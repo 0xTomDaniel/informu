@@ -12,6 +12,8 @@
     "react-native": "0.60.3"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^1.13.0",
+    "@typescript-eslint/parser": "^1.13.0",
     "@babel/core": "7.5.4",
     "@babel/runtime": "7.5.4",
     "@react-native-community/eslint-config": "0.0.3",
