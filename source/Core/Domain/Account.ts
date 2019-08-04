@@ -3,14 +3,8 @@ export class Account {
     uid: string;
     emailAddress: string;
 
-    constructor(userData: AccountData) {
-        this.uid = userData.uid;
-        this.emailAddress = userData.emailAddress;
+    constructor(uid: string, emailAddress: string) {
+        this.uid = uid;
+        this.emailAddress = emailAddress;
     }
-}
-
-export interface AccountData {
-
-    uid: string;
-    emailAddress: string;
 }

@@ -1,6 +1,6 @@
 import { Account } from '../Domain/Account';
 
-export interface AccountRepository {
+export interface AccountRepositoryRemote {
 
     getByUID(uid: string): Promise<Account>;
     add(account: Account): Promise<void>;

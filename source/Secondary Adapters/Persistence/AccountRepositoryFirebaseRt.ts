@@ -1,7 +1,7 @@
-import { AccountRepository } from '../../Core/Ports/AccountRepository';
+import { AccountRepositoryRemote } from '../../Core/Ports/AccountRepositoryRemote';
 import { Account } from '../../Core/Domain/Account';
 
-export class AccountRepositoryFirebaseRt implements AccountRepository {
+export class AccountRepositoryFirebaseRt implements AccountRepositoryRemote {
 
     async getByUID(uid: string): Promise<Account> {
         throw new Error('Method not implemented.');

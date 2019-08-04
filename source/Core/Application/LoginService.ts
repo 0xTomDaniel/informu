@@ -1,19 +1,21 @@
 import { LoginOutput } from '../Ports/LoginOutput';
 import { Authentication } from '../Ports/Authentication';
-import { AccountRepository } from '../Ports/AccountRepository';
+import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
+import { DoesNotExist, FailedToGet, FailedToAdd, FailedToRemove, AccountRepositoryLocalException, AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
+import { fatalError } from '../../Utility';
 
 export class LoginService {
 
     private readonly loginOutput: LoginOutput;
     private readonly authentication: Authentication;
-    private readonly accountRepoLocal: AccountRepository;
-    private readonly accountRepoRemote: AccountRepository;
+    private readonly accountRepoLocal: AccountRepositoryLocal;
+    private readonly accountRepoRemote: AccountRepositoryRemote;
 
     constructor(
         loginAdapter: LoginOutput,
         authentication: Authentication,
-        accountRepoLocal: AccountRepository,
-        accountRepoRemote: AccountRepository
+        accountRepoLocal: AccountRepositoryLocal,
+        accountRepoRemote: AccountRepositoryRemote
     ) {
         this.loginOutput = loginAdapter;
         this.authentication = authentication;
@@ -48,10 +50,25 @@ export class LoginService {
             await this.accountRepoLocal.add(account);
 
             this.loginOutput.showHomeScreen();
+        } catch (error) {
+            if (this.isAccountRepositoryLocalException(error)) {
+                this.loginOutput.showLoginError(error);
+            } else if (error instanceof Error) {
+                fatalError(error.message);
+            } else {
+                console.log(error);
+                fatalError();
+            }
         }
-        catch (error) {
-            this.loginOutput.showLoginError(error);
-        }
+    }
+
+    private isAccountRepositoryLocalException(
+        value: any
+    ): value is AccountRepositoryLocalException {
+        return value instanceof DoesNotExist
+            || value instanceof FailedToGet
+            || value instanceof FailedToAdd
+            || value instanceof FailedToRemove;
     }
 }
 
@@ -64,9 +81,11 @@ export class EmailAddress {
     }
 
     isValid(): boolean {
-        const regexp = /[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}/;
+        /*const regexp = /[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}/;
 
-        return regexp.test(this.emailAddress);
+        return regexp.test(this.emailAddress);*/
+
+        return true;
     }
 
     rawValue(): string {
@@ -83,14 +102,16 @@ export class Password {
     }
 
     isValid(): boolean {
-        const letterOrNumber = '(\p{L}|\p{N})';
+        /*const letterOrNumber = '(\p{L}|\p{N})';
         const letterOrSymbol = '(\p{L}|[^\p{L}\p{N}])';
         const numberOrSymbol = '(\p{N}|[^\p{L}\p{N}])';
         const regex
             = `^(?=.*${letterOrNumber})(?=.*${letterOrSymbol})(?=.*${numberOrSymbol})[\S]{8,}$`;
         const regexp = new RegExp(regex);
 
-        return regexp.test(this.password);
+        return regexp.test(this.password);*/
+
+        return true;
     }
 
     rawValue(): string {
