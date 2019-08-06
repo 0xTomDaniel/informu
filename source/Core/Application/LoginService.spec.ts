@@ -43,7 +43,7 @@ describe('user logs into their account', (): void => {
         accountRepoRemoteMock
     );
 
-    const validAccount = {
+    const validAccountData = {
         uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
         emailAddress: 'support+test@informu.io',
     };
@@ -57,15 +57,15 @@ describe('user logs into their account', (): void => {
         // Given credentials are valid for authentication
         //
         const userData: UserData = {
-            uid: validAccount.uid,
-            emailAddress: validAccount.emailAddress,
+            uid: validAccountData.uid,
+            emailAddress: validAccountData.emailAddress,
         };
         (authenticationMock.authenticateWithEmail as jest.Mock)
             .mockReturnValueOnce(Promise.resolve(userData));
 
         // Given an account exists for the provided credentials
         //
-        const account = new Account(validAccount.uid, validAccount.emailAddress);
+        const account = new Account(validAccountData.uid, validAccountData.emailAddress);
         (accountRepoRemoteMock.getByUID as jest.Mock)
             .mockReturnValueOnce(Promise.resolve(account));
 
@@ -77,7 +77,7 @@ describe('user logs into their account', (): void => {
 
         // Then
         //
-        it('should save account login locally', async (): Promise<void> => {
+        it('should save account login locally', (): void => {
             expect(authenticationMock.authenticateWithEmail)
                 .toHaveBeenCalledWith(validEmail.rawValue(), validPassword.rawValue());
             expect(authenticationMock.authenticateWithEmail).toHaveBeenCalledTimes(1);

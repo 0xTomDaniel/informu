@@ -1,20 +1,15 @@
 import { AccountRepositoryLocal, FailedToAdd, FailedToGet, DoesNotExist, FailedToRemove } from '../../Core/Ports/AccountRepositoryLocal';
 import { Account } from '../../Core/Domain/Account';
 import { serialize, deserialize } from 'class-transformer';
+import AsyncStorage from '@react-native-community/async-storage';
 
 export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
-
-    private readonly database: LocalDatabase;
-
-    constructor(database: LocalDatabase) {
-        this.database = database;
-    }
 
     async get(): Promise<Account> {
         let rawAccount: string | null;
 
         try {
-            rawAccount = await this.database.read('account');
+            rawAccount = await AsyncStorage.getItem('account');
         } catch (e) {
             console.log(e);
             throw new FailedToGet();
@@ -31,7 +26,7 @@ export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
         const rawAccount = serialize(account);
 
         try {
-            await this.database.create('account', rawAccount);
+            await AsyncStorage.setItem('account', rawAccount);
         } catch (e) {
             console.log(e);
             throw new FailedToAdd();
@@ -40,7 +35,7 @@ export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
 
     async remove(): Promise<void> {
         try {
-            await this.database.delete('account');
+            await AsyncStorage.removeItem('account');
         } catch (e) {
             console.log(e);
             throw new FailedToRemove();
