@@ -1,9 +1,8 @@
 import { AccountRepositoryLocal, FailedToAdd, FailedToGet, DoesNotExist, FailedToRemove } from '../../Core/Ports/AccountRepositoryLocal';
 import { Account } from '../../Core/Domain/Account';
-import { serialize, deserialize, ClassTransformOptions } from 'class-transformer';
-import { LocalDatabase } from './LocalDatabase';
+import { serialize, deserialize } from 'class-transformer';
 
-export class AccountRepositoryLocalDb implements AccountRepositoryLocal {
+export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
 
     private readonly database: LocalDatabase;
 
@@ -16,8 +15,8 @@ export class AccountRepositoryLocalDb implements AccountRepositoryLocal {
 
         try {
             rawAccount = await this.database.read('account');
-        } catch (error) {
-            console.log(error);
+        } catch (e) {
+            console.log(e);
             throw new FailedToGet();
         }
 
@@ -33,8 +32,8 @@ export class AccountRepositoryLocalDb implements AccountRepositoryLocal {
 
         try {
             await this.database.create('account', rawAccount);
-        } catch (error) {
-            console.log(error);
+        } catch (e) {
+            console.log(e);
             throw new FailedToAdd();
         }
     }
@@ -42,8 +41,8 @@ export class AccountRepositoryLocalDb implements AccountRepositoryLocal {
     async remove(): Promise<void> {
         try {
             await this.database.delete('account');
-        } catch (error) {
-            console.log(error);
+        } catch (e) {
+            console.log(e);
             throw new FailedToRemove();
         }
     }
