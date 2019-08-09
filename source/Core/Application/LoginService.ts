@@ -1,8 +1,14 @@
 import { LoginOutput } from '../Ports/LoginOutput';
 import { Authentication } from '../Ports/Authentication';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
-import { DoesNotExist, FailedToGet, FailedToAdd, FailedToRemove, AccountRepositoryLocalException, AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
-import { fatalError } from '../../Utility';
+import {
+    DoesNotExist,
+    FailedToGet,
+    FailedToAdd,
+    FailedToRemove,
+    AccountRepositoryLocalException,
+    AccountRepositoryLocal,
+} from '../Ports/AccountRepositoryLocal';
 
 export class LoginService {
 
@@ -50,14 +56,11 @@ export class LoginService {
             await this.accountRepoLocal.add(account);
 
             this.loginOutput.showHomeScreen();
-        } catch (error) {
-            if (this.isAccountRepositoryLocalException(error)) {
-                this.loginOutput.showLoginError(error);
-            } else if (error instanceof Error) {
-                fatalError(error.message);
+        } catch (e) {
+            if (this.isAccountRepositoryLocalException(e)) {
+                this.loginOutput.showLoginError(e);
             } else {
-                console.log(error);
-                fatalError();
+                throw e;
             }
         }
     }

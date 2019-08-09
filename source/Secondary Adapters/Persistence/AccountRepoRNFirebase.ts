@@ -1,10 +1,19 @@
 import { AccountRepositoryRemote, AccountData, FailedToGet, DoesNotExist, PersistedDataMalformed, FailedToAdd, FailedToRemove } from '../../Core/Ports/AccountRepositoryRemote';
 import { Account } from '../../Core/Domain/Account';
-import firebase from 'react-native-firebase';
+import firebase, { App } from 'react-native-firebase';
+import { Database } from 'react-native-firebase/database';
 
 export class AccountRepoRNFirebase implements AccountRepositoryRemote {
 
-    private readonly database = firebase.database();
+    private readonly database: Database;
+
+    constructor(app?: App) {
+        if (app != null) {
+            this.database = app.database();
+        } else {
+            this.database = firebase.database();
+        }
+    }
 
     async getByUID(uid: string): Promise<Account> {
         let value: any;
