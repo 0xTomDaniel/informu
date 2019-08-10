@@ -1,4 +1,10 @@
-import { LoginService, EmailAddress, Password } from './LoginService';
+import {
+    LoginService,
+    EmailAddress,
+    Password,
+    ImproperEmailFormat,
+    ImproperPasswordComplexity,
+} from './LoginService';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
 import { Account } from '../Domain/Account';
 import { Authentication, UserData, InvalidCredentials } from '../Ports/Authentication';
@@ -130,8 +136,68 @@ describe('user logs into their account', (): void => {
         //
         it('should show a message that the log in attempt failed due to invalid credentials', (): void => {
             expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(1);
-            expect(loginOutputMock.showLoginError).toHaveBeenCalledWith(new InvalidCredentials());
+            expect(loginOutputMock.showLoginError)
+                .toHaveBeenCalledWith(new InvalidCredentials());
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
+        });
+    });
+
+    describe('credentials fail input validation', (): void => {
+
+        describe('improper email address', (): void => {
+
+            // Given that no account is logged in
+
+            // Given credentials do not meet input validation requirements
+            //
+            const improperEmail = new EmailAddress('support+test.informu.io');
+
+            // When the user submits credentials
+            //
+            beforeAll(async (): Promise<void> => {
+                await loginService.logInWithEmail(improperEmail, validPassword);
+            });
+
+            afterAll((): void => {
+                jest.clearAllMocks();
+            });
+
+            // Then
+            //
+            it('should show a message that an improper email address was entered', (): void => {
+                expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(1);
+                expect(loginOutputMock.showLoginError)
+                    .toHaveBeenCalledWith(new ImproperEmailFormat());
+                expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
+            });
+        });
+
+        describe('improper password complexity', (): void => {
+
+            // Given that no account is logged in
+
+            // Given credentials do not meet input validation requirements
+            //
+            const improperPassword = new Password('password');
+
+            // When the user submits credentials
+            //
+            beforeAll(async (): Promise<void> => {
+                await loginService.logInWithEmail(validEmail, improperPassword);
+            });
+
+            afterAll((): void => {
+                jest.clearAllMocks();
+            });
+
+            // Then
+            //
+            it('should show a message that password doesn\'t meet complexity requirements', (): void => {
+                expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(1);
+                expect(loginOutputMock.showLoginError)
+                    .toHaveBeenCalledWith(new ImproperPasswordComplexity());
+                expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
+            });
         });
     });
 });

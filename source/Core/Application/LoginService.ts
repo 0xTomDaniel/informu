@@ -1,5 +1,5 @@
 import { LoginOutput } from '../Ports/LoginOutput';
-import { Authentication, InvalidCredentials, AccountDisabled } from '../Ports/Authentication';
+import { Authentication, InvalidCredentials, AccountDisabled, AuthenticationException } from '../Ports/Authentication';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
 import {
     DoesNotExist,
@@ -9,6 +9,28 @@ import {
     AccountRepositoryLocalException,
     AccountRepositoryLocal,
 } from '../Ports/AccountRepositoryLocal';
+import Joi from '@hapi/joi';
+
+export class ImproperEmailFormat extends Error {
+
+    constructor() {
+        super('This is not a proper email address.');
+        this.name = 'ImproperEmailFormat';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class ImproperPasswordComplexity extends Error {
+
+    constructor() {
+        super('Password doesn\'t meet complexity requirements.');
+        this.name = 'ImproperPasswordComplexity';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export type LoginServiceException
+    = ImproperEmailFormat | ImproperPasswordComplexity;
 
 export class LoginService {
 
@@ -30,16 +52,14 @@ export class LoginService {
     }
 
     async logInWithEmail(emailAddress: EmailAddress, password: Password): Promise<void> {
-        if (!emailAddress.isValid) {
-            const error = new Error('Email address is not formatted correctly.');
-            this.loginOutput.showLoginError(error);
+        if (!emailAddress.isValid()) {
+            this.loginOutput.showLoginError(new ImproperEmailFormat());
 
             return;
         }
 
-        if (!password.isValid) {
-            const error = new Error('Password doesn\'t meet complexity requirements.');
-            this.loginOutput.showLoginError(error);
+        if (!password.isValid()) {
+            this.loginOutput.showLoginError(new ImproperPasswordComplexity());
 
             return;
         }
@@ -58,7 +78,8 @@ export class LoginService {
             this.loginOutput.showHomeScreen();
         } catch (e) {
             if (
-                this.isAuthenticationException(e)
+                this.isLoginServiceException(e)
+                || this.isAuthenticationException(e)
                 || this.isAccountRepositoryLocalException(e)
             ) {
                 this.loginOutput.showLoginError(e);
@@ -68,9 +89,16 @@ export class LoginService {
         }
     }
 
+    private isLoginServiceException(
+        value: any
+    ): value is LoginServiceException {
+        return value instanceof ImproperEmailFormat
+            || value instanceof ImproperPasswordComplexity;
+    }
+
     private isAuthenticationException(
         value: any
-    ): value is AccountRepositoryLocalException {
+    ): value is AuthenticationException {
         return value instanceof InvalidCredentials
             || value instanceof AccountDisabled;
     }
@@ -94,11 +122,9 @@ export class EmailAddress {
     }
 
     isValid(): boolean {
-        /*const regexp = /[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}/;
+        const result = Joi.string().email().validate(this.emailAddress);
 
-        return regexp.test(this.emailAddress);*/
-
-        return true;
+        return result.error == null;
     }
 
     rawValue(): string {
@@ -115,16 +141,21 @@ export class Password {
     }
 
     isValid(): boolean {
-        /*const letterOrNumber = '(\p{L}|\p{N})';
-        const letterOrSymbol = '(\p{L}|[^\p{L}\p{N}])';
-        const numberOrSymbol = '(\p{N}|[^\p{L}\p{N}])';
+        const symbols = '!-/:-@\\[-`{-~';
+        const anyLetter = `[^${symbols}\\d]`; // This should allow any Unicode
+        // letter. RegExp currently doesn't support '\p{L}'.
+
+        const letterOrNumber = `(${anyLetter}|\\d)`;
+        const letterOrSymbol = `(${anyLetter}|[${symbols}])`;
+        const numberOrSymbol = `(\\d|[${symbols}])`;
+
         const regex
-            = `^(?=.*${letterOrNumber})(?=.*${letterOrSymbol})(?=.*${numberOrSymbol})[\S]{8,}$`;
+            = `^(?!\\s)(?=.*${letterOrNumber})(?=.*${letterOrSymbol})(?=.*${numberOrSymbol}).{8,}(?<!\\s)$`;
         const regexp = new RegExp(regex);
 
-        return regexp.test(this.password);*/
+        const result = Joi.string().regex(regexp).validate(this.password);
 
-        return true;
+        return result.error == null;
     }
 
     rawValue(): string {
