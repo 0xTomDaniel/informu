@@ -1,7 +1,7 @@
 import { LoginService, EmailAddress, Password } from './LoginService';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
 import { Account } from '../Domain/Account';
-import { Authentication, UserData } from '../Ports/Authentication';
+import { Authentication, UserData, InvalidCredentials } from '../Ports/Authentication';
 import { LoginOutput } from '../Ports/LoginOutput';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
 
@@ -47,6 +47,7 @@ describe('user logs into their account', (): void => {
         uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
         emailAddress: 'support+test@informu.io',
     };
+    const account = new Account(validAccountData.uid, validAccountData.emailAddress);
     const validEmail = new EmailAddress('support+test@informu.io');
     const validPassword = new Password('testPassword!');
 
@@ -61,18 +62,21 @@ describe('user logs into their account', (): void => {
             emailAddress: validAccountData.emailAddress,
         };
         (authenticationMock.authenticateWithEmail as jest.Mock)
-            .mockReturnValueOnce(Promise.resolve(userData));
+            .mockResolvedValueOnce(userData);
 
         // Given an account exists for the provided credentials
         //
-        const account = new Account(validAccountData.uid, validAccountData.emailAddress);
         (accountRepoRemoteMock.getByUID as jest.Mock)
-            .mockReturnValueOnce(Promise.resolve(account));
+            .mockResolvedValueOnce(account);
 
         // When the user submits credentials
         //
         beforeAll(async (): Promise<void> => {
             await loginService.logInWithEmail(validEmail, validPassword);
+        });
+
+        afterAll((): void => {
+            jest.clearAllMocks();
         });
 
         // Then
@@ -92,6 +96,42 @@ describe('user logs into their account', (): void => {
         it('should show Home screen', (): void => {
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(1);
             expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(0);
+        });
+    });
+
+    describe('credentials are invalid', (): void => {
+
+        // Given that no account is logged in
+
+        // Given credentials meet input validation requirements
+
+        // Given credentials are invalid for authentication
+        //
+        const invalidPassword = new Password('testPassword@');
+        (authenticationMock.authenticateWithEmail as jest.Mock)
+            .mockRejectedValueOnce(new InvalidCredentials());
+
+        // Given an account exists for the provided credentials
+        //
+        (accountRepoRemoteMock.getByUID as jest.Mock)
+            .mockResolvedValueOnce(account);
+
+        // When the user submits credentials
+        //
+        beforeAll(async (): Promise<void> => {
+            await loginService.logInWithEmail(validEmail, invalidPassword);
+        });
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show a message that the log in attempt failed due to invalid credentials', (): void => {
+            expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(1);
+            expect(loginOutputMock.showLoginError).toHaveBeenCalledWith(new InvalidCredentials());
+            expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
         });
     });
 });

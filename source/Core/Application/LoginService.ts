@@ -1,5 +1,5 @@
 import { LoginOutput } from '../Ports/LoginOutput';
-import { Authentication } from '../Ports/Authentication';
+import { Authentication, InvalidCredentials, AccountDisabled } from '../Ports/Authentication';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
 import {
     DoesNotExist,
@@ -57,12 +57,22 @@ export class LoginService {
 
             this.loginOutput.showHomeScreen();
         } catch (e) {
-            if (this.isAccountRepositoryLocalException(e)) {
+            if (
+                this.isAuthenticationException(e)
+                || this.isAccountRepositoryLocalException(e)
+            ) {
                 this.loginOutput.showLoginError(e);
             } else {
                 throw e;
             }
         }
+    }
+
+    private isAuthenticationException(
+        value: any
+    ): value is AccountRepositoryLocalException {
+        return value instanceof InvalidCredentials
+            || value instanceof AccountDisabled;
     }
 
     private isAccountRepositoryLocalException(

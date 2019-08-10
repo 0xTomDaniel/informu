@@ -10,6 +10,7 @@ export interface UserData {
 }
 
 export class InvalidCredentials extends Error {
+
     constructor() {
         super('Wrong email address or password. Please try again.');
         this.name = 'InvalidCredentials';
@@ -18,6 +19,7 @@ export class InvalidCredentials extends Error {
 }
 
 export class AccountDisabled extends Error {
+
     constructor() {
         super('This account is currently disabled. Please contact support@informu.io.');
         this.name = 'AccountDisabled';
