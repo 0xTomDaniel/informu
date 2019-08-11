@@ -200,4 +200,38 @@ describe('user logs into their account', (): void => {
             });
         });
     });
+
+    describe('account does not exist for email authentication', (): void => {
+
+        // Given that no account is logged in
+
+        // Given credentials meet input validation requirements
+        //
+        const newEmail = new EmailAddress('support+test2@informu.io');
+        const newPassword = new Password('lollipops23');
+
+        // Given an account does not exists for the provided credentials
+        //
+        (authenticationMock.authenticateWithEmail as jest.Mock)
+            .mockRejectedValueOnce(new InvalidCredentials());
+
+        // When the user submits credentials
+        //
+        beforeAll(async (): Promise<void> => {
+            await loginService.logInWithEmail(newEmail, newPassword);
+        });
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show a message that the log in attempt failed due to invalid credentials', (): void => {
+            expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(1);
+            expect(loginOutputMock.showLoginError)
+                .toHaveBeenCalledWith(new InvalidCredentials());
+            expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
+        });
+    });
 });

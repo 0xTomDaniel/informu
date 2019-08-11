@@ -1,6 +1,6 @@
 import { AccountRepoRNCAsyncStorage } from './AccountRepoRNCAsyncStorage';
 import { Account } from '../../Core/Domain/Account';
-import { DoesNotExist } from '../../Core/Ports/AccountRepositoryRemote';
+import { DoesNotExist } from '../../Core/Ports/AccountRepositoryLocal';
 
 // TODO: Currently unable to use AsyncStorage mock functions directly probably
 // because 'async-storage-mock' does not have TypeScript typings.
