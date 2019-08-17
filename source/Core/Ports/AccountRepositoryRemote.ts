@@ -7,10 +7,6 @@ export interface AccountRepositoryRemote {
     removeByUID(uid: string): Promise<void>;
 }
 
-export interface AccountData {
-    readonly emailAddress: string;
-}
-
 export class DoesNotExist extends Error {
     constructor() {
         super('Account entity does not exist in remote persistence.');

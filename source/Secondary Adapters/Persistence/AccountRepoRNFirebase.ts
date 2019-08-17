@@ -1,4 +1,11 @@
-import { AccountRepositoryRemote, AccountData, FailedToGet, DoesNotExist, PersistedDataMalformed, FailedToAdd, FailedToRemove } from '../../Core/Ports/AccountRepositoryRemote';
+import {
+    AccountRepositoryRemote,
+    FailedToGet,
+    DoesNotExist,
+    PersistedDataMalformed,
+    FailedToAdd,
+    FailedToRemove,
+} from '../../Core/Ports/AccountRepositoryRemote';
 import { Account } from '../../Core/Domain/Account';
 import firebase, { App } from 'react-native-firebase';
 import { Database } from 'react-native-firebase/database';
@@ -31,7 +38,7 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
         }
 
         if (this.isAccountData(value)) {
-            return new Account(uid, value.emailAddress);
+            return new Account(uid, value.email);
         } else {
             throw new PersistedDataMalformed();
         }
@@ -57,6 +64,10 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
     }
 
     private isAccountData(arg: any): arg is AccountData {
-        return (arg as AccountData).emailAddress !== undefined;
+        return (arg as AccountData).email !== undefined;
     }
+}
+
+interface AccountData {
+    readonly email: string;
 }
