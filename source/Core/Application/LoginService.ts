@@ -9,7 +9,6 @@ import {
     AccountRepositoryLocalException,
     AccountRepositoryLocal,
 } from '../Ports/AccountRepositoryLocal';
-import Joi from '@hapi/joi';
 
 export class ImproperEmailFormat extends Error {
 
@@ -122,9 +121,9 @@ export class EmailAddress {
     }
 
     isValid(): boolean {
-        const result = Joi.string().email().validate(this.emailAddress);
+        const regexp = /[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,64}/;
 
-        return result.error == null;
+        return regexp.test(this.emailAddress);
     }
 
     rawValue(): string {
@@ -141,21 +140,27 @@ export class Password {
     }
 
     isValid(): boolean {
+        // Regex for no spaces at beginning or end of string
+        const regexpOne = /^\S$|^\S[ \S]*\S$/;
+        const testOne = regexpOne.test(this.password);
+
         const symbols = '!-/:-@\\[-`{-~';
-        const anyLetter = `[^${symbols}\\d]`; // This should allow any Unicode
-        // letter. RegExp currently doesn't support '\p{L}'.
+
+        /*  This should allow any Unicode letter. RegExp currently doesn't
+            support '\p{L}'.
+        */
+        const anyLetter = `[^${symbols}\\d]`;
 
         const letterOrNumber = `(${anyLetter}|\\d)`;
         const letterOrSymbol = `(${anyLetter}|[${symbols}])`;
         const numberOrSymbol = `(\\d|[${symbols}])`;
 
-        const regex
-            = `^(?!\\s)(?=.*${letterOrNumber})(?=.*${letterOrSymbol})(?=.*${numberOrSymbol}).{8,}(?<!\\s)$`;
-        const regexp = new RegExp(regex);
+        const regexTwo
+            = `^(?=.*${letterOrNumber})(?=.*${letterOrSymbol})(?=.*${numberOrSymbol}).{8,}$`;
+        const regexpTwo = new RegExp(regexTwo);
+        const testTwo = regexpTwo.test(this.password);
 
-        const result = Joi.string().regex(regexp).validate(this.password);
-
-        return result.error == null;
+        return testOne && testTwo;
     }
 
     rawValue(): string {
