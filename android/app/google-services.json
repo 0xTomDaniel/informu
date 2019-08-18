@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "767308727016",
+    "firebase_url": "https://informu-development.firebaseio.com",
+    "project_id": "informu-development",
+    "storage_bucket": "informu-development.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:767308727016:android:f3b66943b734a7d9",
+        "android_client_info": {
+          "package_name": "com.mutagreactnative"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "767308727016-13p98clpkloddstuonfn69enii3030s4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmmIBFdpe6Gp8pFCDhV-HqolGkU_NxTFs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "767308727016-13p98clpkloddstuonfn69enii3030s4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "767308727016-qgl72lj36hchuuugjjdlmh45lmefauq3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.reactjs.native.example.MuTagReactNative"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
