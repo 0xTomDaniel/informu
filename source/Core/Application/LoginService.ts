@@ -1,5 +1,5 @@
 import { LoginOutput } from '../Ports/LoginOutput';
-import { Authentication, InvalidCredentials, AccountDisabled, AuthenticationException } from '../Ports/Authentication';
+import { Authentication, InvalidCredentials, AccountDisabled, AuthenticationException, TooManyAttempts } from '../Ports/Authentication';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
 import {
     DoesNotExist,
@@ -63,6 +63,8 @@ export class LoginService {
             return;
         }
 
+        this.loginOutput.showBusyIndicator();
+
         try {
             const userData = await this.authentication.authenticateWithEmail(
                 emailAddress.rawValue(),
@@ -99,7 +101,8 @@ export class LoginService {
         value: any
     ): value is AuthenticationException {
         return value instanceof InvalidCredentials
-            || value instanceof AccountDisabled;
+            || value instanceof AccountDisabled
+            || value instanceof TooManyAttempts;
     }
 
     private isAccountRepositoryLocalException(

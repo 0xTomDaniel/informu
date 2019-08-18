@@ -1,4 +1,4 @@
-import { Authentication, UserData, InvalidCredentials, AccountDisabled } from '../../Core/Ports/Authentication';
+import { Authentication, UserData, InvalidCredentials, AccountDisabled, TooManyAttempts } from '../../Core/Ports/Authentication';
 import { Auth } from 'react-native-firebase/auth';
 import firebase, { App } from 'react-native-firebase';
 
@@ -33,6 +33,13 @@ export class AuthenticationFirebase implements Authentication {
                     throw new InvalidCredentials();
                 case 'auth/user-disabled':
                     throw new AccountDisabled();
+                case 'auth/unknown':
+                    switch (e.message) {
+                        case 'We have blocked all requests from this device due to unusual activity. Try again later. [ Too many unsuccessful login attempts.  Please include reCaptcha verification or try again later ]':
+                            throw new TooManyAttempts();
+                        default:
+                            throw e;
+                    }
                 default:
                     throw e;
             }

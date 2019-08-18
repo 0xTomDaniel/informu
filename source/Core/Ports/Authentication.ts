@@ -27,5 +27,14 @@ export class AccountDisabled extends Error {
     }
 }
 
+export class TooManyAttempts extends Error {
+
+    constructor() {
+        super('Too many unsuccessful login attempts. Please try again later.');
+        this.name = 'TooManyAttempts';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 export type AuthenticationException
-    = InvalidCredentials | AccountDisabled;
+    = InvalidCredentials | AccountDisabled | TooManyAttempts;
