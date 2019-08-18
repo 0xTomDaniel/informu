@@ -1,11 +1,27 @@
 import React, { Component, ComponentType } from 'react';
-import { Text, AppRegistry, View, TextInput, StyleSheet, Platform, StatusBar, SafeAreaView, TouchableWithoutFeedback, Keyboard, Button, Image } from 'react-native';
-import { LoginViewModel, LoginViewModelState } from './LoginViewModel';
-import { LoginService } from '../../Core/Application/LoginService';
+import {
+    ActivityIndicator,
+    Text,
+    AppRegistry,
+    View,
+    TextInput,
+    StyleSheet,
+    Platform,
+    StatusBar,
+    SafeAreaView,
+    TouchableWithoutFeedback,
+    Keyboard,
+} from 'react-native';
+import { LoginViewModel } from './LoginViewModel';
+import { LoginService, EmailAddress, Password } from '../../Core/Application/LoginService';
 import DeviceInfo from 'react-native-device-info';
 import Images from './Images';
 import PrimaryButton from './Base Components/PrimaryButton';
 import Theme from './Theme';
+import LoginPresenter from './LoginPresenter';
+import { AuthenticationFirebase } from '../../Secondary Adapters/Infrastructure/AuthenticationFirebase';
+import { AccountRepoRNCAsyncStorage } from '../../Secondary Adapters/Persistence/AccountRepoRNCAsyncStorage';
+import { AccountRepoRNFirebase } from '../../Secondary Adapters/Persistence/AccountRepoRNFirebase';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -47,22 +63,35 @@ const styles = StyleSheet.create({
         color: Theme.Color.Error,
         fontWeight: 'bold',
     },
+    logInButtonContainer: {
+        justifyContent: 'center',
+    },
+    logInActivityIndicator: {
+        alignSelf: 'center',
+        position: 'absolute',
+    },
 });
 
 export default class LoginViewController extends Component {
 
-    componentDidMount(): void {
-        this.viewModel.onDidUpdate((): void => {
-            this.setState((): object => (
-                this.viewModel.state
-            ));
-        });
-    }
+    private viewModel = new LoginViewModel();
+    private loginPresenter = new LoginPresenter(this.viewModel);
+    private authentication = new AuthenticationFirebase();
+    private accountRepoLocal = new AccountRepoRNCAsyncStorage();
+    private accountRepoRemote = new AccountRepoRNFirebase();
+    private loginService = new LoginService(
+        this.loginPresenter,
+        this.authentication,
+        this.accountRepoLocal,
+        this.accountRepoRemote
+    );
 
-    viewModel = new LoginViewModel();
-    //loginService = new LoginService();
-    state: Readonly<State> = {
-        viewModel: this.viewModel.state,
+    state: Readonly<LoginState> = this.viewModel;
+
+    componentDidMount(): void {
+        this.viewModel.onDidUpdate((change): void => {
+            this.setState(change);
+        });
     }
 
     render(): Element {
@@ -72,52 +101,68 @@ export default class LoginViewController extends Component {
                     <Images.IconLogoCombo style={[styles.logo]} />
                     <View>
                         <Text style={styles.textInputError}>
-                            {this.state.viewModel.emailErrorMessage}
+                            {this.state.emailErrorMessage}
                         </Text>
                         <TextInput
                             style={styles.textInput}
                             keyboardType="email-address"
                             placeholder="Email address"
                             //onSubmitEditing
-                            onChangeText={(text): void => this.setState({
-                                emailInput: text,
-                            })}
+                            onChangeText={(text): void => {
+                                this.viewModel.emailInput = text;
+                            }}
                             value={this.state.emailInput}
                         />
                         <Text style={styles.textInputError}>
-                            {this.state.viewModel.passwordErrorMessage}
+                            {this.state.passwordErrorMessage}
                         </Text>
                         <TextInput
                             style={styles.textInput}
                             secureTextEntry={true}
                             placeholder="Password"
                             //onSubmitEditing
-                            onChangeText={(text): void => this.setState({
-                                passwordInput: text,
-                            })}
+                            onChangeText={(text): void => {
+                                this.viewModel.passwordInput = text;
+                            }}
                             value={this.state.passwordInput}
                         />
                     </View>
-                    <PrimaryButton
-                        onPress={(): void => this.setState({
-                            viewModel: {
-                                //emailErrorMessage: 'Fuck off',
-                                passwordErrorMessage: 'Eat a dick',
-                            },
-                        })}
-                        title="Log In"
-                    />
+                    <View style={styles.logInButtonContainer}>
+                        <PrimaryButton
+                            onPress={(): void => this.logInWithEmail()}
+                            title="Log In"
+                            disabled={this.state.logInButtonDisabled}
+                        />
+                        {this.state.isBusy
+                            && <ActivityIndicator
+                                style={styles.logInActivityIndicator}
+                                size="large"
+                                color={Theme.Color.PrimaryBlue}
+                                animating={this.state.isBusy}
+                            />
+                        }
+                    </View>
                 </SafeAreaView>
             </TouchableWithoutFeedback>
         );
     }
+
+    private logInWithEmail(): void {
+        const emailAddress = new EmailAddress(this.state.emailInput);
+        const password = new Password(this.state.passwordInput);
+
+        this.loginService.logInWithEmail(emailAddress, password);
+    }
 }
 
-interface State {
+export interface LoginState {
 
-    viewModel: LoginViewModelState;
-    emailInput?: string;
-    passwordInput?: string;
+    emailInput: string;
+    passwordInput: string;
+    emailErrorMessage: string;
+    passwordErrorMessage: string;
+    isBusy: boolean;
+    logInButtonDisabled: boolean;
 }
 
 AppRegistry.registerComponent('MuTagReactNative', (): ComponentType => LoginViewController);

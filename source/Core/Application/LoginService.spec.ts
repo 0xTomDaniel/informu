@@ -15,6 +15,7 @@ describe('user logs into their account', (): void => {
 
     const LoginOutputMock
         = jest.fn<LoginOutput, any>((): LoginOutput => ({
+            showBusyIndicator: jest.fn(),
             showHomeScreen: jest.fn(),
             showLoginError: jest.fn(),
         }));
@@ -87,6 +88,12 @@ describe('user logs into their account', (): void => {
 
         // Then
         //
+        it('should show activity indicator', (): void => {
+            expect(loginOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
         it('should save account login locally', (): void => {
             expect(authenticationMock.authenticateWithEmail)
                 .toHaveBeenCalledWith(validEmail.rawValue(), validPassword.rawValue());
@@ -130,6 +137,12 @@ describe('user logs into their account', (): void => {
 
         afterAll((): void => {
             jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show activity indicator', (): void => {
+            expect(loginOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -223,6 +236,12 @@ describe('user logs into their account', (): void => {
 
         afterAll((): void => {
             jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show activity indicator', (): void => {
+            expect(loginOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
         });
 
         // Then
