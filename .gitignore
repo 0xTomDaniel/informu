@@ -22,6 +22,14 @@ DerivedData
 *.xcuserstate
 project.xcworkspace
 
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
 # Android/IntelliJ
 #
 build/
