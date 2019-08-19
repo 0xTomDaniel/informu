@@ -39,12 +39,12 @@ export class LoginService {
     private readonly accountRepoRemote: AccountRepositoryRemote;
 
     constructor(
-        loginAdapter: LoginOutput,
+        loginOutput: LoginOutput,
         authentication: Authentication,
         accountRepoLocal: AccountRepositoryLocal,
         accountRepoRemote: AccountRepositoryRemote
     ) {
-        this.loginOutput = loginAdapter;
+        this.loginOutput = loginOutput;
         this.authentication = authentication;
         this.accountRepoLocal = accountRepoLocal;
         this.accountRepoRemote = accountRepoRemote;
