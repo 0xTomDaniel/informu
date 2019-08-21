@@ -47,6 +47,8 @@ export class AuthenticationFirebase implements Authentication {
     }
 
     async isAuthenticatedAs(uid: string): Promise<boolean> {
-        throw new Error('Method not implemented.');
+        const currentUser = this.auth.currentUser;
+
+        return currentUser != null && currentUser.uid === uid;
     }
 }
