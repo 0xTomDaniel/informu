@@ -1,17 +1,16 @@
-import React, { Component, ComponentType } from 'react';
+import React, { Component } from 'react';
 import {
     ActivityIndicator,
     Text,
-    AppRegistry,
     View,
     TextInput,
     StyleSheet,
     Platform,
     StatusBar,
-    SafeAreaView,
     TouchableWithoutFeedback,
     Keyboard,
 } from 'react-native';
+import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
 import { LoginViewModel } from './LoginViewModel';
 import { LoginService, EmailAddress, Password } from '../../Core/Application/LoginService';
 import DeviceInfo from 'react-native-device-info';
@@ -19,9 +18,9 @@ import Images from './Images';
 import PrimaryButton from './Base Components/PrimaryButton';
 import Theme from './Theme';
 import LoginPresenter from './LoginPresenter';
-import { AuthenticationFirebase } from '../../Secondary Adapters/Infrastructure/AuthenticationFirebase';
-import { AccountRepoRNCAsyncStorage } from '../../Secondary Adapters/Persistence/AccountRepoRNCAsyncStorage';
-import { AccountRepoRNFirebase } from '../../Secondary Adapters/Persistence/AccountRepoRNFirebase';
+import { AccountRepositoryRemote } from '../../Core/Ports/AccountRepositoryRemote';
+import { Authentication } from '../../Core/Ports/Authentication';
+import { AccountRepositoryLocal } from '../../Core/Ports/AccountRepositoryLocal';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -72,18 +71,21 @@ const styles = StyleSheet.create({
     },
 });
 
-export default class LoginViewController extends Component {
+interface LoginVCProps extends NavigationScreenProps {
+    authentication: Authentication;
+    accountRepoLocal: AccountRepositoryLocal;
+    accountRepoRemote: AccountRepositoryRemote;
+}
+
+export default class LoginViewController extends Component<LoginVCProps> {
 
     private viewModel = new LoginViewModel();
     private loginPresenter = new LoginPresenter(this.viewModel);
-    private authentication = new AuthenticationFirebase();
-    private accountRepoLocal = new AccountRepoRNCAsyncStorage();
-    private accountRepoRemote = new AccountRepoRNFirebase();
     private loginService = new LoginService(
         this.loginPresenter,
-        this.authentication,
-        this.accountRepoLocal,
-        this.accountRepoRemote
+        this.props.authentication,
+        this.props.accountRepoLocal,
+        this.props.accountRepoRemote
     );
 
     state: Readonly<LoginState> = this.viewModel;
@@ -91,6 +93,9 @@ export default class LoginViewController extends Component {
     componentDidMount(): void {
         this.viewModel.onDidUpdate((change): void => {
             this.setState(change);
+        });
+        this.viewModel.onNavigateToApp((): void => {
+            this.props.navigation.navigate('App');
         });
     }
 
@@ -164,5 +169,3 @@ export interface LoginState {
     isBusy: boolean;
     logInButtonDisabled: boolean;
 }
-
-AppRegistry.registerComponent('MuTagReactNative', (): ComponentType => LoginViewController);

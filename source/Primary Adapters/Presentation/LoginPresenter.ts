@@ -18,7 +18,7 @@ export default class LoginPresenter implements LoginOutput {
 
     showHomeScreen(): void {
         this.hideBusyIndicator();
-        throw new Error('Need to show home screen.');
+        this.loginViewModel.navigateToApp();
     }
 
     showLoginError(error: Error): void {
