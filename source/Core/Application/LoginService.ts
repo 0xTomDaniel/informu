@@ -51,21 +51,17 @@ export class LoginService {
     }
 
     async logInWithEmail(emailAddress: EmailAddress, password: Password): Promise<void> {
-        if (!emailAddress.isValid()) {
-            this.loginOutput.showLoginError(new ImproperEmailFormat());
-
-            return;
-        }
-
-        if (!password.isValid()) {
-            this.loginOutput.showLoginError(new ImproperPasswordComplexity());
-
-            return;
-        }
-
-        this.loginOutput.showBusyIndicator();
-
         try {
+            if (!emailAddress.isValid()) {
+                throw new ImproperEmailFormat();
+            }
+
+            if (!password.isValid()) {
+                throw new ImproperPasswordComplexity();
+            }
+
+            this.loginOutput.showBusyIndicator();
+
             const userData = await this.authentication.authenticateWithEmail(
                 emailAddress.rawValue(),
                 password.rawValue()
