@@ -112,7 +112,7 @@ describe('user logs into their account', (): void => {
         });
     });
 
-    describe('credentials are invalid', (): void => {
+    describe('email credentials are invalid', (): void => {
 
         // Given that no account is logged in
 
@@ -155,7 +155,7 @@ describe('user logs into their account', (): void => {
         });
     });
 
-    describe('credentials fail input validation', (): void => {
+    describe('email credentials fail input validation', (): void => {
 
         describe('improper email address', (): void => {
 
