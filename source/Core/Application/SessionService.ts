@@ -20,6 +20,8 @@ export default class SessionService {
     }
 
     async load(): Promise<void> {
+        this.sessionOutput.showLoadSessionScreen();
+
         try {
             const account = await this.accountRepoLocal.get();
             const isLoggedIn = await this.authentication.isAuthenticatedAs(account.uid);
