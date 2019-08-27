@@ -1,9 +1,10 @@
 export enum Screen {
     Entry,
     App,
+    LoadSession,
 }
 
-export default class LoadSessionViewModel {
+export default class AppViewModel {
 
     private onNavigateCallback: ((screen: Screen) => void) | undefined;
 
@@ -11,15 +12,9 @@ export default class LoadSessionViewModel {
         this.onNavigateCallback = callback;
     }
 
-    navigateToApp(): void {
+    navigateTo(screen: Screen): void {
         if (this.onNavigateCallback != null) {
-            this.onNavigateCallback(Screen.App);
-        }
-    }
-
-    navigateToEntry(): void {
-        if (this.onNavigateCallback != null) {
-            this.onNavigateCallback(Screen.Entry);
+            this.onNavigateCallback(screen);
         }
     }
 }

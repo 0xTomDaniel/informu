@@ -10,6 +10,7 @@ describe('user opens saved login session', (): void => {
         = jest.fn<SessionOutput, any>((): SessionOutput => ({
             showHomeScreen: jest.fn(),
             showLoginScreen: jest.fn(),
+            showLoadSessionScreen: jest.fn(),
         }));
 
     const AuthenticationMock
@@ -62,6 +63,12 @@ describe('user opens saved login session', (): void => {
 
         // Then
         //
+        it('should show session loading screen', (): void => {
+            expect(sessionOutputMock.showLoadSessionScreen).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
         it('should show the home screen', (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
             expect(authenticationMock.isAuthenticatedAs)
@@ -85,6 +92,12 @@ describe('user opens saved login session', (): void => {
 
         afterAll((): void => {
             jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show session loading screen', (): void => {
+            expect(sessionOutputMock.showLoadSessionScreen).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -114,6 +127,12 @@ describe('user opens saved login session', (): void => {
 
         afterAll((): void => {
             jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show session loading screen', (): void => {
+            expect(sessionOutputMock.showLoadSessionScreen).toHaveBeenCalledTimes(1);
         });
 
         // Then
