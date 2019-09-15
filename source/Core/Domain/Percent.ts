@@ -9,7 +9,7 @@ export class InvalidPercentage extends RangeError {
 
 export default class Percent {
 
-    value: number;
+    private value: number;
 
     constructor(percent: number) {
         if (percent < 0 || percent > 100) {

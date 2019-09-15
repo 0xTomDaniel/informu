@@ -72,7 +72,9 @@ export default class AddMuTagService {
             this.unprovisionedMuTag = await this.bluetooth.connectToNewMuTag(this.connectThreshold);
 
             if (!this.unprovisionedMuTag.isBatteryAbove(this.addMuTagBatteryThreshold)) {
-                throw new LowMuTagBattery(this.addMuTagBatteryThreshold.value);
+                const error = new LowMuTagBattery(this.addMuTagBatteryThreshold.valueOf());
+                this.addMuTagOutput.showLowBatteryError(error);
+                return;
             }
 
             if (this.muTagName != null) {
@@ -85,6 +87,7 @@ export default class AddMuTagService {
 
     async stopAddingNewMuTag(): Promise<void> {
         this.addMuTagOutput.showHomeScreen();
+        this.resetAddNewMuTagState();
 
         try {
             await this.bluetooth.cancelConnectToNewMuTag();
@@ -120,6 +123,7 @@ export default class AddMuTagService {
             await this.muTagRepoLocal.update(this.provisionedMuTag);
             await this.muTagRepoRemote.update(this.provisionedMuTag);
 
+            this.resetAddNewMuTagState();
             this.addMuTagOutput.showHomeScreen();
         } catch (e) {
             throw e;
@@ -133,5 +137,11 @@ export default class AddMuTagService {
         await this.muTagRepoRemote.add(this.provisionedMuTag);
 
         this.addMuTagOutput.showMuTagFinalSetupScreen();
+    }
+
+    private resetAddNewMuTagState(): void {
+        this.unprovisionedMuTag = undefined;
+        this.provisionedMuTag = undefined;
+        this.muTagName = undefined;
     }
 }

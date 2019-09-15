@@ -1,4 +1,4 @@
-import AddMuTagService from './AddMuTagService';
+import AddMuTagService, { LowMuTagBattery } from './AddMuTagService';
 import { Bluetooth } from '../Ports/Bluetooth';
 import UnprovisionedMuTag from '../Domain/UnprovisionedMuTag';
 import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
@@ -42,9 +42,14 @@ describe('Mu tag user adds Mu tag', (): void => {
         }));
 
     const bluetoothMock = new BluetoothMock();
+    (bluetoothMock.cancelConnectToNewMuTag as jest.Mock).mockResolvedValue(undefined);
     const addMuTagOutputMock = new AddMuTagOutputMock();
     const muTagRepoLocalMock = new MuTagRepoLocalMock();
+    (muTagRepoLocalMock.add as jest.Mock).mockResolvedValue(undefined);
+    (muTagRepoLocalMock.update as jest.Mock).mockResolvedValue(undefined);
     const muTagRepoRemoteMock = new MuTagRepoRemoteMock();
+    (muTagRepoRemoteMock.add as jest.Mock).mockResolvedValue(undefined);
+    (muTagRepoRemoteMock.update as jest.Mock).mockResolvedValue(undefined);
 
     const connectMuTagScanThreshold = -72 as RSSI;
     const addMuTagBatteryThreshold = new Percent(15);
@@ -170,7 +175,6 @@ describe('Mu tag user adds Mu tag', (): void => {
         //
         it('should show activity indicator #2', async (): Promise<void> => {
             await addMuTagService.completeMuTagSetup(muTagColorSetting);
-
             expect(addMuTagOutputMock.showActivityIndicator).toHaveBeenCalledTimes(2);
         });
 
@@ -294,21 +298,25 @@ describe('Mu tag user adds Mu tag', (): void => {
         //
         it('should provision the Mu tag hardware', async (): Promise<void> => {
             // This test must be async to wait for 'bluetoothMock.provisionMuTag'
-            // and remaining promises to resolve
+            // to resolve
             expect(bluetoothMock.provisionMuTag).toHaveBeenCalledWith(unprovisionedMuTag, newMuTagAttachedTo);
             expect(bluetoothMock.provisionMuTag).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it('should add Mu tag to local persistence', (): void => {
+        it('should add Mu tag to local persistence', async (): Promise<void> => {
+            // This test must be async to wait for 'muTagRepoLocalMock.add'
+            // to resolve
             expect(muTagRepoLocalMock.add).toHaveBeenCalledWith(muTag);
             expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it('should add Mu tag to remote persistence', (): void => {
+        it('should add Mu tag to remote persistence', async (): Promise<void> => {
+            // This test must be async to wait for 'muTagRepoRemoteMock.add'
+            // to resolve
             expect(muTagRepoRemoteMock.add).toHaveBeenCalledWith(muTag);
             expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
         });
@@ -357,17 +365,19 @@ describe('Mu tag user adds Mu tag', (): void => {
 
     describe('user cancels add Mu tag', (): void => {
 
+        (bluetoothMock.connectToNewMuTag as jest.Mock).mockResolvedValueOnce(unprovisionedMuTag);
+
         // Given that an account is logged in
 
         // Given that user has requested to add unprovisioned Mu tag
 
         // When
         //
-        beforeAll((): void => {
+        beforeAll(async (): Promise<void> => {
             // user requests to add unprovisioned Mu tag
-            addMuTagService.startAddingNewMuTag();
+            await addMuTagService.startAddingNewMuTag();
             // the user cancels add Mu tag
-            addMuTagService.stopAddingNewMuTag();
+            await addMuTagService.stopAddingNewMuTag();
         });
 
         afterAll((): void => {
@@ -384,6 +394,51 @@ describe('Mu tag user adds Mu tag', (): void => {
         //
         it('should cancel connecting to new Mu tag', (): void => {
             expect(bluetoothMock.cancelConnectToNewMuTag).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('Mu tag battery is below threshold', (): void => {
+
+        // Given that an account is logged in
+
+        // Given the Mu tag battery is below threshold
+        //
+        const muTagBatteryLevelLow = new Percent(15);
+        const unprovisionedMuTagLowBatt = new UnprovisionedMuTag(newUUID, muTagBatteryLevelLow);
+
+        // Given unprovisioned Mu tag is connected
+        //
+        (bluetoothMock.connectToNewMuTag as jest.Mock)
+            .mockResolvedValueOnce(unprovisionedMuTagLowBatt);
+
+        // When
+        //
+        beforeAll(async (): Promise<void> => {
+            // user requests to add unprovisioned Mu tag
+            await addMuTagService.startAddingNewMuTag();
+            // Mu tag battery level is checked
+        });
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show message that the Mu tag battery is below threshold and needs to be charged before adding', (): void => {
+            expect(addMuTagOutputMock.showLowBatteryError)
+                .toHaveBeenCalledWith(new LowMuTagBattery(addMuTagBatteryThreshold.valueOf()));
+            expect(addMuTagOutputMock.showLowBatteryError).toHaveBeenCalledTimes(1);
+        });
+
+        // When user dismisses error message
+        //
+        // Then
+        //
+        it('should show the home screen', async (): Promise<void> => {
+            // the user cancels add Mu tag
+            await addMuTagService.stopAddingNewMuTag();
+            expect(addMuTagOutputMock.showHomeScreen).toHaveBeenCalledTimes(1);
         });
     });
 });
