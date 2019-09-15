@@ -1,11 +1,18 @@
-import MuTag from '../Domain/MuTag';
 import UnprovisionedMuTag from '../Domain/UnprovisionedMuTag';
 import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
 import { RSSI } from '../Domain/Types';
 
+export class ConnectToMuTagFailed extends Error {
+
+    constructor() {
+        super('Failed to connect to Mu tag. Please move it closer to the app.');
+        this.name = 'ConnectToMuTagFailed';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 export interface Bluetooth {
 
-    findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
-    connectToMuTag(muTag: MuTag): Promise<void>;
-    provisionMuTag(muTag: UnprovisionedMuTag): Promise<ProvisionedMuTag>;
+    connectToNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
+    provisionMuTag(muTag: UnprovisionedMuTag, name: string): Promise<ProvisionedMuTag>;
 }

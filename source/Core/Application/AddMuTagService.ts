@@ -5,6 +5,8 @@ import Percent from '../Domain/Percent';
 import UnprovisionedMuTag from '../Domain/UnprovisionedMuTag';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
+import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
+import { MuTagColor } from '../Domain/MuTag';
 
 export class LowMuTagBattery extends Error {
 
@@ -25,35 +27,37 @@ export class NewMuTagNotFound extends Error {
     }
 }
 
-export class AddMuTagTimedOut extends Error {
+export class AddedMuTagNotFound extends Error {
 
     constructor() {
-        super('Mu tag has went to sleep and could not be added. Please try adding again.');
-        this.name = 'AddMuTagTimedOut';
+        super('There was no added Mu tag found.');
+        this.name = 'AddedMuTagNotFound';
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
 export default class AddMuTagService {
 
-    private scanThreshold: RSSI;
-    private addMuTagBatteryThreshold: Percent;
-    private addMuTagOutput: AddMuTagOutput;
-    private bluetooth: Bluetooth;
-    private muTagRepoLocal: MuTagRepositoryLocal;
-    private muTagRepoRemote: MuTagRepositoryRemote;
+    private readonly connectThreshold: RSSI;
+    private readonly addMuTagBatteryThreshold: Percent;
+    private readonly addMuTagOutput: AddMuTagOutput;
+    private readonly bluetooth: Bluetooth;
+    private readonly muTagRepoLocal: MuTagRepositoryLocal;
+    private readonly muTagRepoRemote: MuTagRepositoryRemote;
 
     private unprovisionedMuTag: UnprovisionedMuTag | undefined;
+    private provisionedMuTag: ProvisionedMuTag | undefined;
+    private muTagName: string | undefined;
 
     constructor(
-        scanThreshold: RSSI,
+        connectThreshold: RSSI,
         addMuTagBatteryThreshold: Percent,
         addMuTagOutput: AddMuTagOutput,
         bluetooth: Bluetooth,
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
     ) {
-        this.scanThreshold = scanThreshold;
+        this.connectThreshold = connectThreshold;
         this.addMuTagBatteryThreshold = addMuTagBatteryThreshold;
         this.addMuTagOutput = addMuTagOutput;
         this.bluetooth = bluetooth;
@@ -61,36 +65,63 @@ export default class AddMuTagService {
         this.muTagRepoRemote = muTagRepoRemote;
     }
 
-    async connectToNewMuTag(): Promise<void> {
+    async startAddingNewMuTag(): Promise<void> {
         this.addMuTagOutput.showAddMuTagScreen();
 
         try {
-            this.unprovisionedMuTag = await this.bluetooth.findNewMuTag(this.scanThreshold);
-            this.bluetooth.connectToMuTag(this.unprovisionedMuTag);
+            this.unprovisionedMuTag = await this.bluetooth.connectToNewMuTag(this.connectThreshold);
 
-            if (this.unprovisionedMuTag.batteryLevel < this.addMuTagBatteryThreshold) {
+            if (!this.unprovisionedMuTag.isBatteryAbove(this.addMuTagBatteryThreshold)) {
                 throw new LowMuTagBattery(this.addMuTagBatteryThreshold.value);
             }
 
-            this.addMuTagOutput.showMuTagSetupScreen();
+            if (this.muTagName != null) {
+                await this.addNewMuTag(this.unprovisionedMuTag, this.muTagName);
+            }
         } catch (e) {
             throw e;
         }
     }
 
-    async addConnectedMuTag(attachedTo: string): Promise<void> {
+    instructionsComplete(): void {
+        this.addMuTagOutput.showMuTagNamingScreen();
+    }
+
+    async setMuTagName(name: string): Promise<void> {
+        this.addMuTagOutput.showActivityIndicator();
+
+        if (this.unprovisionedMuTag != null) {
+            await this.addNewMuTag(this.unprovisionedMuTag, name);
+        } else {
+            this.muTagName = name;
+            this.addMuTagOutput.showMuTagConnectingScreen();
+        }
+    }
+
+    async completeMuTagSetup(color: MuTagColor): Promise<void> {
         try {
-            if (this.unprovisionedMuTag == null) {
-                throw new NewMuTagNotFound();
+            if (this.provisionedMuTag == null) {
+                throw new AddedMuTagNotFound();
             }
 
-            const provisionedMuTag = await this.bluetooth.provisionMuTag(this.unprovisionedMuTag);
-            await this.muTagRepoLocal.add(provisionedMuTag);
-            await this.muTagRepoRemote.add(provisionedMuTag);
+            this.addMuTagOutput.showActivityIndicator();
+
+            this.provisionedMuTag.updateColor(color);
+            await this.muTagRepoLocal.update(this.provisionedMuTag);
+            await this.muTagRepoRemote.update(this.provisionedMuTag);
 
             this.addMuTagOutput.showHomeScreen();
         } catch (e) {
             throw e;
         }
+    }
+
+    private async addNewMuTag(unprovisionedMuTag: UnprovisionedMuTag, name: string): Promise<void> {
+        this.provisionedMuTag = await this.bluetooth.provisionMuTag(unprovisionedMuTag, name);
+        this.unprovisionedMuTag = undefined;
+        await this.muTagRepoLocal.add(this.provisionedMuTag);
+        await this.muTagRepoRemote.add(this.provisionedMuTag);
+
+        this.addMuTagOutput.showMuTagFinalSetupScreen();
     }
 }

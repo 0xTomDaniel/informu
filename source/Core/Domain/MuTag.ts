@@ -1,9 +1,21 @@
 import Percent from './Percent';
 
+export enum MuTagColor {
+    Charcoal,
+    Cloud,
+    Indiegogo,
+    Kickstarter,
+    MuOrange,
+    Scarlet,
+    Sky,
+    Smoke,
+}
+
 export default class MuTag {
 
-    uid: string;
-    batteryLevel: Percent;
+    protected readonly uid: string;
+    protected batteryLevel: Percent;
+    protected color: MuTagColor = MuTagColor.MuOrange;
 
     constructor(
         uid: string,
@@ -11,5 +23,9 @@ export default class MuTag {
     ) {
         this.uid = uid;
         this.batteryLevel = batteryLevel;
+    }
+
+    updateColor(color: MuTagColor): void {
+        this.color = color;
     }
 }

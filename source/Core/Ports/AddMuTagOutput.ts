@@ -1,10 +1,12 @@
-import { LowMuTagBattery, AddMuTagTimedOut } from '../Application/AddMuTagService';
+import { LowMuTagBattery } from '../Application/AddMuTagService';
 
 export interface AddMuTagOutput {
 
     showAddMuTagScreen(): void;
-    showMuTagSetupScreen(): void;
+    showMuTagNamingScreen(): void;
+    showMuTagConnectingScreen(): void;
+    showMuTagFinalSetupScreen(): void;
+    showActivityIndicator(): void;
     showHomeScreen(): void;
-    showAddMuTagTimeoutError(error: AddMuTagTimedOut): void;
     showLowBatteryError(error: LowMuTagBattery): void;
 }
