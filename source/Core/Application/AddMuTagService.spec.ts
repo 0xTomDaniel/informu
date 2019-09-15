@@ -14,6 +14,7 @@ describe('Mu tag user adds Mu tag', (): void => {
     const BluetoothMock
         = jest.fn<Bluetooth, any>((): Bluetooth => ({
             connectToNewMuTag: jest.fn(),
+            cancelConnectToNewMuTag: jest.fn(),
             provisionMuTag: jest.fn(),
         }));
 
@@ -351,6 +352,38 @@ describe('Mu tag user adds Mu tag', (): void => {
         //
         it('should show the home screen', (): void => {
             expect(addMuTagOutputMock.showHomeScreen).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('user cancels add Mu tag', (): void => {
+
+        // Given that an account is logged in
+
+        // Given that user has requested to add unprovisioned Mu tag
+
+        // When
+        //
+        beforeAll((): void => {
+            // user requests to add unprovisioned Mu tag
+            addMuTagService.startAddingNewMuTag();
+            // the user cancels add Mu tag
+            addMuTagService.stopAddingNewMuTag();
+        });
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show home screen', (): void => {
+            expect(addMuTagOutputMock.showHomeScreen).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should cancel connecting to new Mu tag', (): void => {
+            expect(bluetoothMock.cancelConnectToNewMuTag).toHaveBeenCalledTimes(1);
         });
     });
 });

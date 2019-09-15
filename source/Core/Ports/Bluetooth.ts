@@ -14,5 +14,6 @@ export class ConnectToMuTagFailed extends Error {
 export interface Bluetooth {
 
     connectToNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
+    cancelConnectToNewMuTag(): Promise<void>;
     provisionMuTag(muTag: UnprovisionedMuTag, name: string): Promise<ProvisionedMuTag>;
 }

@@ -83,6 +83,16 @@ export default class AddMuTagService {
         }
     }
 
+    async stopAddingNewMuTag(): Promise<void> {
+        this.addMuTagOutput.showHomeScreen();
+
+        try {
+            await this.bluetooth.cancelConnectToNewMuTag();
+        } catch (e) {
+            throw e;
+        }
+    }
+
     instructionsComplete(): void {
         this.addMuTagOutput.showMuTagNamingScreen();
     }
