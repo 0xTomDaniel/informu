@@ -4,6 +4,9 @@ import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
 import React, { Component } from 'react';
 import DeviceInfo from 'react-native-device-info';
+import AddMuTagService from '../../Core/Application/AddMuTagService';
+import { ReactNativeBLEPLX } from '../../Secondary Adapters/Infrastructure/ReactNativeBLEPLX';
+import { RSSI } from '../../Core/Domain/Types';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -23,6 +26,14 @@ export default class HomeViewController extends Component<NavigationScreenProps>
     static navigationOptions = {
         title: 'My Mu Tags',
     };
+
+    componentDidMount(): void {
+        const bluetooth = new ReactNativeBLEPLX();
+        const scanThreshold = -100 as RSSI;
+        bluetooth.connectToNewMuTag(scanThreshold).then((unprovisionedMuTag): void => {
+            console.log(unprovisionedMuTag);
+        });
+    }
 
     render(): Element {
         return (

@@ -25,6 +25,10 @@ export default class MuTag {
         this.batteryLevel = batteryLevel;
     }
 
+    getUID(): string {
+        return this.uid;
+    }
+
     updateColor(color: MuTagColor): void {
         this.color = color;
     }
