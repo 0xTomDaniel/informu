@@ -1,10 +1,9 @@
 import { Text } from 'react-native-paper';
-import { StyleSheet, Platform, StatusBar } from 'react-native';
+import { StyleSheet, Platform, StatusBar, PermissionsAndroid, PermissionStatus } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
 import React, { Component } from 'react';
 import DeviceInfo from 'react-native-device-info';
-import AddMuTagService from '../../Core/Application/AddMuTagService';
 import { ReactNativeBLEPLX } from '../../Secondary Adapters/Infrastructure/ReactNativeBLEPLX';
 import { RSSI } from '../../Core/Domain/Types';
 
@@ -23,16 +22,52 @@ const styles = StyleSheet.create({
 
 export default class HomeViewController extends Component<NavigationScreenProps> {
 
+    private bluetooth = new ReactNativeBLEPLX();
+
     static navigationOptions = {
         title: 'My Mu Tags',
     };
 
     componentDidMount(): void {
-        const bluetooth = new ReactNativeBLEPLX();
-        const scanThreshold = -100 as RSSI;
-        bluetooth.connectToNewMuTag(scanThreshold).then((unprovisionedMuTag): void => {
-            console.log(unprovisionedMuTag);
-        });
+        const connectToNewMuTag = (): void => {
+            const scanThreshold = -70 as RSSI;
+            this.bluetooth.connectToNewMuTag(scanThreshold).then((unprovisionedMuTag): void => {
+                console.log(unprovisionedMuTag);
+            });
+        };
+
+        try {
+            PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((granted): Promise<PermissionStatus> | undefined => {
+                if (granted) {
+                    console.log('Bluetooth granted!');
+                    connectToNewMuTag();
+                } else {
+                    console.log('Bluetooth denied');
+                    return PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION, {
+                        title: 'Cool Photo App Camera Permission',
+                        message:
+                            'Cool Photo App needs access to your camera ' +
+                            'so you can take awesome pictures.',
+                        buttonNeutral: 'Ask Me Later',
+                        buttonNegative: 'Cancel',
+                        buttonPositive: 'OK',
+                    });
+                }
+            }).then((granted): void => {
+                if (granted == null) {
+                    return;
+                }
+
+                if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+                    console.log('Bluetooth granted!');
+                    connectToNewMuTag();
+                } else {
+                    console.log('Bluetooth denied');
+                }
+            });
+        } catch (err) {
+            console.warn(err);
+        }
     }
 
     render(): Element {

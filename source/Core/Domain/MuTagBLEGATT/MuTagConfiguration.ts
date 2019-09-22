@@ -1,110 +1,232 @@
-import { Service, Characteristic, CharacteristicWriteOption } from './MuTagBLEGATT';
+import Characteristic, { ReadableCharacteristic, WritableCharacteristic } from './Characteristic';
+import Service from './Service';
 
-class DeviceUUID extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB01';
-    static readonly byteLength = 16;
-    static readonly writeOption = CharacteristicWriteOption.Disabled;
-    static readonly readable = true;
+abstract class MuTagConfigurationCharacteristic<T> extends Characteristic<T> {
+    readonly serviceUUID = 'A173424A-9708-4C4C-AEED-0AB1AF539797';
 }
 
-class DeviceMajor extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB02';
-    static readonly byteLength = 2;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = true;
+class DeviceUUID extends MuTagConfigurationCharacteristic<string>
+    implements ReadableCharacteristic<string>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB01';
+    readonly byteLength = 16;
+
+    fromBase64(base64Value: string): string {
+        return Characteristic.base64ToString(base64Value);
+    }
 }
 
-class DeviceMinor extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB03';
-    static readonly byteLength = 2;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = true;
+class Major extends MuTagConfigurationCharacteristic<number | undefined>
+    implements ReadableCharacteristic<number | undefined>, WritableCharacteristic<number | undefined>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB02';
+    readonly byteLength = 2;
+    readonly withResponse = true;
+
+    fromBase64(base64Value?: string): number | undefined {
+        if (base64Value == null) {
+            return undefined;
+        }
+
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
-class TXPower extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB04';
-    static readonly byteLength = 1;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = true;
+class Minor extends MuTagConfigurationCharacteristic<number | undefined>
+    implements ReadableCharacteristic<number | undefined>, WritableCharacteristic<number | undefined>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB03';
+    readonly byteLength = 2;
+    readonly withResponse = true;
+
+    fromBase64(base64Value?: string): number | undefined {
+        if (base64Value == null) {
+            return undefined;
+        }
+
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
-class Authenticate extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB05';
-    static readonly byteLength = 1;
-    static readonly writeOption = CharacteristicWriteOption.WithoutResponse;
-    static readonly readable = false;
+class TXPower extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>, WritableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB04';
+    readonly byteLength = 1;
+    readonly withResponse = true;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
-class TagColor extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB06';
-    static readonly byteLength = 1;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = true;
+class Authenticate extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>, WritableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB05';
+    readonly byteLength = 1;
+    readonly withResponse = false;
+
+    readonly authKey = 0x55;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
-class DeepSleep extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB07';
-    static readonly byteLength = 1;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = false;
+class TagColor extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>, WritableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB06';
+    readonly byteLength = 1;
+    readonly withResponse = true;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
-class Provisioned extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB08';
-    static readonly byteLength = 1;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = true;
+class DeepSleep extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>, WritableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB07';
+    readonly byteLength = 1;
+    readonly withResponse = true;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
-class AdvertisingInterval extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB09';
-    static readonly byteLength = 1;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = true;
+class Provisioned extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>, WritableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB08';
+    readonly byteLength = 1;
+    readonly withResponse = true;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
-class RawBattery extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB10';
-    static readonly byteLength = 4;
-    static readonly writeOption = CharacteristicWriteOption.Disabled;
-    static readonly readable = true;
+class AdvertisingInterval extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>, WritableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB09';
+    readonly byteLength = 1;
+    readonly withResponse = true;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
-class DebugMode extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB11';
-    static readonly byteLength = 1;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = true;
+class RawBattery extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB10';
+    readonly byteLength = 4;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
 }
 
-class LEDColor extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB12';
-    static readonly byteLength = 1;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = true;
+class DebugMode extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>, WritableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB11';
+    readonly byteLength = 1;
+    readonly withResponse = true;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
-class LEDControl extends Characteristic {
-    static readonly UUID = 'AC9B44EA-AA5E-40F4-888A-C2637573AB13';
-    static readonly byteLength = 1;
-    static readonly writeOption = CharacteristicWriteOption.WithResponse;
-    static readonly readable = true;
+class LEDColor extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>, WritableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB12';
+    readonly byteLength = 1;
+    readonly withResponse = true;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
+}
+
+class LEDControl extends MuTagConfigurationCharacteristic<number>
+    implements ReadableCharacteristic<number>, WritableCharacteristic<number>
+{
+    readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB13';
+    readonly byteLength = 1;
+    readonly withResponse = true;
+
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
 }
 
 export default class MuTagConfiguration extends Service {
-    static readonly UUID = 'A173424A-9708-4C4C-AEED-0AB1AF539797';
+    static readonly uuid = 'A173424A-9708-4C4C-AEED-0AB1AF539797';
 
-    static readonly DeviceUUID = DeviceUUID;
-    static readonly DeviceMajor = DeviceMajor;
-    static readonly DeviceMinor = DeviceMinor;
-    static readonly TXPower = TXPower;
-    static readonly Authenticate = Authenticate;
-    static readonly TagColor = TagColor;
-    static readonly DeepSleep = DeepSleep;
-    static readonly Provisioned = Provisioned;
-    static readonly AdvertisingInterval = AdvertisingInterval;
-    static readonly RawBattery = RawBattery;
-    static readonly DebugMode = DebugMode;
-    static readonly LEDColor = LEDColor;
-    static readonly LEDControl = LEDControl;
+    static readonly DeviceUUID = new DeviceUUID();
+    static readonly Major = new Major();
+    static readonly Minor = new Minor();
+    static readonly TXPower = new TXPower();
+    static readonly Authenticate = new Authenticate();
+    static readonly TagColor = new TagColor();
+    static readonly DeepSleep = new DeepSleep();
+    static readonly Provisioned = new Provisioned();
+    static readonly AdvertisingInterval = new AdvertisingInterval();
+    static readonly RawBattery = new RawBattery();
+    static readonly DebugMode = new DebugMode();
+    static readonly LEDColor = new LEDColor();
+    static readonly LEDControl = new LEDControl();
 }
