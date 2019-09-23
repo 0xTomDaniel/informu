@@ -1,4 +1,4 @@
-import { BleManager, ScanOptions, Device, fullUUID, BleError, BleErrorCode, BleATTErrorCode, BleAndroidErrorCode } from 'react-native-ble-plx';
+import { BleManager, ScanOptions, Device, fullUUID, BleError} from 'react-native-ble-plx';
 import { Bluetooth } from '../../Core/Ports/Bluetooth';
 import { RSSI } from '../../Core/Domain/Types';
 import UnprovisionedMuTag from '../../Core/Domain/UnprovisionedMuTag';

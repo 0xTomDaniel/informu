@@ -36,3 +36,23 @@ export default abstract class Characteristic<T> {
         return bytes.toString();
     }
 }
+
+export abstract class NumberCharacteristic extends Characteristic<number> {
+    fromBase64(base64Value: string): number {
+        return Characteristic.base64ToNumber(base64Value);
+    }
+
+    toBase64(value: number): string {
+        return Characteristic.numberToBase64(value);
+    }
+}
+
+export abstract class StringCharacteristic extends Characteristic<string> {
+    fromBase64(base64Value: string): string {
+        return Characteristic.base64ToString(base64Value);
+    }
+
+    toBase64(value: string): string {
+        return Characteristic.stringToBase64(value);
+    }
+}

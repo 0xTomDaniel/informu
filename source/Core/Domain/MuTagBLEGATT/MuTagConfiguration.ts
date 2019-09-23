@@ -1,19 +1,28 @@
-import Characteristic, { ReadableCharacteristic, WritableCharacteristic } from './Characteristic';
+import Characteristic, {
+    ReadableCharacteristic,
+    WritableCharacteristic,
+    NumberCharacteristic,
+    StringCharacteristic,
+} from './Characteristic';
 import Service from './Service';
 
 abstract class MuTagConfigurationCharacteristic<T> extends Characteristic<T> {
     readonly serviceUUID = 'A173424A-9708-4C4C-AEED-0AB1AF539797';
 }
 
-class DeviceUUID extends MuTagConfigurationCharacteristic<string>
+abstract class MuTagConfigurationNumberCharacteristic extends NumberCharacteristic {
+    readonly serviceUUID = 'A173424A-9708-4C4C-AEED-0AB1AF539797';
+}
+
+abstract class MuTagConfigurationStringCharacteristic extends StringCharacteristic {
+    readonly serviceUUID = 'A173424A-9708-4C4C-AEED-0AB1AF539797';
+}
+
+class DeviceUUID extends MuTagConfigurationStringCharacteristic
     implements ReadableCharacteristic<string>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB01';
     readonly byteLength = 16;
-
-    fromBase64(base64Value: string): string {
-        return Characteristic.base64ToString(base64Value);
-    }
 }
 
 class Major extends MuTagConfigurationCharacteristic<number | undefined>
@@ -56,23 +65,15 @@ class Minor extends MuTagConfigurationCharacteristic<number | undefined>
     }
 }
 
-class TXPower extends MuTagConfigurationCharacteristic<number>
+class TXPower extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB04';
     readonly byteLength = 1;
     readonly withResponse = true;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
-
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
-    }
 }
 
-class Authenticate extends MuTagConfigurationCharacteristic<number>
+class Authenticate extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB05';
@@ -80,137 +81,69 @@ class Authenticate extends MuTagConfigurationCharacteristic<number>
     readonly withResponse = false;
 
     readonly authKey = 0x55;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
-
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
-    }
 }
 
-class TagColor extends MuTagConfigurationCharacteristic<number>
+class TagColor extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB06';
     readonly byteLength = 1;
     readonly withResponse = true;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
-
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
-    }
 }
 
-class DeepSleep extends MuTagConfigurationCharacteristic<number>
+class DeepSleep extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB07';
     readonly byteLength = 1;
     readonly withResponse = true;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
-
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
-    }
 }
 
-class Provisioned extends MuTagConfigurationCharacteristic<number>
+class Provisioned extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB08';
     readonly byteLength = 1;
     readonly withResponse = true;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
-
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
-    }
 }
 
-class AdvertisingInterval extends MuTagConfigurationCharacteristic<number>
+class AdvertisingInterval extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB09';
     readonly byteLength = 1;
     readonly withResponse = true;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
-
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
-    }
 }
 
-class RawBattery extends MuTagConfigurationCharacteristic<number>
+class RawBattery extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB10';
     readonly byteLength = 4;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
 }
 
-class DebugMode extends MuTagConfigurationCharacteristic<number>
+class DebugMode extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB11';
     readonly byteLength = 1;
     readonly withResponse = true;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
-
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
-    }
 }
 
-class LEDColor extends MuTagConfigurationCharacteristic<number>
+class LEDColor extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB12';
     readonly byteLength = 1;
     readonly withResponse = true;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
-
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
-    }
 }
 
-class LEDControl extends MuTagConfigurationCharacteristic<number>
+class LEDControl extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB13';
     readonly byteLength = 1;
     readonly withResponse = true;
-
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
-    }
-
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
-    }
 }
 
 export default class MuTagConfiguration extends Service {
