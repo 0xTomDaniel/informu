@@ -1,9 +1,10 @@
-import { Account } from '../Domain/Account';
+import Account from '../Domain/Account';
 
 export interface AccountRepositoryLocal {
 
     get(): Promise<Account>;
     add(account: Account): Promise<void>;
+    update(account: Account): Promise<void>;
     remove(): Promise<void>;
 }
 
@@ -27,6 +28,14 @@ export class FailedToAdd extends Error {
     constructor() {
         super('Failed to add account entity to local persistence.');
         this.name = 'FailedToAdd';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class FailedToUpdate extends Error {
+    constructor() {
+        super('Failed to update account entity to local persistence.');
+        this.name = 'FailedToUpdate';
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }

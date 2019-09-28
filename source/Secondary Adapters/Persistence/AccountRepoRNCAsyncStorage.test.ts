@@ -1,12 +1,19 @@
 import { AccountRepoRNCAsyncStorage } from './AccountRepoRNCAsyncStorage';
-import { Account } from '../../Core/Domain/Account';
+import Account, { AccountNumber } from '../../Core/Domain/Account';
 import { DoesNotExist } from '../../Core/Ports/AccountRepositoryLocal';
+import { BeaconID } from '../../Core/Domain/ProvisionedMuTag';
 
 // TODO: Currently unable to use AsyncStorage mock functions directly probably
 // because 'async-storage-mock' does not have TypeScript typings.
 
 const accountRepoRNCAsyncStorage = new AccountRepoRNCAsyncStorage();
-const account = new Account('AZeloSR9jCOUxOWnf5RYN14r2632', 'support+test@informu.io');
+const account = new Account(
+    'AZeloSR9jCOUxOWnf5RYN14r2632',
+    AccountNumber.create('0000000'),
+    'support+test@informu.io',
+    BeaconID.create('B'),
+    [BeaconID.create('2'), BeaconID.create('D')],
+);
 
 test('successfully adds account', async (): Promise<void> => {
     expect.assertions(1);

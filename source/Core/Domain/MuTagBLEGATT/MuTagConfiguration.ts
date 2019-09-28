@@ -80,7 +80,7 @@ class Authenticate extends MuTagConfigurationNumberCharacteristic
     readonly byteLength = 1;
     readonly withResponse = false;
 
-    readonly authKey = 0x55;
+    readonly authCode = 0x55;
 }
 
 class TagColor extends MuTagConfigurationNumberCharacteristic
@@ -99,12 +99,15 @@ class DeepSleep extends MuTagConfigurationNumberCharacteristic
     readonly withResponse = true;
 }
 
-class Provisioned extends MuTagConfigurationNumberCharacteristic
+class Provision extends MuTagConfigurationNumberCharacteristic
     implements ReadableCharacteristic<number>, WritableCharacteristic<number>
 {
     readonly uuid = 'AC9B44EA-AA5E-40F4-888A-C2637573AB08';
     readonly byteLength = 1;
     readonly withResponse = true;
+
+    readonly provisionCode = 0x27;
+    readonly unprovisionCode = 0x45;
 }
 
 class AdvertisingInterval extends MuTagConfigurationNumberCharacteristic
@@ -156,7 +159,7 @@ export default class MuTagConfiguration extends Service {
     static readonly Authenticate = new Authenticate();
     static readonly TagColor = new TagColor();
     static readonly DeepSleep = new DeepSleep();
-    static readonly Provisioned = new Provisioned();
+    static readonly Provision = new Provision();
     static readonly AdvertisingInterval = new AdvertisingInterval();
     static readonly RawBattery = new RawBattery();
     static readonly DebugMode = new DebugMode();

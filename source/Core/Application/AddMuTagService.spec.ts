@@ -1,20 +1,23 @@
 import AddMuTagService, { LowMuTagBattery } from './AddMuTagService';
-import { Bluetooth } from '../Ports/Bluetooth';
+import { MuTagDevices } from '../Ports/MuTagDevices';
 import UnprovisionedMuTag from '../Domain/UnprovisionedMuTag';
-import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
+import ProvisionedMuTag, { BeaconID } from '../Domain/ProvisionedMuTag';
 import { AddMuTagOutput } from '../Ports/AddMuTagOutput';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import Percent from '../Domain/Percent';
 import { RSSI, Millisecond } from '../Domain/Types';
 import { MuTagColor } from '../Domain/MuTag';
+import Account, { AccountNumber } from '../Domain/Account';
+import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
+import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
 
 describe('Mu tag user adds Mu tag', (): void => {
 
-    const BluetoothMock
-        = jest.fn<Bluetooth, any>((): Bluetooth => ({
-            connectToNewMuTag: jest.fn(),
-            cancelConnectToNewMuTag: jest.fn(),
+    const MuTagDevicesMock
+        = jest.fn<MuTagDevices, any>((): MuTagDevices => ({
+            findNewMuTag: jest.fn(),
+            cancelFindNewMuTag: jest.fn(),
             provisionMuTag: jest.fn(),
         }));
 
@@ -41,8 +44,24 @@ describe('Mu tag user adds Mu tag', (): void => {
             update: jest.fn(),
         }));
 
-    const bluetoothMock = new BluetoothMock();
-    (bluetoothMock.cancelConnectToNewMuTag as jest.Mock).mockResolvedValue(undefined);
+    const AccountRepoLocalMock
+        = jest.fn<AccountRepositoryLocal, any>((): AccountRepositoryLocal => ({
+            get: jest.fn(),
+            add: jest.fn(),
+            update: jest.fn(),
+            remove: jest.fn(),
+        }));
+
+    const AccountRepoRemoteMock
+        = jest.fn<AccountRepositoryRemote, any>((): AccountRepositoryRemote => ({
+            getByUID: jest.fn(),
+            add: jest.fn(),
+            update: jest.fn(),
+            removeByUID: jest.fn(),
+        }));
+
+    const muTagDevicesMock = new MuTagDevicesMock();
+    (muTagDevicesMock.cancelFindNewMuTag as jest.Mock).mockResolvedValue(undefined);
     const addMuTagOutputMock = new AddMuTagOutputMock();
     const muTagRepoLocalMock = new MuTagRepoLocalMock();
     (muTagRepoLocalMock.add as jest.Mock).mockResolvedValue(undefined);
@@ -50,6 +69,8 @@ describe('Mu tag user adds Mu tag', (): void => {
     const muTagRepoRemoteMock = new MuTagRepoRemoteMock();
     (muTagRepoRemoteMock.add as jest.Mock).mockResolvedValue(undefined);
     (muTagRepoRemoteMock.update as jest.Mock).mockResolvedValue(undefined);
+    const accountRepoLocalMock = new AccountRepoLocalMock();
+    const accountRepoRemoteMock = new AccountRepoRemoteMock();
 
     const connectMuTagScanThreshold = -72 as RSSI;
     const addMuTagBatteryThreshold = new Percent(15);
@@ -57,19 +78,47 @@ describe('Mu tag user adds Mu tag', (): void => {
         connectMuTagScanThreshold,
         addMuTagBatteryThreshold,
         addMuTagOutputMock,
-        bluetoothMock,
+        muTagDevicesMock,
         muTagRepoLocalMock,
         muTagRepoRemoteMock,
+        accountRepoLocalMock,
+        accountRepoRemoteMock,
     );
+
+    const validAccountData = {
+        uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
+        accountNumber: AccountNumber.create('0000000'),
+        emailAddress: 'support+test@informu.io',
+        nextBeaconID: BeaconID.create('A'),
+        recycledBeaconIDs: [
+            BeaconID.create('2'),
+            BeaconID.create('5'),
+        ],
+    };
+    const account = new Account(
+        validAccountData.uid,
+        validAccountData.accountNumber,
+        validAccountData.emailAddress,
+        validAccountData.nextBeaconID,
+        validAccountData.recycledBeaconIDs,
+    );
+    const getNewBeaconIDSpy = jest.spyOn(account, 'getNewBeaconID');
+    const removeNewBeaconIDSpy = jest.spyOn(account, 'removeNewBeaconID');
 
     const muTagBatteryLevel = new Percent(16);
     const newUUID = 'randomUUID';
     const unprovisionedMuTag = new UnprovisionedMuTag(newUUID, muTagBatteryLevel);
     const isBatteryAboveSpy = jest.spyOn(unprovisionedMuTag, 'isBatteryAbove');
     const newMuTagAttachedTo = 'keys';
-    const muTag = new ProvisionedMuTag(newUUID, muTagBatteryLevel);
-    const muTagUpdateColorSpy = jest.spyOn(muTag, 'updateColor');
     const muTagColorSetting = MuTagColor.Scarlet;
+    const muTag = new ProvisionedMuTag(
+        newUUID,
+        validAccountData.recycledBeaconIDs[0],
+        newMuTagAttachedTo,
+        muTagBatteryLevel,
+        muTagColorSetting,
+    );
+    const muTagUpdateColorSpy = jest.spyOn(muTag, 'updateColor');
 
     describe('Mu tag adds successfully', (): void => {
 
@@ -77,7 +126,7 @@ describe('Mu tag user adds Mu tag', (): void => {
 
         // Given unprovisioned Mu tag is connected before user completes Mu tag naming
         //
-        (bluetoothMock.connectToNewMuTag as jest.Mock).mockResolvedValueOnce(unprovisionedMuTag);
+        (muTagDevicesMock.findNewMuTag as jest.Mock).mockResolvedValueOnce(unprovisionedMuTag);
 
         // Given the Mu tag battery is above threshold
         //
@@ -85,7 +134,9 @@ describe('Mu tag user adds Mu tag', (): void => {
 
         // Given Mu tag hardware provisions successfully
         //
-        (bluetoothMock.provisionMuTag as jest.Mock).mockResolvedValueOnce(muTag);
+        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
+        (accountRepoLocalMock.update as jest.Mock).mockResolvedValueOnce(undefined);
+        (muTagDevicesMock.provisionMuTag as jest.Mock).mockResolvedValueOnce(muTag);
 
         // When
         //
@@ -107,9 +158,9 @@ describe('Mu tag user adds Mu tag', (): void => {
         // Then
         //
         it('should attempt connection to unprovisioned Mu tag', (): void => {
-            expect(bluetoothMock.connectToNewMuTag)
+            expect(muTagDevicesMock.findNewMuTag)
                 .toHaveBeenCalledWith(connectMuTagScanThreshold);
-            expect(bluetoothMock.connectToNewMuTag).toHaveBeenCalledTimes(1);
+            expect(muTagDevicesMock.findNewMuTag).toHaveBeenCalledTimes(1);
         });
 
         // When unprovisioned Mu tag is connected
@@ -144,9 +195,27 @@ describe('Mu tag user adds Mu tag', (): void => {
         // Then
         //
         it('should provision the Mu tag hardware', (): void => {
-            expect(bluetoothMock.provisionMuTag).toHaveBeenCalledWith(unprovisionedMuTag, newMuTagAttachedTo);
-            //expect(bluetoothMock.provisionMuTag).resolves.toEqual(muTag);
-            expect(bluetoothMock.provisionMuTag).toHaveBeenCalledTimes(1);
+            expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
+
+            expect(getNewBeaconIDSpy).toHaveBeenCalledTimes(1);
+
+            expect(muTagDevicesMock.provisionMuTag).toHaveBeenCalledWith(
+                unprovisionedMuTag,
+                validAccountData.accountNumber,
+                validAccountData.recycledBeaconIDs[0],
+                newMuTagAttachedTo,
+            );
+            //expect(muTagDevicesMock.provisionMuTag).resolves.toEqual(muTag);
+            expect(muTagDevicesMock.provisionMuTag).toHaveBeenCalledTimes(1);
+
+            expect(removeNewBeaconIDSpy)
+                .toHaveBeenCalledWith(validAccountData.recycledBeaconIDs[0]);
+            expect(removeNewBeaconIDSpy).toHaveBeenCalledTimes(1);
+
+            expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
+            expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
+            expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
+            expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -212,7 +281,7 @@ describe('Mu tag user adds Mu tag', (): void => {
         //
         const userEntersMuTagNameAfter = 1000 as Millisecond;
         const muTagConnectsAfter = 2000 as Millisecond;
-        (bluetoothMock.connectToNewMuTag as jest.Mock).mockImplementationOnce(
+        (muTagDevicesMock.findNewMuTag as jest.Mock).mockImplementationOnce(
             (): Promise<UnprovisionedMuTag> => {
                 return new Promise((resolve): void => {
                     setTimeout((): void => resolve(unprovisionedMuTag), muTagConnectsAfter);
@@ -226,15 +295,18 @@ describe('Mu tag user adds Mu tag', (): void => {
 
         // Given Mu tag hardware provisions successfully
         //
-        (bluetoothMock.provisionMuTag as jest.Mock).mockResolvedValueOnce(muTag);
+        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
+        (accountRepoLocalMock.update as jest.Mock).mockResolvedValueOnce(undefined);
+        (muTagDevicesMock.provisionMuTag as jest.Mock).mockResolvedValueOnce(muTag);
 
+        let startAddingNewMuTagPromise: Promise<void>;
         // When
         //
         beforeAll((): void => {
             jest.useFakeTimers();
 
             // user requests to add unprovisioned Mu tag
-            addMuTagService.startAddingNewMuTag();
+            startAddingNewMuTagPromise = addMuTagService.startAddingNewMuTag();
         });
 
         afterAll((): void => {
@@ -251,9 +323,9 @@ describe('Mu tag user adds Mu tag', (): void => {
         // Then
         //
         it('should attempt connection to unprovisioned Mu tag', (): void => {
-            expect(bluetoothMock.connectToNewMuTag)
+            expect(muTagDevicesMock.findNewMuTag)
                 .toHaveBeenCalledWith(connectMuTagScanThreshold);
-            expect(bluetoothMock.connectToNewMuTag).toHaveBeenCalledTimes(1);
+            expect(muTagDevicesMock.findNewMuTag).toHaveBeenCalledTimes(1);
         });
 
         // When user completes instructions for adding Mu tag
@@ -286,7 +358,7 @@ describe('Mu tag user adds Mu tag', (): void => {
         //
         it('should check the Mu tag battery level', async (): Promise<void> => {
             jest.advanceTimersByTime(muTagConnectsAfter - userEntersMuTagNameAfter);
-            await Promise.resolve();
+            await startAddingNewMuTagPromise;
 
             expect(isBatteryAboveSpy).toHaveBeenCalledWith(addMuTagBatteryThreshold);
             expect(isBatteryAboveSpy).toHaveBeenCalledTimes(1);
@@ -296,27 +368,39 @@ describe('Mu tag user adds Mu tag', (): void => {
 
         // Then
         //
-        it('should provision the Mu tag hardware', async (): Promise<void> => {
-            // This test must be async to wait for 'bluetoothMock.provisionMuTag'
-            // to resolve
-            expect(bluetoothMock.provisionMuTag).toHaveBeenCalledWith(unprovisionedMuTag, newMuTagAttachedTo);
-            expect(bluetoothMock.provisionMuTag).toHaveBeenCalledTimes(1);
+        it('should provision the Mu tag hardware', (): void => {
+            expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
+
+            expect(getNewBeaconIDSpy).toHaveBeenCalledTimes(1);
+
+            expect(muTagDevicesMock.provisionMuTag).toHaveBeenCalledWith(
+                unprovisionedMuTag,
+                validAccountData.accountNumber,
+                validAccountData.recycledBeaconIDs[1],
+                newMuTagAttachedTo,
+            );
+            expect(muTagDevicesMock.provisionMuTag).toHaveBeenCalledTimes(1);
+
+            expect(removeNewBeaconIDSpy)
+                .toHaveBeenCalledWith(validAccountData.recycledBeaconIDs[1]);
+            expect(removeNewBeaconIDSpy).toHaveBeenCalledTimes(1);
+
+            expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
+            expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
+            expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
+            expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it('should add Mu tag to local persistence', async (): Promise<void> => {
-            // This test must be async to wait for 'muTagRepoLocalMock.add'
-            // to resolve
+        it('should add Mu tag to local persistence', (): void => {
             expect(muTagRepoLocalMock.add).toHaveBeenCalledWith(muTag);
             expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it('should add Mu tag to remote persistence', async (): Promise<void> => {
-            // This test must be async to wait for 'muTagRepoRemoteMock.add'
-            // to resolve
+        it('should add Mu tag to remote persistence', (): void => {
             expect(muTagRepoRemoteMock.add).toHaveBeenCalledWith(muTag);
             expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
         });
@@ -365,7 +449,7 @@ describe('Mu tag user adds Mu tag', (): void => {
 
     describe('user cancels add Mu tag', (): void => {
 
-        (bluetoothMock.connectToNewMuTag as jest.Mock).mockResolvedValueOnce(unprovisionedMuTag);
+        (muTagDevicesMock.findNewMuTag as jest.Mock).mockResolvedValueOnce(unprovisionedMuTag);
 
         // Given that an account is logged in
 
@@ -393,7 +477,7 @@ describe('Mu tag user adds Mu tag', (): void => {
         // Then
         //
         it('should cancel connecting to new Mu tag', (): void => {
-            expect(bluetoothMock.cancelConnectToNewMuTag).toHaveBeenCalledTimes(1);
+            expect(muTagDevicesMock.cancelFindNewMuTag).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -408,7 +492,7 @@ describe('Mu tag user adds Mu tag', (): void => {
 
         // Given unprovisioned Mu tag is connected
         //
-        (bluetoothMock.connectToNewMuTag as jest.Mock)
+        (muTagDevicesMock.findNewMuTag as jest.Mock)
             .mockResolvedValueOnce(unprovisionedMuTagLowBatt);
 
         // When

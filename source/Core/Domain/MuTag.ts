@@ -11,25 +11,12 @@ export enum MuTagColor {
     Smoke,
 }
 
-export default class MuTag {
+export default abstract class MuTag {
 
-    protected readonly uid: string;
-    protected batteryLevel: Percent;
-    protected color: MuTagColor = MuTagColor.MuOrange;
-
-    constructor(
-        uid: string,
-        batteryLevel: Percent,
-    ) {
-        this.uid = uid;
-        this.batteryLevel = batteryLevel;
-    }
+    protected abstract readonly uid: string;
+    protected abstract batteryLevel: Percent;
 
     getUID(): string {
         return this.uid;
-    }
-
-    updateColor(color: MuTagColor): void {
-        this.color = color;
     }
 }

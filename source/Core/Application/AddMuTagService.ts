@@ -1,5 +1,5 @@
 import { AddMuTagOutput } from '../Ports/AddMuTagOutput';
-import { Bluetooth } from '../Ports/Bluetooth';
+import { MuTagDevices } from '../Ports/MuTagDevices';
 import { RSSI } from '../Domain/Types';
 import Percent from '../Domain/Percent';
 import UnprovisionedMuTag from '../Domain/UnprovisionedMuTag';
@@ -7,6 +7,8 @@ import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
 import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
 import { MuTagColor } from '../Domain/MuTag';
+import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
+import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
 
 export class LowMuTagBattery extends Error {
 
@@ -41,9 +43,11 @@ export default class AddMuTagService {
     private readonly connectThreshold: RSSI;
     private readonly addMuTagBatteryThreshold: Percent;
     private readonly addMuTagOutput: AddMuTagOutput;
-    private readonly bluetooth: Bluetooth;
+    private readonly muTagDevices: MuTagDevices;
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly muTagRepoRemote: MuTagRepositoryRemote;
+    private readonly accountRepoLocal: AccountRepositoryLocal;
+    private readonly accountRepoRemote: AccountRepositoryRemote;
 
     private unprovisionedMuTag: UnprovisionedMuTag | undefined;
     private provisionedMuTag: ProvisionedMuTag | undefined;
@@ -53,23 +57,28 @@ export default class AddMuTagService {
         connectThreshold: RSSI,
         addMuTagBatteryThreshold: Percent,
         addMuTagOutput: AddMuTagOutput,
-        bluetooth: Bluetooth,
+        muTagDevices: MuTagDevices,
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
+        accountRepoLocal: AccountRepositoryLocal,
+        accountRepoRemote: AccountRepositoryRemote,
     ) {
         this.connectThreshold = connectThreshold;
         this.addMuTagBatteryThreshold = addMuTagBatteryThreshold;
         this.addMuTagOutput = addMuTagOutput;
-        this.bluetooth = bluetooth;
+        this.muTagDevices = muTagDevices;
         this.muTagRepoLocal = muTagRepoLocal;
         this.muTagRepoRemote = muTagRepoRemote;
+        this.accountRepoLocal = accountRepoLocal;
+        this.accountRepoRemote = accountRepoRemote;
     }
 
     async startAddingNewMuTag(): Promise<void> {
         this.addMuTagOutput.showAddMuTagScreen();
 
         try {
-            this.unprovisionedMuTag = await this.bluetooth.connectToNewMuTag(this.connectThreshold);
+            this.unprovisionedMuTag = await this.muTagDevices
+                .findNewMuTag(this.connectThreshold);
 
             if (!this.unprovisionedMuTag.isBatteryAbove(this.addMuTagBatteryThreshold)) {
                 const error = new LowMuTagBattery(this.addMuTagBatteryThreshold.valueOf());
@@ -90,7 +99,7 @@ export default class AddMuTagService {
         this.resetAddNewMuTagState();
 
         try {
-            await this.bluetooth.cancelConnectToNewMuTag();
+            await this.muTagDevices.cancelFindNewMuTag();
         } catch (e) {
             throw e;
         }
@@ -130,11 +139,26 @@ export default class AddMuTagService {
         }
     }
 
-    private async addNewMuTag(unprovisionedMuTag: UnprovisionedMuTag, name: string): Promise<void> {
-        this.provisionedMuTag = await this.bluetooth.provisionMuTag(unprovisionedMuTag, name);
+    private async addNewMuTag(
+        unprovisionedMuTag: UnprovisionedMuTag,
+        name: string
+    ): Promise<void> {
+        const account = await this.accountRepoLocal.get();
+        const beaconID = account.getNewBeaconID();
+
+        this.provisionedMuTag = await this.muTagDevices.provisionMuTag(
+            unprovisionedMuTag,
+            account.getAccountNumber(),
+            beaconID,
+            name,
+        );
         this.unprovisionedMuTag = undefined;
         await this.muTagRepoLocal.add(this.provisionedMuTag);
         await this.muTagRepoRemote.add(this.provisionedMuTag);
+
+        account.removeNewBeaconID(beaconID);
+        await this.accountRepoLocal.update(account);
+        await this.accountRepoRemote.update(account);
 
         this.addMuTagOutput.showMuTagFinalSetupScreen();
     }

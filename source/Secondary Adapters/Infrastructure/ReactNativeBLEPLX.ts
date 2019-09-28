@@ -1,8 +1,8 @@
 import { BleManager, ScanOptions, Device, fullUUID, BleError} from 'react-native-ble-plx';
-import { Bluetooth } from '../../Core/Ports/Bluetooth';
+import { MuTagDevices } from '../../Core/Ports/MuTagDevices';
 import { RSSI } from '../../Core/Domain/Types';
 import UnprovisionedMuTag from '../../Core/Domain/UnprovisionedMuTag';
-import ProvisionedMuTag from '../../Core/Domain/ProvisionedMuTag';
+import ProvisionedMuTag, { BeaconID } from '../../Core/Domain/ProvisionedMuTag';
 import { MuTagBLEGATT } from '../../Core/Domain/MuTagBLEGATT/MuTagBLEGATT';
 import UUIDGenerator from 'react-native-uuid-generator';
 import Percent from '../../Core/Domain/Percent';
@@ -10,6 +10,7 @@ import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic,
 } from '../../Core/Domain/MuTagBLEGATT/Characteristic';
+import { AccountNumber } from '../../Core/Domain/Account';
 
 enum ProvisionState {
     Provisioned,
@@ -19,7 +20,7 @@ enum ProvisionState {
 type MuTagUID = string & { readonly _: unique symbol };
 type DeviceID = string & { readonly _: unique symbol };
 
-export class ReactNativeBLEPLX implements Bluetooth {
+export class MuTagDevicesRNBLEPLX implements MuTagDevices {
 
     private manager: BleManager;
 
@@ -27,14 +28,14 @@ export class ReactNativeBLEPLX implements Bluetooth {
     private rejectFindUnprovisionedMuTag?: (reason?: any) => void;
     private ignoredDeviceIDCache = new Set<DeviceID>();
     private muTagDeviceIDCache = new Map<DeviceID, MuTagUID>();
-    private provisionedMuTagCache = new Map<MuTagUID, DeviceID>();
-    private unprovisionedMuTagCache = new Map<MuTagUID, DeviceID>();
+    private provisionedMuTagCache = new Map<MuTagUID, Device>();
+    private unprovisionedMuTagCache = new Map<MuTagUID, Device>();
 
     constructor() {
         this.manager = new BleManager();
     }
 
-    async connectToNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag> {
+    async findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag> {
         if (this.isConnectingToNewMuTag) {
             throw Error('connectToNewMuTag is already running.');
         }
@@ -42,12 +43,12 @@ export class ReactNativeBLEPLX implements Bluetooth {
         this.isConnectingToNewMuTag = true;
 
         const unprovisionedMuTag = await this.findUnprovisionedMuTag(scanThreshold);
-        await this.cancelConnectToNewMuTag();
+        await this.cancelFindNewMuTag();
 
         return unprovisionedMuTag;
     }
 
-    async cancelConnectToNewMuTag(): Promise<void> {
+    async cancelFindNewMuTag(): Promise<void> {
         if (this.isConnectingToNewMuTag) {
             this.manager.stopDeviceScan();
 
@@ -60,8 +61,49 @@ export class ReactNativeBLEPLX implements Bluetooth {
         }
     }
 
-    async provisionMuTag(muTag: UnprovisionedMuTag, name: string): Promise<ProvisionedMuTag> {
-        throw new Error('Method not implemented.');
+    async provisionMuTag(
+        unprovisionedMuTag: UnprovisionedMuTag,
+        accountNumber: AccountNumber,
+        beaconID: BeaconID,
+        muTagName: string,
+    ): Promise<ProvisionedMuTag> {
+        const device = this.unprovisionedMuTagCache
+            .get(unprovisionedMuTag.getUID() as MuTagUID);
+
+        if (device == null) {
+            throw Error('Unprovisioned Mu tag not found.');
+        }
+
+        await device.connect();
+        await device.discoverAllServicesAndCharacteristics();
+        await MuTagDevicesRNBLEPLX.authenticateToMuTag(device);
+
+        const major = MuTagDevicesRNBLEPLX.getMajor(accountNumber);
+        await MuTagDevicesRNBLEPLX.writeCharacteristic(
+            device,
+            MuTagBLEGATT.MuTagConfiguration.Major,
+            major,
+        );
+        const minor = MuTagDevicesRNBLEPLX.getMinor(accountNumber, beaconID);
+        await MuTagDevicesRNBLEPLX.writeCharacteristic(
+            device,
+            MuTagBLEGATT.MuTagConfiguration.Minor,
+            minor,
+        );
+        await MuTagDevicesRNBLEPLX.writeCharacteristic(
+            device,
+            MuTagBLEGATT.MuTagConfiguration.Provision,
+            MuTagBLEGATT.MuTagConfiguration.Provision.provisionCode,
+        );
+
+        const muTag = new ProvisionedMuTag(
+            unprovisionedMuTag.getUID(),
+            beaconID,
+            muTagName,
+            unprovisionedMuTag.getBatteryLevel(),
+        );
+
+        return muTag;
     }
 
     private async findUnprovisionedMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag> {
@@ -69,7 +111,7 @@ export class ReactNativeBLEPLX implements Bluetooth {
             this.rejectFindUnprovisionedMuTag = reject;
 
             this.connectToMuTagDevices(scanThreshold, (muTagDevice): void => {
-                ReactNativeBLEPLX.authenticateToMuTag(muTagDevice).then((): Promise<ProvisionState> => {
+                MuTagDevicesRNBLEPLX.authenticateToMuTag(muTagDevice).then((): Promise<ProvisionState> => {
                     return this.discoverProvisioning(muTagDevice);
                 }).then((provisionState): Promise<UnprovisionedMuTag> | undefined => {
                     if (provisionState === ProvisionState.Unprovisioned) {
@@ -121,7 +163,7 @@ export class ReactNativeBLEPLX implements Bluetooth {
             discoveryCache.add(deviceID);
 
             device.connect().then((): Promise<boolean> => {
-                return ReactNativeBLEPLX.isMuTag(device);
+                return MuTagDevicesRNBLEPLX.isMuTag(device);
             }).then((isMuTag): void => {
                 if (isMuTag) {
                     callback(device);
@@ -140,55 +182,52 @@ export class ReactNativeBLEPLX implements Bluetooth {
     }
 
     private async discoverProvisioning(device: Device): Promise<ProvisionState> {
-        const major = await ReactNativeBLEPLX
+        const major = await MuTagDevicesRNBLEPLX
             .readCharacteristic(device, MuTagBLEGATT.MuTagConfiguration.Major);
-        const minor = await ReactNativeBLEPLX
+        const minor = await MuTagDevicesRNBLEPLX
             .readCharacteristic(device, MuTagBLEGATT.MuTagConfiguration.Minor);
         const deviceID = device.id as DeviceID;
 
         if (major === undefined && minor === undefined) {
             const muTagUID = await UUIDGenerator.getRandomUUID() as MuTagUID;
             this.muTagDeviceIDCache.set(deviceID, muTagUID);
-            this.unprovisionedMuTagCache.set(muTagUID, deviceID);
+            this.unprovisionedMuTagCache.set(muTagUID, device);
 
             return ProvisionState.Unprovisioned;
         } else {
-            const deviceUUID = await ReactNativeBLEPLX
+            const deviceUUID = await MuTagDevicesRNBLEPLX
                 .readCharacteristic(device, MuTagBLEGATT.MuTagConfiguration.DeviceUUID);
             const muTagUID = deviceUUID as MuTagUID;
 
             this.muTagDeviceIDCache.set(deviceID, muTagUID);
-            this.provisionedMuTagCache.set(muTagUID, deviceID);
+            this.provisionedMuTagCache.set(muTagUID, device);
 
             return ProvisionState.Provisioned;
         }
     }
 
     private async createUnprovisionedMuTag(device: Device): Promise<UnprovisionedMuTag> {
-        const batteryLevelValue = await ReactNativeBLEPLX
+        const batteryLevelValue = await MuTagDevicesRNBLEPLX
             .readCharacteristic(device, MuTagBLEGATT.DeviceInformation.BatteryLevel);
         const batteryLevel = new Percent(batteryLevelValue);
         const muTagUID = this.muTagDeviceIDCache.get(device.id as DeviceID);
 
         if (muTagUID == null) {
-            throw Error('Mu tag UID not found in cache.');
+            throw Error(`Mu tag UID not found for device ${device.id}.`);
         }
 
         return new UnprovisionedMuTag(muTagUID, batteryLevel);
     }
 
-    private async getDeviceFromID(deviceID: DeviceID): Promise<Device> {
-        const deviceArray = await this.manager.devices([deviceID]);
-        const devices = new Map(
-            deviceArray.map((device): [string, Device] => [device.id, device])
-        );
-        const device = devices.get(deviceID);
+    private static getMajor(accountNumber: AccountNumber): number {
+        const majorHex = accountNumber.toString().substr(0, 4);
+        return parseInt(majorHex, 16);
+    }
 
-        if (device == null) {
-            throw Error('Mu tag device not found.');
-        }
-
-        return device;
+    private static getMinor(accountNumber: AccountNumber, beaconID: BeaconID): number {
+        const majorMinorHex = accountNumber.toString() + beaconID.toString();
+        const minorHex = majorMinorHex.toString().substr(4, 4);
+        return parseInt(minorHex, 16);
     }
 
     private static async isMuTag(device: Device): Promise<boolean> {
@@ -202,8 +241,8 @@ export class ReactNativeBLEPLX implements Bluetooth {
 
     private static async authenticateToMuTag(device: Device): Promise<void> {
         const authenticate = MuTagBLEGATT.MuTagConfiguration.Authenticate;
-        await ReactNativeBLEPLX
-            .writeCharacteristic(device, authenticate, authenticate.authKey);
+        await MuTagDevicesRNBLEPLX
+            .writeCharacteristic(device, authenticate, authenticate.authCode);
     }
 
     private static async readCharacteristic<T>(
