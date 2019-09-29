@@ -13,6 +13,8 @@ const account = new Account(
     'support+test@informu.io',
     BeaconID.create('B'),
     [BeaconID.create('2'), BeaconID.create('D')],
+    4,
+    ['randomUUID'],
 );
 
 test('successfully adds account', async (): Promise<void> => {

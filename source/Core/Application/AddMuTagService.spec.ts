@@ -94,6 +94,8 @@ describe('Mu tag user adds Mu tag', (): void => {
             BeaconID.create('2'),
             BeaconID.create('5'),
         ],
+        nextMuTagNumber: 10,
+        muTags: ['randomUUID#1'],
     };
     const account = new Account(
         validAccountData.uid,
@@ -101,12 +103,15 @@ describe('Mu tag user adds Mu tag', (): void => {
         validAccountData.emailAddress,
         validAccountData.nextBeaconID,
         validAccountData.recycledBeaconIDs,
+        validAccountData.nextMuTagNumber,
+        validAccountData.muTags,
     );
     const getNewBeaconIDSpy = jest.spyOn(account, 'getNewBeaconID');
-    const removeNewBeaconIDSpy = jest.spyOn(account, 'removeNewBeaconID');
+    const getNewMuTagNumberSpy = jest.spyOn(account, 'getNewMuTagNumber');
+    const addNewMuTagSpy = jest.spyOn(account, 'addNewMuTag');
 
     const muTagBatteryLevel = new Percent(16);
-    const newUUID = 'randomUUID';
+    const newUUID = 'randomUUID#2';
     const unprovisionedMuTag = new UnprovisionedMuTag(newUUID, muTagBatteryLevel);
     const isBatteryAboveSpy = jest.spyOn(unprovisionedMuTag, 'isBatteryAbove');
     const newMuTagAttachedTo = 'keys';
@@ -114,6 +119,7 @@ describe('Mu tag user adds Mu tag', (): void => {
     const muTag = new ProvisionedMuTag(
         newUUID,
         validAccountData.recycledBeaconIDs[0],
+        validAccountData.nextMuTagNumber,
         newMuTagAttachedTo,
         muTagBatteryLevel,
         muTagColorSetting,
@@ -134,6 +140,7 @@ describe('Mu tag user adds Mu tag', (): void => {
 
         // Given Mu tag hardware provisions successfully
         //
+        const newMuTagBeaconID = validAccountData.recycledBeaconIDs[0];
         (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
         (accountRepoLocalMock.update as jest.Mock).mockResolvedValueOnce(undefined);
         (muTagDevicesMock.provisionMuTag as jest.Mock).mockResolvedValueOnce(muTag);
@@ -198,19 +205,25 @@ describe('Mu tag user adds Mu tag', (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
 
             expect(getNewBeaconIDSpy).toHaveBeenCalledTimes(1);
+            expect(getNewMuTagNumberSpy).toHaveBeenCalledTimes(1);
 
             expect(muTagDevicesMock.provisionMuTag).toHaveBeenCalledWith(
                 unprovisionedMuTag,
                 validAccountData.accountNumber,
-                validAccountData.recycledBeaconIDs[0],
+                newMuTagBeaconID,
+                validAccountData.nextMuTagNumber,
                 newMuTagAttachedTo,
             );
             //expect(muTagDevicesMock.provisionMuTag).resolves.toEqual(muTag);
             expect(muTagDevicesMock.provisionMuTag).toHaveBeenCalledTimes(1);
 
-            expect(removeNewBeaconIDSpy)
-                .toHaveBeenCalledWith(validAccountData.recycledBeaconIDs[0]);
-            expect(removeNewBeaconIDSpy).toHaveBeenCalledTimes(1);
+            expect(addNewMuTagSpy).toHaveBeenCalledWith(
+                newUUID,
+                newMuTagBeaconID,
+            );
+            expect(addNewMuTagSpy).toHaveBeenCalledTimes(1);
+            expect(account.getNewBeaconID()).toEqual(validAccountData.recycledBeaconIDs[1]);
+            expect(account.getNewMuTagNumber()).toEqual(validAccountData.nextMuTagNumber + 1);
 
             expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
@@ -295,6 +308,8 @@ describe('Mu tag user adds Mu tag', (): void => {
 
         // Given Mu tag hardware provisions successfully
         //
+        const newMuTagBeaconID = validAccountData.recycledBeaconIDs[1];
+        const newMuTagNumber = validAccountData.nextMuTagNumber + 1;
         (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
         (accountRepoLocalMock.update as jest.Mock).mockResolvedValueOnce(undefined);
         (muTagDevicesMock.provisionMuTag as jest.Mock).mockResolvedValueOnce(muTag);
@@ -372,18 +387,24 @@ describe('Mu tag user adds Mu tag', (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
 
             expect(getNewBeaconIDSpy).toHaveBeenCalledTimes(1);
+            expect(getNewMuTagNumberSpy).toHaveBeenCalledTimes(1);
 
             expect(muTagDevicesMock.provisionMuTag).toHaveBeenCalledWith(
                 unprovisionedMuTag,
                 validAccountData.accountNumber,
-                validAccountData.recycledBeaconIDs[1],
+                newMuTagBeaconID,
+                newMuTagNumber,
                 newMuTagAttachedTo,
             );
             expect(muTagDevicesMock.provisionMuTag).toHaveBeenCalledTimes(1);
 
-            expect(removeNewBeaconIDSpy)
-                .toHaveBeenCalledWith(validAccountData.recycledBeaconIDs[1]);
-            expect(removeNewBeaconIDSpy).toHaveBeenCalledTimes(1);
+            expect(addNewMuTagSpy).toHaveBeenCalledWith(
+                newUUID,
+                newMuTagBeaconID,
+            );
+            expect(addNewMuTagSpy).toHaveBeenCalledTimes(1);
+            expect(account.getNewBeaconID()).toEqual(validAccountData.nextBeaconID);
+            expect(account.getNewMuTagNumber()).toEqual(newMuTagNumber + 1);
 
             expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);

@@ -65,6 +65,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         unprovisionedMuTag: UnprovisionedMuTag,
         accountNumber: AccountNumber,
         beaconID: BeaconID,
+        muTagNumber: number,
         muTagName: string,
     ): Promise<ProvisionedMuTag> {
         const device = this.unprovisionedMuTagCache
@@ -99,6 +100,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         const muTag = new ProvisionedMuTag(
             unprovisionedMuTag.getUID(),
             beaconID,
+            muTagNumber,
             muTagName,
             unprovisionedMuTag.getBatteryLevel(),
         );

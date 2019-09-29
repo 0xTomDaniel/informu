@@ -21,6 +21,7 @@ export interface MuTagDevices {
         unprovisionedMuTag: UnprovisionedMuTag,
         accountNumber: AccountNumber,
         beaconID: BeaconID,
+        muTagNumber: number,
         muTagName: string,
     ): Promise<ProvisionedMuTag>;
 }

@@ -31,6 +31,16 @@ class NewBeaconIDNotFound extends Error {
     }
 }
 
+export interface AccountData {
+    readonly uid: string;
+    readonly accountNumber: string;
+    readonly emailAddress: string;
+    readonly nextBeaconID: string;
+    readonly recycledBeaconIDs: string[];
+    readonly nextMuTagNumber: number;
+    readonly muTags: string[];
+}
+
 export default class Account {
 
     private readonly uid: string;
@@ -38,6 +48,8 @@ export default class Account {
     private emailAddress: string;
     private nextBeaconID: BeaconID;
     private recycledBeaconIDs: Set<BeaconID>;
+    private nextMuTagNumber: number;
+    private muTags: Set<string>;
 
     constructor(
         uid: string,
@@ -45,12 +57,16 @@ export default class Account {
         emailAddress: string,
         nextBeaconID: BeaconID,
         recycledBeaconIDs: BeaconID[],
+        nextMuTagNumber: number,
+        muTags: string[],
     ) {
         this.uid = uid;
         this.accountNumber = accountNumber;
         this.emailAddress = emailAddress;
         this.nextBeaconID = nextBeaconID;
         this.recycledBeaconIDs = new Set(recycledBeaconIDs);
+        this.nextMuTagNumber = nextMuTagNumber;
+        this.muTags = new Set(muTags);
     }
 
     getAccountNumber(): AccountNumber {
@@ -65,7 +81,11 @@ export default class Account {
         return this.nextBeaconID;
     }
 
-    removeNewBeaconID(beaconID: BeaconID): void {
+    getNewMuTagNumber(): number {
+        return this.nextMuTagNumber;
+    }
+
+    addNewMuTag(muTagUID: string, beaconID: BeaconID): void {
         if (this.recycledBeaconIDs.has(beaconID)) {
             this.recycledBeaconIDs.delete(beaconID);
         } else if (this.nextBeaconID === beaconID) {
@@ -73,19 +93,35 @@ export default class Account {
         } else {
             throw new NewBeaconIDNotFound(beaconID.toString());
         }
+
+        this.muTags.add(muTagUID);
+        this.nextMuTagNumber += 1;
+    }
+
+    getAccountData(): AccountData {
+        const json = this.serialize();
+        return JSON.parse(json);
     }
 
     serialize(): string {
         return JSON.stringify(this, Account.replacer);
     }
 
-    static deserialize(json: string): Account {
-        return JSON.parse(json, Account.reviver);
+    static deserialize(json: string | AccountData): Account {
+        let jsonString = typeof json === 'string' ? json : JSON.stringify(json);
+        return JSON.parse(jsonString, Account.reviver);
     }
 
     static replacer(key: string, value: any): any {
         switch (key) {
+            case 'accountNumber':
+                return value.stringValue;
+            case 'nextBeaconID':
+                return value.stringValue;
             case 'recycledBeaconIDs':
+                const beaconIDs: BeaconID[] = Array.from(value);
+                return beaconIDs.map((beaconID): string => beaconID.toString());
+            case 'muTags':
                 return Array.from(value);
             default:
                 return value;
@@ -98,10 +134,14 @@ export default class Account {
                 const account = Object.create(Account.prototype);
                 return Object.assign(account, value);
             case 'accountNumber':
-                return AccountNumber.create(value.stringValue);
+                return AccountNumber.create(value);
             case 'nextBeaconID':
-                return BeaconID.create(value.stringValue);
+                return BeaconID.create(value);
             case 'recycledBeaconIDs':
+                return new Set(value.map(
+                    (hex: string): BeaconID => BeaconID.fromString(hex)
+                ));
+            case 'muTags':
                 return new Set(value);
             default:
                 return value;

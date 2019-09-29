@@ -150,13 +150,14 @@ export default class AddMuTagService {
             unprovisionedMuTag,
             account.getAccountNumber(),
             beaconID,
+            account.getNewMuTagNumber(),
             name,
         );
         this.unprovisionedMuTag = undefined;
         await this.muTagRepoLocal.add(this.provisionedMuTag);
         await this.muTagRepoRemote.add(this.provisionedMuTag);
 
-        account.removeNewBeaconID(beaconID);
+        account.addNewMuTag(this.provisionedMuTag.getUID(), beaconID);
         await this.accountRepoLocal.update(account);
         await this.accountRepoRemote.update(account);
 

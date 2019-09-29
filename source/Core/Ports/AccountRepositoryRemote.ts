@@ -25,8 +25,8 @@ export class FailedToGet extends Error {
 }
 
 export class PersistedDataMalformed extends Error {
-    constructor() {
-        super('Failed to remove account entity from remote persistence.');
+    constructor(key: string) {
+        super(`Key '${key}' not found in account from remote persistence.`);
         this.name = 'PersistedDataMalformed';
         Object.setPrototypeOf(this, new.target.prototype);
     }

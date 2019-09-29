@@ -26,14 +26,16 @@ export class BeaconID extends Hexadecimal {
 export default class ProvisionedMuTag extends MuTag {
 
     protected uid: string;
-    protected beaconID: BeaconID;
-    protected name: string;
+    private beaconID: BeaconID;
+    private muTagNumber: number;
+    private name: string;
     protected batteryLevel: Percent;
-    protected color: MuTagColor;
+    private color: MuTagColor;
 
     constructor(
         uid: string,
         beaconID: BeaconID,
+        muTagNumber: number,
         name: string,
         batteryLevel: Percent,
         color: MuTagColor = MuTagColor.MuOrange,
@@ -41,6 +43,7 @@ export default class ProvisionedMuTag extends MuTag {
         super();
         this.uid = uid;
         this.beaconID = beaconID;
+        this.muTagNumber = muTagNumber;
         this.name = name;
         this.batteryLevel = batteryLevel;
         this.color = color;
