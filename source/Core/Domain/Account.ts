@@ -69,6 +69,10 @@ export default class Account {
         this.muTags = new Set(muTags);
     }
 
+    getUID(): string {
+        return this.uid;
+    }
+
     getAccountNumber(): AccountNumber {
         return this.accountNumber;
     }

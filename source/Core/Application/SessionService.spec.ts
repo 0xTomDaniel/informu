@@ -43,6 +43,8 @@ describe('user opens saved login session', (): void => {
         emailAddress: 'support+test@informu.io',
         nextBeaconID: BeaconID.create('3'),
         recycledBeaconIDs: [BeaconID.create('1')],
+        nextMuTagNumber: 5,
+        muTags: ['randomUUID'],
     };
     const account = new Account(
         validAccountData.uid,
@@ -50,6 +52,8 @@ describe('user opens saved login session', (): void => {
         validAccountData.emailAddress,
         validAccountData.nextBeaconID,
         validAccountData.recycledBeaconIDs,
+        validAccountData.nextMuTagNumber,
+        validAccountData.muTags,
     );
 
     describe('user is logged in with saved session', (): void => {

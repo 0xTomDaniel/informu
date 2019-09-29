@@ -64,6 +64,8 @@ describe('user logs into their account', (): void => {
             BeaconID.create('2'),
             BeaconID.create('5'),
         ],
+        nextMuTagNumber: 15,
+        muTags: ['randomUUID'],
     };
     const account = new Account(
         validAccountData.uid,
@@ -71,6 +73,8 @@ describe('user logs into their account', (): void => {
         validAccountData.emailAddress,
         validAccountData.nextBeaconID,
         validAccountData.recycledBeaconIDs,
+        validAccountData.nextMuTagNumber,
+        validAccountData.muTags,
     );
     const validEmail = new EmailAddress('support+test@informu.io');
     const validPassword = new Password('testPassword!');

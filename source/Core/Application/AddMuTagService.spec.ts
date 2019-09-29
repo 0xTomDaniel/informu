@@ -30,6 +30,8 @@ describe('Mu tag user adds Mu tag', (): void => {
             showActivityIndicator: jest.fn(),
             showHomeScreen: jest.fn(),
             showLowBatteryError: jest.fn(),
+            showFindNewMuTagError: jest.fn(),
+            showProvisionFailedError: jest.fn(),
         }));
 
     const MuTagRepoLocalMock

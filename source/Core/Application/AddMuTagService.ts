@@ -1,5 +1,5 @@
 import { AddMuTagOutput } from '../Ports/AddMuTagOutput';
-import { MuTagDevices } from '../Ports/MuTagDevices';
+import { MuTagDevices, ProvisionMuTagFailed, NewMuTagNotFound } from '../Ports/MuTagDevices';
 import { RSSI } from '../Domain/Types';
 import Percent from '../Domain/Percent';
 import UnprovisionedMuTag from '../Domain/UnprovisionedMuTag';
@@ -16,15 +16,6 @@ export class LowMuTagBattery extends Error {
         super('Unable to add Mu tag because its battery is below ' +
         `${lowBatteryThreshold}%. Please charge Mu tag and try again.`);
         this.name = 'LowMuTagBattery';
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class NewMuTagNotFound extends Error {
-
-    constructor() {
-        super('A new Mu tag could not be found.');
-        this.name = 'NewMuTagNotFound';
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
@@ -90,19 +81,23 @@ export default class AddMuTagService {
                 await this.addNewMuTag(this.unprovisionedMuTag, this.muTagName);
             }
         } catch (e) {
-            throw e;
+            switch (e.constructor) {
+                case NewMuTagNotFound:
+                    this.addMuTagOutput.showFindNewMuTagError(e);
+                    break;
+                case ProvisionMuTagFailed:
+                    this.addMuTagOutput.showProvisionFailedError(e);
+                    break;
+                default:
+                    throw e;
+            }
         }
     }
 
-    async stopAddingNewMuTag(): Promise<void> {
+    stopAddingNewMuTag(): void {
         this.addMuTagOutput.showHomeScreen();
         this.resetAddNewMuTagState();
-
-        try {
-            await this.muTagDevices.cancelFindNewMuTag();
-        } catch (e) {
-            throw e;
-        }
+        this.muTagDevices.cancelFindNewMuTag();
     }
 
     instructionsComplete(): void {
@@ -113,7 +108,17 @@ export default class AddMuTagService {
         this.addMuTagOutput.showActivityIndicator();
 
         if (this.unprovisionedMuTag != null) {
-            await this.addNewMuTag(this.unprovisionedMuTag, name);
+            try {
+                await this.addNewMuTag(this.unprovisionedMuTag, name);
+            } catch (e) {
+                switch (e.constructor) {
+                    case ProvisionMuTagFailed:
+                        this.addMuTagOutput.showProvisionFailedError(e);
+                        break;
+                    default:
+                        throw e;
+                }
+            }
         } else {
             this.muTagName = name;
             this.addMuTagOutput.showMuTagConnectingScreen();

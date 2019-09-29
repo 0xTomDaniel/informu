@@ -1,5 +1,5 @@
 import { BleManager, ScanOptions, Device, fullUUID, BleError} from 'react-native-ble-plx';
-import { MuTagDevices } from '../../Core/Ports/MuTagDevices';
+import { MuTagDevices, FindNewMuTagAlreadyRunning, FindNewMuTagCanceled, UnprovisionMuTagDeviceNotFound, ProvisionMuTagFailed, NewMuTagNotFound } from '../../Core/Ports/MuTagDevices';
 import { RSSI } from '../../Core/Domain/Types';
 import UnprovisionedMuTag from '../../Core/Domain/UnprovisionedMuTag';
 import ProvisionedMuTag, { BeaconID } from '../../Core/Domain/ProvisionedMuTag';
@@ -24,7 +24,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
 
     private manager: BleManager;
 
-    private isConnectingToNewMuTag = false;
+    private isFindingNewMuTag = false;
     private rejectFindUnprovisionedMuTag?: (reason?: any) => void;
     private ignoredDeviceIDCache = new Set<DeviceID>();
     private muTagDeviceIDCache = new Map<DeviceID, MuTagUID>();
@@ -36,28 +36,33 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
     }
 
     async findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag> {
-        if (this.isConnectingToNewMuTag) {
-            throw Error('connectToNewMuTag is already running.');
+        if (this.isFindingNewMuTag) {
+            throw new FindNewMuTagAlreadyRunning();
         }
 
-        this.isConnectingToNewMuTag = true;
+        this.isFindingNewMuTag = true;
 
-        const unprovisionedMuTag = await this.findUnprovisionedMuTag(scanThreshold);
-        await this.cancelFindNewMuTag();
-
-        return unprovisionedMuTag;
+        try {
+            const unprovisionedMuTag = await this.findUnprovisionedMuTag(scanThreshold);
+            this.cancelFindNewMuTag();
+            return unprovisionedMuTag;
+        } catch (error) {
+            this.cancelFindNewMuTag();
+            console.log(error);
+            throw new NewMuTagNotFound();
+        }
     }
 
-    async cancelFindNewMuTag(): Promise<void> {
-        if (this.isConnectingToNewMuTag) {
+    cancelFindNewMuTag(): void {
+        if (this.isFindingNewMuTag) {
             this.manager.stopDeviceScan();
 
             if (this.rejectFindUnprovisionedMuTag != null) {
-                const error = Error('connectToNewMuTag was canceled.');
+                const error = new FindNewMuTagCanceled();
                 this.rejectFindUnprovisionedMuTag(error);
             }
 
-            this.isConnectingToNewMuTag = false;
+            this.isFindingNewMuTag = false;
         }
     }
 
@@ -72,40 +77,45 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
             .get(unprovisionedMuTag.getUID() as MuTagUID);
 
         if (device == null) {
-            throw Error('Unprovisioned Mu tag not found.');
+            throw new UnprovisionMuTagDeviceNotFound();
         }
 
-        await device.connect();
-        await device.discoverAllServicesAndCharacteristics();
-        await MuTagDevicesRNBLEPLX.authenticateToMuTag(device);
+        try {
+            await device.connect();
+            await device.discoverAllServicesAndCharacteristics();
+            await MuTagDevicesRNBLEPLX.authenticateToMuTag(device);
 
-        const major = MuTagDevicesRNBLEPLX.getMajor(accountNumber);
-        await MuTagDevicesRNBLEPLX.writeCharacteristic(
-            device,
-            MuTagBLEGATT.MuTagConfiguration.Major,
-            major,
-        );
-        const minor = MuTagDevicesRNBLEPLX.getMinor(accountNumber, beaconID);
-        await MuTagDevicesRNBLEPLX.writeCharacteristic(
-            device,
-            MuTagBLEGATT.MuTagConfiguration.Minor,
-            minor,
-        );
-        await MuTagDevicesRNBLEPLX.writeCharacteristic(
-            device,
-            MuTagBLEGATT.MuTagConfiguration.Provision,
-            MuTagBLEGATT.MuTagConfiguration.Provision.provisionCode,
-        );
+            const major = MuTagDevicesRNBLEPLX.getMajor(accountNumber);
+            await MuTagDevicesRNBLEPLX.writeCharacteristic(
+                device,
+                MuTagBLEGATT.MuTagConfiguration.Major,
+                major,
+            );
+            const minor = MuTagDevicesRNBLEPLX.getMinor(accountNumber, beaconID);
+            await MuTagDevicesRNBLEPLX.writeCharacteristic(
+                device,
+                MuTagBLEGATT.MuTagConfiguration.Minor,
+                minor,
+            );
+            await MuTagDevicesRNBLEPLX.writeCharacteristic(
+                device,
+                MuTagBLEGATT.MuTagConfiguration.Provision,
+                MuTagBLEGATT.MuTagConfiguration.Provision.provisionCode,
+            );
 
-        const muTag = new ProvisionedMuTag(
-            unprovisionedMuTag.getUID(),
-            beaconID,
-            muTagNumber,
-            muTagName,
-            unprovisionedMuTag.getBatteryLevel(),
-        );
+            const muTag = new ProvisionedMuTag(
+                unprovisionedMuTag.getUID(),
+                beaconID,
+                muTagNumber,
+                muTagName,
+                unprovisionedMuTag.getBatteryLevel(),
+            );
 
-        return muTag;
+            return muTag;
+        } catch (error) {
+            console.log(error);
+            throw new ProvisionMuTagFailed();
+        }
     }
 
     private async findUnprovisionedMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag> {
@@ -115,10 +125,12 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
             this.connectToMuTagDevices(scanThreshold, (muTagDevice): void => {
                 MuTagDevicesRNBLEPLX.authenticateToMuTag(muTagDevice).then((): Promise<ProvisionState> => {
                     return this.discoverProvisioning(muTagDevice);
-                }).then((provisionState): Promise<UnprovisionedMuTag> | undefined => {
+                }).then((provisionState): Promise<UnprovisionedMuTag | undefined> => {
                     if (provisionState === ProvisionState.Unprovisioned) {
                         return this.createUnprovisionedMuTag(muTagDevice);
                     }
+
+                    return Promise.resolve(undefined);
                 }).then((unprovisionedMuTag): void => {
                     muTagDevice.cancelConnection();
 

@@ -1,4 +1,5 @@
 import { LowMuTagBattery } from '../Application/AddMuTagService';
+import { ProvisionMuTagFailed, NewMuTagNotFound } from './MuTagDevices';
 
 export interface AddMuTagOutput {
 
@@ -9,4 +10,6 @@ export interface AddMuTagOutput {
     showActivityIndicator(): void;
     showHomeScreen(): void;
     showLowBatteryError(error: LowMuTagBattery): void;
+    showFindNewMuTagError(error: NewMuTagNotFound): void;
+    showProvisionFailedError(error: ProvisionMuTagFailed): void;
 }
