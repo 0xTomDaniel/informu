@@ -25,8 +25,8 @@ export class FailedToGet extends Error {
 }
 
 export class PersistedDataMalformed extends Error {
-    constructor(key: string) {
-        super(`Key '${key}' not found in account from remote persistence.`);
+    constructor(json: string) {
+        super(`Received malformed data from remote persistence:\n${json}`);
         this.name = 'PersistedDataMalformed';
         Object.setPrototypeOf(this, new.target.prototype);
     }

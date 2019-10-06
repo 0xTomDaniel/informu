@@ -7,7 +7,7 @@ import {
     FailedToRemove,
     FailedToUpdate,
 } from '../../Core/Ports/AccountRepositoryRemote';
-import Account, { AccountData } from '../../Core/Domain/Account';
+import Account, { AccountData, isAccountData } from '../../Core/Domain/Account';
 import firebase, { App } from 'react-native-firebase';
 import { Database, DataSnapshot } from 'react-native-firebase/database';
 
@@ -39,20 +39,28 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
 
     async add(account: Account): Promise<void> {
         const accountData = account.getAccountData();
+
         /*eslint-disable @typescript-eslint/camelcase*/
-        const databaseData = {
+        const databaseData: {[key: string]: any} = {
             account_id: accountData.accountNumber,
             email: accountData.emailAddress,
             next_beacon_id: accountData.nextBeaconID,
-            recycled_beacon_ids: accountData.recycledBeaconIDs.map(
-                (beaconID): object => { return { [beaconID]: true }; }
-            ),
             next_mu_tag_number: accountData.nextMuTagNumber,
-            mu_tags: accountData.muTags.map(
-                (muTag): object => { return { [muTag]: true }; }
-            ),
         };
+
+        if (accountData.recycledBeaconIDs != null) {
+            databaseData.recycled_beacon_ids = accountData.recycledBeaconIDs.map(
+                (beaconID): object => ( { [beaconID]: true } )
+            );
+        }
+
+        if (accountData.muTags != null) {
+            databaseData.mu_tags = accountData.muTags.map(
+                (beaconID): object => ( { [beaconID]: true } )
+            );
+        }
         /*eslint-enable */
+
         try {
             await this.database.ref(`accounts/${accountData.uid}`).set(databaseData);
         } catch (e) {
@@ -63,20 +71,28 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
 
     async update(account: Account): Promise<void> {
         const accountData = account.getAccountData();
+
         /*eslint-disable @typescript-eslint/camelcase*/
-        const databaseData = {
+        const databaseData: {[key: string]: any} = {
             account_id: accountData.accountNumber,
             email: accountData.emailAddress,
             next_beacon_id: accountData.nextBeaconID,
-            recycled_beacon_ids: accountData.recycledBeaconIDs.map(
-                (beaconID): object => { return { [beaconID]: true }; }
-            ),
             next_mu_tag_number: accountData.nextMuTagNumber,
-            mu_tags: accountData.muTags.map(
-                (muTag): object => { return { [muTag]: true }; }
-            ),
         };
+
+        if (accountData.recycledBeaconIDs != null) {
+            databaseData.recycled_beacon_ids = accountData.recycledBeaconIDs.map(
+                (beaconID): object => ( { [beaconID]: true } )
+            );
+        }
+
+        if (accountData.muTags != null) {
+            databaseData.mu_tags = accountData.muTags.map(
+                (beaconID): object => ( { [beaconID]: true } )
+            );
+        }
         /*eslint-enable */
+
         try {
             await this.database.ref(`accounts/${accountData.uid}`).update(databaseData);
         } catch (e) {
@@ -99,32 +115,31 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
             throw new DoesNotExist();
         }
 
-        const data = snapshot.val();
-        if (typeof data !== 'object') {
+        const snapshotData = snapshot.val();
+        if (typeof snapshotData !== 'object') {
             throw new PersistedDataMalformed(uid);
         }
 
-        const accountData: AccountData = {
+        const data: {[key: string]: any} = {
             uid: uid,
-            accountNumber: this.getValueForKey(data, 'account_id'),
-            emailAddress: this.getValueForKey(data, 'email'),
-            nextBeaconID: this.getValueForKey(data, 'next_beacon_id'),
-            recycledBeaconIDs:
-                Object.keys(this.getValueForKey(data, 'recycled_beacon_ids')),
-            nextMuTagNumber: this.getValueForKey(data, 'next_mu_tag_number'),
-            muTags:
-                Object.keys(this.getValueForKey(data, 'mu_tags')),
+            accountNumber: snapshotData.account_id,
+            emailAddress: snapshotData.email,
+            nextBeaconID: snapshotData.next_beacon_id,
+            nextMuTagNumber: snapshotData.next_mu_tag_number,
         };
-        return accountData;
-    }
 
-    private static getValueForKey(data: object, key: string): any {
-        const object = data as { [key: string]: any };
-
-        if (!object.hasOwnProperty(key)) {
-            throw new PersistedDataMalformed(key);
+        if (snapshotData.hasOwnProperty('recycled_beacon_ids')) {
+            data.recycledBeaconIDs = Object.keys(snapshotData.recycled_beacon_ids);
         }
 
-        return object[key];
+        if (snapshotData.hasOwnProperty('mu_tags')) {
+            data.muTags = Object.keys(snapshotData.mu_tags);
+        }
+
+        if (!isAccountData(data)) {
+            throw new PersistedDataMalformed(JSON.stringify(data));
+        }
+
+        return data;
     }
 }

@@ -36,10 +36,24 @@ export interface AccountData {
     readonly accountNumber: string;
     readonly emailAddress: string;
     readonly nextBeaconID: string;
-    readonly recycledBeaconIDs: string[];
+    readonly recycledBeaconIDs?: string[];
     readonly nextMuTagNumber: number;
-    readonly muTags: string[];
+    readonly muTags?: string[];
 }
+
+const isStringArray = (value: any): value is string[] => {
+    return Array.isArray(value) && value.every((item): boolean => typeof item === 'string');
+};
+
+export const isAccountData = (object: { [key: string]: any }): object is AccountData => {
+    return 'uid' in object && typeof object.uid === 'string'
+        && 'accountNumber' in object && typeof object.accountNumber === 'string'
+        && 'emailAddress' in object && typeof object.emailAddress === 'string'
+        && 'nextBeaconID' in object && typeof object.nextBeaconID === 'string'
+        && 'recycledBeaconIDs' in object ? isStringArray(object.recycledBeaconIDs) : true
+        && 'nextMuTagNumber' in object && typeof object.nextMuTagNumber === 'string'
+        && 'muTags' in object ? isStringArray(object.muTags) : true;
+};
 
 export default class Account {
 
