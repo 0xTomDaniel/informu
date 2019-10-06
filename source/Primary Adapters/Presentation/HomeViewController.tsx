@@ -60,17 +60,6 @@ interface HomeVCProps extends NavigationScreenProps {
 
 export default class HomeViewController extends Component<HomeVCProps> {
 
-    static navigationOptions = ({ addMuTagService }: HomeVCProps): NavigationScreenOptions => ({
-        header: (): ReactElement => (
-            <Appbar style={styles.appBar}>
-                <Appbar.Action
-                    icon="plus-circle-outline"
-                    onPress={(): void => { addMuTagService.startAddingNewMuTag(); }}
-                />
-            </Appbar>
-        ),
-    });
-
     state: Readonly<HomeState> = this.props.viewModel;
 
     componentDidMount(): void {
@@ -118,6 +107,12 @@ export default class HomeViewController extends Component<HomeVCProps> {
     render(): Element {
         return (
             <SafeAreaView style={[styles.safeAreaView, styles.base]}>
+                <Appbar style={styles.appBar}>
+                    <Appbar.Action
+                        icon="plus-circle-outline"
+                        onPress={(): void => { this.props.addMuTagService.startAddingNewMuTag(); }}
+                    />
+                </Appbar>
                 {this.state.showAddMuTagTooltip &&
                     <View>
                         <View style={styles.triangle} />

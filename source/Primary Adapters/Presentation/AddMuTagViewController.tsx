@@ -91,10 +91,6 @@ interface AddMuTagVCProps extends NavigationScreenProps {
 
 export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
 
-    static navigationOptions = {
-        header: null,
-    };
-
     componentDidMount(): void {
         this.props.viewModel.onNavigateToNameMuTag((): void => {
             this.props.navigation.navigate('NameMuTag');

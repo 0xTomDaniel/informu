@@ -52,26 +52,33 @@ const addMuTagService = new AddMuTagService(
     accountRepoRemote,
 );
 
-const AppStack = createStackNavigator({
-    Home: {
-        screen: (props: NavigationScreenProps): Element => (
-            <HomeViewController
-                viewModel={homeViewModel}
-                addMuTagService={addMuTagService}
-                {...props}
-            />
-        ),
+const AppStack = createStackNavigator(
+    {
+        Home: {
+            screen: (props: NavigationScreenProps): Element => (
+                <HomeViewController
+                    viewModel={homeViewModel}
+                    addMuTagService={addMuTagService}
+                    {...props}
+                />
+            ),
+        },
+        AddMuTag: {
+            screen: (props: NavigationScreenProps): Element => (
+                <AddMuTagViewController
+                    viewModel={addMuTagViewModel}
+                    addMuTagService={addMuTagService}
+                    {...props}
+                />
+            ),
+        },
     },
-    AddMuTag: {
-        screen: (props: NavigationScreenProps): Element => (
-            <AddMuTagViewController
-                viewModel={addMuTagViewModel}
-                addMuTagService={addMuTagService}
-                {...props}
-            />
-        ),
+    {
+        defaultNavigationOptions: {
+            header: null,
+        },
     },
-});
+);
 const EntryStack = createStackNavigator(
     {
         Login: {
