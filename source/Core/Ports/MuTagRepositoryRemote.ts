@@ -50,6 +50,6 @@ export class FailedToRemove extends Error {
 
 export interface MuTagRepositoryRemote {
 
-    add(muTag: ProvisionedMuTag): Promise<void>;
-    update(muTag: ProvisionedMuTag): Promise<void>;
+    add(muTag: ProvisionedMuTag, accountUID: string): Promise<void>;
+    update(muTag: ProvisionedMuTag, accountUID: string): Promise<void>;
 }

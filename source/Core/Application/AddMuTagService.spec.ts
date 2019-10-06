@@ -36,8 +36,10 @@ describe('Mu tag user adds Mu tag', (): void => {
 
     const MuTagRepoLocalMock
         = jest.fn<MuTagRepositoryLocal, any>((): MuTagRepositoryLocal => ({
+            getByUID: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
+            removeByUID: jest.fn(),
         }));
 
     const MuTagRepoRemoteMock
@@ -243,7 +245,7 @@ describe('Mu tag user adds Mu tag', (): void => {
         // Then
         //
         it('should add Mu tag to remote persistence', (): void => {
-            expect(muTagRepoRemoteMock.add).toHaveBeenCalledWith(muTag);
+            expect(muTagRepoRemoteMock.add).toHaveBeenCalledWith(muTag, validAccountData.uid);
             expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
         });
 
@@ -277,7 +279,7 @@ describe('Mu tag user adds Mu tag', (): void => {
         });
 
         it('should update Mu tag to remote persistence', (): void => {
-            expect(muTagRepoRemoteMock.update).toHaveBeenCalledWith(muTag);
+            expect(muTagRepoRemoteMock.update).toHaveBeenCalledWith(muTag, validAccountData.uid);
             expect(muTagRepoRemoteMock.update).toHaveBeenCalledTimes(1);
         });
 
@@ -424,7 +426,7 @@ describe('Mu tag user adds Mu tag', (): void => {
         // Then
         //
         it('should add Mu tag to remote persistence', (): void => {
-            expect(muTagRepoRemoteMock.add).toHaveBeenCalledWith(muTag);
+            expect(muTagRepoRemoteMock.add).toHaveBeenCalledWith(muTag, validAccountData.uid);
             expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
         });
 
@@ -459,7 +461,7 @@ describe('Mu tag user adds Mu tag', (): void => {
         });
 
         it('should update Mu tag to remote persistence', (): void => {
-            expect(muTagRepoRemoteMock.update).toHaveBeenCalledWith(muTag);
+            expect(muTagRepoRemoteMock.update).toHaveBeenCalledWith(muTag, validAccountData.uid);
             expect(muTagRepoRemoteMock.update).toHaveBeenCalledTimes(1);
         });
 

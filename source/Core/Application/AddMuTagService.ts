@@ -9,6 +9,7 @@ import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
 import { MuTagColor } from '../Domain/MuTag';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
+import hoistNonReactStatics from 'hoist-non-react-statics';
 
 export class LowMuTagBattery extends Error {
 
@@ -43,6 +44,7 @@ export default class AddMuTagService {
     private unprovisionedMuTag: UnprovisionedMuTag | undefined;
     private provisionedMuTag: ProvisionedMuTag | undefined;
     private muTagName: string | undefined;
+    private accountUID: string | undefined;
 
     constructor(
         connectThreshold: RSSI,
@@ -135,7 +137,8 @@ export default class AddMuTagService {
 
             this.provisionedMuTag.updateColor(color);
             await this.muTagRepoLocal.update(this.provisionedMuTag);
-            await this.muTagRepoRemote.update(this.provisionedMuTag);
+            const accountUID = await this.getAccountUID();
+            await this.muTagRepoRemote.update(this.provisionedMuTag, accountUID);
 
             this.resetAddNewMuTagState();
             this.addMuTagOutput.showHomeScreen();
@@ -160,7 +163,8 @@ export default class AddMuTagService {
         );
         this.unprovisionedMuTag = undefined;
         await this.muTagRepoLocal.add(this.provisionedMuTag);
-        await this.muTagRepoRemote.add(this.provisionedMuTag);
+        this.accountUID = account.getUID();
+        await this.muTagRepoRemote.add(this.provisionedMuTag, this.accountUID);
 
         account.addNewMuTag(this.provisionedMuTag.getUID(), beaconID);
         await this.accountRepoLocal.update(account);
@@ -173,5 +177,15 @@ export default class AddMuTagService {
         this.unprovisionedMuTag = undefined;
         this.provisionedMuTag = undefined;
         this.muTagName = undefined;
+        this.accountUID = undefined;
+    }
+
+    private async getAccountUID(): Promise<string> {
+        if (this.accountUID == null) {
+            const account = await this.accountRepoLocal.get();
+            this.accountUID = account.getUID();
+        }
+
+        return this.accountUID;
     }
 }

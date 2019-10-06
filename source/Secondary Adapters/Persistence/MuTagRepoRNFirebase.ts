@@ -5,12 +5,9 @@ import ProvisionedMuTag from '../../Core/Domain/ProvisionedMuTag';
 
 export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
 
-    private readonly accountUID: string;
     private readonly database: Database;
 
-    constructor(accountUID: string, app?: App) {
-        this.accountUID = accountUID;
-
+    constructor(app?: App) {
         if (app != null) {
             this.database = app.database();
         } else {
@@ -32,7 +29,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         return MuTag.deserialize(muTagData);
     }*/
 
-    async add(muTag: ProvisionedMuTag): Promise<void> {
+    async add(muTag: ProvisionedMuTag, accountUID: string): Promise<void> {
         const muTagData = muTag.getMuTagData();
 
         /*eslint-disable @typescript-eslint/camelcase*/
@@ -46,7 +43,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         /*eslint-enable */
 
         try {
-            await this.database.ref(`mu_tags/${this.accountUID}/${muTagData.uid}`)
+            await this.database.ref(`mu_tags/${accountUID}/${muTagData.uid}`)
                 .set(databaseData);
         } catch (e) {
             console.log(e);
@@ -54,7 +51,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         }
     }
 
-    async update(muTag: ProvisionedMuTag): Promise<void> {
+    async update(muTag: ProvisionedMuTag, accountUID: string): Promise<void> {
         const muTagData = muTag.getMuTagData();
 
         /*eslint-disable @typescript-eslint/camelcase*/
@@ -68,7 +65,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         /*eslint-enable */
 
         try {
-            await this.database.ref(`mu_tags/${this.accountUID}/${muTagData.uid}`)
+            await this.database.ref(`mu_tags/${accountUID}/${muTagData.uid}`)
                 .update(databaseData);
         } catch (e) {
             console.log(e);
