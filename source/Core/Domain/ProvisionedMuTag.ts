@@ -23,6 +23,15 @@ export class BeaconID extends Hexadecimal {
     }
 }
 
+interface MuTagData {
+    uid: string;
+    beaconID: BeaconID;
+    muTagNumber: number;
+    name: string;
+    batteryLevel: Percent;
+    color: MuTagColor;
+}
+
 export default class ProvisionedMuTag extends MuTag {
 
     protected uid: string;
@@ -51,5 +60,44 @@ export default class ProvisionedMuTag extends MuTag {
 
     updateColor(color: MuTagColor): void {
         this.color = color;
+    }
+
+    getMuTagData(): MuTagData {
+        const json = this.serialize();
+        return JSON.parse(json);
+    }
+
+    serialize(): string {
+        return JSON.stringify(this, ProvisionedMuTag.replacer);
+    }
+
+    static deserialize(json: string | MuTagData): ProvisionedMuTag {
+        let jsonString = typeof json === 'string' ? json : JSON.stringify(json);
+        return JSON.parse(jsonString, ProvisionedMuTag.reviver);
+    }
+
+    static replacer(key: string, value: any): any {
+        switch (key) {
+            case 'beaconID':
+                return value.toString();
+            case 'batteryLevel':
+                return value.valueOf();
+            default:
+                return value;
+        }
+    }
+
+    static reviver(key: string, value: any): any {
+        switch (key) {
+            case '':
+                const muTag = Object.create(ProvisionedMuTag.prototype);
+                return Object.assign(muTag, value);
+            case 'beaconID':
+                return BeaconID.create(value);
+            case 'batteryLevel':
+                return new Percent(value);
+            default:
+                return value;
+        }
     }
 }
