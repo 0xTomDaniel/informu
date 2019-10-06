@@ -1,4 +1,12 @@
-import { LoginState } from './LoginViewController';
+export interface LoginState {
+
+    emailInput: string;
+    passwordInput: string;
+    emailErrorMessage: string;
+    passwordErrorMessage: string;
+    isBusy: boolean;
+    logInButtonDisabled: boolean;
+}
 
 export class LoginViewModel implements LoginState {
     private _emailInput = '';
