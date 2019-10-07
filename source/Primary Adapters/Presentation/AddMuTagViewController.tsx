@@ -109,7 +109,7 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                 <SafeAreaView style={[styles.safeAreaView]}>
                     <View style={styles.topContainer}>
                         <Appbar.Header style={styles.appBar}>
-                            <Appbar.BackAction onPress={(): void => this.props.viewModel.goBack()}/>
+                            <Appbar.BackAction onPress={(): void => this.goBack()}/>
                         </Appbar.Header>
                     </View>
                     <View style={styles.bottomContainer}>
@@ -157,5 +157,10 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                 </SafeAreaView>
             </ImageBackgrounds.AddMuTag>
         );
+    }
+
+    private goBack(): void {
+        this.props.viewModel.goBack();
+        this.props.addMuTagService.stopAddingNewMuTag();
     }
 }
