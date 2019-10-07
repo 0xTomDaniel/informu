@@ -2,7 +2,7 @@ import { AddMuTagOutput } from '../../Core/Ports/AddMuTagOutput';
 import { HomeViewModel } from './HomeViewModel';
 import { AddMuTagViewModel } from './AddMuTagViewModel';
 import { LowMuTagBattery } from '../../Core/Application/AddMuTagService';
-import { NewMuTagNotFound, ProvisionMuTagFailed } from '../../Core/Ports/MuTagDevices';
+import { NewMuTagNotFound, ProvisionMuTagFailed, BluetoothUnsupported } from '../../Core/Ports/MuTagDevices';
 
 export default class AddMuTagPresenter implements AddMuTagOutput {
 
@@ -50,6 +50,10 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
     }
 
     showProvisionFailedError(error: ProvisionMuTagFailed): void {
+        throw new Error('Method not implemented.');
+    }
+
+    showBluetoothUnsupportedError(error: BluetoothUnsupported): void {
         throw new Error('Method not implemented.');
     }
 }

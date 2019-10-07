@@ -1,5 +1,5 @@
 import { LowMuTagBattery } from '../Application/AddMuTagService';
-import { ProvisionMuTagFailed, NewMuTagNotFound } from './MuTagDevices';
+import { ProvisionMuTagFailed, NewMuTagNotFound, BluetoothUnsupported } from './MuTagDevices';
 
 export interface AddMuTagOutput {
 
@@ -12,4 +12,5 @@ export interface AddMuTagOutput {
     showLowBatteryError(error: LowMuTagBattery): void;
     showFindNewMuTagError(error: NewMuTagNotFound): void;
     showProvisionFailedError(error: ProvisionMuTagFailed): void;
+    showBluetoothUnsupportedError(error: BluetoothUnsupported): void;
 }

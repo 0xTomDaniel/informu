@@ -13,6 +13,15 @@ export class UnprovisionMuTagDeviceNotFound extends Error {
     }
 }
 
+export class BluetoothUnsupported extends Error {
+
+    constructor() {
+        super('This device doesn\'t support Bluetooth. Mu tags cannot be added.');
+        this.name = 'BluetoothUnsupported';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 export class NewMuTagNotFound extends Error {
 
     constructor() {

@@ -1,5 +1,5 @@
 import { AddMuTagOutput } from '../Ports/AddMuTagOutput';
-import { MuTagDevices, ProvisionMuTagFailed, NewMuTagNotFound } from '../Ports/MuTagDevices';
+import { MuTagDevices, ProvisionMuTagFailed, NewMuTagNotFound, BluetoothUnsupported } from '../Ports/MuTagDevices';
 import { RSSI } from '../Domain/Types';
 import Percent from '../Domain/Percent';
 import UnprovisionedMuTag from '../Domain/UnprovisionedMuTag';
@@ -89,6 +89,9 @@ export default class AddMuTagService {
                     break;
                 case ProvisionMuTagFailed:
                     this.addMuTagOutput.showProvisionFailedError(e);
+                    break;
+                case BluetoothUnsupported:
+                    this.addMuTagOutput.showBluetoothUnsupportedError(e);
                     break;
                 default:
                     throw e;

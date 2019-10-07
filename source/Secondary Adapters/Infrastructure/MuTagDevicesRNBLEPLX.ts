@@ -1,5 +1,5 @@
-import { BleManager, ScanOptions, Device, fullUUID, BleError} from 'react-native-ble-plx';
-import { MuTagDevices, FindNewMuTagAlreadyRunning, FindNewMuTagCanceled, UnprovisionMuTagDeviceNotFound, ProvisionMuTagFailed, NewMuTagNotFound } from '../../Core/Ports/MuTagDevices';
+import { BleManager, ScanOptions, Device, fullUUID, BleError, BleErrorCode} from 'react-native-ble-plx';
+import { MuTagDevices, FindNewMuTagAlreadyRunning, FindNewMuTagCanceled, UnprovisionMuTagDeviceNotFound, ProvisionMuTagFailed, NewMuTagNotFound, BluetoothUnsupported } from '../../Core/Ports/MuTagDevices';
 import { RSSI } from '../../Core/Domain/Types';
 import UnprovisionedMuTag from '../../Core/Domain/UnprovisionedMuTag';
 import ProvisionedMuTag, { BeaconID } from '../../Core/Domain/ProvisionedMuTag';
@@ -46,9 +46,18 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
             const unprovisionedMuTag = await this.findUnprovisionedMuTag(scanThreshold);
             this.cancelFindNewMuTag();
             return unprovisionedMuTag;
-        } catch (error) {
+        } catch (e) {
             this.cancelFindNewMuTag();
-            console.log(error);
+
+            if (e instanceof BleError) {
+                switch (e.errorCode) {
+                    // BleErrorCode.BluetoothUnsupported
+                    case 100:
+                        throw new BluetoothUnsupported();
+                }
+            }
+
+            console.warn(e);
             throw new NewMuTagNotFound();
         }
     }
@@ -122,7 +131,16 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         return new Promise((resolve, reject): void => {
             this.rejectFindUnprovisionedMuTag = reject;
 
-            this.connectToMuTagDevices(scanThreshold, (muTagDevice): void => {
+            this.connectToMuTagDevices(scanThreshold, (muTagDevice, error): void => {
+                if (error != null) {
+                    this.rejectFindUnprovisionedMuTag = undefined;
+                    reject(error);
+                }
+
+                if (muTagDevice == null) {
+                    return;
+                }
+
                 MuTagDevicesRNBLEPLX.authenticateToMuTag(muTagDevice).then((): Promise<ProvisionState> => {
                     return this.discoverProvisioning(muTagDevice);
                 }).then((provisionState): Promise<UnprovisionedMuTag | undefined> => {
@@ -138,9 +156,9 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                         this.rejectFindUnprovisionedMuTag = undefined;
                         resolve(unprovisionedMuTag);
                     }
-                }).catch((error): void => {
+                }).catch((e): void => {
                     this.rejectFindUnprovisionedMuTag = undefined;
-                    reject(error);
+                    reject(e);
                 });
             });
         });
@@ -148,14 +166,14 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
 
     private connectToMuTagDevices(
         scanThreshold: RSSI,
-        callback: (muTagDevice: Device) => void
+        callback: (muTagDevice?: Device, error?: BleError) => void
     ): void {
         const scanOptions: ScanOptions = { scanMode: 2 };
         const discoveryCache = new Set<DeviceID>();
 
         this.manager.startDeviceScan(null, scanOptions, (error, device): void => {
             if (error != null) {
-                throw error;
+                callback(undefined, error);
             }
 
             if (device == null) {
