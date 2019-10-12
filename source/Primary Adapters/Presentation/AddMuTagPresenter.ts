@@ -63,6 +63,9 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
             this.currentViewModel.navigateToHomeScreen();
             this.currentViewModel = this.homeViewModel;
         }
+
+        this.nameMuTagViewModel.showActivityIndicator = false;
+        this.nameMuTagViewModel.attachedToInput = '';
     }
 
     showLowBatteryError(error: LowMuTagBattery): void {
