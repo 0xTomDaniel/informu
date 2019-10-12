@@ -1,4 +1,4 @@
-import { Appbar, Button, Text, Subheading, Headline } from 'react-native-paper';
+import { Appbar, Button, Text, Portal, Dialog, Paragraph } from 'react-native-paper';
 import { StyleSheet, Platform, StatusBar, View, Dimensions } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
@@ -6,7 +6,7 @@ import React, { Component } from 'react';
 import DeviceInfo from 'react-native-device-info';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ImageBackgrounds } from './Images';
-import { AddMuTagViewModel } from './AddMuTagViewModel';
+import { AddMuTagViewModel, AddMuTagState } from './AddMuTagViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import { Scale } from './ResponsiveScaler';
 
@@ -83,6 +83,9 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginVertical: 16,
     },
+    errorDialogTitle: {
+        fontSize: Scale(20, 19),
+    },
 });
 
 interface AddMuTagVCProps extends NavigationScreenProps {
@@ -92,7 +95,12 @@ interface AddMuTagVCProps extends NavigationScreenProps {
 
 export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
 
+    state: Readonly<AddMuTagState> = this.props.viewModel;
+
     componentDidMount(): void {
+        this.props.viewModel.onDidUpdate((change): void =>
+            this.setState(change)
+        );
         this.props.viewModel.onNavigateToNameMuTag((): boolean =>
             this.props.navigation.navigate('NameMuTag')
         );
@@ -157,6 +165,20 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                     >
                         Continue
                     </Button>
+                    <Portal>
+                        <Dialog
+                            visible={this.state.showError}
+                            onDismiss={(): void => this.props.addMuTagService.stopAddingNewMuTag()}
+                        >
+                            <Dialog.Title style={styles.errorDialogTitle}>Something went wrong :(</Dialog.Title>
+                            <Dialog.Content>
+                                <Paragraph>{this.state.errorDescription}</Paragraph>
+                            </Dialog.Content>
+                            <Dialog.Actions>
+                                <Button onPress={(): void => this.props.addMuTagService.stopAddingNewMuTag()}>Exit</Button>
+                            </Dialog.Actions>
+                        </Dialog>
+                    </Portal>
                 </SafeAreaView>
             </ImageBackgrounds.AddMuTag>
         );

@@ -1,11 +1,9 @@
-import { Appbar, Button, Text, Subheading, TextInput, Headline } from 'react-native-paper';
-import { StyleSheet, Platform, StatusBar, View, Dimensions, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { Appbar, Button, TextInput, Headline, Portal, Dialog, Paragraph } from 'react-native-paper';
+import { StyleSheet, Platform, StatusBar, View, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
 import React, { Component } from 'react';
 import DeviceInfo from 'react-native-device-info';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { ImageBackgrounds } from './Images';
 import { NameMuTagViewModel, NameMuTagState } from './NameMuTagViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import { Scale } from './ResponsiveScaler';
@@ -57,6 +55,9 @@ const styles = StyleSheet.create({
     button: {
         alignSelf: 'center',
         marginVertical: 16,
+    },
+    errorDialogTitle: {
+        fontSize: Scale(20, 19),
     },
 });
 
@@ -120,6 +121,20 @@ export default class NameMuTagViewController extends Component<NameMuTagVCProps>
                     >
                         {this.state.showActivityIndicator ? 'Adding' : 'Add'}
                     </Button>
+                    <Portal>
+                        <Dialog
+                            visible={this.state.showError}
+                            onDismiss={this.props.addMuTagService.stopAddingNewMuTag}
+                        >
+                            <Dialog.Title style={styles.errorDialogTitle}>Something went wrong :(</Dialog.Title>
+                            <Dialog.Content>
+                                <Paragraph>{this.state.errorDescription}</Paragraph>
+                            </Dialog.Content>
+                            <Dialog.Actions>
+                                <Button onPress={this.props.addMuTagService.stopAddingNewMuTag}>Exit</Button>
+                            </Dialog.Actions>
+                        </Dialog>
+                    </Portal>
                 </SafeAreaView>
             </TouchableWithoutFeedback>
         );

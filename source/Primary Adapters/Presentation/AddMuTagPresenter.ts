@@ -60,27 +60,44 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
             || this.currentViewModel instanceof NameMuTagViewModel
             || this.currentViewModel instanceof MuTagAddingViewModel
         ) {
+            this.currentViewModel.showError = false;
+            this.currentViewModel.errorDescription = '';
             this.currentViewModel.navigateToHomeScreen();
             this.currentViewModel = this.homeViewModel;
         }
 
-        this.nameMuTagViewModel.showActivityIndicator = false;
-        this.nameMuTagViewModel.attachedToInput = '';
+        this.resetViewModelsToDefault();
     }
 
     showLowBatteryError(error: LowMuTagBattery): void {
-        throw new Error('Method not implemented.');
+        this.showError(error.message);
     }
 
     showFindNewMuTagError(error: NewMuTagNotFound): void {
-        throw new Error('Method not implemented.');
+        this.showError(error.message);
     }
 
     showProvisionFailedError(error: ProvisionMuTagFailed): void {
-        throw new Error('Method not implemented.');
+        this.showError(error.message);
     }
 
     showBluetoothUnsupportedError(error: BluetoothUnsupported): void {
-        throw new Error('Method not implemented.');
+        this.showError(error.message);
+    }
+
+    private showError(description: string): void {
+        if (
+            this.currentViewModel instanceof AddMuTagViewModel
+            || this.currentViewModel instanceof NameMuTagViewModel
+            || this.currentViewModel instanceof MuTagAddingViewModel
+        ) {
+            this.currentViewModel.errorDescription = description;
+            this.currentViewModel.showError = true;
+        }
+    }
+
+    private resetViewModelsToDefault(): void {
+        this.nameMuTagViewModel.showActivityIndicator = false;
+        this.nameMuTagViewModel.attachedToInput = '';
     }
 }

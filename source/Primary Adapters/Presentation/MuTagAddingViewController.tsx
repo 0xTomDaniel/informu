@@ -1,10 +1,10 @@
-import { Button, Headline, ActivityIndicator } from 'react-native-paper';
+import { Button, Headline, ActivityIndicator, Portal, Dialog, Paragraph } from 'react-native-paper';
 import { StyleSheet, Platform, StatusBar, View } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
 import React, { Component } from 'react';
 import DeviceInfo from 'react-native-device-info';
-import { MuTagAddingViewModel } from './MuTagAddingViewModel';
+import { MuTagAddingViewModel, MuTagAddingState } from './MuTagAddingViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import { Scale } from './ResponsiveScaler';
 
@@ -54,6 +54,9 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginVertical: 16,
     },
+    errorDialogTitle: {
+        fontSize: Scale(20, 19),
+    },
 });
 
 interface MuTagAddingVCProps extends NavigationScreenProps {
@@ -63,7 +66,12 @@ interface MuTagAddingVCProps extends NavigationScreenProps {
 
 export default class MuTagAddingViewController extends Component<MuTagAddingVCProps> {
 
+    state: Readonly<MuTagAddingState> = this.props.viewModel;
+
     componentDidMount(): void {
+        this.props.viewModel.onDidUpdate((change): void =>
+            this.setState(change)
+        );
         this.props.viewModel.onNavigateToMuTagSettings((): void => {
             //this.props.navigation.navigate();
         });
@@ -86,6 +94,20 @@ export default class MuTagAddingViewController extends Component<MuTagAddingVCPr
                 >
                     Cancel
                 </Button>
+                <Portal>
+                    <Dialog
+                        visible={this.state.showError}
+                        onDismiss={this.props.addMuTagService.stopAddingNewMuTag}
+                    >
+                        <Dialog.Title style={styles.errorDialogTitle}>Something went wrong :(</Dialog.Title>
+                        <Dialog.Content>
+                            <Paragraph>{this.state.errorDescription}</Paragraph>
+                        </Dialog.Content>
+                        <Dialog.Actions>
+                            <Button onPress={this.props.addMuTagService.stopAddingNewMuTag}>Exit</Button>
+                        </Dialog.Actions>
+                    </Dialog>
+                </Portal>
             </SafeAreaView>
         );
     }
