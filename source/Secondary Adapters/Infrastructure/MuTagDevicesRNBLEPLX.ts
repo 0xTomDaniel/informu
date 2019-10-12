@@ -47,6 +47,10 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
             this.cancelFindNewMuTag();
             return unprovisionedMuTag;
         } catch (e) {
+            if (e instanceof FindNewMuTagCanceled) {
+                throw e;
+            }
+
             this.cancelFindNewMuTag();
 
             if (e instanceof BleError) {
