@@ -9,7 +9,6 @@ import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
 import { MuTagColor } from '../Domain/MuTag';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
-import hoistNonReactStatics from 'hoist-non-react-statics';
 
 export class LowMuTagBattery extends Error {
 

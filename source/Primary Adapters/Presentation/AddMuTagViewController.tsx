@@ -41,8 +41,6 @@ const styles = StyleSheet.create({
     },
     bottomContainer: {
         flex: 1,
-        //justifyContent: 'space-around',
-        //alignItems: 'center',
     },
     instructions: {
         flex: 1,
@@ -64,11 +62,11 @@ const styles = StyleSheet.create({
     },
     instructionsIcon: {
         fontSize: Scale(40),
-        color: Theme.Color.SecondaryBlue,
+        color: Theme.Color.PrimaryBlue,
     },
     instructionsInfoIcon: {
         fontSize: Scale(22),
-        color: Theme.Color.PrimaryBlue,
+        color: Theme.Color.SecondaryBlue,
     },
     instructionsTextCol: {
         flex: 6,
@@ -95,10 +93,10 @@ interface AddMuTagVCProps extends NavigationScreenProps {
 export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
 
     componentDidMount(): void {
-        this.props.viewModel.onNavigateToNameMuTag((): void => {
-            this.props.navigation.navigate('NameMuTag');
-        });
-        this.props.viewModel.onBack(this.props.navigation.goBack);
+        this.props.viewModel.onNavigateToNameMuTag((): boolean =>
+            this.props.navigation.navigate('NameMuTag')
+        );
+        this.props.viewModel.onNavigateToHomeScreen(this.props.navigation.goBack);
     }
 
     render(): Element {
@@ -112,14 +110,16 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                 <SafeAreaView style={[styles.safeAreaView]}>
                     <View style={styles.topContainer}>
                         <Appbar.Header style={styles.appBar}>
-                            <Appbar.BackAction onPress={(): void => this.goBack()}/>
+                            <Appbar.BackAction onPress={(): void =>
+                                this.props.addMuTagService.stopAddingNewMuTag()
+                            } />
                         </Appbar.Header>
                     </View>
                     <View style={styles.bottomContainer}>
                         <View style={styles.instructions}>
                             <View style={styles.instructionsRow}>
                                 <Icon
-                                    name="numeric-1-circle-outline"
+                                    name="numeric-1-circle"
                                     color="black" style={[styles.instructionsIconCol, styles.instructionsIcon]}
                                 />
                                 <Text style={[styles.instructionsTextCol, styles.instructionsText]}>
@@ -129,10 +129,12 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                             <View>
                                 <View style={styles.instructionsRow}>
                                     <Icon
-                                        name="numeric-2-circle-outline"
+                                        name="numeric-2-circle"
                                         style={[styles.instructionsIconCol, styles.instructionsIcon]}
                                     />
-                                    <Text adjustsFontSizeToFit={true} numberOfLines={2} minimumFontScale={0.01} style={[styles.instructionsTextCol, styles.instructionsText]}>
+                                    <Text
+                                        numberOfLines={2}
+                                        style={[styles.instructionsTextCol, styles.instructionsText]}>
                                         Press the Mu tag button now to wake it up.
                                     </Text>
                                 </View>
@@ -158,10 +160,5 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                 </SafeAreaView>
             </ImageBackgrounds.AddMuTag>
         );
-    }
-
-    private goBack(): void {
-        this.props.viewModel.goBack();
-        this.props.addMuTagService.stopAddingNewMuTag();
     }
 }

@@ -30,7 +30,7 @@ export class NameMuTagViewModel {
     private onDidUpdateCallback: ((change: object) => void) | undefined;
     private onNavigateToMuTagSettingsCallback: (() => void) | undefined;
     private onNavigateToMuTagAddingCallback: (() => void) | undefined;
-    private onBackCallback: (() => void) | undefined;
+    private onNavigateToHomeScreenCallback: (() => void) | undefined;
 
     onDidUpdate(callback: (change: object) => void): void {
         this.onDidUpdateCallback = callback;
@@ -52,12 +52,12 @@ export class NameMuTagViewModel {
         this.onNavigateToMuTagAddingCallback && this.onNavigateToMuTagAddingCallback();
     }
 
-    onBack(callback: () => void): void {
-        this.onBackCallback = callback;
+    onNavigateToHomeScreen(callback: () => void): void {
+        this.onNavigateToHomeScreenCallback = callback;
     }
 
-    goBack(): void {
-        this.onBackCallback && this.onBackCallback();
+    navigateToHomeScreen(): void {
+        this.onNavigateToHomeScreenCallback && this.onNavigateToHomeScreenCallback();
     }
 
     private triggerDidUpdate(change: object): void {

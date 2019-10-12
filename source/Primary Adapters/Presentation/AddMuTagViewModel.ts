@@ -1,7 +1,7 @@
 export class AddMuTagViewModel {
 
     private onNavigateToNameMuTagCallback: (() => void) | undefined;
-    private onBackCallback: (() => void) | undefined;
+    private onNavigateToHomeScreenCallback: (() => void) | undefined;
 
     onNavigateToNameMuTag(callback: () => void): void {
         this.onNavigateToNameMuTagCallback = callback;
@@ -11,11 +11,11 @@ export class AddMuTagViewModel {
         this.onNavigateToNameMuTagCallback && this.onNavigateToNameMuTagCallback();
     }
 
-    onBack(callback: () => void): void {
-        this.onBackCallback = callback;
+    onNavigateToHomeScreen(callback: () => void): void {
+        this.onNavigateToHomeScreenCallback = callback;
     }
 
-    goBack(): void {
-        this.onBackCallback && this.onBackCallback();
+    navigateToHomeScreen(): void {
+        this.onNavigateToHomeScreenCallback && this.onNavigateToHomeScreenCallback();
     }
 }

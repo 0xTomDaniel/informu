@@ -4,27 +4,29 @@ import { AddMuTagViewModel } from './AddMuTagViewModel';
 import { LowMuTagBattery } from '../../Core/Application/AddMuTagService';
 import { NewMuTagNotFound, ProvisionMuTagFailed, BluetoothUnsupported } from '../../Core/Ports/MuTagDevices';
 import { NameMuTagViewModel } from './NameMuTagViewModel';
+import { MuTagAddingViewModel } from './MuTagAddingViewModel';
 
 type CurrentViewModel
-    = HomeViewModel | AddMuTagViewModel | NameMuTagViewModel;// | MuTagAddingViewModel;
+    = HomeViewModel | AddMuTagViewModel | NameMuTagViewModel | MuTagAddingViewModel;
 
 export default class AddMuTagPresenter implements AddMuTagOutput {
 
     private readonly homeViewModel: HomeViewModel;
     private readonly addMuTagViewModel: AddMuTagViewModel;
     private readonly nameMuTagViewModel: NameMuTagViewModel;
-    //private readonly muTagAddingViewModel: MuTagAddingViewModel;
+    private readonly muTagAddingViewModel: MuTagAddingViewModel;
     private currentViewModel: CurrentViewModel;
 
     constructor(
         homeViewModel: HomeViewModel,
         addMuTagViewModel: AddMuTagViewModel,
         nameMuTagViewModel: NameMuTagViewModel,
+        muTagAddingViewModel: MuTagAddingViewModel,
     ) {
         this.homeViewModel = homeViewModel;
         this.addMuTagViewModel = addMuTagViewModel;
         this.nameMuTagViewModel = nameMuTagViewModel;
-
+        this.muTagAddingViewModel = muTagAddingViewModel;
         this.currentViewModel = homeViewModel;
     }
 
@@ -39,7 +41,7 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
     }
 
     showMuTagConnectingScreen(): void {
-        throw new Error('Method not implemented.');
+        this.nameMuTagViewModel.navigateToMuTagAdding();
     }
 
     showMuTagFinalSetupScreen(): void {
@@ -53,7 +55,14 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
     }
 
     showHomeScreen(): void {
-        throw new Error('Method not implemented.');
+        if (
+            this.currentViewModel instanceof AddMuTagViewModel
+            || this.currentViewModel instanceof NameMuTagViewModel
+            || this.currentViewModel instanceof MuTagAddingViewModel
+        ) {
+            this.currentViewModel.navigateToHomeScreen();
+            this.currentViewModel = this.homeViewModel;
+        }
     }
 
     showLowBatteryError(error: LowMuTagBattery): void {

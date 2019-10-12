@@ -31,6 +31,8 @@ import { MuTagRepoRNCAsyncStorage } from './source/Secondary Adapters/Persistenc
 import { MuTagRepoRNFirebase } from './source/Secondary Adapters/Persistence/MuTagRepoRNFirebase';
 import NameMuTagViewController from './source/Primary Adapters/Presentation/NameMuTagViewController';
 import { NameMuTagViewModel } from './source/Primary Adapters/Presentation/NameMuTagViewModel';
+import { MuTagAddingViewModel } from './source/Primary Adapters/Presentation/MuTagAddingViewModel';
+import MuTagAddingViewController from './source/Primary Adapters/Presentation/MuTagAddingViewController';
 
 const authentication = new AuthenticationFirebase();
 const accountRepoLocal = new AccountRepoRNCAsyncStorage();
@@ -42,10 +44,12 @@ const addMuTagBatteryThreshold = new Percent(20);
 const homeViewModel = new HomeViewModel();
 const addMuTagViewModel = new AddMuTagViewModel();
 const nameMuTagViewModel = new NameMuTagViewModel();
+const muTagAddingViewModel = new MuTagAddingViewModel();
 const addMuTagPresenter = new AddMuTagPresenter(
     homeViewModel,
     addMuTagViewModel,
-    nameMuTagViewModel
+    nameMuTagViewModel,
+    muTagAddingViewModel,
 );
 const muTagDevices = new MuTagDevicesRNBLEPLX();
 const addMuTagService = new AddMuTagService(
@@ -83,6 +87,15 @@ const AppStack = createStackNavigator(
             screen: (props: NavigationScreenProps): Element => (
                 <NameMuTagViewController
                     viewModel={nameMuTagViewModel}
+                    addMuTagService={addMuTagService}
+                    {...props}
+                />
+            ),
+        },
+        MuTagAdding: {
+            screen: (props: NavigationScreenProps): Element => (
+                <MuTagAddingViewController
+                    viewModel={muTagAddingViewModel}
                     addMuTagService={addMuTagService}
                     {...props}
                 />

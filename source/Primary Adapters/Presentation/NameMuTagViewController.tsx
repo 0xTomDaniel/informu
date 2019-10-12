@@ -70,16 +70,18 @@ export default class NameMuTagViewController extends Component<NameMuTagVCProps>
     state: Readonly<NameMuTagState> = this.props.viewModel;
 
     componentDidMount(): void {
-        this.props.viewModel.onDidUpdate((change): void => {
-            this.setState(change);
-        });
+        this.props.viewModel.onDidUpdate((change): void =>
+            this.setState(change)
+        );
         this.props.viewModel.onNavigateToMuTagSettings((): void => {
             //this.props.navigation.navigate();
         });
-        this.props.viewModel.onNavigateToMuTagAdding((): void => {
-            //this.props.navigation.navigate();
-        });
-        this.props.viewModel.onBack((): void => { this.props.navigation.popToTop(); });
+        this.props.viewModel.onNavigateToMuTagAdding((): boolean =>
+            this.props.navigation.navigate('MuTagAdding')
+        );
+        this.props.viewModel.onNavigateToHomeScreen(
+            (): boolean => this.props.navigation.popToTop()
+        );
     }
 
     render(): Element {
@@ -87,7 +89,9 @@ export default class NameMuTagViewController extends Component<NameMuTagVCProps>
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
                 <SafeAreaView style={[styles.safeAreaView, styles.base]}>
                     <Appbar.Header style={styles.appBar}>
-                        <Appbar.BackAction onPress={(): void => this.goBack()}/>
+                        <Appbar.BackAction onPress={(): void =>
+                            this.props.addMuTagService.stopAddingNewMuTag()
+                        } />
                     </Appbar.Header>
                     <View style={styles.mainContainer}>
                         <Headline style={styles.headline}>
@@ -119,10 +123,5 @@ export default class NameMuTagViewController extends Component<NameMuTagVCProps>
                 </SafeAreaView>
             </TouchableWithoutFeedback>
         );
-    }
-
-    private goBack(): void {
-        this.props.viewModel.goBack();
-        this.props.addMuTagService.stopAddingNewMuTag();
     }
 }
