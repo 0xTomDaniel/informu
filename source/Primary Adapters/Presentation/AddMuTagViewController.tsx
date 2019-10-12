@@ -65,7 +65,7 @@ const styles = StyleSheet.create({
         color: Theme.Color.PrimaryBlue,
     },
     instructionsInfoIcon: {
-        fontSize: Scale(22),
+        fontSize: Scale(22, 19),
         color: Theme.Color.SecondaryBlue,
     },
     instructionsTextCol: {

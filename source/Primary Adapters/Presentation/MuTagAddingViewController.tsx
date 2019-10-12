@@ -1,4 +1,4 @@
-import { Button, Headline, ActivityIndicator, Portal, Dialog, Paragraph } from 'react-native-paper';
+import { Button, Headline, ActivityIndicator, Portal, Dialog, Paragraph, Text } from 'react-native-paper';
 import { StyleSheet, Platform, StatusBar, View } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
@@ -7,6 +7,7 @@ import DeviceInfo from 'react-native-device-info';
 import { MuTagAddingViewModel, MuTagAddingState } from './MuTagAddingViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import { Scale } from './ResponsiveScaler';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -16,6 +17,7 @@ const styles = StyleSheet.create({
     },
     base: {
         backgroundColor: Theme.Color.AlmostWhite,
+        paddingHorizontal: 16,
     },
     mainImage: {
         width: '100%',
@@ -40,7 +42,6 @@ const styles = StyleSheet.create({
     mainContainer: {
         flex: 1,
         justifyContent: 'center',
-        paddingHorizontal: 32,
     },
     headline: {
         textAlign: 'center',
@@ -49,6 +50,32 @@ const styles = StyleSheet.create({
     },
     attachedToInput: {
         backgroundColor: 'white',
+    },
+    instructionsRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        width: '100%',
+    },
+    instructionsInfoRow: {
+        marginTop: 4,
+        marginBottom: 12,
+    },
+    instructionsIconCol: {
+        flex: 1,
+        textAlign: 'center',
+        alignSelf: 'center',
+    },
+    instructionsInfoIcon: {
+        fontSize: Scale(22, 19),
+        color: Theme.Color.SecondaryBlue,
+    },
+    instructionsTextCol: {
+        flex: 6,
+        marginHorizontal: 12,
+    },
+    instructionsInfoText: {
+        fontSize: Scale(15, 13),
+        color: 'grey',
     },
     button: {
         alignSelf: 'center',
@@ -86,6 +113,15 @@ export default class MuTagAddingViewController extends Component<MuTagAddingVCPr
                         Connecting to Mu tag...
                     </Headline>
                     <ActivityIndicator animating={true} color={Theme.Color.PrimaryBlue} size="large" />
+                </View>
+                <View style={[styles.instructionsRow, styles.instructionsInfoRow]}>
+                    <Icon
+                        name="information-outline"
+                        style={[styles.instructionsIconCol, styles.instructionsInfoIcon]}
+                    />
+                    <Text style={[styles.instructionsTextCol, styles.instructionsInfoText]}>
+                        If nothing seems to be happening, then press the Mu tag button to ensure it's awake.
+                    </Text>
                 </View>
                 <Button
                     mode="contained"

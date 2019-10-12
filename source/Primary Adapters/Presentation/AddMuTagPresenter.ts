@@ -82,7 +82,7 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
     }
 
     showBluetoothUnsupportedError(error: BluetoothUnsupported): void {
-        this.showError(error.message);
+        //this.showError(error.message);
     }
 
     private showError(description: string): void {
