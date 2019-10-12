@@ -49,16 +49,16 @@ export class NameMuTagViewModel {
         this.triggerDidUpdate({ showError: newValue });
     }
 
-    private onDidUpdateCallback: ((change: object) => void) | undefined;
-    private onNavigateToMuTagSettingsCallback: (() => void) | undefined;
-    private onNavigateToMuTagAddingCallback: (() => void) | undefined;
-    private onNavigateToHomeScreenCallback: (() => void) | undefined;
+    private onDidUpdateCallback?: (change: object) => void;
+    private onNavigateToMuTagSettingsCallback?: () => void;
+    private onNavigateToMuTagAddingCallback?: () => void;
+    private onNavigateToHomeScreenCallback?: () => void;
 
-    onDidUpdate(callback: (change: object) => void): void {
+    onDidUpdate(callback?: (change: object) => void): void {
         this.onDidUpdateCallback = callback;
     }
 
-    onNavigateToMuTagSettings(callback: () => void): void {
+    onNavigateToMuTagSettings(callback?: () => void): void {
         this.onNavigateToMuTagSettingsCallback = callback;
     }
 
@@ -66,7 +66,7 @@ export class NameMuTagViewModel {
         this.onNavigateToMuTagSettingsCallback && this.onNavigateToMuTagSettingsCallback();
     }
 
-    onNavigateToMuTagAdding(callback: () => void): void {
+    onNavigateToMuTagAdding(callback?: () => void): void {
         this.onNavigateToMuTagAddingCallback = callback;
     }
 
@@ -74,7 +74,7 @@ export class NameMuTagViewModel {
         this.onNavigateToMuTagAddingCallback && this.onNavigateToMuTagAddingCallback();
     }
 
-    onNavigateToHomeScreen(callback: () => void): void {
+    onNavigateToHomeScreen(callback?: () => void): void {
         this.onNavigateToHomeScreenCallback = callback;
     }
 

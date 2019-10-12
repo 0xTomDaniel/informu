@@ -85,6 +85,13 @@ export default class NameMuTagViewController extends Component<NameMuTagVCProps>
         );
     }
 
+    componentWillUnmount(): void {
+        this.props.viewModel.onDidUpdate(undefined);
+        this.props.viewModel.onNavigateToMuTagSettings(undefined);
+        this.props.viewModel.onNavigateToMuTagAdding(undefined);
+        this.props.viewModel.onNavigateToHomeScreen(undefined);
+    }
+
     render(): Element {
         return (
             <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
@@ -124,14 +131,14 @@ export default class NameMuTagViewController extends Component<NameMuTagVCProps>
                     <Portal>
                         <Dialog
                             visible={this.state.showError}
-                            onDismiss={this.props.addMuTagService.stopAddingNewMuTag}
+                            onDismiss={(): void => this.props.addMuTagService.stopAddingNewMuTag()}
                         >
                             <Dialog.Title style={styles.errorDialogTitle}>Something went wrong :(</Dialog.Title>
                             <Dialog.Content>
                                 <Paragraph>{this.state.errorDescription}</Paragraph>
                             </Dialog.Content>
                             <Dialog.Actions>
-                                <Button onPress={this.props.addMuTagService.stopAddingNewMuTag}>Exit</Button>
+                                <Button onPress={(): void => this.props.addMuTagService.stopAddingNewMuTag()}>Exit</Button>
                             </Dialog.Actions>
                         </Dialog>
                     </Portal>

@@ -27,15 +27,15 @@ export class MuTagAddingViewModel {
         this.triggerDidUpdate({ showError: newValue });
     }
 
-    private onDidUpdateCallback: ((change: object) => void) | undefined;
-    private onNavigateToMuTagSettingsCallback: (() => void) | undefined;
-    private onNavigateToHomeScreenCallback: (() => void) | undefined;
+    private onDidUpdateCallback?: (change: object) => void;
+    private onNavigateToMuTagSettingsCallback?: () => void;
+    private onNavigateToHomeScreenCallback?: () => void;
 
-    onDidUpdate(callback: (change: object) => void): void {
+    onDidUpdate(callback?: (change: object) => void): void {
         this.onDidUpdateCallback = callback;
     }
 
-    onNavigateToMuTagSettings(callback: () => void): void {
+    onNavigateToMuTagSettings(callback?: () => void): void {
         this.onNavigateToMuTagSettingsCallback = callback;
     }
 
@@ -43,7 +43,7 @@ export class MuTagAddingViewModel {
         this.onNavigateToMuTagSettingsCallback && this.onNavigateToMuTagSettingsCallback();
     }
 
-    onNavigateToHomeScreen(callback: () => void): void {
+    onNavigateToHomeScreen(callback?: () => void): void {
         this.onNavigateToHomeScreenCallback = callback;
     }
 

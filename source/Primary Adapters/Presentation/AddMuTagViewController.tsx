@@ -107,6 +107,12 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
         this.props.viewModel.onNavigateToHomeScreen(this.props.navigation.goBack);
     }
 
+    componentWillUnmount(): void {
+        this.props.viewModel.onDidUpdate(undefined);
+        this.props.viewModel.onNavigateToNameMuTag(undefined);
+        this.props.viewModel.onNavigateToHomeScreen(undefined);
+    }
+
     render(): Element {
         const window = Dimensions.get('window');
 
