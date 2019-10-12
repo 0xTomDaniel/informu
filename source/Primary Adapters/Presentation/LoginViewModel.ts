@@ -9,6 +9,7 @@ export interface LoginState {
 }
 
 export class LoginViewModel implements LoginState {
+
     private _emailInput = '';
     private _passwordInput = '';
     private _emailErrorMessage = '';

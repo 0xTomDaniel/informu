@@ -32,6 +32,7 @@ describe('Mu tag user adds Mu tag', (): void => {
             showLowBatteryError: jest.fn(),
             showFindNewMuTagError: jest.fn(),
             showProvisionFailedError: jest.fn(),
+            showBluetoothUnsupportedError: jest.fn(),
         }));
 
     const MuTagRepoLocalMock

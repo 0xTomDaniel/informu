@@ -1,4 +1,4 @@
-import { Appbar, Button, Text, Subheading } from 'react-native-paper';
+import { Appbar, Button, Text, Subheading, Headline } from 'react-native-paper';
 import { StyleSheet, Platform, StatusBar, View, Dimensions } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
@@ -8,6 +8,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ImageBackgrounds } from './Images';
 import { AddMuTagViewModel } from './AddMuTagViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
+import { Scale } from './ResponsiveScaler';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -40,8 +41,8 @@ const styles = StyleSheet.create({
     },
     bottomContainer: {
         flex: 1,
-        justifyContent: 'space-around',
-        alignItems: 'center',
+        //justifyContent: 'space-around',
+        //alignItems: 'center',
     },
     instructions: {
         flex: 1,
@@ -50,7 +51,7 @@ const styles = StyleSheet.create({
     },
     instructionsRow: {
         flexDirection: 'row',
-        alignItems: 'center',
+        alignItems: 'flex-start',
         width: '100%',
     },
     instructionsInfoRow: {
@@ -62,24 +63,26 @@ const styles = StyleSheet.create({
         textAlign: 'center',
     },
     instructionsIcon: {
-        fontSize: 32,
+        fontSize: Scale(40),
         color: Theme.Color.SecondaryBlue,
     },
     instructionsInfoIcon: {
-        fontSize: 22,
+        fontSize: Scale(22),
         color: Theme.Color.PrimaryBlue,
     },
     instructionsTextCol: {
         flex: 6,
-        marginHorizontal: 8,
+        marginHorizontal: 12,
     },
     instructionsText: {
-        fontWeight: 'bold',
+        fontSize: Scale(22), // Default 24
     },
     instructionsInfoText: {
+        fontSize: Scale(15, 13), // Default 14
         color: 'grey',
     },
     button: {
+        alignSelf: 'center',
         marginVertical: 16,
     },
 });
@@ -103,7 +106,7 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
 
         return (
             <ImageBackgrounds.AddMuTag
-                imageStyle={[styles.mainImage, {top: -window.height / 6}]}
+                imageStyle={[styles.mainImage, {top: -window.height / Scale(6)}]}
                 style={styles.mainImageView}
             >
                 <SafeAreaView style={[styles.safeAreaView]}>
@@ -114,15 +117,24 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                     </View>
                     <View style={styles.bottomContainer}>
                         <View style={styles.instructions}>
+                            <View style={styles.instructionsRow}>
+                                <Icon
+                                    name="numeric-1-circle-outline"
+                                    color="black" style={[styles.instructionsIconCol, styles.instructionsIcon]}
+                                />
+                                <Text style={[styles.instructionsTextCol, styles.instructionsText]}>
+                                    Keep the Mu tag close to the app during this setup.
+                                </Text>
+                            </View>
                             <View>
                                 <View style={styles.instructionsRow}>
                                     <Icon
-                                        name="numeric-1-circle-outline"
+                                        name="numeric-2-circle-outline"
                                         style={[styles.instructionsIconCol, styles.instructionsIcon]}
                                     />
-                                    <Subheading style={[styles.instructionsTextCol, styles.instructionsText]}>
+                                    <Text adjustsFontSizeToFit={true} numberOfLines={2} minimumFontScale={0.01} style={[styles.instructionsTextCol, styles.instructionsText]}>
                                         Press the Mu tag button now to wake it up.
-                                    </Subheading>
+                                    </Text>
                                 </View>
                                 <View style={[styles.instructionsRow, styles.instructionsInfoRow]}>
                                     <Icon
@@ -130,30 +142,19 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                                         style={[styles.instructionsIconCol, styles.instructionsInfoIcon]}
                                     />
                                     <Text style={[styles.instructionsTextCol, styles.instructionsInfoText]}>
-                                        The dot on the Mu tag logo should start flashing green.
+                                        Once the dot on the Mu tag logo starts flashing green, press 'Continue' below.
                                     </Text>
                                 </View>
                             </View>
-                            <View style={styles.instructionsRow}>
-                                <Icon
-                                    name="numeric-2-circle-outline"
-                                    color="black" style={[styles.instructionsIconCol, styles.instructionsIcon]}
-                                />
-                                <Subheading style={[styles.instructionsTextCol, styles.instructionsText]}>
-                                    Keep the Mu tag close to the app during this setup.
-                                </Subheading>
-                            </View>
-                        </View>
-                        <View>
-                            <Button
-                                mode="contained"
-                                onPress={(): void => this.props.addMuTagService.instructionsComplete()}
-                                style={styles.button}
-                            >
-                                Continue
-                            </Button>
                         </View>
                     </View>
+                    <Button
+                        mode="contained"
+                        onPress={(): void => this.props.addMuTagService.instructionsComplete()}
+                        style={styles.button}
+                    >
+                        Continue
+                    </Button>
                 </SafeAreaView>
             </ImageBackgrounds.AddMuTag>
         );

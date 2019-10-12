@@ -3,26 +3,39 @@ import { HomeViewModel } from './HomeViewModel';
 import { AddMuTagViewModel } from './AddMuTagViewModel';
 import { LowMuTagBattery } from '../../Core/Application/AddMuTagService';
 import { NewMuTagNotFound, ProvisionMuTagFailed, BluetoothUnsupported } from '../../Core/Ports/MuTagDevices';
+import { NameMuTagViewModel } from './NameMuTagViewModel';
+
+type CurrentViewModel
+    = HomeViewModel | AddMuTagViewModel | NameMuTagViewModel;// | MuTagAddingViewModel;
 
 export default class AddMuTagPresenter implements AddMuTagOutput {
 
     private readonly homeViewModel: HomeViewModel;
     private readonly addMuTagViewModel: AddMuTagViewModel;
+    private readonly nameMuTagViewModel: NameMuTagViewModel;
+    //private readonly muTagAddingViewModel: MuTagAddingViewModel;
+    private currentViewModel: CurrentViewModel;
 
     constructor(
         homeViewModel: HomeViewModel,
         addMuTagViewModel: AddMuTagViewModel,
+        nameMuTagViewModel: NameMuTagViewModel,
     ) {
         this.homeViewModel = homeViewModel;
         this.addMuTagViewModel = addMuTagViewModel;
+        this.nameMuTagViewModel = nameMuTagViewModel;
+
+        this.currentViewModel = homeViewModel;
     }
 
     showAddMuTagScreen(): void {
         this.homeViewModel.navigateToAddMuTag();
+        this.currentViewModel = this.addMuTagViewModel;
     }
 
     showMuTagNamingScreen(): void {
-        throw new Error('Method not implemented.');
+        this.addMuTagViewModel.navigateToNameMuTag();
+        this.currentViewModel = this.nameMuTagViewModel;
     }
 
     showMuTagConnectingScreen(): void {
@@ -34,7 +47,9 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
     }
 
     showActivityIndicator(): void {
-        throw new Error('Method not implemented.');
+        if (this.currentViewModel instanceof NameMuTagViewModel) {
+            this.currentViewModel.showActivityIndicator = true;
+        }
     }
 
     showHomeScreen(): void {
