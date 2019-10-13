@@ -91,12 +91,13 @@ export default class LoginViewController extends Component<LoginVCProps> {
     state: Readonly<LoginState> = this.viewModel;
 
     componentDidMount(): void {
-        this.viewModel.onDidUpdate((change): void => {
-            this.setState(change);
-        });
-        this.viewModel.onNavigateToApp((): void => {
-            this.props.navigation.navigate('App');
-        });
+        this.viewModel.onDidUpdate((change): void => this.setState(change));
+        this.viewModel.onNavigateToApp((): boolean => this.props.navigation.navigate('App'));
+    }
+
+    componentWillUnmount(): void {
+        this.viewModel.onDidUpdate(undefined);
+        this.viewModel.onNavigateToApp(undefined);
     }
 
     render(): Element {
