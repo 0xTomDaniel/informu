@@ -55,8 +55,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
 
             if (e instanceof BleError) {
                 switch (e.errorCode) {
-                    // BleErrorCode.BluetoothUnsupported
-                    case 100:
+                    case 100: // BleErrorCode.BluetoothUnsupported
                         throw new BluetoothUnsupported();
                 }
             }
@@ -145,6 +144,14 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                     return;
                 }
 
+                const deviceID = muTagDevice.id as DeviceID;
+                if (this.muTagDeviceIDCache.has(deviceID)) {
+                    const muTagUID = this.muTagDeviceIDCache.get(deviceID) as MuTagUID;
+                    if (this.provisionedMuTagCache.has(muTagUID)) {
+                        return;
+                    }
+                }
+
                 MuTagDevicesRNBLEPLX.authenticateToMuTag(muTagDevice).then((): Promise<ProvisionState> => {
                     return this.discoverProvisioning(muTagDevice);
                 }).then((provisionState): Promise<UnprovisionedMuTag | undefined> => {
@@ -189,7 +196,6 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
             if (
                 discoveryCache.has(deviceID)
                 || this.ignoredDeviceIDCache.has(deviceID)
-                || this.muTagDeviceIDCache.has(deviceID)
                 || device.rssi == null
                 || device.rssi < scanThreshold
             ) {
@@ -210,6 +216,12 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
             }).catch((e): void => {
                 if (e instanceof BleError) {
                     console.log(e);
+
+                    switch (e.errorCode) {
+                        case 201: // BleErrorCode.DeviceDisconnected
+                            console.log(`Adding ${deviceID} to ignored device cache.`);
+                            this.ignoredDeviceIDCache.add(deviceID);
+                    }
                 } else {
                     console.warn(e);
                 }
