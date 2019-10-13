@@ -64,17 +64,14 @@ export default class HomeViewController extends Component<HomeVCProps> {
 
     componentDidMount(): void {
         this.props.viewModel.onDidUpdate((update): void => this.setState(update));
-        this.props.viewModel.onNavigateToAddMuTag((): void => {
-            this.props.navigation.navigate('AddMuTag');
-        });
-    }
+        this.props.viewModel.onNavigateToAddMuTag((): boolean =>
+            this.props.navigation.navigate('AddMuTag')
+        );
 
-    /*componentDidMount(): void {
         try {
             PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((granted): Promise<PermissionStatus> | undefined => {
                 if (granted) {
                     console.log('Bluetooth granted!');
-                    connectToNewMuTag();
                 } else {
                     console.log('Bluetooth denied');
                     return PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION, {
@@ -94,7 +91,6 @@ export default class HomeViewController extends Component<HomeVCProps> {
 
                 if (granted === PermissionsAndroid.RESULTS.GRANTED) {
                     console.log('Bluetooth granted!');
-                    connectToNewMuTag();
                 } else {
                     console.log('Bluetooth denied');
                 }
@@ -102,7 +98,12 @@ export default class HomeViewController extends Component<HomeVCProps> {
         } catch (err) {
             console.warn(err);
         }
-    }*/
+    }
+
+    componentWillUnmount(): void {
+        this.props.viewModel.onDidUpdate(undefined);
+        this.props.viewModel.onNavigateToAddMuTag(undefined);
+    }
 
     render(): Element {
         return (

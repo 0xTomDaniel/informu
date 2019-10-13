@@ -16,14 +16,14 @@ export class HomeViewModel implements HomeState {
         this.triggerDidUpdate({ showAddMuTagTooltip: newValue });
     }
 
-    private onDidUpdateCallback: ((change: object) => void) | undefined;
-    private onNavigateToAddMuTagCallback: (() => void) | undefined;
+    private onDidUpdateCallback?: (change: object) => void;
+    private onNavigateToAddMuTagCallback?: () => void;
 
-    onDidUpdate(callback: (change: object) => void): void {
+    onDidUpdate(callback?: (change: object) => void): void {
         this.onDidUpdateCallback = callback;
     }
 
-    onNavigateToAddMuTag(callback: () => void): void {
+    onNavigateToAddMuTag(callback?: () => void): void {
         this.onNavigateToAddMuTagCallback = callback;
     }
 
