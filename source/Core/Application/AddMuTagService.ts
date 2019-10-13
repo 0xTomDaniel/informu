@@ -156,12 +156,13 @@ export default class AddMuTagService {
     ): Promise<void> {
         const account = await this.accountRepoLocal.get();
         const beaconID = account.getNewBeaconID();
-
+        const accountNumber = account.getAccountNumber();
+        const muTagNumber = account.getNewMuTagNumber();
         this.provisionedMuTag = await this.muTagDevices.provisionMuTag(
             unprovisionedMuTag,
-            account.getAccountNumber(),
+            accountNumber,
             beaconID,
-            account.getNewMuTagNumber(),
+            muTagNumber,
             name,
         );
         this.unprovisionedMuTag = undefined;
