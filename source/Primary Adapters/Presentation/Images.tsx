@@ -1,11 +1,19 @@
 import React, { Component } from 'react';
-import { Image, ImageProps, ImageSourcePropType } from 'react-native';
+import {
+    Image,
+    ImageProps,
+    ImageSourcePropType,
+    ImageBackgroundProps,
+    ImageBackground
+} from 'react-native';
 
-const imageWithAspectRatio = (imageSource: ImageSourcePropType): typeof Component => {
-    return class extends Component<ImageProps> {
+const imageWithAspectRatio = (imageSource: ImageSourcePropType, imageBackground = false): typeof Component => {
+    const { width, height } = Image.resolveAssetSource(imageSource);
+    const aspectRatio = width / height;
+
+    class ImageWrapper extends Component<ImageProps> {
         render(): Element {
-            const { width, height } = Image.resolveAssetSource(imageSource);
-            const aspectRatio = width / height;
+            // Pass through all props except 'source'
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { source, style, ...passThroughProps } = this.props;
 
@@ -16,14 +24,33 @@ const imageWithAspectRatio = (imageSource: ImageSourcePropType): typeof Componen
             />;
         }
     };
+
+    class ImageBackgroundWrapper extends Component<ImageBackgroundProps> {
+        render(): Element {
+            // Pass through all props except 'source'
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { source, imageStyle, ...passThroughProps } = this.props;
+
+            return <ImageBackground
+                source={imageSource}
+                imageStyle={[{ aspectRatio: aspectRatio }, imageStyle]}
+                {...passThroughProps}
+            />;
+        }
+    };
+
+    return imageBackground ? ImageBackgroundWrapper : ImageWrapper;
 };
 
-const ImageSources: { [key: string]: ImageSourcePropType } = {
-    IconLogoCombo: require('../../../assets/icon-logo-combo.png'),
+const ImageSources = {
+    IconLogoCombo: require('../../../assets/icon-logo-combo.png') as ImageSourcePropType,
+    AddMuTag: require('../../../assets/add-mu-tag.png') as ImageSourcePropType,
 };
 
-const Images = {
+export const Images = {
     IconLogoCombo: imageWithAspectRatio(ImageSources.IconLogoCombo),
 };
 
-export default Images;
+export const ImageBackgrounds = {
+    AddMuTag: imageWithAspectRatio(ImageSources.AddMuTag, true),
+};

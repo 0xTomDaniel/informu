@@ -6,10 +6,12 @@ import {
     ImproperPasswordComplexity,
 } from './LoginService';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
-import { Account } from '../Domain/Account';
+import Account, { AccountNumber } from '../Domain/Account';
 import { Authentication, UserData, InvalidCredentials } from '../Ports/Authentication';
 import { LoginOutput } from '../Ports/LoginOutput';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
+import Hexadecimal from '../Domain/Hexadecimal';
+import { BeaconID } from '../Domain/ProvisionedMuTag';
 
 describe('user logs into their account', (): void => {
 
@@ -23,12 +25,14 @@ describe('user logs into their account', (): void => {
     const AuthenticationMock
         = jest.fn<Authentication, any>((): Authentication => ({
             authenticateWithEmail: jest.fn(),
+            isAuthenticatedAs: jest.fn(),
         }));
 
     const AccountRepositoryLocalMock
         = jest.fn<AccountRepositoryLocal, any>((): AccountRepositoryLocal => ({
             get: jest.fn(),
             add: jest.fn(),
+            update: jest.fn(),
             remove: jest.fn(),
         }));
 
@@ -36,6 +40,7 @@ describe('user logs into their account', (): void => {
         = jest.fn<AccountRepositoryRemote, any>((): AccountRepositoryRemote => ({
             getByUID: jest.fn(),
             add: jest.fn(),
+            update: jest.fn(),
             removeByUID: jest.fn(),
         }));
 
@@ -52,9 +57,25 @@ describe('user logs into their account', (): void => {
 
     const validAccountData = {
         uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
+        accountNumber: AccountNumber.create('0000000'),
         emailAddress: 'support+test@informu.io',
+        nextBeaconID: BeaconID.create('A'),
+        recycledBeaconIDs: [
+            BeaconID.create('2'),
+            BeaconID.create('5'),
+        ],
+        nextMuTagNumber: 15,
+        muTags: ['randomUUID'],
     };
-    const account = new Account(validAccountData.uid, validAccountData.emailAddress);
+    const account = new Account(
+        validAccountData.uid,
+        validAccountData.accountNumber,
+        validAccountData.emailAddress,
+        validAccountData.nextBeaconID,
+        validAccountData.recycledBeaconIDs,
+        validAccountData.nextMuTagNumber,
+        validAccountData.muTags,
+    );
     const validEmail = new EmailAddress('support+test@informu.io');
     const validPassword = new Password('testPassword!');
 

@@ -11,10 +11,10 @@ import {
     Keyboard,
 } from 'react-native';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
-import { LoginViewModel } from './LoginViewModel';
+import { LoginViewModel, LoginState } from './LoginViewModel';
 import { LoginService, EmailAddress, Password } from '../../Core/Application/LoginService';
 import DeviceInfo from 'react-native-device-info';
-import Images from './Images';
+import { Images } from './Images';
 import PrimaryButton from './Base Components/PrimaryButton';
 import Theme from './Theme';
 import LoginPresenter from './LoginPresenter';
@@ -79,9 +79,9 @@ interface LoginVCProps extends NavigationScreenProps {
 
 export default class LoginViewController extends Component<LoginVCProps> {
 
-    private viewModel = new LoginViewModel();
-    private loginPresenter = new LoginPresenter(this.viewModel);
-    private loginService = new LoginService(
+    private readonly viewModel = new LoginViewModel();
+    private readonly loginPresenter = new LoginPresenter(this.viewModel);
+    private readonly loginService = new LoginService(
         this.loginPresenter,
         this.props.authentication,
         this.props.accountRepoLocal,
@@ -138,8 +138,8 @@ export default class LoginViewController extends Component<LoginVCProps> {
                             title="Log In"
                             disabled={this.state.logInButtonDisabled}
                         />
-                        {this.state.isBusy
-                            && <ActivityIndicator
+                        {this.state.isBusy &&
+                            <ActivityIndicator
                                 style={styles.logInActivityIndicator}
                                 size="large"
                                 color={Theme.Color.PrimaryBlue}
@@ -158,14 +158,4 @@ export default class LoginViewController extends Component<LoginVCProps> {
 
         this.loginService.logInWithEmail(emailAddress, password);
     }
-}
-
-export interface LoginState {
-
-    emailInput: string;
-    passwordInput: string;
-    emailErrorMessage: string;
-    passwordErrorMessage: string;
-    isBusy: boolean;
-    logInButtonDisabled: boolean;
 }

@@ -1,6 +1,12 @@
-import { AccountRepositoryLocal, FailedToAdd, FailedToGet, DoesNotExist, FailedToRemove } from '../../Core/Ports/AccountRepositoryLocal';
-import { Account } from '../../Core/Domain/Account';
-import { serialize, deserialize } from 'class-transformer';
+import {
+    AccountRepositoryLocal,
+    FailedToAdd,
+    FailedToGet,
+    DoesNotExist,
+    FailedToRemove,
+    FailedToUpdate,
+} from '../../Core/Ports/AccountRepositoryLocal';
+import Account from '../../Core/Domain/Account';
 import AsyncStorage from '@react-native-community/async-storage';
 
 export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
@@ -19,17 +25,30 @@ export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
             throw new DoesNotExist();
         }
 
-        return deserialize(Account, rawAccount);
+        return Account.deserialize(rawAccount);
     }
 
     async add(account: Account): Promise<void> {
-        const rawAccount = serialize(account);
+        const rawAccount = account.serialize();
 
         try {
             await AsyncStorage.setItem('account', rawAccount);
         } catch (e) {
             console.log(e);
             throw new FailedToAdd();
+        }
+    }
+
+    async update(account: Account): Promise<void> {
+        const rawAccount = account.serialize();
+
+        try {
+            // Using 'setItem' because documentation of 'mergeItem' is too vague.
+            // I don't want to have any unforeseen issues.
+            await AsyncStorage.setItem('account', rawAccount);
+        } catch (e) {
+            console.log(e);
+            throw new FailedToUpdate();
         }
     }
 

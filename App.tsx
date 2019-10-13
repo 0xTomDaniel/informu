@@ -19,12 +19,95 @@ import AppViewModel, { Screen } from './source/Primary Adapters/Presentation/App
 import AppPresenter from './source/Primary Adapters/Presentation/AppPresenter';
 import SessionService from './source/Core/Application/SessionService';
 import { AppStateController } from './source/Primary Adapters/Device/AppStateController';
+import AddMuTagViewController from './source/Primary Adapters/Presentation/AddMuTagViewController';
+import { RSSI } from './source/Core/Domain/Types';
+import Percent from './source/Core/Domain/Percent';
+import { MuTagDevicesRNBLEPLX } from './source/Secondary Adapters/Infrastructure/MuTagDevicesRNBLEPLX';
+import AddMuTagService from './source/Core/Application/AddMuTagService';
+import { HomeViewModel } from './source/Primary Adapters/Presentation/HomeViewModel';
+import AddMuTagPresenter from './source/Primary Adapters/Presentation/AddMuTagPresenter';
+import { AddMuTagViewModel } from './source/Primary Adapters/Presentation/AddMuTagViewModel';
+import { MuTagRepoRNCAsyncStorage } from './source/Secondary Adapters/Persistence/MuTagRepoRNCAsyncStorage';
+import { MuTagRepoRNFirebase } from './source/Secondary Adapters/Persistence/MuTagRepoRNFirebase';
+import NameMuTagViewController from './source/Primary Adapters/Presentation/NameMuTagViewController';
+import { NameMuTagViewModel } from './source/Primary Adapters/Presentation/NameMuTagViewModel';
+import { MuTagAddingViewModel } from './source/Primary Adapters/Presentation/MuTagAddingViewModel';
+import MuTagAddingViewController from './source/Primary Adapters/Presentation/MuTagAddingViewController';
 
 const authentication = new AuthenticationFirebase();
 const accountRepoLocal = new AccountRepoRNCAsyncStorage();
 const accountRepoRemote = new AccountRepoRNFirebase();
+const muTagRepoLocal = new MuTagRepoRNCAsyncStorage();
+const muTagRepoRemote = new MuTagRepoRNFirebase();
+const connectThreshold = -80 as RSSI;
+const addMuTagBatteryThreshold = new Percent(20);
+const homeViewModel = new HomeViewModel();
+const addMuTagViewModel = new AddMuTagViewModel();
+const nameMuTagViewModel = new NameMuTagViewModel();
+const muTagAddingViewModel = new MuTagAddingViewModel();
+const addMuTagPresenter = new AddMuTagPresenter(
+    homeViewModel,
+    addMuTagViewModel,
+    nameMuTagViewModel,
+    muTagAddingViewModel,
+);
+const muTagDevices = new MuTagDevicesRNBLEPLX();
+const addMuTagService = new AddMuTagService(
+    connectThreshold,
+    addMuTagBatteryThreshold,
+    addMuTagPresenter,
+    muTagDevices,
+    muTagRepoLocal,
+    muTagRepoRemote,
+    accountRepoLocal,
+    accountRepoRemote,
+);
 
-const AppStack = createStackNavigator({ Home: HomeViewController });
+const AppStack = createStackNavigator(
+    {
+        Home: {
+            screen: (props: NavigationScreenProps): Element => (
+                <HomeViewController
+                    viewModel={homeViewModel}
+                    addMuTagService={addMuTagService}
+                    {...props}
+                />
+            ),
+        },
+        AddMuTag: {
+            screen: (props: NavigationScreenProps): Element => (
+                <AddMuTagViewController
+                    viewModel={addMuTagViewModel}
+                    addMuTagService={addMuTagService}
+                    {...props}
+                />
+            ),
+        },
+        NameMuTag: {
+            screen: (props: NavigationScreenProps): Element => (
+                <NameMuTagViewController
+                    viewModel={nameMuTagViewModel}
+                    addMuTagService={addMuTagService}
+                    {...props}
+                />
+            ),
+        },
+        MuTagAdding: {
+            screen: (props: NavigationScreenProps): Element => (
+                <MuTagAddingViewController
+                    viewModel={muTagAddingViewModel}
+                    addMuTagService={addMuTagService}
+                    {...props}
+                />
+            ),
+        },
+    },
+    {
+        defaultNavigationOptions: {
+            header: null,
+        },
+    },
+);
 const EntryStack = createStackNavigator(
     {
         Login: {

@@ -1,16 +1,8 @@
-import Account from '../Domain/Account';
-
-export interface AccountRepositoryRemote {
-
-    getByUID(uid: string): Promise<Account>;
-    add(account: Account): Promise<void>;
-    update(account: Account): Promise<void>;
-    removeByUID(uid: string): Promise<void>;
-}
+import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
 
 export class DoesNotExist extends Error {
     constructor() {
-        super('Account entity does not exist in remote persistence.');
+        super('Mu tag entity does not exist in local persistence.');
         this.name = 'DoesNotExist';
         Object.setPrototypeOf(this, new.target.prototype);
     }
@@ -18,7 +10,7 @@ export class DoesNotExist extends Error {
 
 export class FailedToGet extends Error {
     constructor() {
-        super('Failed to get account entity from remote persistence.');
+        super('Failed to get Mu tag entity from local persistence.');
         this.name = 'FailedToGet';
         Object.setPrototypeOf(this, new.target.prototype);
     }
@@ -26,7 +18,7 @@ export class FailedToGet extends Error {
 
 export class PersistedDataMalformed extends Error {
     constructor(json: string) {
-        super(`Received malformed data from remote persistence:\n${json}`);
+        super(`Received malformed data from local persistence:\n${json}`);
         this.name = 'PersistedDataMalformed';
         Object.setPrototypeOf(this, new.target.prototype);
     }
@@ -34,7 +26,7 @@ export class PersistedDataMalformed extends Error {
 
 export class FailedToAdd extends Error {
     constructor() {
-        super('Failed to add account entity to remote persistence.');
+        super('Failed to add Mu tag entity to local persistence.');
         this.name = 'FailedToAdd';
         Object.setPrototypeOf(this, new.target.prototype);
     }
@@ -42,7 +34,7 @@ export class FailedToAdd extends Error {
 
 export class FailedToUpdate extends Error {
     constructor() {
-        super('Failed to update account entity to remote persistence.');
+        super('Failed to update Mu tag entity to local persistence.');
         this.name = 'FailedToUpdate';
         Object.setPrototypeOf(this, new.target.prototype);
     }
@@ -50,11 +42,16 @@ export class FailedToUpdate extends Error {
 
 export class FailedToRemove extends Error {
     constructor() {
-        super('Failed to remove account entity from remote persistence.');
+        super('Failed to remove Mu tag entity from local persistence.');
         this.name = 'FailedToRemove';
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
-export type AccountRepositoryRemoteException
-    = DoesNotExist | FailedToGet | PersistedDataMalformed | FailedToAdd | FailedToRemove;
+export interface MuTagRepositoryLocal {
+
+    getByUID(uid: string): Promise<ProvisionedMuTag>;
+    add(muTag: ProvisionedMuTag): Promise<void>;
+    update(muTag: ProvisionedMuTag): Promise<void>;
+    removeByUID(uid: string): Promise<void>;
+}

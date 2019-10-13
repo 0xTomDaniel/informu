@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
 import { StyleSheet, Platform, StatusBar } from 'react-native';
-import Images from './Images';
+import { Images } from './Images';
 import { ProgressBar } from 'react-native-paper';
 import DeviceInfo from 'react-native-device-info';
 import Theme from './Theme';

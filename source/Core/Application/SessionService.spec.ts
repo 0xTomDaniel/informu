@@ -1,8 +1,9 @@
-import { Account } from '../Domain/Account';
+import Account, { AccountNumber } from '../Domain/Account';
 import { Authentication } from '../Ports/Authentication';
 import { AccountRepositoryLocal, DoesNotExist } from '../Ports/AccountRepositoryLocal';
 import { SessionOutput } from '../Ports/SessionOutput';
 import SessionService from './SessionService';
+import { BeaconID } from '../Domain/ProvisionedMuTag';
 
 describe('user opens saved login session', (): void => {
 
@@ -23,6 +24,7 @@ describe('user opens saved login session', (): void => {
         = jest.fn<AccountRepositoryLocal, any>((): AccountRepositoryLocal => ({
             get: jest.fn(),
             add: jest.fn(),
+            update: jest.fn(),
             remove: jest.fn(),
         }));
 
@@ -37,9 +39,22 @@ describe('user opens saved login session', (): void => {
 
     const validAccountData = {
         uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
+        accountNumber: AccountNumber.create('0000000'),
         emailAddress: 'support+test@informu.io',
+        nextBeaconID: BeaconID.create('3'),
+        recycledBeaconIDs: [BeaconID.create('1')],
+        nextMuTagNumber: 5,
+        muTags: ['randomUUID'],
     };
-    const account = new Account(validAccountData.uid, validAccountData.emailAddress);
+    const account = new Account(
+        validAccountData.uid,
+        validAccountData.accountNumber,
+        validAccountData.emailAddress,
+        validAccountData.nextBeaconID,
+        validAccountData.recycledBeaconIDs,
+        validAccountData.nextMuTagNumber,
+        validAccountData.muTags,
+    );
 
     describe('user is logged in with saved session', (): void => {
 
