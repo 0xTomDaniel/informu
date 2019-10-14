@@ -138,7 +138,12 @@ export default class Account {
                 return value.stringValue;
             case 'recycledBeaconIDs':
                 const beaconIDs: BeaconID[] = Array.from(value);
-                return beaconIDs.map((beaconID): string => beaconID.toString());
+                const returnValue = beaconIDs.map((beaconID): string => beaconID.toString());
+
+                // DEBUG
+                console.warn(returnValue);
+
+                return returnValue;
             case 'muTags':
                 return Array.from(value);
             default:
@@ -150,6 +155,15 @@ export default class Account {
         switch (key) {
             case '':
                 const account = Object.create(Account.prototype);
+
+                if (value.recycledBeaconIDs == null) {
+                    value.recycledBeaconIDs = new Set();
+                }
+
+                if (value.muTags == null) {
+                    value.muTags = new Set();
+                }
+
                 return Object.assign(account, value);
             case 'accountNumber':
                 return AccountNumber.create(value);
