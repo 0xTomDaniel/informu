@@ -138,12 +138,7 @@ export default class Account {
                 return value.stringValue;
             case 'recycledBeaconIDs':
                 const beaconIDs: BeaconID[] = Array.from(value);
-                const returnValue = beaconIDs.map((beaconID): string => beaconID.toString());
-
-                // DEBUG
-                console.warn(returnValue);
-
-                return returnValue;
+                return beaconIDs.map((beaconID): string => beaconID.toString());
             case 'muTags':
                 return Array.from(value);
             default:
