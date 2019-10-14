@@ -71,14 +71,14 @@ export class LoginViewModel implements LoginState {
         this.triggerDidUpdate({ logInButtonDisabled: newValue });
     }
 
-    private onDidUpdateCallback: ((change: object) => void) | undefined;
-    private onNavigateToAppCallback: (() => void) | undefined;
+    private onDidUpdateCallback?: (change: object) => void;
+    private onNavigateToAppCallback?: () => void;
 
-    onDidUpdate(callback: (change: object) => void): void {
+    onDidUpdate(callback?: (change: object) => void): void {
         this.onDidUpdateCallback = callback;
     }
 
-    onNavigateToApp(callback: () => void): void {
+    onNavigateToApp(callback?: () => void): void {
         this.onNavigateToAppCallback = callback;
     }
 

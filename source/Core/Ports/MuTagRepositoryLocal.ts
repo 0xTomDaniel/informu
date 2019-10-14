@@ -51,6 +51,7 @@ export class FailedToRemove extends Error {
 export interface MuTagRepositoryLocal {
 
     getByUID(uid: string): Promise<ProvisionedMuTag>;
+    getAll(): Promise<Set<ProvisionedMuTag>>;
     add(muTag: ProvisionedMuTag): Promise<void>;
     update(muTag: ProvisionedMuTag): Promise<void>;
     removeByUID(uid: string): Promise<void>;

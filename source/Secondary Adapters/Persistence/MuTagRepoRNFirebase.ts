@@ -73,6 +73,12 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         }
     }
 
+    async updateMultiple(muTags: Set<ProvisionedMuTag>, accountUID: string): Promise<void> {
+        for (const muTag of muTags) {
+            await this.update(muTag, accountUID);
+        }
+    }
+
     /*async removeByUID(uid: string): Promise<void> {
         try {
             await this.database.ref(`muTags/${uid}`).remove();

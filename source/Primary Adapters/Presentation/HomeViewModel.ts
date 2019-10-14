@@ -1,11 +1,13 @@
 export interface HomeState {
 
     showAddMuTagTooltip: boolean;
+    showActivityIndicator: boolean;
 }
 
 export class HomeViewModel implements HomeState {
 
     private _showAddMuTagTooltip = true;
+    private _showActivityIndicator = false;
 
     get showAddMuTagTooltip(): boolean {
         return this._showAddMuTagTooltip;
@@ -16,8 +18,18 @@ export class HomeViewModel implements HomeState {
         this.triggerDidUpdate({ showAddMuTagTooltip: newValue });
     }
 
+    get showActivityIndicator(): boolean {
+        return this._showActivityIndicator;
+    }
+
+    set showActivityIndicator(newValue: boolean) {
+        this._showActivityIndicator = newValue;
+        this.triggerDidUpdate({ showActivityIndicator: newValue });
+    }
+
     private onDidUpdateCallback?: (change: object) => void;
     private onNavigateToAddMuTagCallback?: () => void;
+    private onShowLogoutCompleteCallback?: () => void;
 
     onDidUpdate(callback?: (change: object) => void): void {
         this.onDidUpdateCallback = callback;
@@ -30,8 +42,16 @@ export class HomeViewModel implements HomeState {
     navigateToAddMuTag(): void {
         if (this.onNavigateToAddMuTagCallback != null) {
             this.onNavigateToAddMuTagCallback();
-        } else {
-            console.log('shit...');
+        }
+    }
+
+    onShowLogoutComplete(callback?: () => void): void {
+        this.onShowLogoutCompleteCallback = callback;
+    }
+
+    showLogoutComplete(): void {
+        if (this.onShowLogoutCompleteCallback != null) {
+            this.onShowLogoutCompleteCallback();
         }
     }
 
