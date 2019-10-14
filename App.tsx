@@ -33,6 +33,9 @@ import NameMuTagViewController from './source/Primary Adapters/Presentation/Name
 import { NameMuTagViewModel } from './source/Primary Adapters/Presentation/NameMuTagViewModel';
 import { MuTagAddingViewModel } from './source/Primary Adapters/Presentation/MuTagAddingViewModel';
 import MuTagAddingViewController from './source/Primary Adapters/Presentation/MuTagAddingViewController';
+import LogoutService from './source/Core/Application/LogoutService';
+import LogoutPresenter from './source/Primary Adapters/Presentation/LogoutPresenter';
+import RepoLocalRNCAsyncStorage from './source/Secondary Adapters/Persistence/RepoLocalRNCAsyncStorage';
 
 const authentication = new AuthenticationFirebase();
 const accountRepoLocal = new AccountRepoRNCAsyncStorage();
@@ -62,13 +65,24 @@ const addMuTagService = new AddMuTagService(
     accountRepoLocal,
     accountRepoRemote,
 );
+const logoutPresenter = new LogoutPresenter(homeViewModel);
+const repoLocal = new RepoLocalRNCAsyncStorage();
+const logoutService = new LogoutService(
+    logoutPresenter,
+    accountRepoLocal,
+    accountRepoRemote,
+    muTagRepoLocal,
+    muTagRepoRemote,
+    repoLocal,
+);
 
 const AppStack = createStackNavigator(
     {
         Home: {
             screen: (props: NavigationScreenProps): Element => (
                 <HomeViewController
-                    viewModel={homeViewModel}
+                    homeViewModel={homeViewModel}
+                    logoutService={logoutService}
                     addMuTagService={addMuTagService}
                     {...props}
                 />

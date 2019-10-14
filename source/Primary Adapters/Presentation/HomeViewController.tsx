@@ -1,4 +1,4 @@
-import { Appbar, Text } from 'react-native-paper';
+import { Appbar, Text, Portal, Modal, ActivityIndicator } from 'react-native-paper';
 import { StyleSheet, Platform, StatusBar, PermissionsAndroid, PermissionStatus, View } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps, NavigationScreenOptions } from 'react-navigation';
@@ -7,6 +7,7 @@ import DeviceInfo from 'react-native-device-info';
 import LinearGradient from 'react-native-linear-gradient';
 import { HomeState, HomeViewModel } from './HomeViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
+import LogoutService from '../../Core/Application/LogoutService';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -51,21 +52,33 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
     },
+    activityModal: {
+        alignSelf: 'center',
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: Theme.Color.AlmostWhite,
+    },
 });
 
 interface HomeVCProps extends NavigationScreenProps {
-    viewModel: HomeViewModel;
+
+    homeViewModel: HomeViewModel;
+    logoutService: LogoutService;
     addMuTagService: AddMuTagService;
 }
 
 export default class HomeViewController extends Component<HomeVCProps> {
 
-    state: Readonly<HomeState> = this.props.viewModel;
+    state: Readonly<HomeState> = this.props.homeViewModel;
 
     componentDidMount(): void {
-        this.props.viewModel.onDidUpdate((update): void => this.setState(update));
-        this.props.viewModel.onNavigateToAddMuTag((): boolean =>
+        this.props.homeViewModel.onDidUpdate((update): void => this.setState(update));
+        this.props.homeViewModel.onNavigateToAddMuTag((): boolean =>
             this.props.navigation.navigate('AddMuTag')
+        );
+        this.props.homeViewModel.onShowLogoutComplete((): boolean =>
+            this.props.navigation.navigate('Login')
         );
 
         try {
@@ -101,19 +114,25 @@ export default class HomeViewController extends Component<HomeVCProps> {
     }
 
     componentWillUnmount(): void {
-        this.props.viewModel.onDidUpdate(undefined);
-        this.props.viewModel.onNavigateToAddMuTag(undefined);
+        this.props.homeViewModel.onDidUpdate(undefined);
+        this.props.homeViewModel.onNavigateToAddMuTag(undefined);
+        this.props.homeViewModel.onShowLogoutComplete(undefined);
     }
 
     render(): Element {
         return (
             <SafeAreaView style={[styles.safeAreaView, styles.base]}>
-                <Appbar style={styles.appBar}>
+                <Appbar.Header style={styles.appBar}>
                     <Appbar.Action
                         icon="plus-circle-outline"
-                        onPress={(): void => { this.props.addMuTagService.startAddingNewMuTag(); }}
+                        onPress={(): Promise<void> => this.props.addMuTagService.startAddingNewMuTag()}
                     />
-                </Appbar>
+                    <Appbar.Content title="" />
+                    <Appbar.Action
+                        icon="logout"
+                        onPress={(): Promise<void> => this.props.logoutService.logOut()}
+                    />
+                </Appbar.Header>
                 {this.state.showAddMuTagTooltip &&
                     <View>
                         <View style={styles.triangle} />
@@ -129,6 +148,15 @@ export default class HomeViewController extends Component<HomeVCProps> {
                         </LinearGradient>
                     </View>
                 }
+                <Portal>
+                    <Modal
+                        dismissable={false}
+                        visible={this.state.showActivityIndicator}
+                        contentContainerStyle={styles.activityModal}
+                    >
+                        <ActivityIndicator size="large" color={Theme.Color.PrimaryBlue} />
+                    </Modal>
+                </Portal>
             </SafeAreaView>
         );
     }

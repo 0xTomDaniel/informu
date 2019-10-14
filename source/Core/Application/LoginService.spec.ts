@@ -10,7 +10,6 @@ import Account, { AccountNumber } from '../Domain/Account';
 import { Authentication, UserData, InvalidCredentials } from '../Ports/Authentication';
 import { LoginOutput } from '../Ports/LoginOutput';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
-import Hexadecimal from '../Domain/Hexadecimal';
 import { BeaconID } from '../Domain/ProvisionedMuTag';
 
 describe('user logs into their account', (): void => {

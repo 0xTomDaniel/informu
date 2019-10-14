@@ -38,6 +38,7 @@ describe('Mu tag user adds Mu tag', (): void => {
     const MuTagRepoLocalMock
         = jest.fn<MuTagRepositoryLocal, any>((): MuTagRepositoryLocal => ({
             getByUID: jest.fn(),
+            getAll: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
             removeByUID: jest.fn(),
@@ -47,6 +48,7 @@ describe('Mu tag user adds Mu tag', (): void => {
         = jest.fn<MuTagRepositoryRemote, any>((): MuTagRepositoryRemote => ({
             add: jest.fn(),
             update: jest.fn(),
+            updateMultiple: jest.fn(),
         }));
 
     const AccountRepoLocalMock

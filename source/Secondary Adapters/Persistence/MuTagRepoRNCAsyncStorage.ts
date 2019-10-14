@@ -28,6 +28,24 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
         return ProvisionedMuTag.deserialize(rawMuTag);
     }
 
+    async getAll(): Promise<Set<ProvisionedMuTag>> {
+        try {
+            const regExp = /^muTags\//;
+            const keys = await AsyncStorage.getAllKeys();
+            const muTagKeys = keys.filter((key): boolean => regExp.test(key));
+            const rawMuTagKeyPairs = await AsyncStorage.multiGet(muTagKeys);
+            const rawMuTags = rawMuTagKeyPairs
+                .map((rawMuTagKeyPair): string => rawMuTagKeyPair[1] || '')
+                .filter((rawMuTag): boolean => rawMuTag !== '');
+            const muTags = rawMuTags.map((rawMuTag): ProvisionedMuTag => ProvisionedMuTag.deserialize(rawMuTag));
+
+            return new Set(muTags);
+        } catch (e) {
+            console.log(e);
+            throw new FailedToGet();
+        }
+    }
+
     async add(muTag: ProvisionedMuTag): Promise<void> {
         const rawMuTag = muTag.serialize();
 
