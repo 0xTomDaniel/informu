@@ -112,7 +112,12 @@ export default class NameMuTagViewController extends Component<NameMuTagVCProps>
                             onChangeText={(text: string): void => {
                                 this.props.viewModel.attachedToInput = text;
                             }}
-                            theme={{colors: {placeholder: 'silver'}}}
+                            theme={{
+                                colors: {
+                                    primary: Theme.Color.SecondaryOrange,
+                                    placeholder: 'silver',
+                                },
+                            }}
                             style={styles.attachedToInput}
                         />
                     </View>
