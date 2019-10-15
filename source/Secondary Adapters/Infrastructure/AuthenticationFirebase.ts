@@ -23,7 +23,7 @@ export class AuthenticationFirebase implements Authentication {
                 emailAddress: emailAddress,
             };
 
-            return Promise.resolve(userData);
+            return userData;
         } catch (e) {
             const errorCode = e.code;
             switch (errorCode) {

@@ -221,6 +221,11 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                         case 201: // BleErrorCode.DeviceDisconnected
                             console.log(`Adding ${deviceID} to ignored device cache.`);
                             this.ignoredDeviceIDCache.add(deviceID);
+                            break;
+                        case 300: // BleErrorCode.ServicesDiscoveryFailed
+                            console.log(`Removing ${deviceID} from discovery cache.`);
+                            discoveryCache.delete(deviceID);
+                            break;
                     }
                 } else {
                     console.warn(e);

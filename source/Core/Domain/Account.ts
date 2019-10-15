@@ -150,6 +150,15 @@ export default class Account {
         switch (key) {
             case '':
                 const account = Object.create(Account.prototype);
+
+                if (value.recycledBeaconIDs == null) {
+                    value.recycledBeaconIDs = new Set();
+                }
+
+                if (value.muTags == null) {
+                    value.muTags = new Set();
+                }
+
                 return Object.assign(account, value);
             case 'accountNumber':
                 return AccountNumber.create(value);

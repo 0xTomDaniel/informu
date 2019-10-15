@@ -45,7 +45,12 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
     }
 
     showMuTagFinalSetupScreen(): void {
-        throw new Error('Method not implemented.');
+        if (
+            this.currentViewModel instanceof NameMuTagViewModel
+            || this.currentViewModel instanceof MuTagAddingViewModel
+        ) {
+            this.currentViewModel.navigateToMuTagSettings();
+        }
     }
 
     showActivityIndicator(): void {

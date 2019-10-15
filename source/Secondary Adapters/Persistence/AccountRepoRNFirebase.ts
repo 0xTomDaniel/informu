@@ -81,15 +81,21 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
         };
 
         if (accountData.recycledBeaconIDs != null) {
-            databaseData.recycled_beacon_ids = accountData.recycledBeaconIDs.map(
-                (beaconID): object => ( { [beaconID]: true } )
-            );
+            const initialValue: { [key: string]: any } = {};
+            databaseData.recycled_beacon_ids = accountData.recycledBeaconIDs
+                .reduce((allBeaconIDs, beaconID): object => {
+                    allBeaconIDs[beaconID] = true;
+                    return allBeaconIDs;
+                }, initialValue);
         }
 
         if (accountData.muTags != null) {
-            databaseData.mu_tags = accountData.muTags.map(
-                (beaconID): object => ( { [beaconID]: true } )
-            );
+            const initialValue: { [key: string]: any } = {};
+            databaseData.mu_tags = accountData.muTags
+                .reduce((allMuTags, beaconID): object => {
+                    allMuTags[beaconID] = true;
+                    return allMuTags;
+                }, initialValue);
         }
         /*eslint-enable */
 
