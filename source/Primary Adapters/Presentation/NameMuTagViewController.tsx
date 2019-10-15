@@ -7,6 +7,7 @@ import DeviceInfo from 'react-native-device-info';
 import { NameMuTagViewModel, NameMuTagState } from './NameMuTagViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import { Scale } from './ResponsiveScaler';
+import { MuTagColor } from '../../Core/Domain/MuTag';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -74,11 +75,11 @@ export default class NameMuTagViewController extends Component<NameMuTagVCProps>
         this.props.viewModel.onDidUpdate((change): void =>
             this.setState(change)
         );
-        this.props.viewModel.onNavigateToMuTagSettings((): void => {
-            //this.props.navigation.navigate();
-        });
-        this.props.viewModel.onNavigateToMuTagAdding((): boolean =>
-            this.props.navigation.navigate('MuTagAdding')
+        this.props.viewModel.onNavigateToMuTagSettings((): Promise<void> =>
+            this.props.addMuTagService.completeMuTagSetup(MuTagColor.MuOrange)
+        );
+        this.props.viewModel.onNavigateToMuTagAdding(
+            (): boolean => this.props.navigation.navigate('MuTagAdding')
         );
         this.props.viewModel.onNavigateToHomeScreen(
             (): boolean => this.props.navigation.popToTop()

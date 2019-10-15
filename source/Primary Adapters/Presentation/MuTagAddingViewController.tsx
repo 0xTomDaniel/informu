@@ -8,6 +8,7 @@ import { MuTagAddingViewModel, MuTagAddingState } from './MuTagAddingViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import { Scale } from './ResponsiveScaler';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MuTagColor } from '../../Core/Domain/MuTag';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -98,9 +99,9 @@ export default class MuTagAddingViewController extends Component<MuTagAddingVCPr
         this.props.viewModel.onDidUpdate((change): void =>
             this.setState(change)
         );
-        this.props.viewModel.onNavigateToMuTagSettings((): void => {
-            //this.props.navigation.navigate();
-        });
+        this.props.viewModel.onNavigateToMuTagSettings((): Promise<void> =>
+            this.props.addMuTagService.completeMuTagSetup(MuTagColor.MuOrange)
+        );
         this.props.viewModel.onNavigateToHomeScreen((): boolean => this.props.navigation.popToTop());
     }
 
