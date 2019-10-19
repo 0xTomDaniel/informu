@@ -23,7 +23,7 @@ const imageWithAspectRatio = (imageSource: ImageSourcePropType, imageBackground 
                 {...passThroughProps}
             />;
         }
-    };
+    }
 
     class ImageBackgroundWrapper extends Component<ImageBackgroundProps> {
         render(): Element {
@@ -37,7 +37,7 @@ const imageWithAspectRatio = (imageSource: ImageSourcePropType, imageBackground 
                 {...passThroughProps}
             />;
         }
-    };
+    }
 
     return imageBackground ? ImageBackgroundWrapper : ImageWrapper;
 };

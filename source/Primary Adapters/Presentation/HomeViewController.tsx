@@ -1,4 +1,4 @@
-import { Appbar, Text, Portal, Modal, ActivityIndicator } from 'react-native-paper';
+import { Appbar, Text, Portal, Modal, ActivityIndicator, Card, Avatar, Title, Paragraph, IconButton } from 'react-native-paper';
 import { StyleSheet, Platform, StatusBar, PermissionsAndroid, PermissionStatus, View } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps, NavigationScreenOptions } from 'react-navigation';
@@ -8,6 +8,8 @@ import LinearGradient from 'react-native-linear-gradient';
 import { HomeState, HomeViewModel } from './HomeViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import LogoutService from '../../Core/Application/LogoutService';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Images } from './Images';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -51,6 +53,27 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: 'bold',
         fontSize: 16,
+    },
+    scrollView: {
+        padding: 16,
+    },
+    card: {
+        //backgroundColor: 'blue',
+        paddingVertical: 8,
+    },
+    subtitle: {
+        color: 'grey',
+    },
+    iconView: {
+        //backgroundColor: '#ccc',
+        backgroundColor: Theme.Color.PrimaryBlue,
+        marginLeft: 4,
+    },
+    cardTitle: {
+        //padding: 16,
+    },
+    cardTitleText: {
+        margin: 8,
     },
     activityModal: {
         alignSelf: 'center',
@@ -128,6 +151,7 @@ export default class HomeViewController extends Component<HomeVCProps> {
                         onPress={(): Promise<void> => this.props.addMuTagService.startAddingNewMuTag()}
                     />
                     <Appbar.Content title="" />
+                    {/*<Images.IconLogoCombo />*/}
                     <Appbar.Action
                         icon="logout"
                         onPress={(): Promise<void> => this.props.logoutService.logOut()}
@@ -148,6 +172,24 @@ export default class HomeViewController extends Component<HomeVCProps> {
                         </LinearGradient>
                     </View>
                 }
+                <View style={styles.scrollView}>
+                    <Card elevation={2} style={styles.card}>
+                        <Card.Title
+                            title="Keys"
+                            subtitle={<Text style={styles.subtitle}><Icon name="checkbox-blank-circle" size={10} color={Theme.Color.Green} /> Just now</Text>}
+                            //subtitle={<Text style={styles.subtitle}>Just now <Icon name="checkbox-blank-circle" size={10} color={Theme.Color.Green} /></Text>}
+                            left={(props) => <Avatar.Icon {...props}
+                                icon="radar"
+                                color="white"
+                                //color={Theme.Color.SecondaryBlue}
+                                style={styles.iconView}
+                            />}
+                            right={(props) => <IconButton {...props} icon="dots-vertical" onPress={() => {}} />}
+                            titleStyle={styles.cardTitleText}
+                            subtitleStyle={styles.cardTitleText}
+                        />
+                    </Card>
+                </View>
                 <Portal>
                     <Modal
                         dismissable={false}
