@@ -32,6 +32,12 @@ const styles = StyleSheet.create({
             },
         }),
     },
+    appBarLogo: {
+        width: undefined,
+        height: 26,
+        marginLeft: Scale(30, 26),
+        marginRight: -12,
+    },
     tooltip: {
         position: 'absolute',
         top: 0,
@@ -49,7 +55,8 @@ const styles = StyleSheet.create({
         borderLeftColor: 'transparent',
         borderRightColor: 'transparent',
         borderBottomColor: Theme.Color.PrimaryOrange,
-        marginLeft: 20,
+        alignSelf: 'flex-end',
+        marginRight: 68,
         // Fixes 1dp gap on some layouts
         marginBottom: -1,
     },
@@ -77,8 +84,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: Theme.Color.AlmostWhiteBorder,
     },
-    subtitle: {
-        color: 'grey',
+    cardSubtitle: {
+        color: 'gray',
     },
     iconView: {
         backgroundColor: Theme.Color.PrimaryBlue,
@@ -123,7 +130,7 @@ const BelongingCard: FunctionComponent<Belonging> = (props): ReactElement => {
             <Card.Title
                 title={props.name}
                 subtitle={
-                    <Text style={styles.subtitle}>
+                    <Text style={styles.cardSubtitle}>
                         <Icon name="checkbox-blank-circle" size={10} color={props.safeStatusColor} />
                         {' ' + props.lastSeen}
                     </Text>
@@ -203,12 +210,13 @@ export default class HomeViewController extends Component<HomeVCProps> {
         return (
             <SafeAreaView style={[styles.safeAreaView, styles.base]}>
                 <Appbar.Header style={styles.appBar}>
+                    {/*<Images.InformuIconLight style={{width: undefined, height: 54, marginLeft: 12, marginRight: -16}} />*/}
+                    <Images.MuLogo style={styles.appBarLogo} />
+                    <Appbar.Content subtitle="beta" color="gray" />
                     <Appbar.Action
                         icon="plus-circle-outline"
                         onPress={(): Promise<void> => this.props.addMuTagService.startAddingNewMuTag()}
                     />
-                    <Appbar.Content title="beta" color="grey" />
-                    {/*<Images.IconLogoCombo />*/}
                     <Appbar.Action
                         icon="logout"
                         onPress={(): Promise<void> => this.props.logoutService.logOut()}

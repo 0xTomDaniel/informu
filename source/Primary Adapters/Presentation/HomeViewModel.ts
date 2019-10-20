@@ -19,7 +19,7 @@ export class HomeViewModel implements HomeState {
     //private _showAddMuTagTooltip = true;
     private _showActivityIndicator = false;
     private _belongings = [
-        {
+        /*{
             uid: '1',
             name: 'Keys',
             safeStatusColor: Theme.Color.Green,
@@ -54,7 +54,7 @@ export class HomeViewModel implements HomeState {
             name: 'Wallet',
             safeStatusColor: Theme.Color.Green,
             lastSeen: 'Just now',
-        },
+        },*/
     ];
 
     /*get showAddMuTagTooltip(): boolean {
