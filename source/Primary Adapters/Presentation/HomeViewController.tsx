@@ -19,15 +19,12 @@ const styles = StyleSheet.create({
             ? StatusBar.currentHeight : 0,
     },
     base: {
-        //backgroundColor: 'white',
-        backgroundColor: '#F0F0F0',
-        //paddingHorizontal: 16,
-        //justifyContent: 'center',
+        backgroundColor: Theme.Color.AlmostWhiteBackground,
     },
     appBar: {
         backgroundColor: 'white',
         borderBottomWidth: 1,
-        borderColor: Theme.Color.ExtraLightGrey,
+        borderColor: Theme.Color.AlmostWhiteBorder,
         ...Platform.select({
             ios: {},
             android: {
@@ -64,29 +61,31 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
     },
+    belongingsContainer: {
+        flexGrow: 1,
+        paddingBottom: 16,
+    },
     belongingsEmpty: {
         flex: 1,
         justifyContent: 'center',
     },
     card: {
-        backgroundColor: Theme.Color.AlmostWhite,
         paddingVertical: 8,
         marginHorizontal: Scale(12),
         marginTop: Scale(12),
+        backgroundColor: Theme.Color.AlmostWhite,
+        borderWidth: 1,
+        borderColor: Theme.Color.AlmostWhiteBorder,
     },
     subtitle: {
         color: 'grey',
     },
     iconView: {
-        //backgroundColor: '#ccc',
         backgroundColor: Theme.Color.PrimaryBlue,
         marginLeft: 4,
     },
-    cardTitle: {
-        //padding: 16,
-    },
     cardTitleText: {
-        margin: 8,
+        marginLeft: 8,
     },
     activityModal: {
         alignSelf: 'center',
@@ -120,15 +119,12 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
 
 const BelongingCard: FunctionComponent<Belonging> = (props): ReactElement => {
     return (
-        <Card elevation={2} style={styles.card}>
+        <Card elevation={0} style={styles.card}>
             <Card.Title
                 title={props.name}
                 subtitle={
                     <Text style={styles.subtitle}>
-                        {props.isSafe
-                            ? <Icon name="checkbox-blank-circle" size={10} color={Theme.Color.Green} />
-                            : <Icon name="checkbox-blank-circle" size={10} color={Theme.Color.Error} />
-                        }
+                        <Icon name="checkbox-blank-circle" size={10} color={props.safeStatusColor} />
                         {' ' + props.lastSeen}
                     </Text>
                 }
@@ -219,17 +215,18 @@ export default class HomeViewController extends Component<HomeVCProps> {
                     />
                 </Appbar.Header>
                 <FlatList
-                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 16 }}
+                    contentContainerStyle={styles.belongingsContainer}
                     ListEmptyComponent={<BelongingsEmpty />}
                     data={this.state.belongings}
                     renderItem={({ item }): ReactElement =>
                         <BelongingCard
+                            uid={item.uid}
                             name={item.name}
-                            isSafe={item.isSafe}
+                            safeStatusColor={item.safeStatusColor}
                             lastSeen={item.lastSeen}
                         />
                     }
-                    //keyExtractor={item => item.id}
+                    keyExtractor={(item): string => item.uid}
                 />
                 <Portal>
                     <Modal

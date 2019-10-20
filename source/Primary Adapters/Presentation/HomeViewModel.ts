@@ -1,6 +1,9 @@
+import Theme from './Theme';
+
 export interface Belonging {
+    uid: string;
     name: string;
-    isSafe: boolean;
+    safeStatusColor: string;
     lastSeen: string;
 }
 
@@ -17,28 +20,39 @@ export class HomeViewModel implements HomeState {
     private _showActivityIndicator = false;
     private _belongings = [
         {
+            uid: '1',
             name: 'Keys',
-            isSafe: true,
+            safeStatusColor: Theme.Color.Green,
             lastSeen: 'Just now',
         },
         {
+            uid: '2',
             name: 'Laptop',
-            isSafe: false,
+            safeStatusColor: Theme.Color.Error,
             lastSeen: '5h ago',
         },
         {
+            uid: '3',
             name: 'Bag',
-            isSafe: true,
+            safeStatusColor: Theme.Color.Green,
             lastSeen: 'Just now',
         },
         {
+            uid: '4',
             name: 'Wallet',
-            isSafe: true,
+            safeStatusColor: Theme.Color.Green,
             lastSeen: 'Just now',
         },
         {
+            uid: '5',
             name: 'Wallet',
-            isSafe: true,
+            safeStatusColor: Theme.Color.Green,
+            lastSeen: 'Just now',
+        },
+        {
+            uid: '6',
+            name: 'Wallet',
+            safeStatusColor: Theme.Color.Green,
             lastSeen: 'Just now',
         },
     ];

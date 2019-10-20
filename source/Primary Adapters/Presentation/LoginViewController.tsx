@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: Theme.BorderRadius,
         borderWidth: 1,
-        borderColor: Theme.Color.ExtraLightGrey,
+        borderColor: Theme.Color.AlmostWhiteBackground,
     },
     textInputError: {
         paddingLeft: 16,
