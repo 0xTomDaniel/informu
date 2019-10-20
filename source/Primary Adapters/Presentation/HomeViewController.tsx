@@ -1,15 +1,16 @@
 import { Appbar, Text, Portal, Modal, ActivityIndicator, Card, Avatar, Title, Paragraph, IconButton } from 'react-native-paper';
-import { StyleSheet, Platform, StatusBar, PermissionsAndroid, PermissionStatus, View } from 'react-native';
+import { StyleSheet, Platform, StatusBar, PermissionsAndroid, PermissionStatus, View, FlatList } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps, NavigationScreenOptions } from 'react-navigation';
-import React, { Component, ReactElement } from 'react';
+import React, { Component, ReactElement, FunctionComponent } from 'react';
 import DeviceInfo from 'react-native-device-info';
 import LinearGradient from 'react-native-linear-gradient';
-import { HomeState, HomeViewModel } from './HomeViewModel';
+import { HomeState, HomeViewModel, Belonging } from './HomeViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import LogoutService from '../../Core/Application/LogoutService';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Images } from './Images';
+import { Scale } from './ResponsiveScaler';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -18,7 +19,8 @@ const styles = StyleSheet.create({
             ? StatusBar.currentHeight : 0,
     },
     base: {
-        backgroundColor: Theme.Color.AlmostWhite,
+        //backgroundColor: 'white',
+        backgroundColor: '#F0F0F0',
         //paddingHorizontal: 16,
         //justifyContent: 'center',
     },
@@ -33,6 +35,12 @@ const styles = StyleSheet.create({
             },
         }),
     },
+    tooltip: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+    },
     triangle: {
         width: 0,
         height: 0,
@@ -45,6 +53,8 @@ const styles = StyleSheet.create({
         borderRightColor: 'transparent',
         borderBottomColor: Theme.Color.PrimaryOrange,
         marginLeft: 20,
+        // Fixes 1dp gap on some layouts
+        marginBottom: -1,
     },
     tooltipContent: {
         padding: 20,
@@ -54,12 +64,15 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         fontSize: 16,
     },
-    scrollView: {
-        padding: 16,
+    belongingsEmpty: {
+        flex: 1,
+        justifyContent: 'center',
     },
     card: {
-        //backgroundColor: 'blue',
+        backgroundColor: Theme.Color.AlmostWhite,
         paddingVertical: 8,
+        marginHorizontal: Scale(12),
+        marginTop: Scale(12),
     },
     subtitle: {
         color: 'grey',
@@ -83,6 +96,54 @@ const styles = StyleSheet.create({
         backgroundColor: Theme.Color.AlmostWhite,
     },
 });
+
+const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
+    return (
+        <View style={styles.belongingsEmpty}>
+            <View style={styles.tooltip}>
+                <View style={styles.triangle} />
+                <LinearGradient
+                    start={{x: 0, y: 0}}
+                    end={{x: 1.5, y: 0}}
+                    colors={[Theme.Color.PrimaryOrange, Theme.Color.SecondaryOrange]}
+                    style={styles.tooltipContent}
+                >
+                    <Text style={styles.tooltipText}>
+                        Add your first Mu tag to get started.
+                    </Text>
+                </LinearGradient>
+            </View>
+            <Images.IconLogoCombo />
+        </View>
+    );
+};
+
+const BelongingCard: FunctionComponent<Belonging> = (props): ReactElement => {
+    return (
+        <Card elevation={2} style={styles.card}>
+            <Card.Title
+                title={props.name}
+                subtitle={
+                    <Text style={styles.subtitle}>
+                        {props.isSafe
+                            ? <Icon name="checkbox-blank-circle" size={10} color={Theme.Color.Green} />
+                            : <Icon name="checkbox-blank-circle" size={10} color={Theme.Color.Error} />
+                        }
+                        {' ' + props.lastSeen}
+                    </Text>
+                }
+                left={(leftProps: any): Element =>
+                    <Avatar.Icon {...leftProps} icon="radar" color="white" style={styles.iconView} />
+                }
+                right={(rightProps: any): Element =>
+                    <IconButton {...rightProps} icon="dots-vertical" onPress={(): void => {}} />
+                }
+                titleStyle={styles.cardTitleText}
+                subtitleStyle={styles.cardTitleText}
+            />
+        </Card>
+    );
+};
 
 interface HomeVCProps extends NavigationScreenProps {
 
@@ -150,46 +211,26 @@ export default class HomeViewController extends Component<HomeVCProps> {
                         icon="plus-circle-outline"
                         onPress={(): Promise<void> => this.props.addMuTagService.startAddingNewMuTag()}
                     />
-                    <Appbar.Content title="" />
+                    <Appbar.Content title="beta" color="grey" />
                     {/*<Images.IconLogoCombo />*/}
                     <Appbar.Action
                         icon="logout"
                         onPress={(): Promise<void> => this.props.logoutService.logOut()}
                     />
                 </Appbar.Header>
-                {this.state.showAddMuTagTooltip &&
-                    <View>
-                        <View style={styles.triangle} />
-                        <LinearGradient
-                            start={{x: 0, y: 0}}
-                            end={{x: 1.5, y: 0}}
-                            colors={[Theme.Color.PrimaryOrange, Theme.Color.SecondaryOrange]}
-                            style={styles.tooltipContent}
-                        >
-                            <Text style={styles.tooltipText}>
-                                Add your first Mu tag to get started.
-                            </Text>
-                        </LinearGradient>
-                    </View>
-                }
-                <View style={styles.scrollView}>
-                    <Card elevation={2} style={styles.card}>
-                        <Card.Title
-                            title="Keys"
-                            subtitle={<Text style={styles.subtitle}><Icon name="checkbox-blank-circle" size={10} color={Theme.Color.Green} /> Just now</Text>}
-                            //subtitle={<Text style={styles.subtitle}>Just now <Icon name="checkbox-blank-circle" size={10} color={Theme.Color.Green} /></Text>}
-                            left={(props) => <Avatar.Icon {...props}
-                                icon="radar"
-                                color="white"
-                                //color={Theme.Color.SecondaryBlue}
-                                style={styles.iconView}
-                            />}
-                            right={(props) => <IconButton {...props} icon="dots-vertical" onPress={() => {}} />}
-                            titleStyle={styles.cardTitleText}
-                            subtitleStyle={styles.cardTitleText}
+                <FlatList
+                    contentContainerStyle={{ flexGrow: 1, paddingBottom: 16 }}
+                    ListEmptyComponent={<BelongingsEmpty />}
+                    data={this.state.belongings}
+                    renderItem={({ item }): ReactElement =>
+                        <BelongingCard
+                            name={item.name}
+                            isSafe={item.isSafe}
+                            lastSeen={item.lastSeen}
                         />
-                    </Card>
-                </View>
+                    }
+                    //keyExtractor={item => item.id}
+                />
                 <Portal>
                     <Modal
                         dismissable={false}

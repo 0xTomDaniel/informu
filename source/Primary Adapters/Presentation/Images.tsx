@@ -4,8 +4,17 @@ import {
     ImageProps,
     ImageSourcePropType,
     ImageBackgroundProps,
-    ImageBackground
+    ImageBackground,
+    StyleSheet,
 } from 'react-native';
+
+const styles = StyleSheet.create({
+    default: {
+        resizeMode: 'contain',
+        width: '100%',
+        height: undefined,
+    },
+});
 
 const imageWithAspectRatio = (imageSource: ImageSourcePropType, imageBackground = false): typeof Component => {
     const { width, height } = Image.resolveAssetSource(imageSource);
@@ -19,7 +28,7 @@ const imageWithAspectRatio = (imageSource: ImageSourcePropType, imageBackground 
 
             return <Image
                 source={imageSource}
-                style={[{ aspectRatio: aspectRatio }, style]}
+                style={[{ aspectRatio: aspectRatio }, styles.default, style]}
                 {...passThroughProps}
             />;
         }

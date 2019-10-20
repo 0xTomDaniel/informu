@@ -1,22 +1,56 @@
+export interface Belonging {
+    name: string;
+    isSafe: boolean;
+    lastSeen: string;
+}
+
 export interface HomeState {
 
-    showAddMuTagTooltip: boolean;
+    //showAddMuTagTooltip: boolean;
     showActivityIndicator: boolean;
+    belongings: Belonging[];
 }
 
 export class HomeViewModel implements HomeState {
 
-    private _showAddMuTagTooltip = true;
+    //private _showAddMuTagTooltip = true;
     private _showActivityIndicator = false;
+    private _belongings = [
+        {
+            name: 'Keys',
+            isSafe: true,
+            lastSeen: 'Just now',
+        },
+        {
+            name: 'Laptop',
+            isSafe: false,
+            lastSeen: '5h ago',
+        },
+        {
+            name: 'Bag',
+            isSafe: true,
+            lastSeen: 'Just now',
+        },
+        {
+            name: 'Wallet',
+            isSafe: true,
+            lastSeen: 'Just now',
+        },
+        {
+            name: 'Wallet',
+            isSafe: true,
+            lastSeen: 'Just now',
+        },
+    ];
 
-    get showAddMuTagTooltip(): boolean {
+    /*get showAddMuTagTooltip(): boolean {
         return this._showAddMuTagTooltip;
     }
 
     set showAddMuTagTooltip(newValue: boolean) {
         this._showAddMuTagTooltip = newValue;
         this.triggerDidUpdate({ showAddMuTagTooltip: newValue });
-    }
+    }*/
 
     get showActivityIndicator(): boolean {
         return this._showActivityIndicator;
@@ -25,6 +59,15 @@ export class HomeViewModel implements HomeState {
     set showActivityIndicator(newValue: boolean) {
         this._showActivityIndicator = newValue;
         this.triggerDidUpdate({ showActivityIndicator: newValue });
+    }
+
+    get belongings(): Belonging[] {
+        return this._belongings;
+    }
+
+    set belongings(newValue: Belonging[]) {
+        this._belongings = newValue;
+        this.triggerDidUpdate({ belongings: newValue });
     }
 
     private onDidUpdateCallback?: (change: object) => void;
