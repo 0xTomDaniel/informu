@@ -54,12 +54,14 @@ const imageWithAspectRatio = (imageSource: ImageSourcePropType, imageBackground 
 const ImageSources = {
     IconLogoCombo: require('../../../assets/icon-logo-combo.png') as ImageSourcePropType,
     MuLogo: require('../../../assets/mu-logo.png') as ImageSourcePropType,
+    NoMuTags: require('../../../assets/no-mu-tags.png') as ImageSourcePropType,
     AddMuTag: require('../../../assets/add-mu-tag.png') as ImageSourcePropType,
 };
 
 export const Images = {
     IconLogoCombo: imageWithAspectRatio(ImageSources.IconLogoCombo),
     MuLogo: imageWithAspectRatio(ImageSources.MuLogo),
+    NoMuTags: imageWithAspectRatio(ImageSources.NoMuTags),
 };
 
 export const ImageBackgrounds = {

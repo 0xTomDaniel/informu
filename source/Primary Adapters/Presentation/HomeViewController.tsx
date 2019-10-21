@@ -35,14 +35,11 @@ const styles = StyleSheet.create({
     appBarLogo: {
         width: undefined,
         height: 26,
-        marginLeft: Scale(30, 26),
-        marginRight: -12,
+        marginLeft: 14,
+        marginRight: -14,
     },
-    tooltip: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
+    appBarContent: {
+        marginBottom: 18,
     },
     triangle: {
         width: 0,
@@ -54,7 +51,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 12,
         borderLeftColor: 'transparent',
         borderRightColor: 'transparent',
-        borderBottomColor: Theme.Color.PrimaryOrange,
+        borderBottomColor: Theme.Color.SecondaryOrange,
         alignSelf: 'flex-end',
         marginRight: 68,
         // Fixes 1dp gap on some layouts
@@ -106,7 +103,7 @@ const styles = StyleSheet.create({
 const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
     return (
         <View style={styles.belongingsEmpty}>
-            <View style={styles.tooltip}>
+            <View>
                 <View style={styles.triangle} />
                 <LinearGradient
                     start={{x: 0, y: 0}}
@@ -119,7 +116,7 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
                     </Text>
                 </LinearGradient>
             </View>
-            <Images.IconLogoCombo />
+            <Images.NoMuTags />
         </View>
     );
 };
@@ -210,9 +207,8 @@ export default class HomeViewController extends Component<HomeVCProps> {
         return (
             <SafeAreaView style={[styles.safeAreaView, styles.base]}>
                 <Appbar.Header style={styles.appBar}>
-                    {/*<Images.InformuIconLight style={{width: undefined, height: 54, marginLeft: 12, marginRight: -16}} />*/}
                     <Images.MuLogo style={styles.appBarLogo} />
-                    <Appbar.Content subtitle="beta" color="gray" />
+                    <Appbar.Content subtitle="beta" color="gray" style={styles.appBarContent} />
                     <Appbar.Action
                         icon="plus-circle-outline"
                         onPress={(): Promise<void> => this.props.addMuTagService.startAddingNewMuTag()}
@@ -225,6 +221,7 @@ export default class HomeViewController extends Component<HomeVCProps> {
                 <FlatList
                     contentContainerStyle={styles.belongingsContainer}
                     ListEmptyComponent={<BelongingsEmpty />}
+                    scrollEnabled={!this.props.homeViewModel.showEmptyBelongings}
                     data={this.state.belongings}
                     renderItem={({ item }): ReactElement =>
                         <BelongingCard

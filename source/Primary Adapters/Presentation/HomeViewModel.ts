@@ -10,6 +10,7 @@ export interface Belonging {
 export interface HomeState {
 
     //showAddMuTagTooltip: boolean;
+    showEmptyBelongings: boolean;
     showActivityIndicator: boolean;
     belongings: Belonging[];
 }
@@ -17,45 +18,47 @@ export interface HomeState {
 export class HomeViewModel implements HomeState {
 
     //private _showAddMuTagTooltip = true;
+    private _showEmptyBelongings = true;
     private _showActivityIndicator = false;
-    private _belongings = [
-        /*{
-            uid: '1',
-            name: 'Keys',
-            safeStatusColor: Theme.Color.Green,
-            lastSeen: 'Just now',
-        },
-        {
-            uid: '2',
-            name: 'Laptop',
-            safeStatusColor: Theme.Color.Error,
-            lastSeen: '5h ago',
-        },
-        {
-            uid: '3',
-            name: 'Bag',
-            safeStatusColor: Theme.Color.Green,
-            lastSeen: 'Just now',
-        },
-        {
-            uid: '4',
-            name: 'Wallet',
-            safeStatusColor: Theme.Color.Green,
-            lastSeen: 'Just now',
-        },
-        {
-            uid: '5',
-            name: 'Wallet',
-            safeStatusColor: Theme.Color.Green,
-            lastSeen: 'Just now',
-        },
-        {
-            uid: '6',
-            name: 'Wallet',
-            safeStatusColor: Theme.Color.Green,
-            lastSeen: 'Just now',
-        },*/
-    ];
+    private _belongings: Belonging[] = [];
+        /*[
+            {
+                uid: '1',
+                name: 'Keys',
+                safeStatusColor: Theme.Color.Green,
+                lastSeen: 'Just now',
+            },
+            {
+                uid: '2',
+                name: 'Laptop',
+                safeStatusColor: Theme.Color.Error,
+                lastSeen: '5h ago',
+            },
+            {
+                uid: '3',
+                name: 'Bag',
+                safeStatusColor: Theme.Color.Green,
+                lastSeen: 'Just now',
+            },
+            {
+                uid: '4',
+                name: 'Wallet',
+                safeStatusColor: Theme.Color.Green,
+                lastSeen: 'Just now',
+            },
+            {
+                uid: '5',
+                name: 'Wallet',
+                safeStatusColor: Theme.Color.Green,
+                lastSeen: 'Just now',
+            },
+            {
+                uid: '6',
+                name: 'Wallet',
+                safeStatusColor: Theme.Color.Green,
+                lastSeen: 'Just now',
+            },
+        ];*/
 
     /*get showAddMuTagTooltip(): boolean {
         return this._showAddMuTagTooltip;
@@ -65,6 +68,15 @@ export class HomeViewModel implements HomeState {
         this._showAddMuTagTooltip = newValue;
         this.triggerDidUpdate({ showAddMuTagTooltip: newValue });
     }*/
+
+    get showEmptyBelongings(): boolean {
+        return this._showEmptyBelongings;
+    }
+
+    set showEmptyBelongings(newValue: boolean) {
+        this._showEmptyBelongings = newValue;
+        this.triggerDidUpdate({ showEmptyBelongings: newValue });
+    }
 
     get showActivityIndicator(): boolean {
         return this._showActivityIndicator;
