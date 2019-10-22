@@ -2,7 +2,7 @@ import { Appbar, Text, Portal, Modal, ActivityIndicator, Card, Avatar, Title, Pa
 import { StyleSheet, Platform, StatusBar, PermissionsAndroid, PermissionStatus, View, FlatList } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps, NavigationScreenOptions } from 'react-navigation';
-import React, { Component, ReactElement, FunctionComponent } from 'react';
+import React, { Component, ReactElement, FunctionComponent, useState, useEffect } from 'react';
 import DeviceInfo from 'react-native-device-info';
 import LinearGradient from 'react-native-linear-gradient';
 import { HomeState, HomeViewModel, Belonging } from './HomeViewModel';
@@ -152,19 +152,29 @@ interface HomeVCProps extends NavigationScreenProps {
     addMuTagService: AddMuTagService;
 }
 
-export default class HomeViewController extends Component<HomeVCProps> {
+const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement => {
 
-    state: Readonly<HomeState> = this.props.homeViewModel;
+    const [state, setState] = useState(props.homeViewModel.state);
 
-    componentDidMount(): void {
-        this.props.homeViewModel.onDidUpdate((update): void => this.setState(update));
-        this.props.homeViewModel.onNavigateToAddMuTag((): boolean =>
-            this.props.navigation.navigate('AddMuTag')
+    useEffect((): (() => void) => {
+        props.homeViewModel.onDidUpdate((key, value): void => {
+            setState((previousState): HomeState => ({ ...previousState, [key]: value }));
+        });
+        props.homeViewModel.onNavigateToAddMuTag((): boolean =>
+            props.navigation.navigate('AddMuTag')
         );
-        this.props.homeViewModel.onShowLogoutComplete((): boolean =>
-            this.props.navigation.navigate('Login')
+        props.homeViewModel.onShowLogoutComplete((): boolean =>
+            props.navigation.navigate('Login')
         );
 
+        return (): void => {
+            props.homeViewModel.onDidUpdate(undefined);
+            props.homeViewModel.onNavigateToAddMuTag(undefined);
+            props.homeViewModel.onShowLogoutComplete(undefined);
+        };
+    });
+
+    useEffect((): void => {
         try {
             PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((granted): Promise<PermissionStatus> | undefined => {
                 if (granted) {
@@ -195,54 +205,48 @@ export default class HomeViewController extends Component<HomeVCProps> {
         } catch (err) {
             console.warn(err);
         }
-    }
+    }, []);
 
-    componentWillUnmount(): void {
-        this.props.homeViewModel.onDidUpdate(undefined);
-        this.props.homeViewModel.onNavigateToAddMuTag(undefined);
-        this.props.homeViewModel.onShowLogoutComplete(undefined);
-    }
-
-    render(): Element {
-        return (
-            <SafeAreaView style={[styles.safeAreaView, styles.base]}>
-                <Appbar.Header style={styles.appBar}>
-                    <Images.MuLogo style={styles.appBarLogo} />
-                    <Appbar.Content subtitle="beta" color="gray" style={styles.appBarContent} />
-                    <Appbar.Action
-                        icon="plus-circle-outline"
-                        onPress={(): Promise<void> => this.props.addMuTagService.startAddingNewMuTag()}
-                    />
-                    <Appbar.Action
-                        icon="logout"
-                        onPress={(): Promise<void> => this.props.logoutService.logOut()}
-                    />
-                </Appbar.Header>
-                <FlatList
-                    contentContainerStyle={styles.belongingsContainer}
-                    ListEmptyComponent={<BelongingsEmpty />}
-                    scrollEnabled={!this.props.homeViewModel.showEmptyBelongings}
-                    data={this.state.belongings}
-                    renderItem={({ item }): ReactElement =>
-                        <BelongingCard
-                            uid={item.uid}
-                            name={item.name}
-                            safeStatusColor={item.safeStatusColor}
-                            lastSeen={item.lastSeen}
-                        />
-                    }
-                    keyExtractor={(item): string => item.uid}
+    return (
+        <SafeAreaView style={[styles.safeAreaView, styles.base]}>
+            <Appbar.Header style={styles.appBar}>
+                <Images.MuLogo style={styles.appBarLogo} />
+                <Appbar.Content subtitle="beta" color="gray" style={styles.appBarContent} />
+                <Appbar.Action
+                    icon="plus-circle-outline"
+                    onPress={(): Promise<void> => props.addMuTagService.startAddingNewMuTag()}
                 />
-                <Portal>
-                    <Modal
-                        dismissable={false}
-                        visible={this.state.showActivityIndicator}
-                        contentContainerStyle={styles.activityModal}
-                    >
-                        <ActivityIndicator size="large" color={Theme.Color.PrimaryBlue} />
-                    </Modal>
-                </Portal>
-            </SafeAreaView>
-        );
-    }
-}
+                <Appbar.Action
+                    icon="logout"
+                    onPress={(): Promise<void> => props.logoutService.logOut()}
+                />
+            </Appbar.Header>
+            <FlatList
+                contentContainerStyle={styles.belongingsContainer}
+                ListEmptyComponent={<BelongingsEmpty />}
+                scrollEnabled={!state.showEmptyBelongings}
+                data={state.belongings}
+                renderItem={({ item }): ReactElement =>
+                    <BelongingCard
+                        uid={item.uid}
+                        name={item.name}
+                        safeStatusColor={item.safeStatusColor}
+                        lastSeen={item.lastSeen}
+                    />
+                }
+                keyExtractor={(item): string => item.uid}
+            />
+            <Portal>
+                <Modal
+                    dismissable={false}
+                    visible={state.showActivityIndicator}
+                    contentContainerStyle={styles.activityModal}
+                >
+                    <ActivityIndicator size="large" color={Theme.Color.PrimaryBlue} />
+                </Modal>
+            </Portal>
+        </SafeAreaView>
+    );
+};
+
+export default HomeViewController;

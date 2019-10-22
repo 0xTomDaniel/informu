@@ -1,5 +1,3 @@
-import Theme from './Theme';
-
 export interface Belonging {
     uid: string;
     name: string;
@@ -9,98 +7,24 @@ export interface Belonging {
 
 export interface HomeState {
 
-    //showAddMuTagTooltip: boolean;
     showEmptyBelongings: boolean;
     showActivityIndicator: boolean;
     belongings: Belonging[];
 }
 
-export class HomeViewModel implements HomeState {
+export class HomeViewModel {
 
-    //private _showAddMuTagTooltip = true;
-    private _showEmptyBelongings = true;
-    private _showActivityIndicator = false;
-    private _belongings: Belonging[] = [];
-        /*[
-            {
-                uid: '1',
-                name: 'Keys',
-                safeStatusColor: Theme.Color.Green,
-                lastSeen: 'Just now',
-            },
-            {
-                uid: '2',
-                name: 'Laptop',
-                safeStatusColor: Theme.Color.Error,
-                lastSeen: '5h ago',
-            },
-            {
-                uid: '3',
-                name: 'Bag',
-                safeStatusColor: Theme.Color.Green,
-                lastSeen: 'Just now',
-            },
-            {
-                uid: '4',
-                name: 'Wallet',
-                safeStatusColor: Theme.Color.Green,
-                lastSeen: 'Just now',
-            },
-            {
-                uid: '5',
-                name: 'Wallet',
-                safeStatusColor: Theme.Color.Green,
-                lastSeen: 'Just now',
-            },
-            {
-                uid: '6',
-                name: 'Wallet',
-                safeStatusColor: Theme.Color.Green,
-                lastSeen: 'Just now',
-            },
-        ];*/
+    state: HomeState = new Proxy({
+        showEmptyBelongings: true,
+        showActivityIndicator: false,
+        belongings: [],
+    }, HomeViewModel.handler(this.triggerDidUpdate.bind(this)));
 
-    /*get showAddMuTagTooltip(): boolean {
-        return this._showAddMuTagTooltip;
-    }
-
-    set showAddMuTagTooltip(newValue: boolean) {
-        this._showAddMuTagTooltip = newValue;
-        this.triggerDidUpdate({ showAddMuTagTooltip: newValue });
-    }*/
-
-    get showEmptyBelongings(): boolean {
-        return this._showEmptyBelongings;
-    }
-
-    set showEmptyBelongings(newValue: boolean) {
-        this._showEmptyBelongings = newValue;
-        this.triggerDidUpdate({ showEmptyBelongings: newValue });
-    }
-
-    get showActivityIndicator(): boolean {
-        return this._showActivityIndicator;
-    }
-
-    set showActivityIndicator(newValue: boolean) {
-        this._showActivityIndicator = newValue;
-        this.triggerDidUpdate({ showActivityIndicator: newValue });
-    }
-
-    get belongings(): Belonging[] {
-        return this._belongings;
-    }
-
-    set belongings(newValue: Belonging[]) {
-        this._belongings = newValue;
-        this.triggerDidUpdate({ belongings: newValue });
-    }
-
-    private onDidUpdateCallback?: (change: object) => void;
+    private onDidUpdateCallback?: (key: string, value: any) => void;
     private onNavigateToAddMuTagCallback?: () => void;
     private onShowLogoutCompleteCallback?: () => void;
 
-    onDidUpdate(callback?: (change: object) => void): void {
+    onDidUpdate(callback?: (key: string, value: any) => void): void {
         this.onDidUpdateCallback = callback;
     }
 
@@ -124,9 +48,38 @@ export class HomeViewModel implements HomeState {
         }
     }
 
-    private triggerDidUpdate(change: object): void {
-        if (this.onDidUpdateCallback != null) {
-            this.onDidUpdateCallback(change);
-        }
+    private triggerDidUpdate(key: string, value: any): void {
+        this.onDidUpdateCallback != null && this.onDidUpdateCallback(key, value);
+    }
+
+    private static handler(onDidUpdate: (key: string, value: any) => void): ProxyHandler<HomeState> {
+        return {
+            get(target: { [key: string]: any }, key: string): any {
+                if (key === '__Proxy') {
+                    return true;
+                }
+
+                if (!(key in target)) {
+                    return;
+                }
+
+                const value = target[key];
+
+                if (typeof value === 'undefined') {
+                    return;
+                }
+
+                if (!value.__Proxy && typeof value === 'object') {
+                    target[key] = new Proxy(value, HomeViewModel.handler(onDidUpdate));
+                }
+
+                return target[key];
+            },
+            set(target: { [key: string]: any }, key: string, value): boolean {
+                target[key] = value;
+                onDidUpdate(key, value);
+                return true;
+            },
+        };
     }
 }
