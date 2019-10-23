@@ -121,6 +121,8 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                 muTagNumber,
                 muTagName,
                 unprovisionedMuTag.getBatteryLevel(),
+                true,
+                new Date()
             );
 
             return muTag;

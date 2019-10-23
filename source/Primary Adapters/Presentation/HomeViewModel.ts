@@ -1,4 +1,4 @@
-export interface Belonging {
+export interface BelongingViewData {
     uid: string;
     name: string;
     safeStatusColor: string;
@@ -9,7 +9,7 @@ export interface HomeState {
 
     showEmptyBelongings: boolean;
     showActivityIndicator: boolean;
-    belongings: Belonging[];
+    belongings: BelongingViewData[];
 }
 
 export class HomeViewModel {

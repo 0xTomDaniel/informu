@@ -38,12 +38,14 @@ describe('user logs out of their account', (): void => {
             getByUID: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
+            addMultiple: jest.fn(),
             update: jest.fn(),
             removeByUID: jest.fn(),
         }));
 
     const MuTagRepositoryRemoteMock
         = jest.fn<MuTagRepositoryRemote, any>((): MuTagRepositoryRemote => ({
+            getAll: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
             updateMultiple: jest.fn(),
@@ -95,14 +97,18 @@ describe('user logs out of their account', (): void => {
         BeaconID.fromString('0'),
         0,
         'keys',
-        new Percent(80)
+        new Percent(80),
+        true,
+        new Date(),
     );
     const muTag2 = new ProvisionedMuTag(
         'randomUUID1',
         BeaconID.fromString('1'),
         1,
         'laptop',
-        new Percent(80)
+        new Percent(80),
+        true,
+        new Date(),
     );
     const muTags = new Set([muTag1, muTag2]);
 

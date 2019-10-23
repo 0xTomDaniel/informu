@@ -40,12 +40,14 @@ describe('Mu tag user adds Mu tag', (): void => {
             getByUID: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
+            addMultiple: jest.fn(),
             update: jest.fn(),
             removeByUID: jest.fn(),
         }));
 
     const MuTagRepoRemoteMock
         = jest.fn<MuTagRepositoryRemote, any>((): MuTagRepositoryRemote => ({
+            getAll: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
             updateMultiple: jest.fn(),
@@ -123,12 +125,16 @@ describe('Mu tag user adds Mu tag', (): void => {
     const isBatteryAboveSpy = jest.spyOn(unprovisionedMuTag, 'isBatteryAbove');
     const newMuTagAttachedTo = 'keys';
     const muTagColorSetting = MuTagColor.Scarlet;
+    const muTagIsSafe = true;
+    const muTagLastSeen = new Date();
     const muTag = new ProvisionedMuTag(
         newUUID,
         validAccountData.recycledBeaconIDs[0],
         validAccountData.nextMuTagNumber,
         newMuTagAttachedTo,
         muTagBatteryLevel,
+        muTagIsSafe,
+        muTagLastSeen,
         muTagColorSetting,
     );
     const muTagUpdateColorSpy = jest.spyOn(muTag, 'updateColor');

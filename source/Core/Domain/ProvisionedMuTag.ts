@@ -1,6 +1,7 @@
 import MuTag, { MuTagColor } from './MuTag';
 import Percent from './Percent';
 import Hexadecimal from './Hexadecimal';
+import { string } from 'prop-types';
 
 class InvalidBeaconID extends RangeError {
 
@@ -23,14 +24,27 @@ export class BeaconID extends Hexadecimal {
     }
 }
 
-interface MuTagData {
+export interface MuTagData {
     uid: string;
-    beaconID: BeaconID;
+    beaconID: string;
     muTagNumber: number;
     name: string;
-    batteryLevel: Percent;
-    color: MuTagColor;
+    batteryLevel: number;
+    color: number;
+    isSafe: boolean;
+    lastSeen: string;
 }
+
+export const isMuTagData = (object: { [key: string]: any }): object is MuTagData => {
+    return 'uid' in object && typeof object.uid === 'string'
+        && 'beaconID' in object && typeof object.beaconID === 'string'
+        && 'muTagNumber' in object && typeof object.muTagNumber === 'number'
+        && 'name' in object && typeof object.name === 'string'
+        && 'batteryLevel' in object && typeof object.batteryLevel === 'number'
+        && 'color' in object && typeof object.color === 'number'
+        && 'isSafe' in object && typeof object.isSafe === 'boolean'
+        && 'lastSeen' in object && typeof object.lastSeen === 'string';
+};
 
 export default class ProvisionedMuTag extends MuTag {
 
@@ -40,6 +54,8 @@ export default class ProvisionedMuTag extends MuTag {
     private name: string;
     protected batteryLevel: Percent;
     private color: MuTagColor;
+    private isSafe: boolean;
+    private lastSeen: Date;
 
     constructor(
         uid: string,
@@ -47,6 +63,8 @@ export default class ProvisionedMuTag extends MuTag {
         muTagNumber: number,
         name: string,
         batteryLevel: Percent,
+        isSafe: boolean,
+        lastSeen: Date,
         color: MuTagColor = MuTagColor.MuOrange,
     ) {
         super();
@@ -56,10 +74,24 @@ export default class ProvisionedMuTag extends MuTag {
         this.name = name;
         this.batteryLevel = batteryLevel;
         this.color = color;
+        this.isSafe = isSafe;
+        this.lastSeen = lastSeen;
     }
 
     updateColor(color: MuTagColor): void {
         this.color = color;
+    }
+
+    getName(): string {
+        return this.name;
+    }
+
+    getIsSafe(): boolean {
+        return this.isSafe;
+    }
+
+    getLastSeen(): Date {
+        return this.lastSeen;
     }
 
     getMuTagData(): MuTagData {
@@ -82,6 +114,8 @@ export default class ProvisionedMuTag extends MuTag {
                 return value.toString();
             case 'batteryLevel':
                 return value.valueOf();
+            /*case 'lastSeen':
+                return value.toISOString();*/
             default:
                 return value;
         }
@@ -96,6 +130,8 @@ export default class ProvisionedMuTag extends MuTag {
                 return BeaconID.create(value);
             case 'batteryLevel':
                 return new Percent(value);
+            case 'lastSeen':
+                return new Date(value);
             default:
                 return value;
         }

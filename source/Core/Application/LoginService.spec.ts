@@ -10,7 +10,11 @@ import Account, { AccountNumber } from '../Domain/Account';
 import { Authentication, UserData, InvalidCredentials } from '../Ports/Authentication';
 import { LoginOutput } from '../Ports/LoginOutput';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
-import { BeaconID } from '../Domain/ProvisionedMuTag';
+import ProvisionedMuTag, { BeaconID } from '../Domain/ProvisionedMuTag';
+import MuTag from '../Domain/MuTag';
+import Percent from '../Domain/Percent';
+import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
+import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 
 describe('user logs into their account', (): void => {
 
@@ -43,17 +47,59 @@ describe('user logs into their account', (): void => {
             removeByUID: jest.fn(),
         }));
 
+    const MuTagRepositoryLocalMock
+        = jest.fn<MuTagRepositoryLocal, any>((): MuTagRepositoryLocal => ({
+            getByUID: jest.fn(),
+            getAll: jest.fn(),
+            add: jest.fn(),
+            addMultiple: jest.fn(),
+            update: jest.fn(),
+            removeByUID: jest.fn(),
+        }));
+
+    const MuTagRepositoryRemoteMock
+        = jest.fn<MuTagRepositoryRemote, any>((): MuTagRepositoryRemote => ({
+            getAll: jest.fn(),
+            add: jest.fn(),
+            update: jest.fn(),
+            updateMultiple: jest.fn(),
+        }));
+
     const loginOutputMock = new LoginOutputMock();
     const authenticationMock = new AuthenticationMock();
     const accountRepoLocalMock = new AccountRepositoryLocalMock();
     const accountRepoRemoteMock = new AccountRepositoryRemoteMock();
+    const muTagRepoLocalMock = new MuTagRepositoryLocalMock();
+    const muTagRepoRemoteMock = new MuTagRepositoryRemoteMock();
     const loginService = new LoginService(
         loginOutputMock,
         authenticationMock,
         accountRepoLocalMock,
-        accountRepoRemoteMock
+        accountRepoRemoteMock,
+        muTagRepoLocalMock,
+        muTagRepoRemoteMock,
     );
 
+    const muTags = new Set([
+        new ProvisionedMuTag(
+            'randomUUID01',
+            BeaconID.create('0'),
+            0,
+            'Keys',
+            new Percent(50),
+            true,
+            new Date(),
+        ),
+        new ProvisionedMuTag(
+            'randomUUID02',
+            BeaconID.create('1'),
+            1,
+            'Laptop',
+            new Percent(50),
+            true,
+            new Date(),
+        ),
+    ]);
     const validAccountData = {
         uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
         accountNumber: AccountNumber.create('0000000'),
@@ -64,7 +110,7 @@ describe('user logs into their account', (): void => {
             BeaconID.create('5'),
         ],
         nextMuTagNumber: 15,
-        muTags: ['randomUUID'],
+        muTags: ['randomUUID01', 'randomUUID02'],
     };
     const account = new Account(
         validAccountData.uid,
@@ -95,6 +141,8 @@ describe('user logs into their account', (): void => {
         //
         (accountRepoRemoteMock.getByUID as jest.Mock)
             .mockResolvedValueOnce(account);
+        (muTagRepoRemoteMock.getAll as jest.Mock)
+            .mockResolvedValueOnce(muTags);
 
         // When the user submits credentials
         //
@@ -122,6 +170,10 @@ describe('user logs into their account', (): void => {
             expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledTimes(1);
             expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
             expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
+            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledWith(userData.uid);
+            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledTimes(1);
+            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledWith(muTags);
+            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledTimes(1);
         });
 
         // Then

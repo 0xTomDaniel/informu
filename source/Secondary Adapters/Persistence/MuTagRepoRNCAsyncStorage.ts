@@ -57,6 +57,12 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
         }
     }
 
+    async addMultiple(muTags: Set<ProvisionedMuTag>): Promise<void> {
+        for (const muTag of muTags) {
+            await this.add(muTag);
+        }
+    }
+
     async update(muTag: ProvisionedMuTag): Promise<void> {
         const rawMuTag = muTag.serialize();
 

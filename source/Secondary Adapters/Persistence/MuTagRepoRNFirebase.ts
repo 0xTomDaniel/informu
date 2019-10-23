@@ -1,7 +1,7 @@
 import firebase, { App } from 'react-native-firebase';
 import { Database, DataSnapshot } from 'react-native-firebase/database';
-import { MuTagRepositoryRemote, FailedToAdd, FailedToUpdate } from '../../Core/Ports/MuTagRepositoryRemote';
-import ProvisionedMuTag from '../../Core/Domain/ProvisionedMuTag';
+import { MuTagRepositoryRemote, FailedToAdd, FailedToUpdate, FailedToGet, DoesNotExist, PersistedDataMalformed } from '../../Core/Ports/MuTagRepositoryRemote';
+import ProvisionedMuTag, { MuTagData, isMuTagData } from '../../Core/Domain/ProvisionedMuTag';
 
 export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
 
@@ -15,19 +15,33 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         }
     }
 
-    /*async getByUID(uid: string): Promise<MuTag> {
+    async getAll(accountUID: string): Promise<Set<ProvisionedMuTag>> {
         let snapshot: DataSnapshot;
 
         try {
-            snapshot = await this.database.ref(`muTags/${uid}`).once('value');
+            snapshot = await this.database.ref(`mu_tags/${accountUID}`).once('value');
         } catch (e) {
             console.log(e);
             throw new FailedToGet();
         }
 
-        const muTagData = MuTagRepoRNFirebase.toMuTagData(uid, snapshot);
-        return MuTag.deserialize(muTagData);
-    }*/
+        const muTags = new Set<ProvisionedMuTag>();
+
+        snapshot.forEach((childSnapshot): boolean => {
+            const muTagUID = childSnapshot.key;
+            if (muTagUID == null) {
+                return true;
+            }
+            const muTagData = MuTagRepoRNFirebase.toMuTagData(muTagUID, childSnapshot);
+            muTags.add(ProvisionedMuTag.deserialize(muTagData));
+            return true;
+        });
+
+        // DEBUG
+        console.log(muTags);
+
+        return muTags;
+    }
 
     async add(muTag: ProvisionedMuTag, accountUID: string): Promise<void> {
         const muTagData = muTag.getMuTagData();
@@ -59,7 +73,8 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
             beacon_id: muTagData.beaconID,
             mu_tag_number: muTagData.muTagNumber,
             attached_to: muTagData.name,
-            batteryPercentage: muTagData.batteryLevel,
+            battery_percentage: muTagData.batteryLevel,
+            last_seen: muTagData.lastSeen,
             color: muTagData.color,
         };
         /*eslint-enable */
@@ -86,7 +101,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
             console.log(e);
             throw new FailedToRemove();
         }
-    }
+    }*/
 
     private static toMuTagData(uid: string, snapshot: DataSnapshot): MuTagData {
         if (!snapshot.exists()) {
@@ -100,24 +115,19 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
 
         const data: {[key: string]: any} = {
             uid: uid,
-            muTagNumber: snapshotData.muTag_id,
-            emailAddress: snapshotData.email,
-            nextBeaconID: snapshotData.next_beacon_id,
-            nextMuTagNumber: snapshotData.next_mu_tag_number,
+            beaconID: snapshotData.beacon_id,
+            muTagNumber: snapshotData.mu_tag_number,
+            name: snapshotData.attached_to,
+            batteryLevel: snapshotData.battery_percentage,
+            color: snapshotData.color,
+            isSafe: true,
+            lastSeen: snapshotData.last_seen,
         };
-
-        if (snapshotData.hasOwnProperty('recycled_beacon_ids')) {
-            data.recycledBeaconIDs = Object.keys(snapshotData.recycled_beacon_ids);
-        }
-
-        if (snapshotData.hasOwnProperty('mu_tags')) {
-            data.muTags = Object.keys(snapshotData.mu_tags);
-        }
 
         if (!isMuTagData(data)) {
             throw new PersistedDataMalformed(JSON.stringify(data));
         }
 
         return data;
-    }*/
+    }
 }

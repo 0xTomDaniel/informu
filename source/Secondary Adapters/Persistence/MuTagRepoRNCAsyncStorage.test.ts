@@ -14,6 +14,8 @@ const muTag = new ProvisionedMuTag(
     12,
     'keys',
     new Percent(30),
+    true,
+    new Date(),
 );
 
 test('successfully adds Mu tag', async (): Promise<void> => {

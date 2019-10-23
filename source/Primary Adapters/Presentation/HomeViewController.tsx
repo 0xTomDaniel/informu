@@ -5,12 +5,13 @@ import { SafeAreaView, NavigationScreenProps, NavigationScreenOptions } from 're
 import React, { Component, ReactElement, FunctionComponent, useState, useEffect } from 'react';
 import DeviceInfo from 'react-native-device-info';
 import LinearGradient from 'react-native-linear-gradient';
-import { HomeState, HomeViewModel, Belonging } from './HomeViewModel';
+import { HomeState, HomeViewModel, BelongingViewData } from './HomeViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import LogoutService from '../../Core/Application/LogoutService';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Images } from './Images';
 import { Scale } from './ResponsiveScaler';
+import BelongingDashboardService from '../../Core/Application/BelongingDashboardService';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -121,7 +122,7 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
     );
 };
 
-const BelongingCard: FunctionComponent<Belonging> = (props): ReactElement => {
+const BelongingCard: FunctionComponent<BelongingViewData> = (props): ReactElement => {
     return (
         <Card elevation={0} style={styles.card}>
             <Card.Title
@@ -148,6 +149,7 @@ const BelongingCard: FunctionComponent<Belonging> = (props): ReactElement => {
 interface HomeVCProps extends NavigationScreenProps {
 
     homeViewModel: HomeViewModel;
+    belongingDashboardService: BelongingDashboardService;
     logoutService: LogoutService;
     addMuTagService: AddMuTagService;
 }
@@ -173,6 +175,10 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
             props.homeViewModel.onShowLogoutComplete(undefined);
         };
     });
+
+    useEffect((): void => {
+        props.belongingDashboardService.open();
+    }, [props.belongingDashboardService]);
 
     useEffect((): void => {
         try {
