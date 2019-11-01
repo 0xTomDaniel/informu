@@ -1,16 +1,25 @@
-import { BleManager, ScanOptions, Device, fullUUID, BleError, BleErrorCode} from 'react-native-ble-plx';
-import { MuTagDevices, FindNewMuTagAlreadyRunning, FindNewMuTagCanceled, UnprovisionMuTagDeviceNotFound, ProvisionMuTagFailed, NewMuTagNotFound, BluetoothUnsupported } from '../../Core/Ports/MuTagDevices';
+import { BleManager, ScanOptions, Device, fullUUID, BleError } from 'react-native-ble-plx';
+import {
+    MuTagDevices,
+    FindNewMuTagAlreadyRunning,
+    FindNewMuTagCanceled,
+    UnprovisionMuTagDeviceNotFound,
+    ProvisionMuTagFailed,
+    NewMuTagNotFound,
+    BluetoothUnsupported
+} from '../../Core/Ports/MuTagDevices';
 import { RSSI } from '../../Core/Domain/Types';
 import UnprovisionedMuTag from '../../Core/Domain/UnprovisionedMuTag';
 import ProvisionedMuTag, { BeaconID } from '../../Core/Domain/ProvisionedMuTag';
 import { MuTagBLEGATT } from '../../Core/Domain/MuTagBLEGATT/MuTagBLEGATT';
-import UUIDGenerator from 'react-native-uuid-generator';
+import { v4 as UUIDv4 } from 'uuid';
 import Percent from '../../Core/Domain/Percent';
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic,
 } from '../../Core/Domain/MuTagBLEGATT/Characteristic';
 import { AccountNumber } from '../../Core/Domain/Account';
+import { MuTagColor } from '../../Core/Domain/MuTag';
 
 enum ProvisionState {
     Provisioned,
@@ -86,7 +95,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         muTagName: string,
     ): Promise<ProvisionedMuTag> {
         const device = this.unprovisionedMuTagCache
-            .get(unprovisionedMuTag.getUID() as MuTagUID);
+            .get(unprovisionedMuTag.uid as MuTagUID);
 
         if (device == null) {
             throw new UnprovisionMuTagDeviceNotFound();
@@ -115,15 +124,16 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                 MuTagBLEGATT.MuTagConfiguration.Provision.provisionCode,
             );
 
-            const muTag = new ProvisionedMuTag(
-                unprovisionedMuTag.getUID(),
-                beaconID,
-                muTagNumber,
-                muTagName,
-                unprovisionedMuTag.getBatteryLevel(),
-                true,
-                new Date()
-            );
+            const muTag = new ProvisionedMuTag({
+                _uid: unprovisionedMuTag.uid,
+                _beaconID: beaconID,
+                _muTagNumber: muTagNumber,
+                _name: muTagName,
+                _batteryLevel: unprovisionedMuTag.batteryLevel,
+                _isSafe: true,
+                _lastSeen: new Date(),
+                _color: MuTagColor.MuOrange,
+            });
 
             return muTag;
         } catch (error) {
@@ -244,7 +254,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         const deviceID = device.id as DeviceID;
 
         if (major === undefined && minor === undefined) {
-            const muTagUID = await UUIDGenerator.getRandomUUID() as MuTagUID;
+            const muTagUID = UUIDv4() as MuTagUID;
             this.muTagDeviceIDCache.set(deviceID, muTagUID);
             this.unprovisionedMuTagCache.set(muTagUID, device);
 

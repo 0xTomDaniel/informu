@@ -20,11 +20,11 @@ export class HomeViewModel {
         belongings: [],
     }, HomeViewModel.handler(this.triggerDidUpdate.bind(this)));
 
-    private onDidUpdateCallback?: (key: string, value: any) => void;
+    private onDidUpdateCallback?: (newState: HomeState) => void;
     private onNavigateToAddMuTagCallback?: () => void;
     private onShowLogoutCompleteCallback?: () => void;
 
-    onDidUpdate(callback?: (key: string, value: any) => void): void {
+    onDidUpdate(callback?: (newState: HomeState) => void): void {
         this.onDidUpdateCallback = callback;
     }
 
@@ -48,13 +48,14 @@ export class HomeViewModel {
         }
     }
 
-    private triggerDidUpdate(key: string, value: any): void {
-        this.onDidUpdateCallback != null && this.onDidUpdateCallback(key, value);
+    private triggerDidUpdate(): void {
+        const newState = Object.assign({}, this.state);
+        this.onDidUpdateCallback != null && this.onDidUpdateCallback(newState);
     }
 
-    private static handler(onDidUpdate: (key: string, value: any) => void): ProxyHandler<HomeState> {
+    private static handler(triggerDidUpdate: () => void): ProxyHandler<HomeState> {
         return {
-            get(target: { [key: string]: any }, key: string): any {
+            get(target: { [key: string]: any }, key: string, receiver): any {
                 if (key === '__Proxy') {
                     return true;
                 }
@@ -63,21 +64,25 @@ export class HomeViewModel {
                     return;
                 }
 
-                const value = target[key];
+                const value = Reflect.get(target, key, receiver);
 
                 if (typeof value === 'undefined') {
                     return;
                 }
 
                 if (!value.__Proxy && typeof value === 'object') {
-                    target[key] = new Proxy(value, HomeViewModel.handler(onDidUpdate));
+                    const proxyValue = new Proxy(value, HomeViewModel.handler(triggerDidUpdate));
+                    Reflect.set(target, key, proxyValue, receiver);
                 }
 
                 return target[key];
             },
-            set(target: { [key: string]: any }, key: string, value): boolean {
-                target[key] = value;
-                onDidUpdate(key, value);
+            set(target: { [key: string]: any }, key: string, value, receiver): boolean {
+                Reflect.set(target, key, value, receiver);
+                if (Array.isArray(target) && key === 'length') {
+                    return true;
+                }
+                triggerDidUpdate();
                 return true;
             },
         };

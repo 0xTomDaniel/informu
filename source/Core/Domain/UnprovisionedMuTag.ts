@@ -3,20 +3,20 @@ import Percent from './Percent';
 
 export default class UnprovisionedMuTag extends MuTag {
 
-    protected readonly uid: string;
-    protected readonly batteryLevel: Percent;
+    protected readonly _uid: string;
+    protected readonly _batteryLevel: Percent;
 
     constructor(uid: string, batteryLevel: Percent) {
         super();
-        this.uid = uid;
-        this.batteryLevel = batteryLevel;
+        this._uid = uid;
+        this._batteryLevel = batteryLevel;
     }
 
-    getBatteryLevel(): Percent {
-        return this.batteryLevel;
+    get batteryLevel(): Percent {
+        return this._batteryLevel;
     }
 
-    isBatteryAbove(threshold: Percent): boolean {
-        return this.batteryLevel > threshold;
+    isBatteryAboveThreshold(threshold: Percent): boolean {
+        return this._batteryLevel > threshold;
     }
 }

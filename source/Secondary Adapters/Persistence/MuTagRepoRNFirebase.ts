@@ -1,7 +1,16 @@
 import firebase, { App } from 'react-native-firebase';
 import { Database, DataSnapshot } from 'react-native-firebase/database';
 import { MuTagRepositoryRemote, FailedToAdd, FailedToUpdate, FailedToGet, DoesNotExist, PersistedDataMalformed } from '../../Core/Ports/MuTagRepositoryRemote';
-import ProvisionedMuTag, { MuTagData, isMuTagData } from '../../Core/Domain/ProvisionedMuTag';
+import ProvisionedMuTag, { MuTagJSON, isMuTagJSON } from '../../Core/Domain/ProvisionedMuTag';
+
+interface DatabaseMuTag {
+    beacon_id: string;
+    mu_tag_number: number;
+    attached_to: string;
+    battery_percentage: number;
+    last_seen: string;
+    color: number;
+}
 
 export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
 
@@ -32,33 +41,20 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
             if (muTagUID == null) {
                 return true;
             }
-            const muTagData = MuTagRepoRNFirebase.toMuTagData(muTagUID, childSnapshot);
+            const muTagData = MuTagRepoRNFirebase.toMuTagJSON(muTagUID, childSnapshot);
             muTags.add(ProvisionedMuTag.deserialize(muTagData));
             return true;
         });
-
-        // DEBUG
-        console.log(muTags);
 
         return muTags;
     }
 
     async add(muTag: ProvisionedMuTag, accountUID: string): Promise<void> {
-        const muTagData = muTag.getMuTagData();
-
-        /*eslint-disable @typescript-eslint/camelcase*/
-        const databaseData: {[key: string]: any} = {
-            beacon_id: muTagData.beaconID,
-            mu_tag_number: muTagData.muTagNumber,
-            attached_to: muTagData.name,
-            batteryPercentage: muTagData.batteryLevel,
-            color: muTagData.color,
-        };
-        /*eslint-enable */
+        const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(muTag);
 
         try {
-            await this.database.ref(`mu_tags/${accountUID}/${muTagData.uid}`)
-                .set(databaseData);
+            await this.database.ref(`mu_tags/${accountUID}/${muTag.uid}`)
+                .set(databaseMuTag);
         } catch (e) {
             console.log(e);
             throw new FailedToAdd();
@@ -66,22 +62,11 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
     }
 
     async update(muTag: ProvisionedMuTag, accountUID: string): Promise<void> {
-        const muTagData = muTag.getMuTagData();
-
-        /*eslint-disable @typescript-eslint/camelcase*/
-        const databaseData: {[key: string]: any} = {
-            beacon_id: muTagData.beaconID,
-            mu_tag_number: muTagData.muTagNumber,
-            attached_to: muTagData.name,
-            battery_percentage: muTagData.batteryLevel,
-            last_seen: muTagData.lastSeen,
-            color: muTagData.color,
-        };
-        /*eslint-enable */
+        const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(muTag);
 
         try {
-            await this.database.ref(`mu_tags/${accountUID}/${muTagData.uid}`)
-                .update(databaseData);
+            await this.database.ref(`mu_tags/${accountUID}/${muTag.uid}`)
+                .update(databaseMuTag);
         } catch (e) {
             console.log(e);
             throw new FailedToUpdate();
@@ -103,7 +88,22 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         }
     }*/
 
-    private static toMuTagData(uid: string, snapshot: DataSnapshot): MuTagData {
+    private static toDatabaseMuTag(muTag: ProvisionedMuTag): DatabaseMuTag {
+        const muTagJSON = muTag.json;
+        /*eslint-disable @typescript-eslint/camelcase*/
+        const databaseMuTag: DatabaseMuTag = {
+            beacon_id: muTagJSON._beaconID,
+            mu_tag_number: muTagJSON._muTagNumber,
+            attached_to: muTagJSON._name,
+            battery_percentage: muTagJSON._batteryLevel,
+            last_seen: muTagJSON._lastSeen,
+            color: muTagJSON._color,
+        };
+        /*eslint-enable */
+        return databaseMuTag;
+    }
+
+    private static toMuTagJSON(uid: string, snapshot: DataSnapshot): MuTagJSON {
         if (!snapshot.exists()) {
             throw new DoesNotExist();
         }
@@ -113,21 +113,21 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
             throw new PersistedDataMalformed(uid);
         }
 
-        const data: {[key: string]: any} = {
-            uid: uid,
-            beaconID: snapshotData.beacon_id,
-            muTagNumber: snapshotData.mu_tag_number,
-            name: snapshotData.attached_to,
-            batteryLevel: snapshotData.battery_percentage,
-            color: snapshotData.color,
-            isSafe: true,
-            lastSeen: snapshotData.last_seen,
+        const json: {[key: string]: any} = {
+            _uid: uid,
+            _beaconID: snapshotData.beacon_id,
+            _muTagNumber: snapshotData.mu_tag_number,
+            _name: snapshotData.attached_to,
+            _batteryLevel: snapshotData.battery_percentage,
+            _color: snapshotData.color,
+            _isSafe: true,
+            _lastSeen: snapshotData.last_seen,
         };
 
-        if (!isMuTagData(data)) {
-            throw new PersistedDataMalformed(JSON.stringify(data));
+        if (!isMuTagJSON(json)) {
+            throw new PersistedDataMalformed(JSON.stringify(json));
         }
 
-        return data;
+        return json;
     }
 }

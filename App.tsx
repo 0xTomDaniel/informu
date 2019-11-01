@@ -81,6 +81,7 @@ const belongingDashboardPresenter = new BelongingDashboardPresenter(homeViewMode
 const belongingDashboardService = new BelongingDashboardService(
     belongingDashboardPresenter,
     muTagRepoLocal,
+    accountRepoLocal,
 );
 
 const AppStack = createStackNavigator(

@@ -1,8 +1,8 @@
-import { Appbar, Text, Portal, Modal, ActivityIndicator, Card, Avatar, Title, Paragraph, IconButton } from 'react-native-paper';
+import { Appbar, Text, Portal, Modal, ActivityIndicator, Card, Avatar, IconButton } from 'react-native-paper';
 import { StyleSheet, Platform, StatusBar, PermissionsAndroid, PermissionStatus, View, FlatList } from 'react-native';
 import Theme from './Theme';
-import { SafeAreaView, NavigationScreenProps, NavigationScreenOptions } from 'react-navigation';
-import React, { Component, ReactElement, FunctionComponent, useState, useEffect } from 'react';
+import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
+import React, { ReactElement, FunctionComponent, useState, useEffect } from 'react';
 import DeviceInfo from 'react-native-device-info';
 import LinearGradient from 'react-native-linear-gradient';
 import { HomeState, HomeViewModel, BelongingViewData } from './HomeViewModel';
@@ -159,8 +159,8 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
     const [state, setState] = useState(props.homeViewModel.state);
 
     useEffect((): (() => void) => {
-        props.homeViewModel.onDidUpdate((key, value): void => {
-            setState((previousState): HomeState => ({ ...previousState, [key]: value }));
+        props.homeViewModel.onDidUpdate((newState): void => {
+            setState((): HomeState => (newState));
         });
         props.homeViewModel.onNavigateToAddMuTag((): boolean =>
             props.navigation.navigate('AddMuTag')
@@ -217,14 +217,26 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
         <SafeAreaView style={[styles.safeAreaView, styles.base]}>
             <Appbar.Header style={styles.appBar}>
                 <Images.MuLogo style={styles.appBarLogo} />
-                <Appbar.Content subtitle="beta" color="gray" style={styles.appBarContent} />
+                <Appbar.Content title="" subtitle="beta" color="gray" style={styles.appBarContent} />
                 <Appbar.Action
                     icon="plus-circle-outline"
-                    onPress={(): Promise<void> => props.addMuTagService.startAddingNewMuTag()}
+                    onPress={(): void => { props.addMuTagService.startAddingNewMuTag(); }}
                 />
                 <Appbar.Action
                     icon="logout"
-                    onPress={(): Promise<void> => props.logoutService.logOut()}
+                    onPress={(): void => { props.logoutService.logOut(); }}
+                />
+                <Appbar.Action
+                    icon="rocket"
+                    color="red"
+                    onPress={(): void => {
+                        state.belongings.push({
+                            uid: 'randomUUID09',
+                            name: 'Jacket',
+                            safeStatusColor: Theme.Color.SecondaryOrange,
+                            lastSeen: '10d ago',
+                        });
+                    }}
                 />
             </Appbar.Header>
             <FlatList

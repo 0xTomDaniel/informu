@@ -13,10 +13,10 @@ export enum MuTagColor {
 
 export default abstract class MuTag {
 
-    protected abstract readonly uid: string;
-    protected abstract batteryLevel: Percent;
+    protected abstract readonly _uid: string;
+    protected abstract _batteryLevel: Percent;
 
-    getUID(): string {
-        return this.uid;
+    get uid(): string {
+        return this._uid;
     }
 }
