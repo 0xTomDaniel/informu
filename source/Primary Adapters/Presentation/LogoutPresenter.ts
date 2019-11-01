@@ -10,11 +10,11 @@ export default class LogoutPresenter implements LogoutOutput{
     }
 
     showBusyIndicator(): void {
-        this.viewModel.showActivityIndicator = true;
+        this.viewModel.state.showActivityIndicator = true;
     }
 
     showLogoutComplete(): void {
         this.viewModel.showLogoutComplete();
-        this.viewModel.showActivityIndicator = false;
+        this.viewModel.state.showActivityIndicator = false;
     }
 }

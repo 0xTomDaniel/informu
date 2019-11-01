@@ -1,5 +1,6 @@
 import Hexadecimal from './Hexadecimal';
 import { BeaconID } from './ProvisionedMuTag';
+import { v4 as UUIDv4 } from 'uuid';
 
 class InvalidAccountNumber extends RangeError {
 
@@ -55,15 +56,20 @@ export const isAccountData = (object: { [key: string]: any }): object is Account
         && 'muTags' in object ? isStringArray(object.muTags) : true;
 };
 
+type MuTagAddedCallback = (muTagUID: string) => void;
+
 export default class Account {
 
     private readonly uid: string;
     private readonly accountNumber: AccountNumber;
     private emailAddress: string;
     private nextBeaconID: BeaconID;
-    private recycledBeaconIDs: Set<BeaconID>;
+    private readonly recycledBeaconIDs: Set<BeaconID>;
     private nextMuTagNumber: number;
-    private muTags: Set<string>;
+    private readonly muTags: Set<string>;
+
+    private readonly onMuTagAddedSubscriptions = new Map<string, MuTagAddedCallback>();
+    private readonly onMuTagRemovedSubscriptions = new Map<string, MuTagAddedCallback>();
 
     constructor(
         uid: string,
@@ -114,6 +120,30 @@ export default class Account {
 
         this.muTags.add(muTagUID);
         this.nextMuTagNumber += 1;
+
+        this.onMuTagAddedSubscriptions.forEach((callback): void => {
+            callback(muTagUID);
+        });
+    }
+
+    onMuTagAddedSubscribe(callback: (muTagUID: string) => void): string {
+        const uuid = UUIDv4();
+        this.onMuTagAddedSubscriptions.set(uuid, callback);
+        return uuid;
+    }
+
+    removeMuTag(muTagUID: string, beaconID: BeaconID): void {
+        this.muTags.delete(muTagUID);
+        this.recycledBeaconIDs.add(beaconID);
+        this.onMuTagRemovedSubscriptions.forEach((callback): void => {
+            callback(muTagUID);
+        });
+    }
+
+    onMuTagRemovedSubscribe(callback: (muTagUID: string) => void): string {
+        const uuid = UUIDv4();
+        this.onMuTagRemovedSubscriptions.set(uuid, callback);
+        return uuid;
     }
 
     getAccountData(): AccountData {
@@ -152,12 +182,15 @@ export default class Account {
                 const account = Object.create(Account.prototype);
 
                 if (value.recycledBeaconIDs == null) {
-                    value.recycledBeaconIDs = new Set();
+                    value.recycledBeaconIDs = new Set<BeaconID>();
                 }
 
                 if (value.muTags == null) {
-                    value.muTags = new Set();
+                    value.muTags = new Set<string>();
                 }
+
+                value.onMuTagAddedSubscriptions = new Map<string, MuTagAddedCallback>();
+                value.onMuTagRemovedSubscriptions = new Map<string, MuTagAddedCallback>();
 
                 return Object.assign(account, value);
             case 'accountNumber':
@@ -165,11 +198,11 @@ export default class Account {
             case 'nextBeaconID':
                 return BeaconID.create(value);
             case 'recycledBeaconIDs':
-                return new Set(value.map(
+                return new Set<BeaconID>(value.map(
                     (hex: string): BeaconID => BeaconID.fromString(hex)
                 ));
             case 'muTags':
-                return new Set(value);
+                return new Set<string>(value);
             default:
                 return value;
         }

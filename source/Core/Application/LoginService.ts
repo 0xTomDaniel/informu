@@ -9,6 +9,8 @@ import {
     AccountRepositoryLocalException,
     AccountRepositoryLocal,
 } from '../Ports/AccountRepositoryLocal';
+import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
+import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
 
 export class ImproperEmailFormat extends Error {
 
@@ -37,17 +39,23 @@ export class LoginService {
     private readonly authentication: Authentication;
     private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly accountRepoRemote: AccountRepositoryRemote;
+    private readonly muTagRepoLocal: MuTagRepositoryLocal;
+    private readonly muTagRepoRemote: MuTagRepositoryRemote;
 
     constructor(
         loginOutput: LoginOutput,
         authentication: Authentication,
         accountRepoLocal: AccountRepositoryLocal,
-        accountRepoRemote: AccountRepositoryRemote
+        accountRepoRemote: AccountRepositoryRemote,
+        muTagRepoLocal: MuTagRepositoryLocal,
+        muTagRepoRemote: MuTagRepositoryRemote,
     ) {
         this.loginOutput = loginOutput;
         this.authentication = authentication;
         this.accountRepoLocal = accountRepoLocal;
         this.accountRepoRemote = accountRepoRemote;
+        this.muTagRepoLocal = muTagRepoLocal;
+        this.muTagRepoRemote = muTagRepoRemote;
     }
 
     async logInWithEmail(emailAddress: EmailAddress, password: Password): Promise<void> {
@@ -66,11 +74,14 @@ export class LoginService {
                 emailAddress.rawValue(),
                 password.rawValue()
             );
+
             const account = await this.accountRepoRemote.getByUID(userData.uid);
-
-            // TODO: Load and save Mu tags, Safe Zones, etc.
-
             await this.accountRepoLocal.add(account);
+
+            const muTags = await this.muTagRepoRemote.getAll(userData.uid);
+            await this.muTagRepoLocal.addMultiple(muTags);
+
+            // TODO: Load and save Safe Zones, etc.
 
             this.loginOutput.showHomeScreen();
         } catch (e) {

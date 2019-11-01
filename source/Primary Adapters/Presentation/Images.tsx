@@ -4,8 +4,17 @@ import {
     ImageProps,
     ImageSourcePropType,
     ImageBackgroundProps,
-    ImageBackground
+    ImageBackground,
+    StyleSheet,
 } from 'react-native';
+
+const styles = StyleSheet.create({
+    default: {
+        resizeMode: 'contain',
+        width: '100%',
+        height: undefined,
+    },
+});
 
 const imageWithAspectRatio = (imageSource: ImageSourcePropType, imageBackground = false): typeof Component => {
     const { width, height } = Image.resolveAssetSource(imageSource);
@@ -19,11 +28,11 @@ const imageWithAspectRatio = (imageSource: ImageSourcePropType, imageBackground 
 
             return <Image
                 source={imageSource}
-                style={[{ aspectRatio: aspectRatio }, style]}
+                style={[{ aspectRatio: aspectRatio }, styles.default, style]}
                 {...passThroughProps}
             />;
         }
-    };
+    }
 
     class ImageBackgroundWrapper extends Component<ImageBackgroundProps> {
         render(): Element {
@@ -37,18 +46,22 @@ const imageWithAspectRatio = (imageSource: ImageSourcePropType, imageBackground 
                 {...passThroughProps}
             />;
         }
-    };
+    }
 
     return imageBackground ? ImageBackgroundWrapper : ImageWrapper;
 };
 
 const ImageSources = {
     IconLogoCombo: require('../../../assets/icon-logo-combo.png') as ImageSourcePropType,
+    MuLogo: require('../../../assets/mu-logo.png') as ImageSourcePropType,
+    NoMuTags: require('../../../assets/no-mu-tags.png') as ImageSourcePropType,
     AddMuTag: require('../../../assets/add-mu-tag.png') as ImageSourcePropType,
 };
 
 export const Images = {
     IconLogoCombo: imageWithAspectRatio(ImageSources.IconLogoCombo),
+    MuLogo: imageWithAspectRatio(ImageSources.MuLogo),
+    NoMuTags: imageWithAspectRatio(ImageSources.NoMuTags),
 };
 
 export const ImageBackgrounds = {

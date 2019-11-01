@@ -1,37 +1,30 @@
-export interface HomeState {
-
-    showAddMuTagTooltip: boolean;
-    showActivityIndicator: boolean;
+export interface BelongingViewData {
+    uid: string;
+    name: string;
+    safeStatusColor: string;
+    lastSeen: string;
 }
 
-export class HomeViewModel implements HomeState {
+export interface HomeState {
 
-    private _showAddMuTagTooltip = true;
-    private _showActivityIndicator = false;
+    showEmptyBelongings: boolean;
+    showActivityIndicator: boolean;
+    belongings: BelongingViewData[];
+}
 
-    get showAddMuTagTooltip(): boolean {
-        return this._showAddMuTagTooltip;
-    }
+export class HomeViewModel {
 
-    set showAddMuTagTooltip(newValue: boolean) {
-        this._showAddMuTagTooltip = newValue;
-        this.triggerDidUpdate({ showAddMuTagTooltip: newValue });
-    }
+    state: HomeState = new Proxy({
+        showEmptyBelongings: true,
+        showActivityIndicator: false,
+        belongings: [],
+    }, HomeViewModel.handler(this.triggerDidUpdate.bind(this)));
 
-    get showActivityIndicator(): boolean {
-        return this._showActivityIndicator;
-    }
-
-    set showActivityIndicator(newValue: boolean) {
-        this._showActivityIndicator = newValue;
-        this.triggerDidUpdate({ showActivityIndicator: newValue });
-    }
-
-    private onDidUpdateCallback?: (change: object) => void;
+    private onDidUpdateCallback?: (newState: HomeState) => void;
     private onNavigateToAddMuTagCallback?: () => void;
     private onShowLogoutCompleteCallback?: () => void;
 
-    onDidUpdate(callback?: (change: object) => void): void {
+    onDidUpdate(callback?: (newState: HomeState) => void): void {
         this.onDidUpdateCallback = callback;
     }
 
@@ -55,9 +48,43 @@ export class HomeViewModel implements HomeState {
         }
     }
 
-    private triggerDidUpdate(change: object): void {
-        if (this.onDidUpdateCallback != null) {
-            this.onDidUpdateCallback(change);
-        }
+    private triggerDidUpdate(): void {
+        const newState = Object.assign({}, this.state);
+        this.onDidUpdateCallback != null && this.onDidUpdateCallback(newState);
+    }
+
+    private static handler(triggerDidUpdate: () => void): ProxyHandler<HomeState> {
+        return {
+            get(target: { [key: string]: any }, key: string, receiver): any {
+                if (key === '__Proxy') {
+                    return true;
+                }
+
+                if (!(key in target)) {
+                    return;
+                }
+
+                const value = Reflect.get(target, key, receiver);
+
+                if (typeof value === 'undefined') {
+                    return;
+                }
+
+                if (!value.__Proxy && typeof value === 'object') {
+                    const proxyValue = new Proxy(value, HomeViewModel.handler(triggerDidUpdate));
+                    Reflect.set(target, key, proxyValue, receiver);
+                }
+
+                return target[key];
+            },
+            set(target: { [key: string]: any }, key: string, value, receiver): boolean {
+                Reflect.set(target, key, value, receiver);
+                if (Array.isArray(target) && key === 'length') {
+                    return true;
+                }
+                triggerDidUpdate();
+                return true;
+            },
+        };
     }
 }
