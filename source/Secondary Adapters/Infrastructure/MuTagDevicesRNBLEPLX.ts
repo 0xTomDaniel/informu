@@ -6,7 +6,7 @@ import {
     UnprovisionMuTagDeviceNotFound,
     ProvisionMuTagFailed,
     NewMuTagNotFound,
-    BluetoothUnsupported
+    BluetoothUnsupported,
 } from '../../Core/Ports/MuTagDevices';
 import { RSSI } from '../../Core/Domain/Types';
 import UnprovisionedMuTag from '../../Core/Domain/UnprovisionedMuTag';
@@ -20,6 +20,7 @@ import Characteristic, {
 } from '../../Core/Domain/MuTagBLEGATT/Characteristic';
 import { AccountNumber } from '../../Core/Domain/Account';
 import { MuTagColor } from '../../Core/Domain/MuTag';
+import { Buffer } from 'buffer';
 
 enum ProvisionState {
     Provisioned,
@@ -30,6 +31,8 @@ type MuTagUID = string & { readonly _: unique symbol };
 type DeviceID = string & { readonly _: unique symbol };
 
 export class MuTagDevicesRNBLEPLX implements MuTagDevices {
+
+    private static readonly muTagDeviceUUID = 'de7ec7ed1055b055c0dedefea7edfa7e';
 
     private manager: BleManager;
 
@@ -191,7 +194,10 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         scanThreshold: RSSI,
         callback: (muTagDevice?: Device, error?: BleError) => void
     ): void {
-        const scanOptions: ScanOptions = { scanMode: 2 };
+        const scanOptions: ScanOptions = {
+            scanMode: 2, // ScanMode.LowLatency
+            allowDuplicates: false, // iOS only
+        };
         const discoveryCache = new Set<DeviceID>();
 
         this.manager.startDeviceScan(null, scanOptions, (error, device): void => {
@@ -216,31 +222,25 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
 
             discoveryCache.add(deviceID);
 
-            device.connect().then((): Promise<boolean> => {
-                return MuTagDevicesRNBLEPLX.isMuTag(device);
-            }).then((isMuTag): void => {
-                if (isMuTag) {
-                    callback(device);
-                } else {
-                    device.cancelConnection();
-                    this.ignoredDeviceIDCache.add(deviceID);
-                }
-            }).catch((e): void => {
-                if (e instanceof BleError) {
-                    console.log(e);
+            if (!MuTagDevicesRNBLEPLX.isMuTag(device)) {
+                this.ignoredDeviceIDCache.add(deviceID);
+                return;
+            }
 
+            device.connect().then((): Promise<Device> => {
+                return device.discoverAllServicesAndCharacteristics();
+            }).then((muTagDevice): void => {
+                callback(muTagDevice);
+            }).catch((e): void => {
+                console.warn(e);
+                if (e instanceof BleError) {
                     switch (e.errorCode) {
                         case 201: // BleErrorCode.DeviceDisconnected
-                            console.log(`Adding ${deviceID} to ignored device cache.`);
-                            this.ignoredDeviceIDCache.add(deviceID);
-                            break;
                         case 300: // BleErrorCode.ServicesDiscoveryFailed
                             console.log(`Removing ${deviceID} from discovery cache.`);
                             discoveryCache.delete(deviceID);
                             break;
                     }
-                } else {
-                    console.warn(e);
                 }
             });
         });
@@ -284,6 +284,22 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         return new UnprovisionedMuTag(muTagUID, batteryLevel);
     }
 
+    private static isMuTag(device: Device): boolean {
+        const deviceUUID = this.getDeviceUUID(device)
+        return deviceUUID === this.muTagDeviceUUID;
+    }
+
+    private static getDeviceUUID(device: Device): string | undefined {
+        if (device.manufacturerData == null) {
+            return;
+        }
+        const bytes = Buffer.from(device.manufacturerData, 'base64');
+        if (bytes.length !== 25) {
+            return;
+        }
+        return bytes.toString('hex').substring(8, 40);
+    }
+
     private static getMajor(accountNumber: AccountNumber): number {
         const majorHex = accountNumber.toString().substr(0, 4);
         return parseInt(majorHex, 16);
@@ -295,14 +311,14 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         return parseInt(minorHex, 16);
     }
 
-    private static async isMuTag(device: Device): Promise<boolean> {
+    /*private static async isMuTag(device: Device): Promise<boolean> {
         await device.discoverAllServicesAndCharacteristics();
 
         const services = await device.services();
         const serviceUUIDs = new Set(services.map((service): string => service.uuid));
 
         return serviceUUIDs.has(fullUUID(MuTagBLEGATT.MuTagConfiguration.uuid));
-    }
+    }*/
 
     private static async authenticateToMuTag(device: Device): Promise<void> {
         const authenticate = MuTagBLEGATT.MuTagConfiguration.Authenticate;
