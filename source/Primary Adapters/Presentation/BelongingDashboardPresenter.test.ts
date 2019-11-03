@@ -2,7 +2,9 @@ import { DashboardBelonging, DashboardBelongingUpdate } from '../../Core/Ports/B
 import { HomeViewModel, BelongingViewData } from './HomeViewModel';
 import BelongingDashboardPresenter from './BelongingDashboardPresenter';
 import Theme from './Theme';
+import lolex from 'lolex';
 
+const clock = lolex.install();
 const belongings: DashboardBelonging[] = [
     {
         uid: 'randomUUID01',
@@ -35,9 +37,10 @@ const viewModel = new HomeViewModel();
 const belongingDashboardPresenter = new BelongingDashboardPresenter(viewModel);
 
 test('show all current belongings', (): void => {
-    expect.assertions(1);
+    expect.assertions(2);
     viewModel.onDidUpdate((newState): void => {
         expect(newState.belongings).toEqual(belongingsViewData);
+        expect(newState.showEmptyBelongings).toEqual(false);
     });
 
     belongingDashboardPresenter.showAll(belongings);
@@ -66,9 +69,10 @@ test('show added belonging', (): void => {
         lastSeen: 'Just now',
     };
 
-    expect.assertions(1);
+    expect.assertions(2);
     viewModel.onDidUpdate((newState): void => {
         expect(newState.belongings[2]).toEqual(newBelongingViewData);
+        expect(newState.showEmptyBelongings).toEqual(false);
     });
 
     belongingDashboardPresenter.add(newBelonging);
@@ -88,10 +92,55 @@ test('show belonging update', (): void => {
         lastSeen: 'Just now',
     };
 
-    expect.assertions(1);
+    expect.assertions(2);
     viewModel.onDidUpdate((newState): void => {
         expect(newState.belongings[1]).toEqual(belongingUpdateViewData);
+        expect(newState.showEmptyBelongings).toEqual(false);
     });
 
     belongingDashboardPresenter.update(belongingUpdate);
+});
+
+test('continuously update last seen message', (): void => {
+    const oneSecondInMS = 1000;
+    const oneMinuteInMS = oneSecondInMS * 60;
+    const oneHourInMS = oneMinuteInMS * 60;
+    const oneDayInMS = oneHourInMS * 24;
+
+    viewModel.onDidUpdate(undefined);
+
+    clock.tick(oneSecondInMS * 59);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('Just now');
+
+    clock.tick(oneSecondInMS);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('1m ago');
+
+    clock.tick(oneMinuteInMS);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('2m ago');
+
+    clock.tick(oneMinuteInMS * 57);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('59m ago');
+
+    clock.tick(oneMinuteInMS);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('1h ago');
+
+    clock.tick(oneHourInMS);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('2h ago');
+
+    clock.tick(oneHourInMS * 21);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('23h ago');
+
+    clock.tick(oneHourInMS);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('1d ago');
+
+    clock.tick(oneDayInMS);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('2d ago');
+
+    clock.tick(oneDayInMS * 4);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('6d ago');
+
+    clock.tick(oneDayInMS);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('1969-12-31');
+
+    clock.uninstall();
 });
