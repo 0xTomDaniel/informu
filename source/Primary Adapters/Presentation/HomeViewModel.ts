@@ -1,28 +1,68 @@
+import _ from 'lodash';
+
 export interface BelongingViewData {
-    uid: string;
-    name: string;
-    safeStatusColor: string;
-    lastSeen: string;
+
+    readonly uid: string;
+    readonly name: string;
+    readonly safeStatusColor: string;
+    readonly lastSeen: string;
+}
+
+export interface BelongingViewDataDelta {
+
+    readonly uid: string;
+    readonly name?: string;
+    readonly safeStatusColor?: string;
+    readonly lastSeen?: string;
 }
 
 export interface HomeState {
 
-    showEmptyBelongings: boolean;
-    showActivityIndicator: boolean;
-    belongings: BelongingViewData[];
+    readonly showEmptyBelongings: boolean;
+    readonly showActivityIndicator: boolean;
+    readonly belongings: BelongingViewData[];
+}
+
+export interface HomeStateDelta {
+
+    readonly showEmptyBelongings?: boolean;
+    readonly showActivityIndicator?: boolean;
+    readonly belongings?: BelongingViewDataDelta[];
 }
 
 export class HomeViewModel {
 
-    state: HomeState = new Proxy({
+    private _state: HomeState = {
         showEmptyBelongings: true,
         showActivityIndicator: false,
         belongings: [],
-    }, HomeViewModel.handler(this.triggerDidUpdate.bind(this)));
+    }
+
+    get state(): HomeState {
+        return this._state;
+    }
 
     private onDidUpdateCallback?: (newState: HomeState) => void;
     private onNavigateToAddMuTagCallback?: () => void;
     private onShowLogoutCompleteCallback?: () => void;
+
+    updateState(delta: HomeStateDelta): void {
+        const oldState = _.cloneDeep(this._state);
+        _.mergeWith(
+            this._state,
+            delta,
+            (destValue, deltaValue): any[] | undefined => {
+                if (_.isArray(destValue)) {
+                    return _.values(_.merge(
+                        _.keyBy(destValue, 'uid'), _.keyBy(deltaValue, 'uid')
+                    ));
+                }
+            }
+        );
+        if (!_.isEqual(this._state, oldState)) {
+            this.triggerDidUpdate();
+        }
+    }
 
     onDidUpdate(callback?: (newState: HomeState) => void): void {
         this.onDidUpdateCallback = callback;
@@ -49,42 +89,7 @@ export class HomeViewModel {
     }
 
     private triggerDidUpdate(): void {
-        const newState = Object.assign({}, this.state);
+        const newState = _.cloneDeep(this._state);
         this.onDidUpdateCallback != null && this.onDidUpdateCallback(newState);
-    }
-
-    private static handler(triggerDidUpdate: () => void): ProxyHandler<HomeState> {
-        return {
-            get(target: { [key: string]: any }, key: string, receiver): any {
-                if (key === '__Proxy') {
-                    return true;
-                }
-
-                if (!(key in target)) {
-                    return;
-                }
-
-                const value = Reflect.get(target, key, receiver);
-
-                if (typeof value === 'undefined') {
-                    return;
-                }
-
-                if (!value.__Proxy && typeof value === 'object') {
-                    const proxyValue = new Proxy(value, HomeViewModel.handler(triggerDidUpdate));
-                    Reflect.set(target, key, proxyValue, receiver);
-                }
-
-                return target[key];
-            },
-            set(target: { [key: string]: any }, key: string, value, receiver): boolean {
-                Reflect.set(target, key, value, receiver);
-                if (Array.isArray(target) && key === 'length') {
-                    return true;
-                }
-                triggerDidUpdate();
-                return true;
-            },
-        };
     }
 }

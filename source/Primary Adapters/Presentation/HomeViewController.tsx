@@ -226,18 +226,6 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
                     icon="logout"
                     onPress={(): void => { props.logoutService.logOut(); }}
                 />
-                <Appbar.Action
-                    icon="rocket"
-                    color="red"
-                    onPress={(): void => {
-                        state.belongings.push({
-                            uid: 'randomUUID09',
-                            name: 'Jacket',
-                            safeStatusColor: Theme.Color.SecondaryOrange,
-                            lastSeen: '10d ago',
-                        });
-                    }}
-                />
             </Appbar.Header>
             <FlatList
                 contentContainerStyle={styles.belongingsContainer}
