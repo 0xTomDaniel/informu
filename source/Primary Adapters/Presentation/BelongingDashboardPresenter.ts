@@ -92,9 +92,6 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
     }
 
     private startUpdatingLastSeenDisplay(): void {
-        // DEBUG
-        //console.log('startUpdatingLastSeenDisplay() executed');
-
         this.lastSeenDisplayUpdateTimerID = setInterval((): void => {
             const belongingsViewDataDelta: BelongingViewDataDelta[] = [];
             this.belongingsLastSeenCache.forEach((lastSeen, uid): void => {
@@ -102,10 +99,6 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
                     = BelongingDashboardPresenter.lastSeenDisplay(lastSeen);
                 belongingsViewDataDelta.push({ uid: uid, lastSeen: lastSeenDisplay });
             });
-
-            // DEBUG
-            //console.log(belongingsViewDataDelta);
-
             this.viewModel.updateState({
                 belongings: belongingsViewDataDelta,
             });
@@ -133,9 +126,6 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
 
     private static lastSeenDisplay(timestamp: Date): string {
         const now = new Date();
-
-        //DEBUG
-        //console.log(now);
         const daysSinceLastSeen = this.daysBetween(timestamp, now);
         const hoursSinceLastSeen = this.hoursBetween(timestamp, now);
         const minutesSinceLastSeen = this.minutesBetween(timestamp, now);
