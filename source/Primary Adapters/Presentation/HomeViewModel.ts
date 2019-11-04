@@ -1,37 +1,70 @@
-export interface HomeState {
+import _ from 'lodash';
 
-    showAddMuTagTooltip: boolean;
-    showActivityIndicator: boolean;
+export interface BelongingViewData {
+
+    readonly uid: string;
+    readonly name: string;
+    readonly safeStatusColor: string;
+    readonly lastSeen: string;
 }
 
-export class HomeViewModel implements HomeState {
+export interface BelongingViewDataDelta {
 
-    private _showAddMuTagTooltip = true;
-    private _showActivityIndicator = false;
+    readonly uid: string;
+    readonly name?: string;
+    readonly safeStatusColor?: string;
+    readonly lastSeen?: string;
+}
 
-    get showAddMuTagTooltip(): boolean {
-        return this._showAddMuTagTooltip;
+export interface HomeState {
+
+    readonly showEmptyBelongings: boolean;
+    readonly showActivityIndicator: boolean;
+    readonly belongings: BelongingViewData[];
+}
+
+export interface HomeStateDelta {
+
+    readonly showEmptyBelongings?: boolean;
+    readonly showActivityIndicator?: boolean;
+    readonly belongings?: BelongingViewDataDelta[];
+}
+
+export class HomeViewModel {
+
+    private _state: HomeState = {
+        showEmptyBelongings: true,
+        showActivityIndicator: false,
+        belongings: [],
     }
 
-    set showAddMuTagTooltip(newValue: boolean) {
-        this._showAddMuTagTooltip = newValue;
-        this.triggerDidUpdate({ showAddMuTagTooltip: newValue });
+    get state(): HomeState {
+        return this._state;
     }
 
-    get showActivityIndicator(): boolean {
-        return this._showActivityIndicator;
-    }
-
-    set showActivityIndicator(newValue: boolean) {
-        this._showActivityIndicator = newValue;
-        this.triggerDidUpdate({ showActivityIndicator: newValue });
-    }
-
-    private onDidUpdateCallback?: (change: object) => void;
+    private onDidUpdateCallback?: (newState: HomeState) => void;
     private onNavigateToAddMuTagCallback?: () => void;
     private onShowLogoutCompleteCallback?: () => void;
 
-    onDidUpdate(callback?: (change: object) => void): void {
+    updateState(delta: HomeStateDelta): void {
+        const oldState = _.cloneDeep(this._state);
+        _.mergeWith(
+            this._state,
+            delta,
+            (destValue, deltaValue): any[] | undefined => {
+                if (_.isArray(destValue)) {
+                    return _.values(_.merge(
+                        _.keyBy(destValue, 'uid'), _.keyBy(deltaValue, 'uid')
+                    ));
+                }
+            }
+        );
+        if (!_.isEqual(this._state, oldState)) {
+            this.triggerDidUpdate();
+        }
+    }
+
+    onDidUpdate(callback?: (newState: HomeState) => void): void {
         this.onDidUpdateCallback = callback;
     }
 
@@ -55,9 +88,8 @@ export class HomeViewModel implements HomeState {
         }
     }
 
-    private triggerDidUpdate(change: object): void {
-        if (this.onDidUpdateCallback != null) {
-            this.onDidUpdateCallback(change);
-        }
+    private triggerDidUpdate(): void {
+        const newState = _.cloneDeep(this._state);
+        this.onDidUpdateCallback != null && this.onDidUpdateCallback(newState);
     }
 }

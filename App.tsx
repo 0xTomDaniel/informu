@@ -36,6 +36,8 @@ import MuTagAddingViewController from './source/Primary Adapters/Presentation/Mu
 import LogoutService from './source/Core/Application/LogoutService';
 import LogoutPresenter from './source/Primary Adapters/Presentation/LogoutPresenter';
 import RepoLocalRNCAsyncStorage from './source/Secondary Adapters/Persistence/RepoLocalRNCAsyncStorage';
+import BelongingDashboardService from './source/Core/Application/BelongingDashboardService';
+import BelongingDashboardPresenter from './source/Primary Adapters/Presentation/BelongingDashboardPresenter';
 
 const authentication = new AuthenticationFirebase();
 const accountRepoLocal = new AccountRepoRNCAsyncStorage();
@@ -75,6 +77,12 @@ const logoutService = new LogoutService(
     muTagRepoRemote,
     repoLocal,
 );
+const belongingDashboardPresenter = new BelongingDashboardPresenter(homeViewModel);
+const belongingDashboardService = new BelongingDashboardService(
+    belongingDashboardPresenter,
+    muTagRepoLocal,
+    accountRepoLocal,
+);
 
 const AppStack = createStackNavigator(
     {
@@ -82,6 +90,7 @@ const AppStack = createStackNavigator(
             screen: (props: NavigationScreenProps): Element => (
                 <HomeViewController
                     homeViewModel={homeViewModel}
+                    belongingDashboardService={belongingDashboardService}
                     logoutService={logoutService}
                     addMuTagService={addMuTagService}
                     {...props}
@@ -130,6 +139,8 @@ const EntryStack = createStackNavigator(
                     authentication={authentication}
                     accountRepoLocal={accountRepoLocal}
                     accountRepoRemote={accountRepoRemote}
+                    muTagRepoLocal={muTagRepoLocal}
+                    muTagRepoRemote={muTagRepoRemote}
                     {...props}
                 />
             ),

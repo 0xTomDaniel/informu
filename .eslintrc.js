@@ -1,7 +1,10 @@
 module.exports = {
   root: true,
   parser: '@typescript-eslint/parser',
-  plugins: ['@typescript-eslint'],
+  plugins: [
+    '@typescript-eslint',
+    "react-hooks"
+  ],
   extends: [
     'plugin:@typescript-eslint/recommended',
     '@react-native-community'
@@ -14,6 +17,8 @@ module.exports = {
       "error",
       { "accessibility": "no-public" }
     ],
-    "@typescript-eslint/no-explicit-any": "off"
+    "@typescript-eslint/no-explicit-any": "off",
+    "react-hooks/rules-of-hooks": "error",
+    "react-hooks/exhaustive-deps": "warn"
   }
 };

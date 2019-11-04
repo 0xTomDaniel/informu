@@ -72,7 +72,7 @@ export default class AddMuTagService {
             this.unprovisionedMuTag = await this.muTagDevices
                 .findNewMuTag(this.connectThreshold);
 
-            if (!this.unprovisionedMuTag.isBatteryAbove(this.addMuTagBatteryThreshold)) {
+            if (!this.unprovisionedMuTag.isBatteryAboveThreshold(this.addMuTagBatteryThreshold)) {
                 const error = new LowMuTagBattery(this.addMuTagBatteryThreshold.valueOf());
                 this.addMuTagOutput.showLowBatteryError(error);
                 return;
@@ -138,7 +138,7 @@ export default class AddMuTagService {
 
             this.addMuTagOutput.showActivityIndicator();
 
-            this.provisionedMuTag.updateColor(color);
+            this.provisionedMuTag.changeColor(color);
             await this.muTagRepoLocal.update(this.provisionedMuTag);
             const accountUID = await this.getAccountUID();
             await this.muTagRepoRemote.update(this.provisionedMuTag, accountUID);
@@ -170,7 +170,7 @@ export default class AddMuTagService {
         this.accountUID = account.getUID();
         await this.muTagRepoRemote.add(this.provisionedMuTag, this.accountUID);
 
-        account.addNewMuTag(this.provisionedMuTag.getUID(), beaconID);
+        account.addNewMuTag(this.provisionedMuTag.uid, beaconID);
         await this.accountRepoLocal.update(account);
         await this.accountRepoRemote.update(account);
 

@@ -11,7 +11,14 @@ import AsyncStorage from '@react-native-community/async-storage';
 
 export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
 
+    private readonly muTagCache = new Map<string, ProvisionedMuTag>();
+    private muTagCacheHasAll = false;
+
     async getByUID(uid: string): Promise<ProvisionedMuTag> {
+        if (this.muTagCache.has(uid)) {
+            return this.muTagCache.get(uid) as ProvisionedMuTag;
+        }
+
         let rawMuTag: string | null;
 
         try {
@@ -25,10 +32,16 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
             throw new DoesNotExist();
         }
 
-        return ProvisionedMuTag.deserialize(rawMuTag);
+        const muTag = ProvisionedMuTag.deserialize(rawMuTag);
+        this.muTagCache.set(muTag.uid, muTag);
+        return muTag;
     }
 
     async getAll(): Promise<Set<ProvisionedMuTag>> {
+        if (this.muTagCacheHasAll) {
+            return new Set(this.muTagCache.values());
+        }
+
         try {
             const regExp = /^muTags\//;
             const keys = await AsyncStorage.getAllKeys();
@@ -39,7 +52,8 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
                 .filter((rawMuTag): boolean => rawMuTag !== '');
             const muTags = rawMuTags.map((rawMuTag): ProvisionedMuTag => ProvisionedMuTag.deserialize(rawMuTag));
 
-            return new Set(muTags);
+            muTags.forEach((muTag): void => { this.muTagCache.set(muTag.uid, muTag); });
+            return new Set(this.muTagCache.values());
         } catch (e) {
             console.log(e);
             throw new FailedToGet();
@@ -50,10 +64,17 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
         const rawMuTag = muTag.serialize();
 
         try {
-            await AsyncStorage.setItem(`muTags/${muTag.getUID()}`, rawMuTag);
+            await AsyncStorage.setItem(`muTags/${muTag.uid}`, rawMuTag);
+            this.muTagCache.set(muTag.uid, muTag);
         } catch (e) {
             console.log(e);
             throw new FailedToAdd();
+        }
+    }
+
+    async addMultiple(muTags: Set<ProvisionedMuTag>): Promise<void> {
+        for (const muTag of muTags) {
+            await this.add(muTag);
         }
     }
 
@@ -63,7 +84,7 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
         try {
             // Using 'setItem' because documentation of 'mergeItem' is too vague.
             // I don't want to have any unforeseen issues.
-            await AsyncStorage.setItem(`muTags/${muTag.getUID()}`, rawMuTag);
+            await AsyncStorage.setItem(`muTags/${muTag.uid}`, rawMuTag);
         } catch (e) {
             console.log(e);
             throw new FailedToUpdate();
@@ -73,6 +94,7 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
     async removeByUID(uid: string): Promise<void> {
         try {
             await AsyncStorage.removeItem(`muTags/${uid}`);
+            this.muTagCache.delete(uid);
         } catch (e) {
             console.log(e);
             throw new FailedToRemove();

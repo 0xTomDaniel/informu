@@ -11,7 +11,13 @@ import AsyncStorage from '@react-native-community/async-storage';
 
 export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
 
+    private account?: Account;
+
     async get(): Promise<Account> {
+        if (this.account != null) {
+            return this.account;
+        }
+
         let rawAccount: string | null;
 
         try {
@@ -25,7 +31,9 @@ export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
             throw new DoesNotExist();
         }
 
-        return Account.deserialize(rawAccount);
+        const account = Account.deserialize(rawAccount);
+        this.account = account;
+        return account;
     }
 
     async add(account: Account): Promise<void> {
@@ -55,6 +63,7 @@ export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
     async remove(): Promise<void> {
         try {
             await AsyncStorage.removeItem('account');
+            this.account = undefined;
         } catch (e) {
             console.log(e);
             throw new FailedToRemove();
