@@ -11,6 +11,7 @@ import {
 } from '../Ports/AccountRepositoryLocal';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
+import { Session } from './SessionService';
 
 export class ImproperEmailFormat extends Error {
 
@@ -41,6 +42,7 @@ export class LoginService {
     private readonly accountRepoRemote: AccountRepositoryRemote;
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly muTagRepoRemote: MuTagRepositoryRemote;
+    private readonly sessionService: Session;
 
     constructor(
         loginOutput: LoginOutput,
@@ -49,6 +51,7 @@ export class LoginService {
         accountRepoRemote: AccountRepositoryRemote,
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
+        sessionService: Session,
     ) {
         this.loginOutput = loginOutput;
         this.authentication = authentication;
@@ -56,6 +59,7 @@ export class LoginService {
         this.accountRepoRemote = accountRepoRemote;
         this.muTagRepoLocal = muTagRepoLocal;
         this.muTagRepoRemote = muTagRepoRemote;
+        this.sessionService = sessionService;
     }
 
     async logInWithEmail(emailAddress: EmailAddress, password: Password): Promise<void> {
@@ -83,7 +87,7 @@ export class LoginService {
 
             // TODO: Load and save Safe Zones, etc.
 
-            this.loginOutput.showHomeScreen();
+            this.sessionService.start();
         } catch (e) {
             if (
                 this.isLoginServiceException(e)

@@ -8,6 +8,7 @@ import Percent from '../Domain/Percent';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
 import { RepositoryLocal } from '../Ports/RepositoryLocal';
+import { MuTagColor } from '../Domain/MuTag';
 
 describe('user logs out of their account', (): void => {
 
@@ -92,24 +93,26 @@ describe('user logs out of their account', (): void => {
         validAccountData.nextMuTagNumber,
         validAccountData.muTags,
     );
-    const muTag1 = new ProvisionedMuTag(
-        'randomUUID1',
-        BeaconID.fromString('0'),
-        0,
-        'keys',
-        new Percent(80),
-        true,
-        new Date(),
-    );
-    const muTag2 = new ProvisionedMuTag(
-        'randomUUID1',
-        BeaconID.fromString('1'),
-        1,
-        'laptop',
-        new Percent(80),
-        true,
-        new Date(),
-    );
+    const muTag1 = new ProvisionedMuTag({
+        _uid: 'randomUUID1',
+        _beaconID: BeaconID.fromString('0'),
+        _muTagNumber: 0,
+        _name: 'keys',
+        _batteryLevel: new Percent(80),
+        _isSafe: true,
+        _lastSeen: new Date(),
+        _color: MuTagColor.MuOrange,
+    });
+    const muTag2 = new ProvisionedMuTag({
+        _uid: 'randomUUID2',
+        _beaconID: BeaconID.fromString('1'),
+        _muTagNumber: 1,
+        _name: 'laptop',
+        _batteryLevel: new Percent(80),
+        _isSafe: true,
+        _lastSeen: new Date(),
+        _color: MuTagColor.MuOrange,
+    });
     const muTags = new Set([muTag1, muTag2]);
 
     describe('user is logged in', (): void => {

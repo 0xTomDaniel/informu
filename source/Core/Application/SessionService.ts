@@ -3,7 +3,13 @@ import { Authentication } from '../Ports/Authentication';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
 import { DoesNotExist } from '../Ports/AccountRepositoryLocal';
 
-export default class SessionService {
+export interface Session {
+
+    load(): Promise<void>;
+    start(): Promise<void>;
+}
+
+export default class SessionService implements Session {
 
     private readonly sessionOutput: SessionOutput;
     private readonly authentication: Authentication;
@@ -39,5 +45,9 @@ export default class SessionService {
                 throw e;
             }
         }
+    }
+
+    async start(): Promise<void> {
+        this.sessionOutput.showHomeScreen();
     }
 }
