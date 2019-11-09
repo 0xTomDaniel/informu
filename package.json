@@ -16,6 +16,7 @@
     "lodash": "^4.17.15",
     "react": "16.8.6",
     "react-native": "0.60.3",
+    "react-native-beacons-manager": "^1.0.7",
     "react-native-ble-plx": "^1.1.0",
     "react-native-device-info": "^2.3.2",
     "react-native-firebase": "^5.5.6",
