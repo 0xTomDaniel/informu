@@ -23,6 +23,7 @@ import { Authentication } from '../../Core/Ports/Authentication';
 import { AccountRepositoryLocal } from '../../Core/Ports/AccountRepositoryLocal';
 import { MuTagRepositoryLocal } from '../../Core/Ports/MuTagRepositoryLocal';
 import { MuTagRepositoryRemote } from '../../Core/Ports/MuTagRepositoryRemote';
+import SessionService from '../../Core/Application/SessionService';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -79,6 +80,7 @@ interface LoginVCProps extends NavigationScreenProps {
     accountRepoRemote: AccountRepositoryRemote;
     muTagRepoLocal: MuTagRepositoryLocal;
     muTagRepoRemote: MuTagRepositoryRemote;
+    sessionService: SessionService;
 }
 
 export default class LoginViewController extends Component<LoginVCProps> {
@@ -92,6 +94,7 @@ export default class LoginViewController extends Component<LoginVCProps> {
         this.props.accountRepoRemote,
         this.props.muTagRepoLocal,
         this.props.muTagRepoRemote,
+        this.props.sessionService,
     );
 
     state: Readonly<LoginState> = this.viewModel;

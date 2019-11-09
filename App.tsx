@@ -83,6 +83,13 @@ const belongingDashboardService = new BelongingDashboardService(
     muTagRepoLocal,
     accountRepoLocal,
 );
+const appViewModel = new AppViewModel();
+const sessionPresenter = new AppPresenter(appViewModel);
+const sessionService = new SessionService(
+    sessionPresenter,
+    authentication,
+    accountRepoLocal,
+);
 
 const AppStack = createStackNavigator(
     {
@@ -141,6 +148,7 @@ const EntryStack = createStackNavigator(
                     accountRepoRemote={accountRepoRemote}
                     muTagRepoLocal={muTagRepoLocal}
                     muTagRepoRemote={muTagRepoRemote}
+                    sessionService={sessionService}
                     {...props}
                 />
             ),
@@ -178,17 +186,10 @@ const paperTheme = {
 export default class App extends Component {
 
     private navigator: NavigationContainerComponent | null | undefined;
-    private viewModel = new AppViewModel();
-    private sessionPresenter = new AppPresenter(this.viewModel);
-    private sessionService = new SessionService(
-        this.sessionPresenter,
-        authentication,
-        accountRepoLocal,
-    );
-    private appStateController = new AppStateController(this.sessionService);
+    private appStateController = new AppStateController(sessionService);
 
     componentDidMount(): void {
-        this.viewModel.onNavigate((screen): void => {
+        appViewModel.onNavigate((screen): void => {
             switch (screen) {
                 case Screen.App:
                     this.navigate('App');
@@ -201,7 +202,7 @@ export default class App extends Component {
                     break;
             }
         });
-        this.sessionService.load();
+        sessionService.load();
     }
 
     render(): Element {

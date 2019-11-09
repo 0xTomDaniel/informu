@@ -91,6 +91,12 @@ describe('user opens saved login session', (): void => {
             expect(sessionOutputMock.showHomeScreen).toHaveBeenCalledTimes(1);
             expect(sessionOutputMock.showLoginScreen).toHaveBeenCalledTimes(0);
         });
+
+        // Then
+        //
+        /*it('should start safety status updates', (): void => {
+            
+        });*/
     });
 
     describe('no account exists in local persistence', (): void => {
@@ -165,5 +171,36 @@ describe('user opens saved login session', (): void => {
             expect(sessionOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
             expect(sessionOutputMock.showLoginScreen).toHaveBeenCalledTimes(1);
         });
+    });
+
+    describe('user logs in', (): void => {
+
+        // Given that app is opened
+        //
+        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
+
+        // When the user logs in
+        //
+        beforeAll(async (): Promise<void> => {
+            (authenticationMock.isAuthenticatedAs as jest.Mock).mockResolvedValueOnce(true);
+            await sessionService.start();
+        });
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show the home screen', (): void => {
+            expect(sessionOutputMock.showHomeScreen).toHaveBeenCalledTimes(1);
+            expect(sessionOutputMock.showLoginScreen).toHaveBeenCalledTimes(0);
+        });
+
+        // Then
+        //
+        /*it('should start safety status updates', (): void => {
+            
+        });*/
     });
 });
