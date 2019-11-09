@@ -15,6 +15,7 @@ import { MuTagColor } from '../Domain/MuTag';
 import Percent from '../Domain/Percent';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
+import { Session } from './SessionService';
 
 describe('user logs into their account', (): void => {
 
@@ -65,12 +66,20 @@ describe('user logs into their account', (): void => {
             updateMultiple: jest.fn(),
         }));
 
+    const SessionServiceMock
+        = jest.fn<Session, any>((): Session => ({
+            load: jest.fn(),
+            start: jest.fn(),
+        }));
+
     const loginOutputMock = new LoginOutputMock();
     const authenticationMock = new AuthenticationMock();
     const accountRepoLocalMock = new AccountRepositoryLocalMock();
     const accountRepoRemoteMock = new AccountRepositoryRemoteMock();
     const muTagRepoLocalMock = new MuTagRepositoryLocalMock();
     const muTagRepoRemoteMock = new MuTagRepositoryRemoteMock();
+    const sessionServiceMock = new SessionServiceMock();
+
     const loginService = new LoginService(
         loginOutputMock,
         authenticationMock,
@@ -78,6 +87,7 @@ describe('user logs into their account', (): void => {
         accountRepoRemoteMock,
         muTagRepoLocalMock,
         muTagRepoRemoteMock,
+        sessionServiceMock,
     );
 
     const muTags = new Set([
@@ -180,8 +190,8 @@ describe('user logs into their account', (): void => {
 
         // Then
         //
-        it('should show Home screen', (): void => {
-            expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(1);
+        it('should start login session', (): void => {
+            expect(sessionServiceMock.start).toHaveBeenCalledTimes(1);
             expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(0);
         });
     });
