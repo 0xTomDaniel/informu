@@ -11,7 +11,7 @@ import { Authentication, UserData, InvalidCredentials } from '../Ports/Authentic
 import { LoginOutput } from '../Ports/LoginOutput';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
 import ProvisionedMuTag, { BeaconID } from '../Domain/ProvisionedMuTag';
-import MuTag from '../Domain/MuTag';
+import { MuTagColor } from '../Domain/MuTag';
 import Percent from '../Domain/Percent';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
@@ -81,24 +81,26 @@ describe('user logs into their account', (): void => {
     );
 
     const muTags = new Set([
-        new ProvisionedMuTag(
-            'randomUUID01',
-            BeaconID.create('0'),
-            0,
-            'Keys',
-            new Percent(50),
-            true,
-            new Date(),
-        ),
-        new ProvisionedMuTag(
-            'randomUUID02',
-            BeaconID.create('1'),
-            1,
-            'Laptop',
-            new Percent(50),
-            true,
-            new Date(),
-        ),
+        new ProvisionedMuTag({
+            _uid: 'randomUUID01',
+            _beaconID: BeaconID.create('0'),
+            _muTagNumber: 0,
+            _name: 'Keys',
+            _batteryLevel: new Percent(50),
+            _isSafe: true,
+            _lastSeen: new Date(),
+            _color: MuTagColor.MuOrange,
+        }),
+        new ProvisionedMuTag({
+            _uid: 'randomUUID02',
+            _beaconID: BeaconID.create('1'),
+            _muTagNumber: 1,
+            _name: 'Laptop',
+            _batteryLevel: new Percent(50),
+            _isSafe: true,
+            _lastSeen: new Date(),
+            _color: MuTagColor.MuOrange,
+        }),
     ]);
     const validAccountData = {
         uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
