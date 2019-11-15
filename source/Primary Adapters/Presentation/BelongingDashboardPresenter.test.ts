@@ -109,7 +109,10 @@ test('continuously update last seen message', (): void => {
 
     viewModel.onDidUpdate(undefined);
 
-    clock.tick(oneSecondInMS * 59);
+    clock.tick(oneSecondInMS * 5);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('Just now');
+
+    clock.tick(oneSecondInMS * 54);
     expect(viewModel.state.belongings[2].lastSeen).toEqual('Just now');
 
     clock.tick(oneSecondInMS);
@@ -141,6 +144,23 @@ test('continuously update last seen message', (): void => {
 
     clock.tick(oneDayInMS);
     expect(viewModel.state.belongings[2].lastSeen).toEqual('1969-12-31');
+
+    belongingDashboardPresenter.update({
+        uid: 'randomUUID03',
+        isSafe: true,
+        lastSeen: new Date(),
+    });
+
+    belongingDashboardPresenter.update({
+        uid: 'randomUUID03',
+        isSafe: false,
+    });
+
+    clock.tick(oneSecondInMS * 5);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('Seconds ago');
+
+    clock.tick(oneSecondInMS * 55);
+    expect(viewModel.state.belongings[2].lastSeen).toEqual('1m ago');
 
     clock.uninstall();
 });

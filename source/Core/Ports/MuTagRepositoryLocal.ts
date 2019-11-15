@@ -1,8 +1,8 @@
 import ProvisionedMuTag, { BeaconID } from '../Domain/ProvisionedMuTag';
 
 export class DoesNotExist extends Error {
-    constructor() {
-        super('Mu tag entity does not exist in local persistence.');
+    constructor(id: string) {
+        super(`Mu tag (${id}) entity does not exist in local persistence.`);
         this.name = 'DoesNotExist';
         Object.setPrototypeOf(this, new.target.prototype);
     }
@@ -51,7 +51,7 @@ export class FailedToRemove extends Error {
 export interface MuTagRepositoryLocal {
 
     getByUID(uid: string): Promise<ProvisionedMuTag>;
-    //getByBeaconID(beaconID: BeaconID): Promise<ProvisionedMuTag>;
+    getByBeaconID(beaconID: BeaconID): Promise<ProvisionedMuTag>;
     getAll(): Promise<Set<ProvisionedMuTag>>;
     add(muTag: ProvisionedMuTag): Promise<void>;
     addMultiple(muTags: Set<ProvisionedMuTag>): Promise<void>;

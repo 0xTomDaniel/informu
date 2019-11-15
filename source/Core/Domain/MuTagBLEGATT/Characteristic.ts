@@ -1,4 +1,5 @@
 import { Buffer } from 'buffer';
+import Hexadecimal from '../Hexadecimal';
 
 export interface ReadableCharacteristic<T> {
     fromBase64(base64Value?: string): T;
@@ -15,44 +16,43 @@ export default abstract class Characteristic<T> {
     abstract readonly serviceUUID: string;
     abstract readonly byteLength: number;
 
-    protected static numberToBase64(value: number): string {
-        const hex = value.toString(16);
-        const bytes = Buffer.from(hex, 'hex');
+    protected static hexToBase64(hex: Hexadecimal): string {
+        const bytes = Buffer.from(hex.toString(), 'hex');
         return bytes.toString('base64');
     }
 
-    protected static base64ToNumber(base64: string): number {
+    protected static base64ToHex(base64: string): Hexadecimal {
         const bytes = Buffer.from(base64, 'base64');
-        return bytes.readIntBE(0, bytes.byteLength);
+        return Hexadecimal.fromString(bytes.toString('hex'));
     }
 
-    protected static stringToBase64(value: string): string {
-        const bytes = Buffer.from(value);
+    protected static utf8ToBase64(utf8: string): string {
+        const bytes = Buffer.from(utf8);
         return bytes.toString('base64');
     }
 
-    protected static base64ToString(base64: string): string {
+    protected static base64ToUTF8(base64: string): string {
         const bytes = Buffer.from(base64, 'base64');
         return bytes.toString();
     }
 }
 
-export abstract class NumberCharacteristic extends Characteristic<number> {
-    fromBase64(base64Value: string): number {
-        return Characteristic.base64ToNumber(base64Value);
+export abstract class HexCharacteristic extends Characteristic<Hexadecimal> {
+    fromBase64(base64Value: string): Hexadecimal {
+        return Characteristic.base64ToHex(base64Value);
     }
 
-    toBase64(value: number): string {
-        return Characteristic.numberToBase64(value);
+    toBase64(hex: Hexadecimal): string {
+        return Characteristic.hexToBase64(hex);
     }
 }
 
-export abstract class StringCharacteristic extends Characteristic<string> {
+export abstract class UTF8Characteristic extends Characteristic<string> {
     fromBase64(base64Value: string): string {
-        return Characteristic.base64ToString(base64Value);
+        return Characteristic.base64ToUTF8(base64Value);
     }
 
     toBase64(value: string): string {
-        return Characteristic.stringToBase64(value);
+        return Characteristic.utf8ToBase64(value);
     }
 }

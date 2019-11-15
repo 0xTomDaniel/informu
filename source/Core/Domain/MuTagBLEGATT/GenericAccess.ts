@@ -1,18 +1,18 @@
-import { ReadableCharacteristic, StringCharacteristic } from './Characteristic';
+import { ReadableCharacteristic, UTF8Characteristic } from './Characteristic';
 import Service from './Service';
 
-abstract class GenericAccessStringCharacteristic extends StringCharacteristic {
+abstract class GenericAccessUTF8Characteristic extends UTF8Characteristic {
     readonly serviceUUID = '00001800-0000-1000-8000-00805F9B34FB';
 }
 
-class DeviceName extends GenericAccessStringCharacteristic
+class DeviceName extends GenericAccessUTF8Characteristic
     implements ReadableCharacteristic<string>
 {
     readonly uuid = '00002A00-0000-1000-8000-00805F9B34FB';
     readonly byteLength = 14;
 }
 
-class Appearance extends GenericAccessStringCharacteristic
+class Appearance extends GenericAccessUTF8Characteristic
     implements ReadableCharacteristic<string>
 {
     readonly uuid = '00002A01-0000-1000-8000-00805F9B34FB';

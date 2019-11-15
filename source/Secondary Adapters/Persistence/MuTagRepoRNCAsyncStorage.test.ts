@@ -9,9 +9,10 @@ import { MuTagColor } from '../../Core/Domain/MuTag';
 
 const muTagRepoRNCAsyncStorage = new MuTagRepoRNCAsyncStorage();
 const muTagUID = 'randomUUID';
+const muTagBeaconID = BeaconID.create('A');
 const muTag = new ProvisionedMuTag({
     _uid: muTagUID,
-    _beaconID: BeaconID.create('A'),
+    _beaconID: muTagBeaconID,
     _muTagNumber: 12,
     _name: 'keys',
     _batteryLevel: new Percent(30),
@@ -26,8 +27,9 @@ test('successfully adds Mu tag', async (): Promise<void> => {
 });
 
 test('successfully gets added Mu tag', async (): Promise<void> => {
-    expect.assertions(1);
+    expect.assertions(2);
     await expect(muTagRepoRNCAsyncStorage.getByUID(muTagUID)).resolves.toEqual(muTag);
+    await expect(muTagRepoRNCAsyncStorage.getByBeaconID(muTagBeaconID)).resolves.toEqual(muTag);
 });
 
 test('successfully removes Mu tag', async (): Promise<void> => {
@@ -37,5 +39,5 @@ test('successfully removes Mu tag', async (): Promise<void> => {
 
 test('failed to get Mu tag that does not exist', async (): Promise<void> => {
     expect.assertions(1);
-    await expect(muTagRepoRNCAsyncStorage.getByUID(muTagUID)).rejects.toEqual(new DoesNotExist());
+    await expect(muTagRepoRNCAsyncStorage.getByUID(muTagUID)).rejects.toEqual(new DoesNotExist(muTagUID));
 });

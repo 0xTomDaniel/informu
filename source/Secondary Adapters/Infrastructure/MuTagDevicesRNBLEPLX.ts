@@ -21,6 +21,7 @@ import Characteristic, {
 import { AccountNumber } from '../../Core/Domain/Account';
 import { MuTagColor } from '../../Core/Domain/MuTag';
 import { Buffer } from 'buffer';
+import Hexadecimal from '../../Core/Domain/Hexadecimal';
 
 enum ProvisionState {
     Provisioned,
@@ -247,13 +248,11 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
     }
 
     private async discoverProvisioning(device: Device): Promise<ProvisionState> {
-        const major = await MuTagDevicesRNBLEPLX
-            .readCharacteristic(device, MuTagBLEGATT.MuTagConfiguration.Major);
-        const minor = await MuTagDevicesRNBLEPLX
-            .readCharacteristic(device, MuTagBLEGATT.MuTagConfiguration.Minor);
+        const provisioned = await MuTagDevicesRNBLEPLX
+            .readCharacteristic(device, MuTagBLEGATT.MuTagConfiguration.Provision);
         const deviceID = device.id as DeviceID;
 
-        if (major === undefined && minor === undefined) {
+        if (provisioned === undefined) {
             const muTagUID = UUIDv4() as MuTagUID;
             this.muTagDeviceIDCache.set(deviceID, muTagUID);
             this.unprovisionedMuTagCache.set(muTagUID, device);
@@ -274,7 +273,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
     private async createUnprovisionedMuTag(device: Device): Promise<UnprovisionedMuTag> {
         const batteryLevelValue = await MuTagDevicesRNBLEPLX
             .readCharacteristic(device, MuTagBLEGATT.DeviceInformation.BatteryLevel);
-        const batteryLevel = new Percent(batteryLevelValue);
+        const batteryLevel = new Percent(batteryLevelValue.valueOf());
         const muTagUID = this.muTagDeviceIDCache.get(device.id as DeviceID);
 
         if (muTagUID == null) {
@@ -285,7 +284,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
     }
 
     private static isMuTag(device: Device): boolean {
-        const deviceUUID = this.getDeviceUUID(device)
+        const deviceUUID = this.getDeviceUUID(device);
         return deviceUUID === this.muTagDeviceUUID;
     }
 
@@ -300,15 +299,15 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         return bytes.toString('hex').substring(8, 40);
     }
 
-    private static getMajor(accountNumber: AccountNumber): number {
-        const majorHex = accountNumber.toString().substr(0, 4);
-        return parseInt(majorHex, 16);
+    private static getMajor(accountNumber: AccountNumber): Hexadecimal {
+        const majorHexString = accountNumber.toString().substr(0, 4);
+        return Hexadecimal.fromString(majorHexString);
     }
 
-    private static getMinor(accountNumber: AccountNumber, beaconID: BeaconID): number {
+    private static getMinor(accountNumber: AccountNumber, beaconID: BeaconID): Hexadecimal {
         const majorMinorHex = accountNumber.toString() + beaconID.toString();
         const minorHex = majorMinorHex.toString().substr(4, 4);
-        return parseInt(minorHex, 16);
+        return Hexadecimal.fromString(minorHex);
     }
 
     /*private static async isMuTag(device: Device): Promise<boolean> {

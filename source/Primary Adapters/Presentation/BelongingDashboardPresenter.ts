@@ -10,6 +10,7 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
     private static readonly millisecondsInSecond = 1000;
 
     private readonly viewModel: HomeViewModel;
+    private belongingsSafeStatusCache = new Map<string, boolean>();
     private belongingsLastSeenCache = new Map<string, Date>();
     private lastSeenDisplayUpdateTimerID?: NodeJS.Timeout;
     private lastSeenDisplayUpdateMSInterval = 15000;
@@ -53,11 +54,25 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
     }
 
     update(belonging: DashboardBelongingUpdate): void {
+        const belongingUpdate = Object.assign({}, belonging);
+
+        if (belonging.isSafe != null) {
+            this.belongingsSafeStatusCache.set(belonging.uid, belonging.isSafe);
+
+            if (
+                belonging.lastSeen == null
+                && this.belongingsLastSeenCache.has(belonging.uid)
+            ) {
+                const lastSeen = this.belongingsLastSeenCache.get(belonging.uid);
+                Object.assign(belongingUpdate, { lastSeen: lastSeen });
+            }
+        }
+
         if (belonging.lastSeen != null) {
             this.belongingsLastSeenCache.set(belonging.uid, belonging.lastSeen);
         }
 
-        const belongingViewDataDelta = Object.entries(belonging)
+        const belongingViewDataDelta = Object.entries(belongingUpdate)
             .reduce((accumulator, [key, value]): BelongingViewDataDelta => {
                 let convertedKey = key;
                 let convertedValue = value;
@@ -67,7 +82,9 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
                         convertedValue = BelongingDashboardPresenter.safeStatusColor(value);
                         break;
                     case 'lastSeen':
-                        convertedValue = BelongingDashboardPresenter.lastSeenDisplay(value);
+                        convertedValue = BelongingDashboardPresenter.lastSeenDisplay(
+                            value, this.belongingsSafeStatusCache.get(belonging.uid)
+                        );
                         break;
                 }
                 return Object.assign(accumulator, { [convertedKey]: convertedValue });
@@ -95,8 +112,9 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
         this.lastSeenDisplayUpdateTimerID = setInterval((): void => {
             const belongingsViewDataDelta: BelongingViewDataDelta[] = [];
             this.belongingsLastSeenCache.forEach((lastSeen, uid): void => {
+                const isSafe = this.belongingsSafeStatusCache.get(uid);
                 const lastSeenDisplay
-                    = BelongingDashboardPresenter.lastSeenDisplay(lastSeen);
+                    = BelongingDashboardPresenter.lastSeenDisplay(lastSeen, isSafe);
                 belongingsViewDataDelta.push({ uid: uid, lastSeen: lastSeenDisplay });
             });
             this.viewModel.updateState({
@@ -116,7 +134,7 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
             uid: belonging.uid,
             name: belonging.name,
             safeStatusColor: this.safeStatusColor(belonging.isSafe),
-            lastSeen: this.lastSeenDisplay(belonging.lastSeen),
+            lastSeen: this.lastSeenDisplay(belonging.lastSeen, belonging.isSafe),
         };
     }
 
@@ -124,7 +142,7 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
         return isSafe ? Theme.Color.Green : Theme.Color.Error;
     }
 
-    private static lastSeenDisplay(timestamp: Date): string {
+    private static lastSeenDisplay(timestamp: Date, isSafe: boolean | undefined): string {
         const now = new Date();
         const daysSinceLastSeen = this.daysBetween(timestamp, now);
         const hoursSinceLastSeen = this.hoursBetween(timestamp, now);
@@ -138,6 +156,8 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
             return `${hoursSinceLastSeen}h ago`;
         } else if (minutesSinceLastSeen >= 1) {
             return `${minutesSinceLastSeen}m ago`;
+        } else if (isSafe != null && !isSafe) {
+            return 'Seconds ago';
         } else {
             return 'Just now';
         }
