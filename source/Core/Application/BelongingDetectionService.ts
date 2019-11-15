@@ -4,7 +4,12 @@ import ProvisionedMuTag, { BeaconID } from '../Domain/ProvisionedMuTag';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
 import { AccountNumber } from '../Domain/Account';
 
-export default class BelongingDetectionService {
+export interface BelongingDetection {
+
+    start(): Promise<void>;
+}
+
+export default class BelongingDetectionService implements BelongingDetection {
 
     private readonly muTagMonitor: MuTagMonitor;
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
@@ -40,17 +45,21 @@ export default class BelongingDetectionService {
     }
 
     private updateMuTagsWhenRegionExited(): void {
-        this.muTagMonitor.onMuTagRegionExit.subscribe((muTagsExited): void => {
-            muTagsExited.forEach((muTag): void => {
-                this.updateExitedMuTag(muTag.uid).catch((e): void => {
-                    console.warn(e);
-                });
+        this.muTagMonitor.onMuTagRegionExit.subscribe((exitedMuTag): void => {
+            this.updateExitedMuTag(exitedMuTag.uid).catch((e): void => {
+                console.warn(e);
             });
         });
     }
 
     private async updateDetectedMuTag(muTagSignal: MuTagSignal): Promise<void> {
-        const muTag = await this.muTagRepoLocal.getByUID(muTagSignal.uid);
+        const account = await this.accountRepoLocal.get();
+        const accountNumber = account.getAccountNumber();
+        if (muTagSignal.accountNumber.valueOf() !== accountNumber.valueOf()) {
+            return;
+        }
+
+        const muTag = await this.muTagRepoLocal.getByBeaconID(muTagSignal.beaconID);
         muTag.userDidDetect(muTagSignal.timestamp);
         this.muTagRepoLocal.update(muTag);
     }
@@ -65,19 +74,8 @@ export default class BelongingDetectionService {
         const account = await this.accountRepoLocal.get();
         const accountNumber = account.getAccountNumber();
         const beacons = new Set(Array.from(muTags).map((muTag): MuTagBeacon => {
-            const major = BelongingDetectionService.getMajor(accountNumber);
-            const minor = BelongingDetectionService.getMinor(accountNumber, muTag.beaconID);
-            return { uid: muTag.uid, major: major, minor: minor };
+            return { uid: muTag.uid, accountNumber: accountNumber, beaconID: muTag.beaconID };
         }));
         return beacons;
-    }
-
-    private static getMajor(accountNumber: AccountNumber): string {
-        return accountNumber.toString().substr(0, 4);
-    }
-
-    private static getMinor(accountNumber: AccountNumber, beaconID: BeaconID): string {
-        const majorMinorHex = accountNumber.toString() + beaconID.toString();
-        return majorMinorHex.toString().substr(4, 4);
     }
 }

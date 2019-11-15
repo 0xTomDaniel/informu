@@ -4,6 +4,7 @@ import { AccountRepositoryLocal, DoesNotExist } from '../Ports/AccountRepository
 import { SessionOutput } from '../Ports/SessionOutput';
 import SessionService from './SessionService';
 import { BeaconID } from '../Domain/ProvisionedMuTag';
+import { BelongingDetection } from './BelongingDetectionService';
 
 describe('user opens saved login session', (): void => {
 
@@ -28,14 +29,23 @@ describe('user opens saved login session', (): void => {
             remove: jest.fn(),
         }));
 
+    const BelongingDetectionServiceMock
+        = jest.fn<BelongingDetection, any>((): BelongingDetection => ({
+            start: jest.fn(),
+        }));
+
     const sessionOutputMock = new SessionOutputMock();
     const authenticationMock = new AuthenticationMock();
     const accountRepoLocalMock = new AccountRepositoryLocalMock();
+    const belongingDetectionService = new BelongingDetectionServiceMock();
+
     const sessionService = new SessionService(
         sessionOutputMock,
         authenticationMock,
-        accountRepoLocalMock
+        accountRepoLocalMock,
+        belongingDetectionService,
     );
+
 
     const validAccountData = {
         uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
@@ -94,9 +104,9 @@ describe('user opens saved login session', (): void => {
 
         // Then
         //
-        /*it('should start safety status updates', (): void => {
-            
-        });*/
+        it('should start safety status updates', (): void => {
+            expect(belongingDetectionService.start).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('no account exists in local persistence', (): void => {
@@ -199,8 +209,8 @@ describe('user opens saved login session', (): void => {
 
         // Then
         //
-        /*it('should start safety status updates', (): void => {
-            
-        });*/
+        it('should start safety status updates', (): void => {
+            expect(belongingDetectionService.start).toHaveBeenCalledTimes(1);
+        });
     });
 });

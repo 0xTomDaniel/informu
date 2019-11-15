@@ -34,6 +34,7 @@ export default class Hexadecimal {
     static fromNumber(value: number, prefix: boolean = false, minLength?: number): Hexadecimal {
         let hex = value.toString(16).toUpperCase();
 
+        // Might be able to refactor using padStart(X, '0')
         if (minLength != null) {
             const paddingLength = Math.max(0, minLength - hex.length);
             hex = '0'.repeat(paddingLength) + hex;
