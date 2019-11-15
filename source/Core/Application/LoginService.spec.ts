@@ -51,6 +51,7 @@ describe('user logs into their account', (): void => {
     const MuTagRepositoryLocalMock
         = jest.fn<MuTagRepositoryLocal, any>((): MuTagRepositoryLocal => ({
             getByUID: jest.fn(),
+            getByBeaconID: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),

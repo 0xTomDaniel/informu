@@ -20,6 +20,7 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
     const MuTagRepositoryLocalMock
         = jest.fn<MuTagRepositoryLocal, any>((): MuTagRepositoryLocal => ({
             getByUID: jest.fn(),
+            getByBeaconID: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),
