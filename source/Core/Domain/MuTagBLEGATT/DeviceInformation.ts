@@ -1,48 +1,49 @@
 import {
     ReadableCharacteristic,
-    NumberCharacteristic,
-    StringCharacteristic,
+    HexCharacteristic,
+    UTF8Characteristic,
 } from './Characteristic';
 import Service from './Service';
+import Hexadecimal from '../Hexadecimal';
 
-abstract class DeviceInformationNumberCharacteristic extends NumberCharacteristic {
+abstract class DeviceInformationHexCharacteristic extends HexCharacteristic {
     readonly serviceUUID = '0000180A-0000-1000-8000-00805F9B34FB';
 }
 
-abstract class DeviceInformationStringCharacteristic extends StringCharacteristic {
+abstract class DeviceInformationUTF8Characteristic extends UTF8Characteristic {
     readonly serviceUUID = '0000180A-0000-1000-8000-00805F9B34FB';
 }
 
-class ManufacturerName extends DeviceInformationStringCharacteristic
+class ManufacturerName extends DeviceInformationUTF8Characteristic
     implements ReadableCharacteristic<string>
 {
     readonly uuid = '00002A29-0000-1000-8000-00805F9B34FB';
     readonly byteLength = 11;
 }
 
-class FirmwareRevisionString extends DeviceInformationStringCharacteristic
+class FirmwareRevisionString extends DeviceInformationUTF8Characteristic
     implements ReadableCharacteristic<string>
 {
     readonly uuid = '00002A26-0000-1000-8000-00805F9B34FB';
     readonly byteLength = 3;
 }
 
-class ModelNumberString extends DeviceInformationStringCharacteristic
+class ModelNumberString extends DeviceInformationUTF8Characteristic
     implements ReadableCharacteristic<string>
 {
     readonly uuid = '00002A24-0000-1000-8000-00805F9B34FB';
     readonly byteLength = 8;
 }
 
-class SystemID extends DeviceInformationStringCharacteristic
+class SystemID extends DeviceInformationUTF8Characteristic
     implements ReadableCharacteristic<string>
 {
     readonly uuid = '00002A23-0000-1000-8000-00805F9B34FB';
     readonly byteLength = 6;
 }
 
-class BatteryLevel extends DeviceInformationNumberCharacteristic
-    implements ReadableCharacteristic<number>
+class BatteryLevel extends DeviceInformationHexCharacteristic
+    implements ReadableCharacteristic<Hexadecimal>
 {
     readonly uuid = '00002A19-0000-1000-8000-00805F9B34FB';
     readonly byteLength = 1;
