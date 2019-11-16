@@ -54,7 +54,7 @@ export default class BelongingDetectionService implements BelongingDetection {
 
     private async updateDetectedMuTag(muTagSignal: MuTagSignal): Promise<void> {
         const account = await this.accountRepoLocal.get();
-        const accountNumber = account.getAccountNumber();
+        const accountNumber = account.accountNumber;
         if (muTagSignal.accountNumber.valueOf() !== accountNumber.valueOf()) {
             return;
         }
@@ -72,7 +72,7 @@ export default class BelongingDetectionService implements BelongingDetection {
 
     private async getBeaconsFromMuTags(muTags: Set<ProvisionedMuTag>): Promise<Set<MuTagBeacon>> {
         const account = await this.accountRepoLocal.get();
-        const accountNumber = account.getAccountNumber();
+        const accountNumber = account.accountNumber;
         const beacons = new Set(Array.from(muTags).map((muTag): MuTagBeacon => {
             return { uid: muTag.uid, accountNumber: accountNumber, beaconID: muTag.beaconID };
         }));

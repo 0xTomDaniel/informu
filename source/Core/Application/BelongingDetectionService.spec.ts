@@ -6,7 +6,7 @@ import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import { Observable, Subscriber } from 'rxjs';
 import BelongingDetectionService from './BelongingDetectionService';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
-import Account, { AccountNumber } from '../Domain/Account';
+import Account, { AccountNumber, AccountData } from '../Domain/Account';
 
 let onMuTagDetectionSubscriber: Subscriber<Set<MuTagSignal>>;
 let onMuTagRegionExitSubscriber: Subscriber<MuTagRegionExit>;
@@ -49,15 +49,16 @@ const belongingDetectionService = new BelongingDetectionService(
 );
 
 const accountNumber = AccountNumber.create('0000001');
-const account = new Account(
-    'UUID01',
-    accountNumber,
-    'user@email.com',
-    BeaconID.create('2'),
-    [],
-    2,
-    [],
-);
+const accountData: AccountData = {
+    _uid: 'UUID01',
+    _accountNumber: accountNumber,
+    _emailAddress: 'user@email.com',
+    _nextBeaconID: BeaconID.create('2'),
+    _recycledBeaconIDs: new Set(),
+    _nextMuTagNumber: 2,
+    _muTags: new Set(),
+};
+const account = new Account(accountData);
 const muTagBeaconID = BeaconID.create('0');
 const muTagData = {
     _uid: 'UUID01',
