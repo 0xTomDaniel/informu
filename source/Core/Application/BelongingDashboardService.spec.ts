@@ -3,7 +3,7 @@ import Percent from '../Domain/Percent';
 import { BelongingDashboardOutput, DashboardBelonging } from '../Ports/BelongingDashboardOutput';
 import BelongingDashboardService from './BelongingDashboardService';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
-import Account, { AccountNumber } from '../Domain/Account';
+import Account, { AccountNumber, AccountData } from '../Domain/Account';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
 import { MuTagColor } from '../Domain/MuTag';
 
@@ -20,6 +20,7 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
     const MuTagRepositoryLocalMock
         = jest.fn<MuTagRepositoryLocal, any>((): MuTagRepositoryLocal => ({
             getByUID: jest.fn(),
+            getByBeaconID: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),
@@ -79,37 +80,28 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
         new ProvisionedMuTag(belongingsData[0]),
         new ProvisionedMuTag(belongingsData[1]),
     ]);
-    const validAccountData = {
-        uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
-        accountNumber: AccountNumber.create('0000000'),
-        emailAddress: 'support+test@informu.io',
-        nextBeaconID: BeaconID.create('A'),
-        recycledBeaconIDs: [
-            BeaconID.create('2'),
-            BeaconID.create('5'),
-        ],
-        nextMuTagNumber: 10,
-        muTags: [belongingsData[0]._uid, belongingsData[1]._uid],
+    const recycledBeaconIDs = [BeaconID.create('2'), BeaconID.create('5')];
+    const accountMuTags = [belongingsData[0]._uid, belongingsData[1]._uid];
+    const validAccountData: AccountData = {
+        _uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
+        _accountNumber: AccountNumber.create('0000000'),
+        _emailAddress: 'support+test@informu.io',
+        _nextBeaconID: BeaconID.create('A'),
+        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _nextMuTagNumber: 10,
+        _muTags: new Set(accountMuTags),
     };
-    const account = new Account(
-        validAccountData.uid,
-        validAccountData.accountNumber,
-        validAccountData.emailAddress,
-        validAccountData.nextBeaconID,
-        validAccountData.recycledBeaconIDs,
-        validAccountData.nextMuTagNumber,
-        validAccountData.muTags,
-    );
-    const accountNoMuTags = new Account(
-        validAccountData.uid,
-        validAccountData.accountNumber,
-        validAccountData.emailAddress,
-        validAccountData.nextBeaconID,
-        validAccountData.recycledBeaconIDs,
-        validAccountData.nextMuTagNumber,
-        [],
-    );
-    const addedBeaconID = accountNoMuTags.getNewBeaconID();
+    const account = new Account(validAccountData);
+    const accountNoMuTags = new Account({
+        _uid: validAccountData._uid,
+        _accountNumber: validAccountData._accountNumber,
+        _emailAddress: validAccountData._emailAddress,
+        _nextBeaconID: validAccountData._nextBeaconID,
+        _recycledBeaconIDs: validAccountData._recycledBeaconIDs,
+        _nextMuTagNumber: validAccountData._nextMuTagNumber,
+        _muTags: new Set(),
+    });
+    const addedBeaconID = accountNoMuTags.newBeaconID;
     const newBelongingDashboardData: DashboardBelonging = {
         uid: belongingsData[2]._uid,
         name: belongingsData[2]._name,

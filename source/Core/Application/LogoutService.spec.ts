@@ -1,6 +1,6 @@
 import LogoutService from './LogoutService';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
-import Account, { AccountNumber } from '../Domain/Account';
+import Account, { AccountNumber, AccountData } from '../Domain/Account';
 import { LogoutOutput } from '../Ports/LogoutOutput';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
 import ProvisionedMuTag, { BeaconID } from '../Domain/ProvisionedMuTag';
@@ -37,6 +37,7 @@ describe('user logs out of their account', (): void => {
     const MuTagRepositoryLocalMock
         = jest.fn<MuTagRepositoryLocal, any>((): MuTagRepositoryLocal => ({
             getByUID: jest.fn(),
+            getByBeaconID: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),
@@ -72,27 +73,21 @@ describe('user logs out of their account', (): void => {
         repoLocalMock,
     );
 
-    const validAccountData = {
-        uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
-        accountNumber: AccountNumber.create('0000000'),
-        emailAddress: 'support+test@informu.io',
-        nextBeaconID: BeaconID.create('A'),
-        recycledBeaconIDs: [
-            BeaconID.create('2'),
-            BeaconID.create('5'),
-        ],
-        nextMuTagNumber: 15,
-        muTags: ['randomUUID1', 'randomUUID2'],
+    const recycledBeaconIDs = [
+        BeaconID.create('2'),
+        BeaconID.create('5'),
+    ];
+    const accountMuTags = ['randomUUID1', 'randomUUID2'];
+    const validAccountData: AccountData = {
+        _uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
+        _accountNumber: AccountNumber.create('0000000'),
+        _emailAddress: 'support+test@informu.io',
+        _nextBeaconID: BeaconID.create('A'),
+        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _nextMuTagNumber: 15,
+        _muTags: new Set(accountMuTags),
     };
-    const account = new Account(
-        validAccountData.uid,
-        validAccountData.accountNumber,
-        validAccountData.emailAddress,
-        validAccountData.nextBeaconID,
-        validAccountData.recycledBeaconIDs,
-        validAccountData.nextMuTagNumber,
-        validAccountData.muTags,
-    );
+    const account = new Account(validAccountData);
     const muTag1 = new ProvisionedMuTag({
         _uid: 'randomUUID1',
         _beaconID: BeaconID.fromString('0'),
@@ -147,7 +142,7 @@ describe('user logs out of their account', (): void => {
             expect(muTagRepoLocalMock.getAll).toHaveBeenCalledTimes(1);
             expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
-            expect(muTagRepoRemoteMock.updateMultiple).toHaveBeenCalledWith(muTags, validAccountData.uid);
+            expect(muTagRepoRemoteMock.updateMultiple).toHaveBeenCalledWith(muTags, validAccountData._uid);
             expect(muTagRepoRemoteMock.updateMultiple).toHaveBeenCalledTimes(1);
         });
 

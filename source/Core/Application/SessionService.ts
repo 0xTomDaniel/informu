@@ -30,7 +30,7 @@ export default class SessionService implements Session {
 
         try {
             const account = await this.accountRepoLocal.get();
-            const isLoggedIn = await this.authentication.isAuthenticatedAs(account.getUID());
+            const isLoggedIn = await this.authentication.isAuthenticatedAs(account.uid);
 
             if (isLoggedIn) {
                 this.sessionOutput.showHomeScreen();

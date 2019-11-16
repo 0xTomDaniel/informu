@@ -48,24 +48,25 @@ export default class BelongingDashboardService {
 
     private async subscribeToMuTagChanges(muTags: Set<ProvisionedMuTag>): Promise<void> {
         const account = await this.accountRepoLocal.get();
+        account.muTagsChange.subscribe((change): void => {
+            if (change.insertion != null) {
+                this.muTagRepoLocal.getByUID(change.insertion).then((muTag): void => {
+                    const dashboardBelonging = {
+                        uid: muTag.uid,
+                        name: muTag.name,
+                        isSafe: muTag.isSafe,
+                        lastSeen: muTag.lastSeen,
+                    };
+                    this.belongingDashboardOutput.add(dashboardBelonging);
+                    this.updateDashboardOnSafetyStatusChange(muTag);
+                }).catch((e): void => {
+                    console.warn(e);
+                });
+            }
 
-        account.onMuTagAddedSubscribe((muTagUID): void => {
-            this.muTagRepoLocal.getByUID(muTagUID).then((muTag): void => {
-                const dashboardBelonging = {
-                    uid: muTag.uid,
-                    name: muTag.name,
-                    isSafe: muTag.isSafe,
-                    lastSeen: muTag.lastSeen,
-                };
-                this.belongingDashboardOutput.add(dashboardBelonging);
-                this.updateDashboardOnSafetyStatusChange(muTag);
-            }).catch((e): void => {
-                console.warn(e);
-            });
-        });
-
-        account.onMuTagRemovedSubscribe((muTagUID): void => {
-            this.belongingDashboardOutput.remove(muTagUID);
+            if (change.deletion != null) {
+                this.belongingDashboardOutput.remove(change.deletion);
+            }
         });
 
         muTags.forEach((muTag): void => {

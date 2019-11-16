@@ -7,7 +7,7 @@ import {
     FailedToRemove,
     FailedToUpdate,
 } from '../../Core/Ports/AccountRepositoryRemote';
-import Account, { AccountData, isAccountData } from '../../Core/Domain/Account';
+import Account, { AccountJSON, isAccountJSON } from '../../Core/Domain/Account';
 import firebase, { App } from 'react-native-firebase';
 import { Database, DataSnapshot } from 'react-native-firebase/database';
 
@@ -38,31 +38,31 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
     }
 
     async add(account: Account): Promise<void> {
-        const accountData = account.getAccountData();
+        const accountData = account.json;
 
         /*eslint-disable @typescript-eslint/camelcase*/
         const databaseData: {[key: string]: any} = {
-            account_id: accountData.accountNumber,
-            email: accountData.emailAddress,
-            next_beacon_id: accountData.nextBeaconID,
-            next_mu_tag_number: accountData.nextMuTagNumber,
+            account_id: accountData._accountNumber,
+            email: accountData._emailAddress,
+            next_beacon_id: accountData._nextBeaconID,
+            next_mu_tag_number: accountData._nextMuTagNumber,
         };
 
-        if (accountData.recycledBeaconIDs != null) {
-            databaseData.recycled_beacon_ids = accountData.recycledBeaconIDs.map(
+        if (accountData._recycledBeaconIDs != null) {
+            databaseData.recycled_beacon_ids = accountData._recycledBeaconIDs.map(
                 (beaconID): object => ( { [beaconID]: true } )
             );
         }
 
-        if (accountData.muTags != null) {
-            databaseData.mu_tags = accountData.muTags.map(
+        if (accountData._muTags != null) {
+            databaseData.mu_tags = accountData._muTags.map(
                 (beaconID): object => ( { [beaconID]: true } )
             );
         }
         /*eslint-enable */
 
         try {
-            await this.database.ref(`accounts/${accountData.uid}`).set(databaseData);
+            await this.database.ref(`accounts/${accountData._uid}`).set(databaseData);
         } catch (e) {
             console.log(e);
             throw new FailedToAdd();
@@ -70,28 +70,28 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
     }
 
     async update(account: Account): Promise<void> {
-        const accountData = account.getAccountData();
+        const accountData = account.json;
 
         /*eslint-disable @typescript-eslint/camelcase*/
         const databaseData: {[key: string]: any} = {
-            account_id: accountData.accountNumber,
-            email: accountData.emailAddress,
-            next_beacon_id: accountData.nextBeaconID,
-            next_mu_tag_number: accountData.nextMuTagNumber,
+            account_id: accountData._accountNumber,
+            email: accountData._emailAddress,
+            next_beacon_id: accountData._nextBeaconID,
+            next_mu_tag_number: accountData._nextMuTagNumber,
         };
 
-        if (accountData.recycledBeaconIDs != null) {
+        if (accountData._recycledBeaconIDs != null) {
             const initialValue: { [key: string]: any } = {};
-            databaseData.recycled_beacon_ids = accountData.recycledBeaconIDs
+            databaseData.recycled_beacon_ids = accountData._recycledBeaconIDs
                 .reduce((allBeaconIDs, beaconID): object => {
                     allBeaconIDs[beaconID] = true;
                     return allBeaconIDs;
                 }, initialValue);
         }
 
-        if (accountData.muTags != null) {
+        if (accountData._muTags != null) {
             const initialValue: { [key: string]: any } = {};
-            databaseData.mu_tags = accountData.muTags
+            databaseData.mu_tags = accountData._muTags
                 .reduce((allMuTags, beaconID): object => {
                     allMuTags[beaconID] = true;
                     return allMuTags;
@@ -100,7 +100,7 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
         /*eslint-enable */
 
         try {
-            await this.database.ref(`accounts/${accountData.uid}`).update(databaseData);
+            await this.database.ref(`accounts/${accountData._uid}`).update(databaseData);
         } catch (e) {
             console.log(e);
             throw new FailedToUpdate();
@@ -116,7 +116,7 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
         }
     }
 
-    private static toAccountData(uid: string, snapshot: DataSnapshot): AccountData {
+    private static toAccountData(uid: string, snapshot: DataSnapshot): AccountJSON {
         if (!snapshot.exists()) {
             throw new DoesNotExist();
         }
@@ -142,7 +142,7 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
             data.muTags = Object.keys(snapshotData.mu_tags);
         }
 
-        if (!isAccountData(data)) {
+        if (!isAccountJSON(data)) {
             throw new PersistedDataMalformed(JSON.stringify(data));
         }
 

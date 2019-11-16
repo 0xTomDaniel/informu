@@ -110,6 +110,10 @@ export default class ProvisionedMuTag extends MuTag {
         };
     }
 
+    get beaconID(): BeaconID {
+        return this._beaconID;
+    }
+
     get name(): string {
         return this._name;
     }
