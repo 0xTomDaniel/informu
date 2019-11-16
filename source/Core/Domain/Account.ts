@@ -1,6 +1,8 @@
 import Hexadecimal from './Hexadecimal';
 import { BeaconID } from './ProvisionedMuTag';
-import { v4 as UUIDv4 } from 'uuid';
+import { BehaviorSubject, Observable } from 'rxjs';
+import { pairwise, map } from 'rxjs/operators';
+import _ from 'lodash';
 
 class InvalidAccountNumber extends RangeError {
 
@@ -33,143 +35,162 @@ class NewBeaconIDNotFound extends Error {
 }
 
 export interface AccountData {
-    readonly uid: string;
-    readonly accountNumber: string;
-    readonly emailAddress: string;
-    readonly nextBeaconID: string;
-    readonly recycledBeaconIDs?: string[];
-    readonly nextMuTagNumber: number;
-    readonly muTags?: string[];
+    readonly _uid: string;
+    readonly _accountNumber: AccountNumber;
+    readonly _emailAddress: string;
+    readonly _nextBeaconID: BeaconID;
+    readonly _recycledBeaconIDs: Set<BeaconID>;
+    readonly _nextMuTagNumber: number;
+    readonly _muTags: Set<string>;
+}
+
+export interface AccountJSON {
+    readonly _uid: string;
+    readonly _accountNumber: string;
+    readonly _emailAddress: string;
+    readonly _nextBeaconID: string;
+    readonly _recycledBeaconIDs?: string[];
+    readonly _nextMuTagNumber: number;
+    readonly _muTags?: string[];
 }
 
 const isStringArray = (value: any): value is string[] => {
     return Array.isArray(value) && value.every((item): boolean => typeof item === 'string');
 };
 
-export const isAccountData = (object: { [key: string]: any }): object is AccountData => {
-    return 'uid' in object && typeof object.uid === 'string'
-        && 'accountNumber' in object && typeof object.accountNumber === 'string'
-        && 'emailAddress' in object && typeof object.emailAddress === 'string'
-        && 'nextBeaconID' in object && typeof object.nextBeaconID === 'string'
-        && 'recycledBeaconIDs' in object ? isStringArray(object.recycledBeaconIDs) : true
-        && 'nextMuTagNumber' in object && typeof object.nextMuTagNumber === 'string'
-        && 'muTags' in object ? isStringArray(object.muTags) : true;
+export const isAccountJSON = (object: { [key: string]: any }): object is AccountJSON => {
+    return '_uid' in object && typeof object.uid === 'string'
+        && '_accountNumber' in object && typeof object.accountNumber === 'string'
+        && '_emailAddress' in object && typeof object.emailAddress === 'string'
+        && '_nextBeaconID' in object && typeof object.nextBeaconID === 'string'
+        && '_recycledBeaconIDs' in object ? isStringArray(object.recycledBeaconIDs) : true
+        && '_nextMuTagNumber' in object && typeof object.nextMuTagNumber === 'string'
+        && '_muTags' in object ? isStringArray(object.muTags) : true;
 };
 
-type MuTagAddedCallback = (muTagUID: string) => void;
+interface AccessorValue {
+    readonly muTags: BehaviorSubject<Set<string>>;
+}
+
+interface MuTagsChange {
+    insertion?: string;
+    deletion?: string;
+}
 
 export default class Account {
 
-    private readonly uid: string;
-    private readonly accountNumber: AccountNumber;
-    private emailAddress: string;
-    private nextBeaconID: BeaconID;
-    private readonly recycledBeaconIDs: Set<BeaconID>;
-    private nextMuTagNumber: number;
-    private readonly muTags: Set<string>;
-
-    private readonly onMuTagAddedSubscriptions = new Map<string, MuTagAddedCallback>();
-    private readonly onMuTagRemovedSubscriptions = new Map<string, MuTagAddedCallback>();
-
-    constructor(
-        uid: string,
-        accountNumber: AccountNumber,
-        emailAddress: string,
-        nextBeaconID: BeaconID,
-        recycledBeaconIDs: BeaconID[],
-        nextMuTagNumber: number,
-        muTags: string[],
-    ) {
-        this.uid = uid;
-        this.accountNumber = accountNumber;
-        this.emailAddress = emailAddress;
-        this.nextBeaconID = nextBeaconID;
-        this.recycledBeaconIDs = new Set(recycledBeaconIDs);
-        this.nextMuTagNumber = nextMuTagNumber;
-        this.muTags = new Set(muTags);
+    private readonly _uid: string;
+    private readonly _accountNumber: AccountNumber;
+    private _emailAddress: string;
+    private _nextBeaconID: BeaconID;
+    private readonly _recycledBeaconIDs: Set<BeaconID>;
+    private _nextMuTagNumber: number;
+    private get _muTags(): Set<string> {
+        return this._accessorValue.muTags.value;
+    }
+    private set _muTags(newValue: Set<string>) {
+        this._accessorValue.muTags.next(newValue);
     }
 
-    getUID(): string {
-        return this.uid;
+    private readonly _accessorValue: AccessorValue;
+
+    constructor(accountData: AccountData) {
+        this._uid = accountData._uid;
+        this._accountNumber = accountData._accountNumber;
+        this._emailAddress = accountData._emailAddress;
+        this._nextBeaconID = accountData._nextBeaconID;
+        this._recycledBeaconIDs = accountData._recycledBeaconIDs;
+        this._nextMuTagNumber = accountData._nextMuTagNumber;
+        this._accessorValue = {
+            muTags: new BehaviorSubject(accountData._muTags),
+        };
     }
 
-    getAccountNumber(): AccountNumber {
-        return this.accountNumber;
+    get uid(): string {
+        return this._uid;
     }
 
-    getNewBeaconID(): BeaconID {
-        if (this.recycledBeaconIDs.size !== 0) {
-            return this.recycledBeaconIDs.values().next().value;
+    get accountNumber(): AccountNumber {
+        return this._accountNumber;
+    }
+
+    get newBeaconID(): BeaconID {
+        if (this._recycledBeaconIDs.size !== 0) {
+            return this._recycledBeaconIDs.values().next().value;
         }
 
-        return this.nextBeaconID;
+        return this._nextBeaconID;
     }
 
-    getNewMuTagNumber(): number {
-        return this.nextMuTagNumber;
+    get newMuTagNumber(): number {
+        return this._nextMuTagNumber;
+    }
+
+    get muTagsChange(): Observable<MuTagsChange> {
+        return this._accessorValue.muTags.pipe(
+            pairwise(),
+            map(([previousMuTags, currentMuTags]): MuTagsChange => {
+                return {
+                    insertion: _.differenceBy([...currentMuTags], [...previousMuTags], 'uid')[0],
+                    deletion: _.differenceBy([...previousMuTags], [...currentMuTags], 'uid')[0],
+                };
+            })
+        );
+    }
+
+    get json(): AccountJSON {
+        const json = this.serialize();
+        return JSON.parse(json);
     }
 
     addNewMuTag(muTagUID: string, beaconID: BeaconID): void {
-        if (this.recycledBeaconIDs.has(beaconID)) {
-            this.recycledBeaconIDs.delete(beaconID);
-        } else if (this.nextBeaconID === beaconID) {
+        if (this._recycledBeaconIDs.has(beaconID)) {
+            this._recycledBeaconIDs.delete(beaconID);
+        } else if (this._nextBeaconID === beaconID) {
             this.incrementNextBeaconID();
         } else {
             throw new NewBeaconIDNotFound(beaconID.toString());
         }
 
-        this.muTags.add(muTagUID);
-        this.nextMuTagNumber += 1;
-
-        this.onMuTagAddedSubscriptions.forEach((callback): void => {
-            callback(muTagUID);
-        });
-    }
-
-    onMuTagAddedSubscribe(callback: (muTagUID: string) => void): string {
-        const uuid = UUIDv4();
-        this.onMuTagAddedSubscriptions.set(uuid, callback);
-        return uuid;
+        this._nextMuTagNumber += 1;
+        this._muTags = new Set(this._muTags).add(muTagUID);
     }
 
     removeMuTag(muTagUID: string, beaconID: BeaconID): void {
-        this.muTags.delete(muTagUID);
-        this.recycledBeaconIDs.add(beaconID);
-        this.onMuTagRemovedSubscriptions.forEach((callback): void => {
-            callback(muTagUID);
-        });
-    }
-
-    onMuTagRemovedSubscribe(callback: (muTagUID: string) => void): string {
-        const uuid = UUIDv4();
-        this.onMuTagRemovedSubscriptions.set(uuid, callback);
-        return uuid;
-    }
-
-    getAccountData(): AccountData {
-        const json = this.serialize();
-        return JSON.parse(json);
+        this._recycledBeaconIDs.add(beaconID);
+        const muTags = new Set(this._muTags);
+        if (muTags.delete(muTagUID)) {
+            this._muTags = muTags;
+        }
     }
 
     serialize(): string {
         return JSON.stringify(this, Account.replacer);
     }
 
-    static deserialize(json: string | AccountData): Account {
+    static deserialize(json: string | AccountJSON): Account {
         let jsonString = typeof json === 'string' ? json : JSON.stringify(json);
         return JSON.parse(jsonString, Account.reviver);
     }
 
     static replacer(key: string, value: any): any {
         switch (key) {
-            case 'accountNumber':
+            case '':
+                /* Class getters are not actual object properties. Must manually
+                 * populate any class getter properties and copy the class object
+                 * properties into a new object.
+                 */
+                return Object.assign({
+                    _muTags: value._muTags,
+                }, value);
+            case '_accountNumber':
                 return value.stringValue;
-            case 'nextBeaconID':
+            case '_nextBeaconID':
                 return value.stringValue;
-            case 'recycledBeaconIDs':
+            case '_recycledBeaconIDs':
                 const beaconIDs: BeaconID[] = Array.from(value);
                 return beaconIDs.map((beaconID): string => beaconID.toString());
-            case 'muTags':
+            case '_muTags':
                 return Array.from(value);
             default:
                 return value;
@@ -179,8 +200,6 @@ export default class Account {
     static reviver(key: string, value: any): any {
         switch (key) {
             case '':
-                const account = Object.create(Account.prototype);
-
                 if (value.recycledBeaconIDs == null) {
                     value.recycledBeaconIDs = new Set<BeaconID>();
                 }
@@ -189,19 +208,16 @@ export default class Account {
                     value.muTags = new Set<string>();
                 }
 
-                value.onMuTagAddedSubscriptions = new Map<string, MuTagAddedCallback>();
-                value.onMuTagRemovedSubscriptions = new Map<string, MuTagAddedCallback>();
-
-                return Object.assign(account, value);
-            case 'accountNumber':
+                return new Account(value);
+            case '_accountNumber':
                 return AccountNumber.create(value);
-            case 'nextBeaconID':
+            case '_nextBeaconID':
                 return BeaconID.create(value);
-            case 'recycledBeaconIDs':
+            case '_recycledBeaconIDs':
                 return new Set<BeaconID>(value.map(
                     (hex: string): BeaconID => BeaconID.fromString(hex)
                 ));
-            case 'muTags':
+            case '_muTags':
                 return new Set<string>(value);
             default:
                 return value;
@@ -209,10 +225,10 @@ export default class Account {
     }
 
     private incrementNextBeaconID(): void {
-        const previousBeaconID = this.nextBeaconID.valueOf();
+        const previousBeaconID = this._nextBeaconID.valueOf();
         const nextBeaconIDNumber = previousBeaconID + 1;
         const nextBeaconIDHex = nextBeaconIDNumber.toString(16).toUpperCase();
         const nextBeaconID = BeaconID.create(nextBeaconIDHex);
-        this.nextBeaconID = nextBeaconID;
+        this._nextBeaconID = nextBeaconID;
     }
 }

@@ -6,7 +6,7 @@ import {
     ImproperPasswordComplexity,
 } from './LoginService';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
-import Account, { AccountNumber } from '../Domain/Account';
+import Account, { AccountNumber, AccountData } from '../Domain/Account';
 import { Authentication, UserData, InvalidCredentials } from '../Ports/Authentication';
 import { LoginOutput } from '../Ports/LoginOutput';
 import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
@@ -113,27 +113,18 @@ describe('user logs into their account', (): void => {
             _color: MuTagColor.MuOrange,
         }),
     ]);
-    const validAccountData = {
-        uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
-        accountNumber: AccountNumber.create('0000000'),
-        emailAddress: 'support+test@informu.io',
-        nextBeaconID: BeaconID.create('A'),
-        recycledBeaconIDs: [
-            BeaconID.create('2'),
-            BeaconID.create('5'),
-        ],
-        nextMuTagNumber: 15,
-        muTags: ['randomUUID01', 'randomUUID02'],
+    const recycledBeaconIDs = [BeaconID.create('2'), BeaconID.create('5')];
+    const accountMuTags = ['randomUUID01', 'randomUUID02'];
+    const validAccountData: AccountData = {
+        _uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
+        _accountNumber: AccountNumber.create('0000000'),
+        _emailAddress: 'support+test@informu.io',
+        _nextBeaconID: BeaconID.create('A'),
+        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _nextMuTagNumber: 15,
+        _muTags: new Set(accountMuTags),
     };
-    const account = new Account(
-        validAccountData.uid,
-        validAccountData.accountNumber,
-        validAccountData.emailAddress,
-        validAccountData.nextBeaconID,
-        validAccountData.recycledBeaconIDs,
-        validAccountData.nextMuTagNumber,
-        validAccountData.muTags,
-    );
+    const account = new Account(validAccountData);
     const validEmail = new EmailAddress('support+test@informu.io');
     const validPassword = new Password('testPassword!');
 
@@ -144,8 +135,8 @@ describe('user logs into their account', (): void => {
         // Given credentials are valid for authentication
         //
         const userData: UserData = {
-            uid: validAccountData.uid,
-            emailAddress: validAccountData.emailAddress,
+            uid: validAccountData._uid,
+            emailAddress: validAccountData._emailAddress,
         };
         (authenticationMock.authenticateWithEmail as jest.Mock)
             .mockResolvedValueOnce(userData);

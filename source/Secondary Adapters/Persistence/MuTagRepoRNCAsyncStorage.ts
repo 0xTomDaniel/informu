@@ -1,7 +1,6 @@
 import {
     MuTagRepositoryLocal,
     FailedToAdd,
-    FailedToGet,
     DoesNotExist,
     FailedToRemove,
     FailedToUpdate,

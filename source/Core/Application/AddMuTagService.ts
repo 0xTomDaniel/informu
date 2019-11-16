@@ -155,9 +155,9 @@ export default class AddMuTagService {
         name: string
     ): Promise<void> {
         const account = await this.accountRepoLocal.get();
-        const beaconID = account.getNewBeaconID();
-        const accountNumber = account.getAccountNumber();
-        const muTagNumber = account.getNewMuTagNumber();
+        const beaconID = account.newBeaconID;
+        const accountNumber = account.accountNumber;
+        const muTagNumber = account.newMuTagNumber;
         this.provisionedMuTag = await this.muTagDevices.provisionMuTag(
             unprovisionedMuTag,
             accountNumber,
@@ -167,7 +167,7 @@ export default class AddMuTagService {
         );
         this.unprovisionedMuTag = undefined;
         await this.muTagRepoLocal.add(this.provisionedMuTag);
-        this.accountUID = account.getUID();
+        this.accountUID = account.uid;
         await this.muTagRepoRemote.add(this.provisionedMuTag, this.accountUID);
 
         account.addNewMuTag(this.provisionedMuTag.uid, beaconID);
@@ -187,7 +187,7 @@ export default class AddMuTagService {
     private async getAccountUID(): Promise<string> {
         if (this.accountUID == null) {
             const account = await this.accountRepoLocal.get();
-            this.accountUID = account.getUID();
+            this.accountUID = account.uid;
         }
 
         return this.accountUID;

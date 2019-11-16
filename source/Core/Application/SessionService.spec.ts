@@ -1,4 +1,4 @@
-import Account, { AccountNumber } from '../Domain/Account';
+import Account, { AccountNumber, AccountData } from '../Domain/Account';
 import { Authentication } from '../Ports/Authentication';
 import { AccountRepositoryLocal, DoesNotExist } from '../Ports/AccountRepositoryLocal';
 import { SessionOutput } from '../Ports/SessionOutput';
@@ -46,25 +46,18 @@ describe('user opens saved login session', (): void => {
         belongingDetectionService,
     );
 
-
-    const validAccountData = {
-        uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
-        accountNumber: AccountNumber.create('0000000'),
-        emailAddress: 'support+test@informu.io',
-        nextBeaconID: BeaconID.create('3'),
-        recycledBeaconIDs: [BeaconID.create('1')],
-        nextMuTagNumber: 5,
-        muTags: ['randomUUID'],
+    const recycledBeaconIDs = [BeaconID.create('1')];
+    const accountMuTags = ['randomUUID'];
+    const validAccountData: AccountData = {
+        _uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
+        _accountNumber: AccountNumber.create('0000000'),
+        _emailAddress: 'support+test@informu.io',
+        _nextBeaconID: BeaconID.create('3'),
+        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _nextMuTagNumber: 5,
+        _muTags: new Set(accountMuTags),
     };
-    const account = new Account(
-        validAccountData.uid,
-        validAccountData.accountNumber,
-        validAccountData.emailAddress,
-        validAccountData.nextBeaconID,
-        validAccountData.recycledBeaconIDs,
-        validAccountData.nextMuTagNumber,
-        validAccountData.muTags,
-    );
+    const account = new Account(validAccountData);
 
     describe('user is logged in with saved session', (): void => {
 
@@ -97,7 +90,7 @@ describe('user opens saved login session', (): void => {
         it('should show the home screen', (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
             expect(authenticationMock.isAuthenticatedAs)
-                .toHaveBeenCalledWith(validAccountData.uid);
+                .toHaveBeenCalledWith(validAccountData._uid);
             expect(sessionOutputMock.showHomeScreen).toHaveBeenCalledTimes(1);
             expect(sessionOutputMock.showLoginScreen).toHaveBeenCalledTimes(0);
         });
@@ -171,7 +164,7 @@ describe('user opens saved login session', (): void => {
         it('should delete all local persistence', (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
             expect(authenticationMock.isAuthenticatedAs)
-                .toHaveBeenCalledWith(validAccountData.uid);
+                .toHaveBeenCalledWith(validAccountData._uid);
             expect(accountRepoLocalMock.remove).toHaveBeenCalledTimes(1);
         });
 
