@@ -38,6 +38,8 @@ import LogoutPresenter from './source/Primary Adapters/Presentation/LogoutPresen
 import RepoLocalRNCAsyncStorage from './source/Secondary Adapters/Persistence/RepoLocalRNCAsyncStorage';
 import BelongingDashboardService from './source/Core/Application/BelongingDashboardService';
 import BelongingDashboardPresenter from './source/Primary Adapters/Presentation/BelongingDashboardPresenter';
+import BelongingDetectionService from './source/Core/Application/BelongingDetectionService';
+import MuTagMonitorRNBM from './source/Secondary Adapters/Infrastructure/MuTagMonitorRNBM';
 
 const authentication = new AuthenticationFirebase();
 const accountRepoLocal = new AccountRepoRNCAsyncStorage();
@@ -83,12 +85,19 @@ const belongingDashboardService = new BelongingDashboardService(
     muTagRepoLocal,
     accountRepoLocal,
 );
+const muTagMonitor = new MuTagMonitorRNBM();
+const belongingDetectionService = new BelongingDetectionService(
+    muTagMonitor,
+    muTagRepoLocal,
+    accountRepoLocal,
+);
 const appViewModel = new AppViewModel();
 const sessionPresenter = new AppPresenter(appViewModel);
 const sessionService = new SessionService(
     sessionPresenter,
     authentication,
     accountRepoLocal,
+    belongingDetectionService,
 );
 
 const AppStack = createStackNavigator(
