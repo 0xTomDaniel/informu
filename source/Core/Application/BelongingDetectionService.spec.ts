@@ -1,7 +1,7 @@
 import ProvisionedMuTag, { BeaconID } from '../Domain/ProvisionedMuTag';
 import Percent from '../Domain/Percent';
 import { MuTagColor } from '../Domain/MuTag';
-import { MuTagSignal, MuTagMonitor, MuTagRegionExit } from '../Ports/MuTagMonitor';
+import { MuTagSignal, MuTagMonitor, MuTagRegionExit, MuTagBeacon } from '../Ports/MuTagMonitor';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import { Observable, Subscriber } from 'rxjs';
 import BelongingDetectionService from './BelongingDetectionService';
@@ -48,6 +48,7 @@ const belongingDetectionService = new BelongingDetectionService(
     muTagMonitorMock, muTagRepoLocalMock, accountRepoLocalMock
 );
 
+const nonAccountNumber = AccountNumber.create('0000002');
 const accountNumber = AccountNumber.create('0000001');
 const accountData: AccountData = {
     _uid: 'UUID01',
@@ -70,19 +71,12 @@ const muTagData = {
     _lastSeen: new Date('2019-11-03T17:09:31.007Z'),
     _color: MuTagColor.Charcoal,
 };
-const nonAccountNumber = AccountNumber.create('0000002');
-/*const nonAccountMuTagData = {
-    _uid: 'UUID09',
-    _beaconID: muTagBeaconID,
-    _muTagNumber: 0,
-    _name: 'Wallet',
-    _batteryLevel: new Percent(56),
-    _isSafe: false,
-    _lastSeen: new Date('2019-11-03T17:09:31.007Z'),
-    _color: MuTagColor.Cloud,
-};*/
 const muTag = new ProvisionedMuTag(muTagData);
-//const nonAccountMuTag = new ProvisionedMuTag(nonAccountMuTagData);
+const muTagBeacon: MuTagBeacon = {
+    uid: muTagData._uid,
+    accountNumber: accountNumber,
+    beaconID: muTagBeaconID,
+};
 const lastSeenTimestamp = new Date();
 
 describe('last seen status of belongings continuously updates', (): void => {
@@ -92,6 +86,7 @@ describe('last seen status of belongings continuously updates', (): void => {
         // Given that the account connected to the current belonging is logged in
         //
         (accountRepoLocalMock.get as jest.Mock).mockResolvedValue(account);
+        (muTagRepoLocalMock.getAll as jest.Mock).mockResolvedValueOnce(new Set([muTag]));
         (muTagRepoLocalMock.getByBeaconID as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given app device is in range of a belonging beacon
@@ -112,7 +107,7 @@ describe('last seen status of belongings continuously updates', (): void => {
         // When the app device detects the belonging beacon
         //
         beforeAll(async (): Promise<void> => {
-            belongingDetectionService.start();
+            await belongingDetectionService.start();
             onMuTagDetectionSubscriber.next(detectedMuTags);
 
             // https://stackoverflow.com/questions/44741102/how-to-make-jest-wait-for-all-asynchronous-code-to-finish-execution-before-expec
@@ -127,7 +122,9 @@ describe('last seen status of belongings continuously updates', (): void => {
         // Then
         //
         it('should update belonging safety status to true with detected timestamp', (): void => {
-            expect(muTagRepoLocalMock.getByBeaconID).toHaveBeenCalledTimes(1);
+            expect(muTagMonitorMock.startMonitoringMuTags).toHaveBeenCalledTimes(1);
+            expect(muTagMonitorMock.startMonitoringMuTags).toHaveBeenCalledWith(new Set([muTagBeacon]));
+            expect(muTagMonitorMock.startRangingAllMuTags).toHaveBeenCalledTimes(1);
             expect(muTag.isSafe).toEqual(true);
             expect(muTag.lastSeen).toEqual(lastSeenTimestamp);
         });
@@ -178,6 +175,55 @@ describe('last seen status of belongings continuously updates', (): void => {
         it('should update belonging in local repo', (): void => {
             expect(muTagRepoLocalMock.update).toHaveBeenCalledTimes(1);
             expect(muTagRepoLocalMock.update).toHaveBeenCalledWith(muTag);
+        });
+    });
+
+    describe('belonging is added to account', (): void => {
+
+        // Given that an account is logged in
+
+        const beaconID = account.newBeaconID;
+        const muTagNumber = account.newMuTagNumber;
+        const addedMuTagData = {
+            _uid: 'UUID02',
+            _beaconID: beaconID,
+            _muTagNumber: muTagNumber,
+            _name: 'Bag',
+            _batteryLevel: new Percent(68),
+            _isSafe: false,
+            _lastSeen: new Date('2019-11-02T17:09:31.007Z'),
+            _color: MuTagColor.Charcoal,
+        };
+        const addedMuTag = new ProvisionedMuTag(addedMuTagData);
+        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(addedMuTag);
+        (muTagRepoLocalMock.getByBeaconID as jest.Mock).mockResolvedValueOnce(addedMuTag);
+
+        const detectedTimestamp = new Date();
+        const detectedMuTags: Set<MuTagSignal> = new Set([
+            {
+                accountNumber: accountNumber,
+                beaconID: addedMuTagData._beaconID,
+                timestamp: detectedTimestamp,
+            },
+        ]);
+
+        // When a belonging is added to account
+        //
+        beforeAll(async (): Promise<void> => {
+            account.addNewMuTag(addedMuTagData._uid, addedMuTagData._beaconID);
+            await new Promise(setImmediate);
+            onMuTagDetectionSubscriber.next(detectedMuTags);
+            await new Promise(setImmediate);
+        });
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should start updating belonging safety status', (): void => {
+            expect(addedMuTag.lastSeen).toEqual(detectedTimestamp);
         });
     });
 });

@@ -29,9 +29,27 @@ export default class BelongingDetectionService implements BelongingDetection {
         this.updateMuTagsWhenDetected();
         this.updateMuTagsWhenRegionExited();
         const muTags = await this.muTagRepoLocal.getAll();
-        const beacons = await this.getBeaconsFromMuTags(muTags);
-        await this.muTagMonitor.startMonitoringMuTags(beacons);
+        await this.startMonitoringMuTags(muTags);
         await this.muTagMonitor.startRangingAllMuTags();
+        this.startMonitoringAddedMuTags();
+    }
+
+    private async startMonitoringAddedMuTags(): Promise<void> {
+        const account = await this.accountRepoLocal.get();
+        account.muTagsChange.subscribe((change): void => {
+            if (change.insertion != null) {
+                this.muTagRepoLocal.getByUID(change.insertion).then((muTag): Promise<void> => {
+                    return this.startMonitoringMuTags(new Set([muTag]));
+                }).catch((e): void => {
+                    console.warn(e);
+                });
+            }
+        });
+    }
+
+    private async startMonitoringMuTags(muTags: Set<ProvisionedMuTag>): Promise<void> {
+        const beacons = await this.getBeaconsFromMuTags(muTags);
+        this.muTagMonitor.startMonitoringMuTags(beacons);
     }
 
     private updateMuTagsWhenDetected(): void {
