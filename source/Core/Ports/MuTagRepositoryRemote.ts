@@ -54,4 +54,5 @@ export interface MuTagRepositoryRemote {
     add(muTag: ProvisionedMuTag, accountUID: string): Promise<void>;
     update(muTag: ProvisionedMuTag, accountUID: string): Promise<void>;
     updateMultiple(muTags: Set<ProvisionedMuTag>, accountUID: string): Promise<void>;
+    removeByUID(uid: string, accountUID: string): Promise<void>;
 }
