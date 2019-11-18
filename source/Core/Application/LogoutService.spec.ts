@@ -51,6 +51,7 @@ describe('user logs out of their account', (): void => {
             add: jest.fn(),
             update: jest.fn(),
             updateMultiple: jest.fn(),
+            removeByUID: jest.fn(),
         }));
 
     const RepoLocalMock

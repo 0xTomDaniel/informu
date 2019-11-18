@@ -1,6 +1,6 @@
 import firebase, { App } from 'react-native-firebase';
 import { Database, DataSnapshot } from 'react-native-firebase/database';
-import { MuTagRepositoryRemote, FailedToAdd, FailedToUpdate, FailedToGet, DoesNotExist, PersistedDataMalformed } from '../../Core/Ports/MuTagRepositoryRemote';
+import { MuTagRepositoryRemote, FailedToAdd, FailedToUpdate, FailedToGet, DoesNotExist, PersistedDataMalformed, FailedToRemove } from '../../Core/Ports/MuTagRepositoryRemote';
 import ProvisionedMuTag, { MuTagJSON, isMuTagJSON } from '../../Core/Domain/ProvisionedMuTag';
 
 interface DatabaseMuTag {
@@ -79,14 +79,14 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         }
     }
 
-    /*async removeByUID(uid: string): Promise<void> {
+    async removeByUID(uid: string): Promise<void> {
         try {
             await this.database.ref(`muTags/${uid}`).remove();
         } catch (e) {
             console.log(e);
             throw new FailedToRemove();
         }
-    }*/
+    }
 
     private static toDatabaseMuTag(muTag: ProvisionedMuTag): DatabaseMuTag {
         const muTagJSON = muTag.json;

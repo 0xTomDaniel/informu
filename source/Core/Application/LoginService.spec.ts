@@ -65,6 +65,7 @@ describe('user logs into their account', (): void => {
             add: jest.fn(),
             update: jest.fn(),
             updateMultiple: jest.fn(),
+            removeByUID: jest.fn(),
         }));
 
     const SessionServiceMock

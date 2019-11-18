@@ -146,6 +146,14 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         }
     }
 
+    async unprovisionMuTag(uid: string): Promise<void> {
+
+    }
+
+    async readBatteryLevel(uid: string): Promise<Percent> {
+        
+    }
+
     private async findUnprovisionedMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag> {
         return new Promise((resolve, reject): void => {
             this.rejectFindUnprovisionedMuTag = reject;
