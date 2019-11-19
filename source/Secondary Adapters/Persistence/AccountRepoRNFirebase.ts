@@ -127,19 +127,19 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
         }
 
         const data: {[key: string]: any} = {
-            uid: uid,
-            accountNumber: snapshotData.account_id,
-            emailAddress: snapshotData.email,
-            nextBeaconID: snapshotData.next_beacon_id,
-            nextMuTagNumber: snapshotData.next_mu_tag_number,
+            _uid: uid,
+            _accountNumber: snapshotData.account_id,
+            _emailAddress: snapshotData.email,
+            _nextBeaconID: snapshotData.next_beacon_id,
+            _nextMuTagNumber: snapshotData.next_mu_tag_number,
         };
 
         if (snapshotData.hasOwnProperty('recycled_beacon_ids')) {
-            data.recycledBeaconIDs = Object.keys(snapshotData.recycled_beacon_ids);
+            data._recycledBeaconIDs = Object.keys(snapshotData.recycled_beacon_ids);
         }
 
         if (snapshotData.hasOwnProperty('mu_tags')) {
-            data.muTags = Object.keys(snapshotData.mu_tags);
+            data._muTags = Object.keys(snapshotData.mu_tags);
         }
 
         if (!isAccountJSON(data)) {
