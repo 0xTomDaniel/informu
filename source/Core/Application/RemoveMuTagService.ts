@@ -45,6 +45,8 @@ export default class RemoveMuTagService {
     }
 
     async remove(uid: string): Promise<void> {
+        this.removeMuTagOutput.showBusyIndicator();
+
         try {
             const batteryLevel = await this.muTagDevices.readBatteryLevel(uid);
             if (batteryLevel <= this.removeMuTagBatteryThreshold) {
@@ -73,8 +75,10 @@ export default class RemoveMuTagService {
                     this.removeMuTagOutput.showUnprovisionMuTagFailedError(e);
                     break;
                 default:
-                    throw e;
+                    this.removeMuTagOutput.showUnknownError(e);
             }
+        } finally {
+            this.removeMuTagOutput.hideBusyIndicator();
         }
     }
 }

@@ -147,11 +147,11 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
     }
 
     async unprovisionMuTag(uid: string): Promise<void> {
-
+        throw Error('Method not implemented');
     }
 
     async readBatteryLevel(uid: string): Promise<Percent> {
-        
+        throw Error('Method not implemented');
     }
 
     private async findUnprovisionedMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag> {

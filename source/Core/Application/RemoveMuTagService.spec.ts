@@ -59,9 +59,12 @@ describe('Mu tag user removes Mu tag', (): void => {
 
     const RemoveMuTagOutputMock
         = jest.fn<RemoveMuTagOutput, any>((): RemoveMuTagOutput => ({
+            showBusyIndicator: jest.fn(),
+            hideBusyIndicator: jest.fn(),
             showMuTagNotFoundError: jest.fn(),
             showUnprovisionMuTagFailedError: jest.fn(),
             showLowBatteryError: jest.fn(),
+            showUnknownError: jest.fn(),
         }));
 
     const muTagDevicesMock = new MuTagDevicesMock();
@@ -143,6 +146,12 @@ describe('Mu tag user removes Mu tag', (): void => {
 
         // Then
         //
+        it('should show busy indicator', (): void => {
+            expect(removeMuTagOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
         it('should check the Mu tag battery level', (): void => {
             expect(muTagDevicesMock.readBatteryLevel).toHaveBeenCalledTimes(1);
         });
@@ -176,6 +185,12 @@ describe('Mu tag user removes Mu tag', (): void => {
                 .toHaveBeenCalledWith(muTagUID, validAccountData._uid);
             expect(muTagRepoRemoteMock.removeByUID).toHaveBeenCalledTimes(1);
         });
+
+        // Then
+        //
+        it('should hide busy indicator', (): void => {
+            expect(removeMuTagOutputMock.hideBusyIndicator).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('Mu tag is unconnectable (while reading battery level)', (): void => {
@@ -199,6 +214,18 @@ describe('Mu tag user removes Mu tag', (): void => {
 
         afterAll((): void => {
             jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show busy indicator', (): void => {
+            expect(removeMuTagOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should hide busy indicator', (): void => {
+            expect(removeMuTagOutputMock.hideBusyIndicator).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -232,6 +259,18 @@ describe('Mu tag user removes Mu tag', (): void => {
 
         afterAll((): void => {
             jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show busy indicator', (): void => {
+            expect(removeMuTagOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should hide busy indicator', (): void => {
+            expect(removeMuTagOutputMock.hideBusyIndicator).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -274,8 +313,20 @@ describe('Mu tag user removes Mu tag', (): void => {
 
         // Then
         //
+        it('should show busy indicator', (): void => {
+            expect(removeMuTagOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
         it('should check the Mu tag battery level', (): void => {
             expect(muTagDevicesMock.readBatteryLevel).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should hide busy indicator', (): void => {
+            expect(removeMuTagOutputMock.hideBusyIndicator).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -309,6 +360,18 @@ describe('Mu tag user removes Mu tag', (): void => {
 
         afterAll((): void => {
             jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should show busy indicator', (): void => {
+            expect(removeMuTagOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should hide busy indicator', (): void => {
+            expect(removeMuTagOutputMock.hideBusyIndicator).toHaveBeenCalledTimes(1);
         });
 
         // Then
