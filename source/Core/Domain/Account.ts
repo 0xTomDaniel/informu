@@ -59,13 +59,22 @@ const isStringArray = (value: any): value is string[] => {
 };
 
 export const isAccountJSON = (object: { [key: string]: any }): object is AccountJSON => {
-    return '_uid' in object && typeof object.uid === 'string'
-        && '_accountNumber' in object && typeof object.accountNumber === 'string'
-        && '_emailAddress' in object && typeof object.emailAddress === 'string'
-        && '_nextBeaconID' in object && typeof object.nextBeaconID === 'string'
-        && '_recycledBeaconIDs' in object ? isStringArray(object.recycledBeaconIDs) : true
-        && '_nextMuTagNumber' in object && typeof object.nextMuTagNumber === 'string'
-        && '_muTags' in object ? isStringArray(object.muTags) : true;
+    const isUIDValid = '_uid' in object && typeof object._uid === 'string';
+    const isAccountNumberValid = '_accountNumber' in object
+        && typeof object._accountNumber === 'string';
+    const isEmailAddressValid = '_emailAddress' in object
+        && typeof object._emailAddress === 'string';
+    const isNextBeaconIDValid = '_nextBeaconID' in object
+        && typeof object._nextBeaconID === 'string';
+    const isRecycledBeaconIDsValid = '_recycledBeaconIDs' in object
+        ? isStringArray(object._recycledBeaconIDs) : true;
+    const isNextMuTagNumberValid = '_nextMuTagNumber' in object
+        && typeof object._nextMuTagNumber === 'number';
+    const isMuTagsValid = '_muTags' in object ? isStringArray(object._muTags) : true;
+
+    return isUIDValid && isAccountNumberValid && isEmailAddressValid
+        && isNextBeaconIDValid && isRecycledBeaconIDsValid
+        && isNextMuTagNumberValid && isMuTagsValid;
 };
 
 interface AccessorValue {
@@ -204,12 +213,12 @@ export default class Account {
     static reviver(key: string, value: any): any {
         switch (key) {
             case '':
-                if (value.recycledBeaconIDs == null) {
-                    value.recycledBeaconIDs = new Set<BeaconID>();
+                if (value._recycledBeaconIDs == null) {
+                    value._recycledBeaconIDs = new Set<BeaconID>();
                 }
 
-                if (value.muTags == null) {
-                    value.muTags = new Set<string>();
+                if (value._muTags == null) {
+                    value._muTags = new Set<string>();
                 }
 
                 return new Account(value);
