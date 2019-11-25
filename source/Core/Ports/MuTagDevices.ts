@@ -3,6 +3,7 @@ import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
 import { RSSI } from '../Domain/Types';
 import { BeaconID } from '../Domain/ProvisionedMuTag';
 import { AccountNumber } from '../Domain/Account';
+import Percent from '../Domain/Percent';
 
 export class UnprovisionMuTagDeviceNotFound extends Error {
 
@@ -40,6 +41,15 @@ export class ProvisionMuTagFailed extends Error {
     }
 }
 
+export class UnprovisionMuTagFailed extends Error {
+
+    constructor() {
+        super('Failed to remove Mu tag. Please ensure the Mu tag is charged and move it closer to the app.');
+        this.name = 'UnprovisionMuTagFailed';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 export class FindNewMuTagAlreadyRunning extends Error {
 
     constructor() {
@@ -58,10 +68,30 @@ export class FindNewMuTagCanceled extends Error {
     }
 }
 
+export class MuTagNotFound extends Error {
+
+    constructor() {
+        super('Could not find Mu tag. Please ensure the Mu tag is charged and move it closer to the app.');
+        this.name = 'MuTagNotFound';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class InvalidProvisioning extends Error {
+
+    constructor() {
+        super('Mu tag provisioning is invalid. Please contact customer support.');
+        this.name = 'InvalidProvisioning';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 export interface MuTagDevices {
 
     findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
     cancelFindNewMuTag(): void;
+    connectToProvisionedMuTag(accountNumber: AccountNumber, beaconID: BeaconID): Promise<void>;
+    disconnectFromProvisionedMuTag(accountNumber: AccountNumber, beaconID: BeaconID): void;
     provisionMuTag(
         unprovisionedMuTag: UnprovisionedMuTag,
         accountNumber: AccountNumber,
@@ -69,4 +99,6 @@ export interface MuTagDevices {
         muTagNumber: number,
         muTagName: string,
     ): Promise<ProvisionedMuTag>;
+    unprovisionMuTag(accountNumber: AccountNumber, beaconID: BeaconID): Promise<void>;
+    readBatteryLevel(accountNumber: AccountNumber, beaconID: BeaconID): Promise<Percent>;
 }

@@ -40,6 +40,8 @@ import BelongingDashboardService from './source/Core/Application/BelongingDashbo
 import BelongingDashboardPresenter from './source/Primary Adapters/Presentation/BelongingDashboardPresenter';
 import BelongingDetectionService from './source/Core/Application/BelongingDetectionService';
 import MuTagMonitorRNBM from './source/Secondary Adapters/Infrastructure/MuTagMonitorRNBM';
+import RemoveMuTagService from './source/Core/Application/RemoveMuTagService';
+import RemoveMuTagPresenter from './source/Primary Adapters/Presentation/RemoveMuTagPresenter';
 
 const authentication = new AuthenticationFirebase();
 const accountRepoLocal = new AccountRepoRNCAsyncStorage();
@@ -68,6 +70,19 @@ const addMuTagService = new AddMuTagService(
     muTagRepoRemote,
     accountRepoLocal,
     accountRepoRemote,
+);
+const removeMuTagBatteryThreshold = new Percent(20);
+const removeMuTagPresenter = new RemoveMuTagPresenter(
+    homeViewModel
+);
+const removeMuTagService = new RemoveMuTagService(
+    removeMuTagBatteryThreshold,
+    muTagDevices,
+    accountRepoLocal,
+    accountRepoRemote,
+    muTagRepoLocal,
+    muTagRepoRemote,
+    removeMuTagPresenter,
 );
 const logoutPresenter = new LogoutPresenter(homeViewModel);
 const repoLocal = new RepoLocalRNCAsyncStorage();
@@ -109,6 +124,7 @@ const AppStack = createStackNavigator(
                     belongingDashboardService={belongingDashboardService}
                     logoutService={logoutService}
                     addMuTagService={addMuTagService}
+                    removeMuTagService={removeMuTagService}
                     {...props}
                 />
             ),

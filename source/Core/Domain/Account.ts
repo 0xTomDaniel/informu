@@ -162,11 +162,15 @@ export default class Account {
         }
 
         this._nextMuTagNumber += 1;
+        // Must copy _muTags set or behavior subject's previous value will be
+        // mutated
         this._muTags = new Set(this._muTags).add(muTagUID);
     }
 
     removeMuTag(muTagUID: string, beaconID: BeaconID): void {
         this._recycledBeaconIDs.add(beaconID);
+        // Must copy _muTags set or behavior subject's previous value will be
+        // mutated
         const muTags = new Set(this._muTags);
         if (muTags.delete(muTagUID)) {
             this._muTags = muTags;

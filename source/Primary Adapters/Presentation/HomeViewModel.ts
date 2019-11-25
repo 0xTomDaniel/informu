@@ -20,6 +20,8 @@ export interface HomeState {
 
     readonly showEmptyBelongings: boolean;
     readonly showActivityIndicator: boolean;
+    readonly errorDescription: string;
+    readonly isErrorVisible: boolean;
     readonly belongings: BelongingViewData[];
 }
 
@@ -27,6 +29,8 @@ export interface HomeStateDelta {
 
     readonly showEmptyBelongings?: boolean;
     readonly showActivityIndicator?: boolean;
+    readonly errorDescription?: string;
+    readonly isErrorVisible?: boolean;
     readonly belongings?: BelongingViewDataDelta[];
 }
 
@@ -35,6 +39,8 @@ export class HomeViewModel {
     private _state: HomeState = {
         showEmptyBelongings: true,
         showActivityIndicator: false,
+        errorDescription: '',
+        isErrorVisible: false,
         belongings: [],
     }
 

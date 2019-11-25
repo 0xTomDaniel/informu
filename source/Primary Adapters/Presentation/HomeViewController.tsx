@@ -1,17 +1,19 @@
-import { Appbar, Text, Portal, Modal, ActivityIndicator, Card, Avatar, IconButton } from 'react-native-paper';
+import { Appbar, Text, Portal, Modal, ActivityIndicator, Card, Avatar, IconButton, Menu } from 'react-native-paper';
 import { StyleSheet, Platform, StatusBar, PermissionsAndroid, PermissionStatus, View, FlatList } from 'react-native';
 import Theme from './Theme';
 import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
 import React, { ReactElement, FunctionComponent, useState, useEffect } from 'react';
 import DeviceInfo from 'react-native-device-info';
 import LinearGradient from 'react-native-linear-gradient';
-import { HomeState, HomeViewModel, BelongingViewData } from './HomeViewModel';
+import { HomeViewModel, BelongingViewData } from './HomeViewModel';
 import AddMuTagService from '../../Core/Application/AddMuTagService';
 import LogoutService from '../../Core/Application/LogoutService';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { Images } from './Images';
 import { Scale } from './ResponsiveScaler';
 import BelongingDashboardService from '../../Core/Application/BelongingDashboardService';
+import RemoveMuTagService from '../../Core/Application/RemoveMuTagService';
+import ErrorDialog from './Base Components/ErrorDialog';
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -122,22 +124,64 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
     );
 };
 
-const BelongingCard: FunctionComponent<BelongingViewData> = (props): ReactElement => {
+interface BelongingCardProps {
+    viewData: BelongingViewData;
+    removeMuTagService: RemoveMuTagService;
+}
+
+const BelongingCard: FunctionComponent<BelongingCardProps> = (props): ReactElement => {
+
+    const [isMenuVisible, setIsMenuVisible] = useState(false);
+
+    const showMenu = (): void => setIsMenuVisible(true);
+    const hideMenu = (): void => setIsMenuVisible(false);
+    const removeMuTag = (): void => {
+        hideMenu();
+        props.removeMuTagService.remove(props.viewData.uid).catch((e): void => {
+            console.warn(`removeMuTagService.remove() - error: ${e}`);
+        });
+    };
+
     return (
         <Card elevation={0} style={styles.card}>
             <Card.Title
-                title={props.name}
+                title={props.viewData.name}
                 subtitle={
                     <Text style={styles.cardSubtitle}>
-                        <Icon name="checkbox-blank-circle" size={10} color={props.safeStatusColor} />
-                        {' ' + props.lastSeen}
+                        <Icon
+                            name="checkbox-blank-circle"
+                            size={10}
+                            color={props.viewData.safeStatusColor}
+                        />
+                        {' ' + props.viewData.lastSeen}
                     </Text>
                 }
                 left={(leftProps: any): Element =>
-                    <Avatar.Icon {...leftProps} icon="radar" color="white" style={styles.iconView} />
+                    <Avatar.Icon
+                        {...leftProps}
+                        icon="radar"
+                        color="white"
+                        style={styles.iconView}
+                    />
                 }
                 right={(rightProps: any): Element =>
-                    <IconButton {...rightProps} icon="dots-vertical" onPress={(): void => {}} />
+                    <Menu
+                        visible={isMenuVisible}
+                        onDismiss={hideMenu}
+                        anchor={
+                            <IconButton
+                                {...rightProps}
+                                icon="dots-vertical"
+                                onPress={showMenu}
+                            />
+                        }
+                    >
+                        <Menu.Item
+                            title="Remove"
+                            icon="minus-circle-outline"
+                            onPress={removeMuTag}
+                        />
+                    </Menu>
                 }
                 titleStyle={styles.cardTitleText}
                 subtitleStyle={styles.cardTitleText}
@@ -152,15 +196,20 @@ interface HomeVCProps extends NavigationScreenProps {
     belongingDashboardService: BelongingDashboardService;
     logoutService: LogoutService;
     addMuTagService: AddMuTagService;
+    removeMuTagService: RemoveMuTagService;
 }
 
 const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement => {
 
     const [state, setState] = useState(props.homeViewModel.state);
 
+    const onDismissErrorDialog = (): void => {
+        props.homeViewModel.updateState({ errorDescription: '', isErrorVisible: false });
+    };
+
     useEffect((): (() => void) => {
         props.homeViewModel.onDidUpdate((newState): void => {
-            setState((): HomeState => (newState));
+            setState(newState);
         });
         props.homeViewModel.onNavigateToAddMuTag((): boolean =>
             props.navigation.navigate('AddMuTag')
@@ -234,10 +283,8 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
                 data={state.belongings}
                 renderItem={({ item }): ReactElement =>
                     <BelongingCard
-                        uid={item.uid}
-                        name={item.name}
-                        safeStatusColor={item.safeStatusColor}
-                        lastSeen={item.lastSeen}
+                        viewData={item}
+                        removeMuTagService={props.removeMuTagService}
                     />
                 }
                 keyExtractor={(item): string => item.uid}
@@ -251,6 +298,11 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
                     <ActivityIndicator size="large" color={Theme.Color.PrimaryBlue} />
                 </Modal>
             </Portal>
+            <ErrorDialog
+                message={state.errorDescription}
+                visible={state.isErrorVisible}
+                onDismiss={onDismissErrorDialog}
+            />
         </SafeAreaView>
     );
 };
