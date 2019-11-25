@@ -138,7 +138,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (props): ReactEleme
     const removeMuTag = (): void => {
         hideMenu();
         props.removeMuTagService.remove(props.viewData.uid).catch((e): void => {
-            console.warn(e);
+            console.warn(`removeMuTagService.remove() - error: ${e}`);
         });
     };
 

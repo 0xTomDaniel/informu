@@ -14,7 +14,7 @@ export default class Hexadecimal {
     protected readonly stringValue: string;
 
     protected constructor(hex: string, numberValue: number) {
-        this.stringValue = hex;
+        this.stringValue = hex.toUpperCase();
         this.numberValue = numberValue;
     }
 
@@ -32,7 +32,7 @@ export default class Hexadecimal {
     }
 
     static fromNumber(value: number, prefix: boolean = false, minLength?: number): Hexadecimal {
-        let hex = value.toString(16).toUpperCase();
+        let hex = value.toString(16);
 
         // Might be able to refactor using padStart(X, '0')
         if (minLength != null) {

@@ -16,6 +16,8 @@ describe('Mu tag user removes Mu tag', (): void => {
         = jest.fn<MuTagDevices, any>((): MuTagDevices => ({
             findNewMuTag: jest.fn(),
             cancelFindNewMuTag: jest.fn(),
+            connectToProvisionedMuTag: jest.fn(),
+            disconnectFromProvisionedMuTag: jest.fn(),
             provisionMuTag: jest.fn(),
             unprovisionMuTag: jest.fn(),
             readBatteryLevel: jest.fn(),
@@ -124,6 +126,8 @@ describe('Mu tag user removes Mu tag', (): void => {
         (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given Mu tag is connectable
+        //
+        (muTagDevicesMock.connectToProvisionedMuTag as jest.Mock).mockResolvedValueOnce(undefined);
 
         // Given the Mu tag battery is above threshold
         //
@@ -148,6 +152,12 @@ describe('Mu tag user removes Mu tag', (): void => {
         //
         it('should show busy indicator', (): void => {
             expect(removeMuTagOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should connect to the Mu tag', (): void => {
+            expect(muTagDevicesMock.connectToProvisionedMuTag).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -193,16 +203,17 @@ describe('Mu tag user removes Mu tag', (): void => {
         });
     });
 
-    describe('Mu tag is unconnectable (while reading battery level)', (): void => {
+    describe('Mu tag is unconnectable', (): void => {
 
         // Given that the account connected to the current Mu tag is logged in
         //
         (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
+        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given Mu tag is unconnectable
         //
         const muTagNoTFoundError = new MuTagNotFound();
-        (muTagDevicesMock.readBatteryLevel as jest.Mock)
+        (muTagDevicesMock.connectToProvisionedMuTag as jest.Mock)
             .mockRejectedValueOnce(muTagNoTFoundError);
 
         // When
@@ -224,47 +235,8 @@ describe('Mu tag user removes Mu tag', (): void => {
 
         // Then
         //
-        it('should hide busy indicator', (): void => {
-            expect(removeMuTagOutputMock.hideBusyIndicator).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it('should show message to move Mu tag closer to mobile device, check Mu tag battery level, and try again', (): void => {
-            expect(removeMuTagOutputMock.showMuTagNotFoundError).toHaveBeenCalledTimes(1);
-            expect(removeMuTagOutputMock.showMuTagNotFoundError)
-                .toHaveBeenCalledWith(muTagNoTFoundError);
-        });
-    });
-
-    describe('Mu tag is unconnectable (while unprovisioning)', (): void => {
-
-        // Given that the account connected to the current Mu tag is logged in
-        //
-        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
-
-        // Given Mu tag is unconnectable
-        //
-        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockResolvedValueOnce(new Percent(16));
-        const muTagNoTFoundError = new MuTagNotFound();
-        (muTagDevicesMock.unprovisionMuTag as jest.Mock)
-            .mockRejectedValueOnce(muTagNoTFoundError);
-
-        // When
-        //
-        beforeAll(async (): Promise<void> => {
-            // user removes Mu tag
-            await removeMuTagService.remove(muTagUID);
-        });
-
-        afterAll((): void => {
-            jest.clearAllMocks();
-        });
-
-        // Then
-        //
-        it('should show busy indicator', (): void => {
-            expect(removeMuTagOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        it('should connect to the Mu tag', (): void => {
+            expect(muTagDevicesMock.connectToProvisionedMuTag).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -287,9 +259,12 @@ describe('Mu tag user removes Mu tag', (): void => {
         // Given that the account connected to the current Mu tag is logged in
         //
         (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
+        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given Mu tag is connectable
         //
+        (muTagDevicesMock.connectToProvisionedMuTag as jest.Mock).mockResolvedValueOnce(undefined);
+
         // Given the Mu tag battery is above threshold
         //
         (muTagDevicesMock.readBatteryLevel as jest.Mock).mockResolvedValueOnce(new Percent(16));
@@ -319,8 +294,26 @@ describe('Mu tag user removes Mu tag', (): void => {
 
         // Then
         //
+        it('should connect to the Mu tag', (): void => {
+            expect(muTagDevicesMock.connectToProvisionedMuTag).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
         it('should check the Mu tag battery level', (): void => {
             expect(muTagDevicesMock.readBatteryLevel).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should unprovision the Mu tag hardware', (): void => {
+            expect(muTagDevicesMock.unprovisionMuTag).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should disconnect from the Mu tag', (): void => {
+            expect(muTagDevicesMock.disconnectFromProvisionedMuTag).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -342,9 +335,14 @@ describe('Mu tag user removes Mu tag', (): void => {
     describe('Mu tag battery is below threshold', (): void => {
 
         // Given that the account connected to the current Mu tag is logged in
+        //
+        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
+        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given Mu tag is connectable
         //
+        (muTagDevicesMock.connectToProvisionedMuTag as jest.Mock).mockResolvedValueOnce(undefined);
+
         // Given the Mu tag battery is below threshold
         //
         const muTagBatteryLevelLow = new Percent(15);
@@ -366,6 +364,24 @@ describe('Mu tag user removes Mu tag', (): void => {
         //
         it('should show busy indicator', (): void => {
             expect(removeMuTagOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should connect to the Mu tag', (): void => {
+            expect(muTagDevicesMock.connectToProvisionedMuTag).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should check the Mu tag battery level', (): void => {
+            expect(muTagDevicesMock.readBatteryLevel).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should disconnect from the Mu tag', (): void => {
+            expect(muTagDevicesMock.disconnectFromProvisionedMuTag).toHaveBeenCalledTimes(1);
         });
 
         // Then

@@ -79,9 +79,9 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         }
     }
 
-    async removeByUID(uid: string): Promise<void> {
+    async removeByUID(uid: string, accountUID: string): Promise<void> {
         try {
-            await this.database.ref(`muTags/${uid}`).remove();
+            await this.database.ref(`mu_tags/${accountUID}/${uid}`).remove();
         } catch (e) {
             console.log(e);
             throw new FailedToRemove();

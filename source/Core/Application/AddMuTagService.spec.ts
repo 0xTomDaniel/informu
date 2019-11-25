@@ -18,6 +18,8 @@ describe('Mu tag user adds Mu tag', (): void => {
         = jest.fn<MuTagDevices, any>((): MuTagDevices => ({
             findNewMuTag: jest.fn(),
             cancelFindNewMuTag: jest.fn(),
+            connectToProvisionedMuTag: jest.fn(),
+            disconnectFromProvisionedMuTag: jest.fn(),
             provisionMuTag: jest.fn(),
             unprovisionMuTag: jest.fn(),
             readBatteryLevel: jest.fn(),

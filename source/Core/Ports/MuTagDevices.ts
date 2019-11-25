@@ -45,7 +45,7 @@ export class UnprovisionMuTagFailed extends Error {
 
     constructor() {
         super('Failed to remove Mu tag. Please ensure the Mu tag is charged and move it closer to the app.');
-        this.name = 'ProvisionMuTagFailed';
+        this.name = 'UnprovisionMuTagFailed';
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
@@ -72,7 +72,16 @@ export class MuTagNotFound extends Error {
 
     constructor() {
         super('Could not find Mu tag. Please ensure the Mu tag is charged and move it closer to the app.');
-        this.name = 'NewMuTagNotFound';
+        this.name = 'MuTagNotFound';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class InvalidProvisioning extends Error {
+
+    constructor() {
+        super('Mu tag provisioning is invalid. Please contact customer support.');
+        this.name = 'InvalidProvisioning';
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
@@ -81,6 +90,8 @@ export interface MuTagDevices {
 
     findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
     cancelFindNewMuTag(): void;
+    connectToProvisionedMuTag(accountNumber: AccountNumber, beaconID: BeaconID): Promise<void>;
+    disconnectFromProvisionedMuTag(accountNumber: AccountNumber, beaconID: BeaconID): void;
     provisionMuTag(
         unprovisionedMuTag: UnprovisionedMuTag,
         accountNumber: AccountNumber,
@@ -88,6 +99,6 @@ export interface MuTagDevices {
         muTagNumber: number,
         muTagName: string,
     ): Promise<ProvisionedMuTag>;
-    unprovisionMuTag(uid: string): Promise<void>;
-    readBatteryLevel(uid: string): Promise<Percent>;
+    unprovisionMuTag(accountNumber: AccountNumber, beaconID: BeaconID): Promise<void>;
+    readBatteryLevel(accountNumber: AccountNumber, beaconID: BeaconID): Promise<Percent>;
 }

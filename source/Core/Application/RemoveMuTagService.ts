@@ -5,6 +5,8 @@ import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
 import { RemoveMuTagOutput } from '../Ports/RemoveMuTagOutput';
+import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
+import Account from '../Domain/Account';
 
 export class LowMuTagBattery extends Error {
 
@@ -47,16 +49,23 @@ export default class RemoveMuTagService {
     async remove(uid: string): Promise<void> {
         this.removeMuTagOutput.showBusyIndicator();
 
+        let account: Account | undefined;
+        let muTag: ProvisionedMuTag | undefined;
+
         try {
-            const batteryLevel = await this.muTagDevices.readBatteryLevel(uid);
+            account = await this.accountRepoLocal.get();
+            muTag = await this.muTagRepoLocal.getByUID(uid);
+
+            await this.muTagDevices.connectToProvisionedMuTag(account.accountNumber, muTag.beaconID);
+            const batteryLevel = await this.muTagDevices
+                .readBatteryLevel(account.accountNumber, muTag.beaconID);
             if (batteryLevel <= this.removeMuTagBatteryThreshold) {
                 throw new LowMuTagBattery(this.removeMuTagBatteryThreshold.valueOf());
             }
 
-            await this.muTagDevices.unprovisionMuTag(uid);
+            await this.muTagDevices
+                .unprovisionMuTag(account.accountNumber, muTag.beaconID);
 
-            const account = await this.accountRepoLocal.get();
-            const muTag = await this.muTagRepoLocal.getByUID(uid);
             account.removeMuTag(uid, muTag.beaconID);
 
             await this.accountRepoLocal.update(account);
@@ -64,6 +73,14 @@ export default class RemoveMuTagService {
             await this.accountRepoRemote.update(account);
             await this.muTagRepoRemote.removeByUID(uid, account.uid);
         } catch (e) {
+            if (
+                e.constructor !== MuTagNotFound
+                && account != null
+                && muTag != null
+            ) {
+                this.muTagDevices.disconnectFromProvisionedMuTag(account.accountNumber, muTag.beaconID);
+            }
+
             switch (e.constructor) {
                 case LowMuTagBattery:
                     this.removeMuTagOutput.showLowBatteryError(e);

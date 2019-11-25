@@ -7,6 +7,8 @@ import {
     ProvisionMuTagFailed,
     NewMuTagNotFound,
     BluetoothUnsupported,
+    InvalidProvisioning,
+    MuTagNotFound,
 } from '../../Core/Ports/MuTagDevices';
 import { RSSI } from '../../Core/Domain/Types';
 import UnprovisionedMuTag from '../../Core/Domain/UnprovisionedMuTag';
@@ -23,11 +25,30 @@ import { MuTagColor } from '../../Core/Domain/MuTag';
 import { Buffer } from 'buffer';
 import Hexadecimal from '../../Core/Domain/Hexadecimal';
 
+export class MuTagNotFoundInUnprovisionedCache extends Error {
+
+    constructor() {
+        super('Could not find Mu tag in unprovisioned cache.');
+        this.name = 'MuTagNotFoundInUnprovisionedCache';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class MuTagNotFoundInProvisionedCache extends Error {
+
+    constructor() {
+        super('Could not find Mu tag in provisioned cache.');
+        this.name = 'MuTagNotFoundInUnprovisionedCache';
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 enum ProvisionState {
     Provisioned,
     Unprovisioned,
 }
 
+type ProvisionID = string & { readonly _: unique symbol };
 type MuTagUID = string & { readonly _: unique symbol };
 type DeviceID = string & { readonly _: unique symbol };
 
@@ -40,8 +61,9 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
     private isFindingNewMuTag = false;
     private rejectFindUnprovisionedMuTag?: (reason?: any) => void;
     private ignoredDeviceIDCache = new Set<DeviceID>();
-    private muTagDeviceIDCache = new Map<DeviceID, MuTagUID>();
-    private provisionedMuTagCache = new Map<MuTagUID, Device>();
+    private muTagUIDCache = new Map<DeviceID, MuTagUID>();
+    private muTagProvisionIDCache = new Map<DeviceID, ProvisionID>();
+    private provisionedMuTagCache = new Map<ProvisionID, Device>();
     private unprovisionedMuTagCache = new Map<MuTagUID, Device>();
 
     constructor() {
@@ -73,7 +95,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                 }
             }
 
-            console.warn(e);
+            console.warn(`findNewMuTag(): ${e}`);
             throw new NewMuTagNotFound();
         }
     }
@@ -91,6 +113,38 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         }
     }
 
+    async connectToProvisionedMuTag(accountNumber: AccountNumber, beaconID: BeaconID): Promise<void> {
+        let muTagDevice: Device | undefined;
+
+        try {
+            muTagDevice = await this.getProvisionedMuTagDevice(accountNumber, beaconID);
+            const isConnected = await muTagDevice.isConnected();
+            if (!isConnected) {
+                await muTagDevice.connect();
+                await muTagDevice.discoverAllServicesAndCharacteristics();
+            }
+            await MuTagDevicesRNBLEPLX.authenticateToMuTag(muTagDevice);
+        } catch (e) {
+            if (muTagDevice != null) {
+                muTagDevice.cancelConnection().catch((error): void => {
+                    console.warn(`connect() - muTagDevice.cancelConnection() - error: ${error}`);
+                });
+            }
+
+            console.warn(`connect() - error: ${e}`);
+
+            throw new MuTagNotFound();
+        }
+    }
+
+    disconnectFromProvisionedMuTag(accountNumber: AccountNumber, beaconID: BeaconID): void {
+        this.getProvisionedMuTagDevice(accountNumber, beaconID).then((muTagDevice): Promise<Device> => {
+            return muTagDevice.cancelConnection();
+        }).catch((e): void => {
+            console.warn(`disconnect() - error: ${e}`);
+        });
+    }
+
     async provisionMuTag(
         unprovisionedMuTag: UnprovisionedMuTag,
         accountNumber: AccountNumber,
@@ -106,8 +160,12 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         }
 
         try {
-            await device.connect();
-            await device.discoverAllServicesAndCharacteristics();
+            const isConnected = await device.isConnected();
+            if (!isConnected) {
+                await device.connect();
+                await device.discoverAllServicesAndCharacteristics();
+            }
+
             await MuTagDevicesRNBLEPLX.authenticateToMuTag(device);
 
             const major = MuTagDevicesRNBLEPLX.getMajor(accountNumber);
@@ -127,6 +185,9 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                 MuTagBLEGATT.MuTagConfiguration.Provision,
                 MuTagBLEGATT.MuTagConfiguration.Provision.provisionCode,
             );
+            await device.cancelConnection();
+
+            this.moveToProvisionedCache(device.id as DeviceID, accountNumber, beaconID);
 
             const muTag = new ProvisionedMuTag({
                 _uid: unprovisionedMuTag.uid,
@@ -146,12 +207,91 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         }
     }
 
-    async unprovisionMuTag(uid: string): Promise<void> {
-        throw Error('Method not implemented');
+    async unprovisionMuTag(accountNumber: AccountNumber, beaconID: BeaconID): Promise<void> {
+        const muTagDevice = await this.getProvisionedMuTagDevice(accountNumber, beaconID);
+        const transactionID = UUIDv4();
+
+        return new Promise((resolve): void => {
+            //DEBUG
+            console.warn('Writing unprovision...');
+            MuTagDevicesRNBLEPLX.writeCharacteristic(
+                muTagDevice,
+                MuTagBLEGATT.MuTagConfiguration.Provision,
+                MuTagBLEGATT.MuTagConfiguration.Provision.unprovisionCode,
+                transactionID,
+            ).catch((e): void => {
+                console.warn(`writeCharacteristic() - error: ${e}`);
+
+                muTagDevice.cancelConnection().catch((error): void => {
+                    console.warn(`writeCharacteristic() - cancelConnection() - error: ${error}`);
+                });
+                this.removeFromProvisionedCache(muTagDevice.id as DeviceID);
+                resolve();
+            });
+
+            // Tested with 1ms and unprovisioning still works. Using 250ms to be
+            // safe from zombied Mu tags.
+            const unprovisionTimeoutMS = 250;
+            setTimeout((): void => {
+                //DEBUG
+                console.warn(`Cancelling unprovision write - manager: ${this.manager}`);
+                this.manager.cancelTransaction(transactionID);
+            }, unprovisionTimeoutMS);
+        });
     }
 
-    async readBatteryLevel(uid: string): Promise<Percent> {
-        throw Error('Method not implemented');
+    async readBatteryLevel(accountNumber: AccountNumber, beaconID: BeaconID): Promise<Percent> {
+        const muTagDevice = await this.getProvisionedMuTagDevice(accountNumber, beaconID);
+        const batteryLevel = await MuTagDevicesRNBLEPLX
+            .readCharacteristic(muTagDevice, MuTagBLEGATT.DeviceInformation.BatteryLevel);
+        return new Percent(batteryLevel.valueOf());
+    }
+
+    private moveToProvisionedCache(
+        deviceID: DeviceID,
+        accountNumber: AccountNumber,
+        beaconID: BeaconID
+    ): void {
+        const uid = this.muTagUIDCache.get(deviceID);
+        if (uid == null) {
+            throw new MuTagNotFoundInUnprovisionedCache();
+        }
+
+        const device = this.unprovisionedMuTagCache.get(uid);
+        if (device == null) {
+            throw new MuTagNotFoundInUnprovisionedCache();
+        }
+
+        const provisionID = MuTagDevicesRNBLEPLX.getProvisionID(accountNumber, beaconID);
+        this.muTagProvisionIDCache.set(deviceID, provisionID);
+        this.provisionedMuTagCache.set(provisionID, device);
+        this.muTagUIDCache.delete(deviceID);
+        this.unprovisionedMuTagCache.delete(uid);
+    }
+
+    private removeFromProvisionedCache(deviceID: DeviceID): void {
+        const provisionID = this.muTagProvisionIDCache.get(deviceID);
+        if (provisionID == null) {
+            throw new MuTagNotFoundInProvisionedCache();
+        }
+
+        this.muTagProvisionIDCache.delete(deviceID);
+        this.provisionedMuTagCache.delete(provisionID);
+    }
+
+    private async getProvisionedMuTagDevice(accountNumber: AccountNumber, beaconID: BeaconID): Promise<Device> {
+        let muTagDevice: Device | undefined;
+        const provisionID = MuTagDevicesRNBLEPLX.getProvisionID(accountNumber, beaconID);
+
+        muTagDevice = this.provisionedMuTagCache.get(provisionID);
+
+        if (muTagDevice == null) {
+            muTagDevice = await this.findProvisionedMuTag(provisionID);
+            //DEBUG
+            console.warn('Provisioned Mu tag found!');
+        }
+
+        return muTagDevice;
     }
 
     private async findUnprovisionedMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag> {
@@ -169,11 +309,9 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                 }
 
                 const deviceID = muTagDevice.id as DeviceID;
-                if (this.muTagDeviceIDCache.has(deviceID)) {
-                    const muTagUID = this.muTagDeviceIDCache.get(deviceID) as MuTagUID;
-                    if (this.provisionedMuTagCache.has(muTagUID)) {
-                        return;
-                    }
+                if (this.muTagProvisionIDCache.has(deviceID)) {
+                    muTagDevice.cancelConnection();
+                    return;
                 }
 
                 MuTagDevicesRNBLEPLX.authenticateToMuTag(muTagDevice).then((): Promise<ProvisionState> => {
@@ -193,6 +331,48 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                     }
                 }).catch((e): void => {
                     this.rejectFindUnprovisionedMuTag = undefined;
+                    reject(e);
+                });
+            });
+        });
+    }
+
+    private async findProvisionedMuTag(provisionID: ProvisionID): Promise<Device> {
+        return new Promise((resolve, reject): void => {
+            const scanThreshold = -90 as RSSI;
+            this.connectToMuTagDevices(scanThreshold, (muTagDevice, error): void => {
+                if (error != null) {
+                    reject(error);
+                }
+
+                if (muTagDevice == null) {
+                    return;
+                }
+
+                const deviceID = muTagDevice.id as DeviceID;
+                if (this.muTagProvisionIDCache.has(deviceID)) {
+                    return;
+                }
+
+                MuTagDevicesRNBLEPLX.authenticateToMuTag(muTagDevice).then((): Promise<ProvisionState> => {
+                    return this.discoverProvisioning(muTagDevice);
+                }).then((provisionState): Promise<Device | undefined> => {
+                    const connectedProvisionID = this.muTagProvisionIDCache.get(deviceID);
+
+                    if (
+                        provisionState === ProvisionState.Unprovisioned
+                        || connectedProvisionID !== provisionID
+                    ) {
+                        return Promise.resolve(undefined);
+                    }
+
+                    this.manager.stopDeviceScan();
+                    return muTagDevice.cancelConnection();
+                }).then((device): void => {
+                    if (device != null) {
+                        resolve(device);
+                    }
+                }).catch((e): void => {
                     reject(e);
                 });
             });
@@ -241,13 +421,16 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
             }).then((muTagDevice): void => {
                 callback(muTagDevice);
             }).catch((e): void => {
-                console.warn(e);
+                console.warn(`connectToMuTagDevices(): ${e}`);
                 if (e instanceof BleError) {
                     switch (e.errorCode) {
                         case 201: // BleErrorCode.DeviceDisconnected
                         case 300: // BleErrorCode.ServicesDiscoveryFailed
                             console.log(`Removing ${deviceID} from discovery cache.`);
                             discoveryCache.delete(deviceID);
+                            break;
+                        case 203: // BleErrorCode.DeviceAlreadyConnected
+                            callback(device);
                             break;
                     }
                 }
@@ -262,17 +445,24 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
 
         if (provisioned === undefined) {
             const muTagUID = UUIDv4() as MuTagUID;
-            this.muTagDeviceIDCache.set(deviceID, muTagUID);
+            this.muTagUIDCache.set(deviceID, muTagUID);
             this.unprovisionedMuTagCache.set(muTagUID, device);
 
             return ProvisionState.Unprovisioned;
         } else {
-            const deviceUUID = await MuTagDevicesRNBLEPLX
-                .readCharacteristic(device, MuTagBLEGATT.MuTagConfiguration.DeviceUUID);
-            const muTagUID = deviceUUID as MuTagUID;
+            const major = await MuTagDevicesRNBLEPLX
+                .readCharacteristic(device, MuTagBLEGATT.MuTagConfiguration.Major);
+            const minor = await MuTagDevicesRNBLEPLX
+                .readCharacteristic(device, MuTagBLEGATT.MuTagConfiguration.Minor);
 
-            this.muTagDeviceIDCache.set(deviceID, muTagUID);
-            this.provisionedMuTagCache.set(muTagUID, device);
+            if (major == null || minor == null) {
+                throw new InvalidProvisioning();
+            }
+
+            const provisionID = MuTagDevicesRNBLEPLX.getProvisionIDFromMajorMinor(major, minor);
+
+            this.muTagProvisionIDCache.set(deviceID, provisionID);
+            this.provisionedMuTagCache.set(provisionID, device);
 
             return ProvisionState.Provisioned;
         }
@@ -282,7 +472,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         const batteryLevelValue = await MuTagDevicesRNBLEPLX
             .readCharacteristic(device, MuTagBLEGATT.DeviceInformation.BatteryLevel);
         const batteryLevel = new Percent(batteryLevelValue.valueOf());
-        const muTagUID = this.muTagDeviceIDCache.get(device.id as DeviceID);
+        const muTagUID = this.muTagUIDCache.get(device.id as DeviceID);
 
         if (muTagUID == null) {
             throw Error(`Mu tag UID not found for device ${device.id}.`);
@@ -318,6 +508,14 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         return Hexadecimal.fromString(minorHex);
     }
 
+    private static getProvisionIDFromMajorMinor(major: Hexadecimal, minor: Hexadecimal): ProvisionID {
+        return major.toString() + minor.toString() as ProvisionID;
+    }
+
+    private static getProvisionID(accountNumber: AccountNumber, beaconID: BeaconID): ProvisionID {
+        return accountNumber.toString() + beaconID.toString() as ProvisionID;
+    }
+
     /*private static async isMuTag(device: Device): Promise<boolean> {
         await device.discoverAllServicesAndCharacteristics();
 
@@ -349,6 +547,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         device: Device,
         characteristic: Characteristic<T> & WritableCharacteristic<T>,
         value: T,
+        transactionId?: string,
     ): Promise<void> {
         const base64Value = characteristic.toBase64(value);
 
@@ -357,12 +556,14 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
                 fullUUID(characteristic.serviceUUID),
                 fullUUID(characteristic.uuid),
                 base64Value,
+                transactionId,
             );
         } else {
             await device.writeCharacteristicWithoutResponseForService(
                 fullUUID(characteristic.serviceUUID),
                 fullUUID(characteristic.uuid),
                 base64Value,
+                transactionId,
             );
         }
     }

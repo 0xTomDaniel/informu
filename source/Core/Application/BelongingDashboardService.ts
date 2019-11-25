@@ -60,7 +60,7 @@ export default class BelongingDashboardService {
                     this.belongingDashboardOutput.add(dashboardBelonging);
                     this.updateDashboardOnSafetyStatusChange(muTag);
                 }).catch((e): void => {
-                    console.warn(e);
+                    console.warn(`muTagRepoLocal.getByUID() - error: ${e}`);
                 });
             }
 

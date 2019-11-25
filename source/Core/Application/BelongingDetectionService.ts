@@ -41,7 +41,7 @@ export default class BelongingDetectionService implements BelongingDetection {
                 this.muTagRepoLocal.getByUID(change.insertion).then((muTag): Promise<void> => {
                     return this.startMonitoringMuTags(new Set([muTag]));
                 }).catch((e): void => {
-                    console.warn(e);
+                    console.warn(`muTagRepoLocal.getByUID() - error: ${e}`);
                 });
             }
         });
@@ -56,7 +56,7 @@ export default class BelongingDetectionService implements BelongingDetection {
         this.muTagMonitor.onMuTagDetection.subscribe((detectedMuTags): void => {
             detectedMuTags.forEach((muTagSignal): void => {
                 this.updateDetectedMuTag(muTagSignal).catch((e): void => {
-                    console.warn(e);
+                    console.warn(`updateDetectedMuTag() - error: ${e}`);
                 });
             });
         });
@@ -65,7 +65,7 @@ export default class BelongingDetectionService implements BelongingDetection {
     private updateMuTagsWhenRegionExited(): void {
         this.muTagMonitor.onMuTagRegionExit.subscribe((exitedMuTag): void => {
             this.updateExitedMuTag(exitedMuTag.uid).catch((e): void => {
-                console.warn(e);
+                console.warn(`updateExitedMuTag() - error: ${e}`);
             });
         });
     }
