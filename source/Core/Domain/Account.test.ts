@@ -8,7 +8,7 @@ const accountData: AccountData = {
     _nextBeaconID: BeaconID.create('A'),
     _recycledBeaconIDs: new Set([BeaconID.create('8'), BeaconID.create('9')]),
     _nextMuTagNumber: 10,
-    _muTags: new Set(['randomUUID#1']),
+    _muTags: new Set(['UUID00']),
 };
 const referenceAccount = new Account(accountData);
 const accountJSON: AccountJSON = {
@@ -68,4 +68,58 @@ test('successfully serializes and deserializes Account (empty collections)', ():
     const json = referenceAccountEmptyCollections.serialize();
     const account = Account.deserialize(json);
     expect(account).toEqual(referenceAccountEmptyCollections);
+});
+
+describe('adding and removing Mu tags', (): void => {
+
+    const beaconIDOne = referenceAccount.newBeaconID;
+    const muTagUIDOne = 'UUID01';
+    const muTagUIDTwo = 'UUID02';
+
+    /*beforeAll(async (): Promise<void> => {
+        account.removeMuTag(addedMuTagData._uid, addedMuTagData._beaconID);
+        await new Promise(setImmediate);
+    });
+
+    afterAll((): void => {
+        jest.clearAllMocks();
+    });*/
+
+    test('successfully adds Mu tag to account', (): void => {
+        expect.assertions(3);
+        const subscription = referenceAccount.muTagsChange.subscribe((muTagsChange): void => {
+            expect(muTagsChange.insertion).toEqual(muTagUIDOne);
+            expect(muTagsChange.deletion).toEqual(undefined);
+        });
+        referenceAccount.addNewMuTag(muTagUIDOne, beaconIDOne);
+        expect(referenceAccount.newMuTagNumber).toEqual(11);
+
+        subscription.unsubscribe();
+    });
+
+    test('successfully adds another Mu tag to account', (): void => {
+        const beaconIDTwo = referenceAccount.newBeaconID;
+
+        expect.assertions(3);
+        const subscription = referenceAccount.muTagsChange.subscribe((muTagsChange): void => {
+            expect(muTagsChange.insertion).toEqual(muTagUIDTwo);
+            expect(muTagsChange.deletion).toEqual(undefined);
+        });
+        referenceAccount.addNewMuTag(muTagUIDTwo, beaconIDTwo);
+        expect(referenceAccount.newMuTagNumber).toEqual(12);
+
+        subscription.unsubscribe();
+    });
+
+    test('successfully removes two Mu tags from account', (): void => {
+        expect.assertions(3);
+        const subscription = referenceAccount.muTagsChange.subscribe((muTagsChange): void => {
+            expect(muTagsChange.deletion).toEqual(muTagUIDOne);
+            expect(muTagsChange.insertion).toEqual(undefined);
+        });
+        referenceAccount.removeMuTag(muTagUIDOne, beaconIDOne);
+        expect(referenceAccount.newBeaconID.toString()).toEqual('8');
+
+        subscription.unsubscribe();
+    });
 });

@@ -31,15 +31,23 @@ export default class BelongingDetectionService implements BelongingDetection {
         const muTags = await this.muTagRepoLocal.getAll();
         await this.startMonitoringMuTags(muTags);
         await this.muTagMonitor.startRangingAllMuTags();
-        this.startMonitoringAddedMuTags();
+        this.controlMonitoringForMuTagChanges();
     }
 
-    private async startMonitoringAddedMuTags(): Promise<void> {
+    private async controlMonitoringForMuTagChanges(): Promise<void> {
         const account = await this.accountRepoLocal.get();
         account.muTagsChange.subscribe((change): void => {
             if (change.insertion != null) {
                 this.muTagRepoLocal.getByUID(change.insertion).then((muTag): Promise<void> => {
                     return this.startMonitoringMuTags(new Set([muTag]));
+                }).catch((e): void => {
+                    console.warn(`muTagRepoLocal.getByUID() - error: ${e}`);
+                });
+            }
+
+            if (change.deletion != null) {
+                this.muTagRepoLocal.getByUID(change.deletion).then((muTag): Promise<void> => {
+                    return this.stopMonitoringMuTags(new Set([muTag]));
                 }).catch((e): void => {
                     console.warn(`muTagRepoLocal.getByUID() - error: ${e}`);
                 });
@@ -50,6 +58,11 @@ export default class BelongingDetectionService implements BelongingDetection {
     private async startMonitoringMuTags(muTags: Set<ProvisionedMuTag>): Promise<void> {
         const beacons = await this.getBeaconsFromMuTags(muTags);
         this.muTagMonitor.startMonitoringMuTags(beacons);
+    }
+
+    private async stopMonitoringMuTags(muTags: Set<ProvisionedMuTag>): Promise<void> {
+        const beacons = await this.getBeaconsFromMuTags(muTags);
+        this.muTagMonitor.stopMonitoringMuTags(beacons);
     }
 
     private updateMuTagsWhenDetected(): void {

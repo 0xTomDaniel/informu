@@ -212,8 +212,6 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
         const transactionID = UUIDv4();
 
         return new Promise((resolve): void => {
-            //DEBUG
-            console.warn('Writing unprovision...');
             MuTagDevicesRNBLEPLX.writeCharacteristic(
                 muTagDevice,
                 MuTagBLEGATT.MuTagConfiguration.Provision,
@@ -233,8 +231,6 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
             // safe from zombied Mu tags.
             const unprovisionTimeoutMS = 250;
             setTimeout((): void => {
-                //DEBUG
-                console.warn(`Cancelling unprovision write - manager: ${this.manager}`);
                 this.manager.cancelTransaction(transactionID);
             }, unprovisionTimeoutMS);
         });
@@ -287,8 +283,6 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
 
         if (muTagDevice == null) {
             muTagDevice = await this.findProvisionedMuTag(provisionID);
-            //DEBUG
-            console.warn('Provisioned Mu tag found!');
         }
 
         return muTagDevice;

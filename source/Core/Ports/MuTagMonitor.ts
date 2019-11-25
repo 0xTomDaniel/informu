@@ -28,5 +28,6 @@ export interface MuTagMonitor {
     readonly onMuTagDetection: Observable<Set<MuTagSignal>>;
     readonly onMuTagRegionExit: Observable<MuTagRegionExit>;
     startMonitoringMuTags(muTags: Set<MuTagBeacon>): Promise<void>;
+    stopMonitoringMuTags(muTags: Set<MuTagBeacon>): Promise<void>;
     startRangingAllMuTags(): Promise<void>;
 }
