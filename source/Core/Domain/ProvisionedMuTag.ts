@@ -170,14 +170,16 @@ export default class ProvisionedMuTag extends MuTag {
                     _isSafe: value._isSafe,
                     _lastSeen: value._lastSeen,
                 }, value);
-            case '_accessorValue':
-                return;
             case '_beaconID':
                 return value.toString();
             case '_batteryLevel':
                 return value.valueOf();
             /*case 'lastSeen':
                 return value.toISOString();*/
+            case '_accessorValue':
+                // This property is not part of the model. It only serves to
+                // make some properties observable.
+                return;
             default:
                 return value;
         }

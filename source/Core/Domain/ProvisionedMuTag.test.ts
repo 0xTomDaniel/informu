@@ -30,7 +30,16 @@ test('successfully creates Mu tag from MuTagJSON', (): void => {
 });
 
 test('successfully serializes and deserializes Mu tag', (): void => {
+    // This is to ensure JSON.stringify doesn't throw error 'TypeError: Converting
+    // circular structure to JSON'
+    const subscription = referenceMuTag.safetyStatus.subscribe((safetyStatus): void => {
+        console.log(safetyStatus);
+    });
+
     const json = referenceMuTag.serialize();
     const muTag = ProvisionedMuTag.deserialize(json);
+
+    // Unsubscribing ensures equality
+    subscription.unsubscribe();
     expect(muTag).toEqual(referenceMuTag);
 });

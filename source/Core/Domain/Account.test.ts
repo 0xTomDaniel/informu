@@ -27,8 +27,17 @@ test('successfully creates Account from MuTagJSON', (): void => {
 });
 
 test('successfully serializes and deserializes Account', (): void => {
+    // This is to ensure JSON.stringify doesn't throw error 'TypeError: Converting
+    // circular structure to JSON'
+    const subscription = referenceAccount.muTagsChange.subscribe((muTagsChange): void => {
+        console.log(muTagsChange);
+    });
+
     const json = referenceAccount.serialize();
     const account = Account.deserialize(json);
+
+    // Unsubscribing ensures equality
+    subscription.unsubscribe();
     expect(account).toEqual(referenceAccount);
 });
 

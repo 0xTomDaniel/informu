@@ -201,6 +201,10 @@ export default class Account {
                 return beaconIDs.map((beaconID): string => beaconID.toString());
             case '_muTags':
                 return Array.from(value);
+            case '_accessorValue':
+                // This property is not part of the model. It only serves to
+                // make some properties observable.
+                return;
             default:
                 return value;
         }
