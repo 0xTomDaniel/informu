@@ -18,6 +18,7 @@ const MuTagMonitorMock  = jest.fn<MuTagMonitor, any>((): MuTagMonitor => ({
         onMuTagRegionExitSubscriber = subscriber;
     }),
     startMonitoringMuTags: jest.fn(),
+    stopMonitoringMuTags: jest.fn(),
     startRangingAllMuTags: jest.fn(),
 }));
 
@@ -77,6 +78,19 @@ const muTagBeacon: MuTagBeacon = {
     accountNumber: accountNumber,
     beaconID: muTagBeaconID,
 };
+const addedBeaconID = account.newBeaconID;
+const addedMuTagNumber = account.newMuTagNumber;
+const addedMuTagData = {
+    _uid: 'UUID02',
+    _beaconID: addedBeaconID,
+    _muTagNumber: addedMuTagNumber,
+    _name: 'Bag',
+    _batteryLevel: new Percent(68),
+    _isSafe: false,
+    _lastSeen: new Date('2019-11-02T17:09:31.007Z'),
+    _color: MuTagColor.Charcoal,
+};
+const addedMuTag = new ProvisionedMuTag(addedMuTagData);
 const lastSeenTimestamp = new Date();
 
 describe('last seen status of belongings continuously updates', (): void => {
@@ -182,19 +196,6 @@ describe('last seen status of belongings continuously updates', (): void => {
 
         // Given that an account is logged in
 
-        const beaconID = account.newBeaconID;
-        const muTagNumber = account.newMuTagNumber;
-        const addedMuTagData = {
-            _uid: 'UUID02',
-            _beaconID: beaconID,
-            _muTagNumber: muTagNumber,
-            _name: 'Bag',
-            _batteryLevel: new Percent(68),
-            _isSafe: false,
-            _lastSeen: new Date('2019-11-02T17:09:31.007Z'),
-            _color: MuTagColor.Charcoal,
-        };
-        const addedMuTag = new ProvisionedMuTag(addedMuTagData);
         (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(addedMuTag);
         (muTagRepoLocalMock.getByBeaconID as jest.Mock).mockResolvedValueOnce(addedMuTag);
 
@@ -224,6 +225,36 @@ describe('last seen status of belongings continuously updates', (): void => {
         //
         it('should start updating belonging safety status', (): void => {
             expect(addedMuTag.lastSeen).toEqual(detectedTimestamp);
+        });
+    });
+
+    describe('belonging is removed from account', (): void => {
+
+        // Given that an account is logged in
+
+        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(addedMuTag);
+        const addedMuTagBeacon: MuTagBeacon = {
+            uid: addedMuTagData._uid,
+            accountNumber: accountNumber,
+            beaconID: addedBeaconID,
+        };
+
+        // When a belonging is removed from account
+        //
+        beforeAll(async (): Promise<void> => {
+            account.removeMuTag(addedMuTagData._uid, addedMuTagData._beaconID);
+            await new Promise(setImmediate);
+        });
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it('should stop updating belonging safety status', (): void => {
+            expect(muTagMonitorMock.stopMonitoringMuTags).toHaveBeenCalledTimes(1);
+            expect(muTagMonitorMock.stopMonitoringMuTags).toHaveBeenCalledWith(new Set([addedMuTagBeacon]));
         });
     });
 });

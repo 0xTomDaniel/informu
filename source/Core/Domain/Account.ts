@@ -140,8 +140,8 @@ export default class Account {
             pairwise(),
             map(([previousMuTags, currentMuTags]): MuTagsChange => {
                 return {
-                    insertion: _.differenceBy([...currentMuTags], [...previousMuTags], 'uid')[0],
-                    deletion: _.differenceBy([...previousMuTags], [...currentMuTags], 'uid')[0],
+                    insertion: _.difference([...currentMuTags], [...previousMuTags])[0],
+                    deletion: _.difference([...previousMuTags], [...currentMuTags])[0],
                 };
             })
         );
