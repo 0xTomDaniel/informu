@@ -59,9 +59,10 @@ export class HomeViewModel {
             delta,
             (destValue, deltaValue): any[] | undefined => {
                 if (_.isArray(destValue)) {
-                    return _.values(_.merge(
+                    const merged = _.values(_.merge(
                         _.keyBy(destValue, 'uid'), _.keyBy(deltaValue, 'uid')
                     ));
+                    return _.intersectionBy(merged, deltaValue, 'uid');
                 }
             }
         );
