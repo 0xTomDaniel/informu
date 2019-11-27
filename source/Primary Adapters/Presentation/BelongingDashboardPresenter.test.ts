@@ -164,3 +164,29 @@ test('continuously update last seen message', (): void => {
 
     clock.uninstall();
 });
+
+test('remove belonging', (): void => {
+    const updatedBelongingsViewData: BelongingViewData[] = [
+        {
+            uid: 'randomUUID01',
+            name: 'Keys',
+            safeStatusColor: Theme.Color.Green,
+            lastSeen: '1969-12-31',
+        },
+        {
+            uid: 'randomUUID03',
+            name: 'Wallet',
+            safeStatusColor: Theme.Color.Error,
+            lastSeen: '1m ago',
+        },
+    ];
+
+    //
+    viewModel.onDidUpdate((newState): void => {
+        expect(newState.belongings).toEqual(updatedBelongingsViewData);
+        expect(newState.showEmptyBelongings).toEqual(false);
+    });
+
+    belongingDashboardPresenter.remove('randomUUID02');
+    expect.assertions(2);
+});

@@ -1,6 +1,7 @@
 import { BelongingDashboardOutput, DashboardBelonging, DashboardBelongingUpdate } from '../../Core/Ports/BelongingDashboardOutput';
-import { HomeViewModel, BelongingViewData, BelongingViewDataDelta } from './HomeViewModel';
+import { HomeViewModel, BelongingViewData, BelongingViewDataDelta, HomeStateDelta } from './HomeViewModel';
 import Theme from './Theme';
+import _ from 'lodash';
 
 export default class BelongingDashboardPresenter implements BelongingDashboardOutput {
 
@@ -42,12 +43,16 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
 
     add(belonging: DashboardBelonging): void {
         this.belongingsLastSeenCache.set(belonging.uid, belonging.lastSeen);
+
         const belongingViewData
             = BelongingDashboardPresenter.toBelongingViewData(belonging);
+        const allBelongingsWithAdded = this.addExistingBelongings(belongingViewData);
+
         this.viewModel.updateState({
             showEmptyBelongings: false,
-            belongings: [belongingViewData],
+            belongings: allBelongingsWithAdded,
         });
+
         if (this.belongingsLastSeenCache.size === 1) {
             this.startUpdatingLastSeenDisplay();
         }
@@ -91,21 +96,33 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
             // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
             }, {} as BelongingViewDataDelta);
 
+        const allBelongingsWithDelta = this.addExistingBelongings(belongingViewDataDelta);
+
         this.viewModel.updateState({
-            showEmptyBelongings: false,
-            belongings: [belongingViewDataDelta],
+            belongings: allBelongingsWithDelta,
         });
     }
 
     remove(belongingUID: string): void {
         this.belongingsLastSeenCache.delete(belongingUID);
-        const index = this.viewModel.state.belongings.findIndex((belonging): void => {
-            belonging.uid === belongingUID;
-        });
-        this.viewModel.state.belongings.splice(index, 1);
+
+        const existingBelongings = _.map(
+            this.viewModel.state.belongings,
+            (belonging): BelongingViewDataDelta => _.pick(belonging, 'uid')
+        );
+        const belongings = _.differenceBy(
+            existingBelongings, [{ uid: belongingUID }], 'uid'
+        );
+        const homeStateDelta: { [key: string]: any } = {
+            belongings: belongings,
+        };
+
         if (this.belongingsLastSeenCache.size === 0) {
             this.stopUpdatingLastSeenDisplay();
+            homeStateDelta.showEmptyBelongings = true;
         }
+
+        this.viewModel.updateState(homeStateDelta);
     }
 
     private startUpdatingLastSeenDisplay(): void {
@@ -127,6 +144,14 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
         if (this.lastSeenDisplayUpdateTimerID != null) {
             clearTimeout(this.lastSeenDisplayUpdateTimerID);
         }
+    }
+
+    private addExistingBelongings(belongingDelta: BelongingViewDataDelta): BelongingViewDataDelta[] {
+        const existingBelongings = _.map(
+            this.viewModel.state.belongings,
+            (belonging): BelongingViewDataDelta => _.pick(belonging, 'uid')
+        );
+        return _.unionBy([belongingDelta], existingBelongings, 'uid');
     }
 
     private static toBelongingViewData(belonging: DashboardBelonging): BelongingViewData {
