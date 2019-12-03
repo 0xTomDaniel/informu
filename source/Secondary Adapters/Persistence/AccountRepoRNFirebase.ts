@@ -8,26 +8,15 @@ import {
     FailedToUpdate,
 } from '../../Core/Ports/AccountRepositoryRemote';
 import Account, { AccountJSON, isAccountJSON } from '../../Core/Domain/Account';
-import firebase, { App } from 'react-native-firebase';
-import { Database, DataSnapshot } from 'react-native-firebase/database';
+import database, { FirebaseDatabaseTypes } from '@react-native-firebase/database';
 
 export class AccountRepoRNFirebase implements AccountRepositoryRemote {
 
-    private readonly database: Database;
-
-    constructor(app?: App) {
-        if (app != null) {
-            this.database = app.database();
-        } else {
-            this.database = firebase.database();
-        }
-    }
-
     async getByUID(uid: string): Promise<Account> {
-        let snapshot: DataSnapshot;
+        let snapshot: FirebaseDatabaseTypes.DataSnapshot;
 
         try {
-            snapshot = await this.database.ref(`accounts/${uid}`).once('value');
+            snapshot = await database().ref(`accounts/${uid}`).once('value');
         } catch (e) {
             console.log(e);
             throw new FailedToGet();
@@ -62,7 +51,7 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
         /*eslint-enable */
 
         try {
-            await this.database.ref(`accounts/${accountData._uid}`).set(databaseData);
+            await database().ref(`accounts/${accountData._uid}`).set(databaseData);
         } catch (e) {
             console.log(e);
             throw new FailedToAdd();
@@ -100,7 +89,7 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
         /*eslint-enable */
 
         try {
-            await this.database.ref(`accounts/${accountData._uid}`).update(databaseData);
+            await database().ref(`accounts/${accountData._uid}`).update(databaseData);
         } catch (e) {
             console.log(e);
             throw new FailedToUpdate();
@@ -109,14 +98,14 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
 
     async removeByUID(uid: string): Promise<void> {
         try {
-            await this.database.ref(`accounts/${uid}`).remove();
+            await database().ref(`accounts/${uid}`).remove();
         } catch (e) {
             console.log(e);
             throw new FailedToRemove();
         }
     }
 
-    private static toAccountData(uid: string, snapshot: DataSnapshot): AccountJSON {
+    private static toAccountData(uid: string, snapshot: FirebaseDatabaseTypes.DataSnapshot): AccountJSON {
         if (!snapshot.exists()) {
             throw new DoesNotExist();
         }

@@ -8,7 +8,7 @@ export default class AppViewModel {
 
     private onNavigateCallback: ((screen: Screen) => void) | undefined;
 
-    onNavigate(callback: (screen: Screen) => void): void {
+    onNavigate(callback: ((screen: Screen) => void) | undefined): void {
         this.onNavigateCallback = callback;
     }
 

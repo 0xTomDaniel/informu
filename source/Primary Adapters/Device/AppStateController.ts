@@ -9,13 +9,17 @@ export class AppStateController {
         this.setupSessionReload();
     }
 
-    private setupSessionReload(): void {
-        AppState.addEventListener('change', this.handleAppStateChange.bind(this));
+    destructor(): void {
+        AppState.removeEventListener('change', this.handleAppStateChange);
     }
 
-    private handleAppStateChange(state: AppStateStatus): void {
+    private setupSessionReload(): void {
+        AppState.addEventListener('change', this.handleAppStateChange);
+    }
+
+    private readonly handleAppStateChange = (state: AppStateStatus): void => {
         if (state === 'active') {
             this.sessionService.load();
         }
-    }
+    };
 }

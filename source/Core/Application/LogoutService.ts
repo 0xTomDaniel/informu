@@ -14,6 +14,8 @@ export default class LogoutService {
     private readonly muTagRepoRemote: MuTagRepositoryRemote;
     private readonly repoLocal: RepositoryLocal;
 
+    private onResetAllDependenciesCallback?: () => void;
+
     constructor(
         logoutOutput: LogoutOutput,
         accountRepoLocal: AccountRepositoryLocal,
@@ -41,7 +43,17 @@ export default class LogoutService {
         await this.muTagRepoRemote.updateMultiple(muTags, accountUID);
 
         await this.repoLocal.erase();
+        this.resetAllDependencies();
 
         this.logoutOutput.showLogoutComplete();
+    }
+
+    onResetAllDependencies(callback: (() => void) | undefined): void {
+        this.onResetAllDependenciesCallback = callback;
+    }
+
+    private resetAllDependencies(): void {
+        this.onResetAllDependenciesCallback != null
+            && this.onResetAllDependenciesCallback();
     }
 }

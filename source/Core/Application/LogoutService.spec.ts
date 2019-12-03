@@ -120,9 +120,14 @@ describe('user logs out of their account', (): void => {
         (muTagRepoLocalMock.getAll as jest.Mock)
             .mockResolvedValueOnce(muTags);
 
+        let onResetAllDependenciesCalledTimes = 0;
+
         // When the user submits log out
         //
         beforeAll(async (): Promise<void> => {
+            logoutService.onResetAllDependencies((): void => {
+                onResetAllDependenciesCalledTimes++;
+            });
             await logoutService.logOut();
         });
 
@@ -151,6 +156,12 @@ describe('user logs out of their account', (): void => {
         //
         it('should delete all local persistence', (): void => {
             expect(repoLocalMock.erase).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it('should reset all dependencies', (): void => {
+            expect(onResetAllDependenciesCalledTimes).toEqual(1);
         });
 
         // Then
