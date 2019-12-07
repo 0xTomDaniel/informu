@@ -135,6 +135,10 @@ export default class Account {
         return this._nextMuTagNumber;
     }
 
+    get muTags(): Set<string> {
+        return this._muTags;
+    }
+
     get muTagsChange(): Observable<MuTagsChange> {
         return this._accessorValue.muTags.pipe(
             pairwise(),

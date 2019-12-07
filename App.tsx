@@ -12,7 +12,7 @@ import LoginViewController from './source/Primary Adapters/Presentation/LoginVie
 import LoadSessionViewController from './source/Primary Adapters/Presentation/LoadSessionViewController';
 import Theme from './source/Primary Adapters/Presentation/Theme';
 import { AuthenticationFirebase } from './source/Secondary Adapters/Infrastructure/AuthenticationFirebase';
-import { AccountRepoRNCAsyncStorage } from './source/Secondary Adapters/Persistence/AccountRepoRNCAsyncStorage';
+import AccountRepoLocalImpl from './source/Secondary Adapters/Persistence/AccountRepoLocalImpl';
 import HomeViewController from './source/Primary Adapters/Presentation/HomeViewController';
 import { AccountRepoRNFirebase } from './source/Secondary Adapters/Persistence/AccountRepoRNFirebase';
 import AppViewModel, { Screen } from './source/Primary Adapters/Presentation/AppViewModel';
@@ -27,7 +27,7 @@ import AddMuTagService from './source/Core/Application/AddMuTagService';
 import { HomeViewModel } from './source/Primary Adapters/Presentation/HomeViewModel';
 import AddMuTagPresenter from './source/Primary Adapters/Presentation/AddMuTagPresenter';
 import { AddMuTagViewModel } from './source/Primary Adapters/Presentation/AddMuTagViewModel';
-import { MuTagRepoRNCAsyncStorage } from './source/Secondary Adapters/Persistence/MuTagRepoRNCAsyncStorage';
+import MuTagRepoLocalImpl from './source/Secondary Adapters/Persistence/MuTagRepoLocalImpl';
 import { MuTagRepoRNFirebase } from './source/Secondary Adapters/Persistence/MuTagRepoRNFirebase';
 import NameMuTagViewController from './source/Primary Adapters/Presentation/NameMuTagViewController';
 import { NameMuTagViewModel } from './source/Primary Adapters/Presentation/NameMuTagViewModel';
@@ -35,13 +35,13 @@ import { MuTagAddingViewModel } from './source/Primary Adapters/Presentation/MuT
 import MuTagAddingViewController from './source/Primary Adapters/Presentation/MuTagAddingViewController';
 import LogoutService from './source/Core/Application/LogoutService';
 import LogoutPresenter from './source/Primary Adapters/Presentation/LogoutPresenter';
-import RepoLocalRNCAsyncStorage from './source/Secondary Adapters/Persistence/RepoLocalRNCAsyncStorage';
 import BelongingDashboardService from './source/Core/Application/BelongingDashboardService';
 import BelongingDashboardPresenter from './source/Primary Adapters/Presentation/BelongingDashboardPresenter';
 import BelongingDetectionService from './source/Core/Application/BelongingDetectionService';
 import MuTagMonitorRNBM from './source/Secondary Adapters/Infrastructure/MuTagMonitorRNBM';
 import RemoveMuTagService from './source/Core/Application/RemoveMuTagService';
 import RemoveMuTagPresenter from './source/Primary Adapters/Presentation/RemoveMuTagPresenter';
+import DatabaseImplWatermelon from './source/Secondary Adapters/Persistence/DatabaseImplWatermelon';
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -52,9 +52,10 @@ const sessionPresenter = new AppPresenter(appViewModel);
 export class Dependencies {
 
     authentication: AuthenticationFirebase;
-    accountRepoLocal: AccountRepoRNCAsyncStorage;
+    database: DatabaseImplWatermelon;
+    accountRepoLocal: AccountRepoLocalImpl;
     accountRepoRemote: AccountRepoRNFirebase;
-    muTagRepoLocal: MuTagRepoRNCAsyncStorage;
+    muTagRepoLocal: MuTagRepoLocalImpl;
     muTagRepoRemote: MuTagRepoRNFirebase;
     connectThreshold: RSSI;
     addMuTagBatteryThreshold: Percent;
@@ -69,7 +70,6 @@ export class Dependencies {
     removeMuTagPresenter: RemoveMuTagPresenter;
     removeMuTagService: RemoveMuTagService;
     logoutPresenter: LogoutPresenter;
-    repoLocal: RepoLocalRNCAsyncStorage;
     logoutService: LogoutService;
     belongingDashboardPresenter: BelongingDashboardPresenter;
     belongingDashboardService: BelongingDashboardService;
@@ -80,9 +80,10 @@ export class Dependencies {
 
     constructor() {
         this.authentication = new AuthenticationFirebase();
-        this.accountRepoLocal = new AccountRepoRNCAsyncStorage();
+        this.database = new DatabaseImplWatermelon();
+        this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
-        this.muTagRepoLocal = new MuTagRepoRNCAsyncStorage();
+        this.muTagRepoLocal = new MuTagRepoLocalImpl(this.database, this.accountRepoLocal);
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
         this.connectThreshold = -80 as RSSI;
         this.addMuTagBatteryThreshold = new Percent(20);
@@ -121,14 +122,13 @@ export class Dependencies {
             this.removeMuTagPresenter,
         );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
-        this.repoLocal = new RepoLocalRNCAsyncStorage();
         this.logoutService = new LogoutService(
             this.logoutPresenter,
             this.accountRepoLocal,
             this.accountRepoRemote,
             this.muTagRepoLocal,
             this.muTagRepoRemote,
-            this.repoLocal,
+            this.database,
         );
         this.logoutService.onResetAllDependencies((): void => this.resetAll());
         this.belongingDashboardPresenter = new BelongingDashboardPresenter(this.homeViewModel);
@@ -154,9 +154,10 @@ export class Dependencies {
 
     private resetAll(): void {
         this.authentication = new AuthenticationFirebase();
-        this.accountRepoLocal = new AccountRepoRNCAsyncStorage();
+        this.database = new DatabaseImplWatermelon();
+        this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
-        this.muTagRepoLocal = new MuTagRepoRNCAsyncStorage();
+        this.muTagRepoLocal = new MuTagRepoLocalImpl(this.database, this.accountRepoLocal);
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
         this.connectThreshold = -80 as RSSI;
         this.addMuTagBatteryThreshold = new Percent(20);
@@ -195,7 +196,6 @@ export class Dependencies {
             this.removeMuTagPresenter,
         );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
-        this.repoLocal = new RepoLocalRNCAsyncStorage();
         this.logoutService.onResetAllDependencies(undefined);
         this.logoutService = new LogoutService(
             this.logoutPresenter,
@@ -203,7 +203,7 @@ export class Dependencies {
             this.accountRepoRemote,
             this.muTagRepoLocal,
             this.muTagRepoRemote,
-            this.repoLocal,
+            this.database,
         );
         this.logoutService.onResetAllDependencies((): void => this.resetAll());
         this.belongingDashboardPresenter = new BelongingDashboardPresenter(this.homeViewModel);

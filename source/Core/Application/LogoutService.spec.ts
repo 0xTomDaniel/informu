@@ -7,8 +7,10 @@ import ProvisionedMuTag, { BeaconID } from '../Domain/ProvisionedMuTag';
 import Percent from '../Domain/Percent';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
-import { RepositoryLocal } from '../Ports/RepositoryLocal';
 import { MuTagColor } from '../Domain/MuTag';
+import DatabaseImplWatermelon from '../../Secondary Adapters/Persistence/DatabaseImplWatermelon';
+
+jest.mock('../../Secondary Adapters/Persistence/DatabaseImplWatermelon');
 
 describe('user logs out of their account', (): void => {
 
@@ -54,24 +56,21 @@ describe('user logs out of their account', (): void => {
             removeByUID: jest.fn(),
         }));
 
-    const RepoLocalMock
-        = jest.fn<RepositoryLocal, any>((): RepositoryLocal => ({
-            erase: jest.fn(),
-        }));
+    const DatabaseImplWatermelonMock = DatabaseImplWatermelon as jest.Mock<DatabaseImplWatermelon, any>;
 
     const logoutOutputMock = new LogoutOutputMock();
     const accountRepoLocalMock = new AccountRepositoryLocalMock();
     const accountRepoRemoteMock = new AccountRepositoryRemoteMock();
     const muTagRepoLocalMock = new MuTagRepositoryLocalMock();
     const muTagRepoRemoteMock = new MuTagRepositoryRemoteMock();
-    const repoLocalMock = new RepoLocalMock();
+    const databaseImplWatermelonMock = new DatabaseImplWatermelonMock();
     const logoutService = new LogoutService(
         logoutOutputMock,
         accountRepoLocalMock,
         accountRepoRemoteMock,
         muTagRepoLocalMock,
         muTagRepoRemoteMock,
-        repoLocalMock,
+        databaseImplWatermelonMock,
     );
 
     const recycledBeaconIDs = [
@@ -155,7 +154,7 @@ describe('user logs out of their account', (): void => {
         // Then
         //
         it('should delete all local persistence', (): void => {
-            expect(repoLocalMock.erase).toHaveBeenCalledTimes(1);
+            expect(databaseImplWatermelonMock.destroy).toHaveBeenCalledTimes(1);
         });
 
         // Then

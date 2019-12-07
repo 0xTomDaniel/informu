@@ -3,7 +3,7 @@ import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
 import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
 import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
 import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
-import { RepositoryLocal } from '../Ports/RepositoryLocal';
+import DatabaseImplWatermelon from '../../Secondary Adapters/Persistence/DatabaseImplWatermelon';
 
 export default class LogoutService {
 
@@ -12,7 +12,7 @@ export default class LogoutService {
     private readonly accountRepoRemote: AccountRepositoryRemote;
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly muTagRepoRemote: MuTagRepositoryRemote;
-    private readonly repoLocal: RepositoryLocal;
+    private readonly database: DatabaseImplWatermelon;
 
     private onResetAllDependenciesCallback?: () => void;
 
@@ -22,14 +22,14 @@ export default class LogoutService {
         accountRepoRemote: AccountRepositoryRemote,
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
-        repoLocal: RepositoryLocal,
+        database: DatabaseImplWatermelon,
     ) {
         this.logoutOutput = logoutOutput;
         this.accountRepoLocal = accountRepoLocal;
         this.accountRepoRemote = accountRepoRemote;
         this.muTagRepoLocal = muTagRepoLocal;
         this.muTagRepoRemote = muTagRepoRemote;
-        this.repoLocal = repoLocal;
+        this.database = database;
     }
 
     async logOut(): Promise<void> {
@@ -42,7 +42,7 @@ export default class LogoutService {
         const accountUID = account.uid;
         await this.muTagRepoRemote.updateMultiple(muTags, accountUID);
 
-        await this.repoLocal.erase();
+        await this.database.destroy();
         this.resetAllDependencies();
 
         this.logoutOutput.showLogoutComplete();
