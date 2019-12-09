@@ -6,13 +6,19 @@ module.exports = {
     "react-hooks"
   ],
   extends: [
-    'plugin:@typescript-eslint/recommended',
-    '@react-native-community'
+    "eslint:recommended",
+    "plugin:@typescript-eslint/eslint-recommended",
+    "plugin:@typescript-eslint/recommended",
+    "@react-native-community", // Enforces Prettier through ESLint
+    "prettier", // eslint-config-prettier
+    "prettier/@typescript-eslint",
+    "prettier/flowtype",
+    "prettier/react"
   ],
   env: {
     'jest': true,
   },
-  "rules": {
+  rules: {
     "@typescript-eslint/explicit-member-accessibility": [
       "error",
       { "accessibility": "no-public" }
