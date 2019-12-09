@@ -6,21 +6,26 @@ import {
     FailedToUpdate,
 } from '../../Core/Ports/MuTagRepositoryLocal';
 import ProvisionedMuTag, { BeaconID } from '../../Core/Domain/ProvisionedMuTag';
-import AsyncStorage from '@react-native-community/async-storage';
+import { AccountRepositoryLocal } from '../../Core/Ports/AccountRepositoryLocal';
+import { Database } from './Database';
 
 interface PromiseExecutor {
     resolve: (value?: void | PromiseLike<void> | undefined) => void;
     reject: (reason?: any) => void;
 }
 
-export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
+export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
 
+    private readonly database: Database;
+    private readonly accountRepoLocal: AccountRepositoryLocal
     private readonly muTagCache = new Map<string, ProvisionedMuTag>();
     private readonly muTagBeaconIDToUIDCache = new Map<string, string>();
     private cachePopulated = false;
     private readonly executeOnCachePopulated: PromiseExecutor[] = [];
 
-    constructor() {
+    constructor(database: Database, accountRepoLocal: AccountRepositoryLocal) {
+        this.database = database;
+        this.accountRepoLocal = accountRepoLocal;
         this.populateCache();
     }
 
@@ -55,7 +60,7 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
         const rawMuTag = muTag.serialize();
 
         try {
-            await AsyncStorage.setItem(`muTags/${muTag.uid}`, rawMuTag);
+            await this.database.set(`muTags/${muTag.uid}`, rawMuTag);
             this.muTagCache.set(muTag.uid, muTag);
             this.muTagBeaconIDToUIDCache.set(muTag.beaconID.toString(), muTag.uid);
         } catch (e) {
@@ -74,9 +79,7 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
         const rawMuTag = muTag.serialize();
 
         try {
-            // Using 'setItem' because documentation of 'mergeItem' is too vague.
-            // I don't want to have any unforeseen issues.
-            await AsyncStorage.setItem(`muTags/${muTag.uid}`, rawMuTag);
+            await this.database.set(`muTags/${muTag.uid}`, rawMuTag);
         } catch (e) {
             console.log(e);
             throw new FailedToUpdate();
@@ -85,7 +88,7 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
 
     async removeByUID(uid: string): Promise<void> {
         try {
-            await AsyncStorage.removeItem(`muTags/${uid}`);
+            await this.database.remove(`muTags/${uid}`);
             this.muTagCache.delete(uid);
             const beaconIDs = [...this.muTagBeaconIDToUIDCache]
                 .filter(({ 1: value }): boolean => value === uid)
@@ -127,16 +130,16 @@ export class MuTagRepoRNCAsyncStorage implements MuTagRepositoryLocal {
     }
 
     private async getAllMuTagsFromDatabase(): Promise<Set<ProvisionedMuTag>> {
-        const regExp = /^muTags\//;
-        const keys = await AsyncStorage.getAllKeys();
-        const muTagKeys = keys.filter((key): boolean => regExp.test(key));
-        const rawMuTagKeyPairs = await AsyncStorage.multiGet(muTagKeys);
-        const rawMuTags = rawMuTagKeyPairs
-            .map((rawMuTagKeyPair): string => rawMuTagKeyPair[1] || '')
-            .filter((rawMuTag): boolean => rawMuTag !== '');
-        const muTags = rawMuTags.map((rawMuTag): ProvisionedMuTag => {
-            return ProvisionedMuTag.deserialize(rawMuTag);
-        });
+        const account = await this.accountRepoLocal.get();
+        const muTags = new Set<ProvisionedMuTag>();
+
+        for (let muTagUID of account.muTags) {
+            const rawMuTag = await this.database.get(`muTags/${muTagUID}`);
+            if (rawMuTag == null) {
+                throw new DoesNotExist(muTagUID);
+            }
+            muTags.add(ProvisionedMuTag.deserialize(rawMuTag));
+        }
 
         return new Set(muTags);
     }

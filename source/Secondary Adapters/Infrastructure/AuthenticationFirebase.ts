@@ -1,22 +1,11 @@
 import { Authentication, UserData, InvalidCredentials, AccountDisabled, TooManyAttempts } from '../../Core/Ports/Authentication';
-import { Auth } from 'react-native-firebase/auth';
-import firebase, { App } from 'react-native-firebase';
+import auth from '@react-native-firebase/auth';
 
 export class AuthenticationFirebase implements Authentication {
 
-    private readonly auth: Auth;
-
-    constructor(app?: App) {
-        if (app != null) {
-            this.auth = app.auth();
-        } else {
-            this.auth = firebase.auth();
-        }
-    }
-
     async authenticateWithEmail(emailAddress: string, password: string): Promise<UserData> {
         try {
-            const userCredential = await this.auth
+            const userCredential = await auth()
                 .signInWithEmailAndPassword(emailAddress, password);
             const userData = {
                 uid: userCredential.user.uid,
@@ -46,8 +35,8 @@ export class AuthenticationFirebase implements Authentication {
         }
     }
 
-    async isAuthenticatedAs(uid: string): Promise<boolean> {
-        const currentUser = this.auth.currentUser;
+    isAuthenticatedAs(uid: string): boolean {
+        const currentUser = auth().currentUser;
 
         return currentUser != null && currentUser.uid === uid;
     }

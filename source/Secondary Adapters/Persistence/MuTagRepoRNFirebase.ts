@@ -1,5 +1,4 @@
-import firebase, { App } from 'react-native-firebase';
-import { Database, DataSnapshot } from 'react-native-firebase/database';
+import database, { FirebaseDatabaseTypes } from '@react-native-firebase/database';
 import { MuTagRepositoryRemote, FailedToAdd, FailedToUpdate, FailedToGet, DoesNotExist, PersistedDataMalformed, FailedToRemove } from '../../Core/Ports/MuTagRepositoryRemote';
 import ProvisionedMuTag, { MuTagJSON, isMuTagJSON } from '../../Core/Domain/ProvisionedMuTag';
 
@@ -14,21 +13,11 @@ interface DatabaseMuTag {
 
 export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
 
-    private readonly database: Database;
-
-    constructor(app?: App) {
-        if (app != null) {
-            this.database = app.database();
-        } else {
-            this.database = firebase.database();
-        }
-    }
-
     async getAll(accountUID: string): Promise<Set<ProvisionedMuTag>> {
-        let snapshot: DataSnapshot;
+        let snapshot: FirebaseDatabaseTypes.DataSnapshot;
 
         try {
-            snapshot = await this.database.ref(`mu_tags/${accountUID}`).once('value');
+            snapshot = await database().ref(`mu_tags/${accountUID}`).once('value');
         } catch (e) {
             console.log(e);
             throw new FailedToGet();
@@ -36,7 +25,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
 
         const muTags = new Set<ProvisionedMuTag>();
 
-        snapshot.forEach((childSnapshot): boolean => {
+        snapshot.forEach((childSnapshot: FirebaseDatabaseTypes.DataSnapshot): boolean => {
             const muTagUID = childSnapshot.key;
             if (muTagUID == null) {
                 return true;
@@ -53,7 +42,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(muTag);
 
         try {
-            await this.database.ref(`mu_tags/${accountUID}/${muTag.uid}`)
+            await database().ref(`mu_tags/${accountUID}/${muTag.uid}`)
                 .set(databaseMuTag);
         } catch (e) {
             console.log(e);
@@ -65,7 +54,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(muTag);
 
         try {
-            await this.database.ref(`mu_tags/${accountUID}/${muTag.uid}`)
+            await database().ref(`mu_tags/${accountUID}/${muTag.uid}`)
                 .update(databaseMuTag);
         } catch (e) {
             console.log(e);
@@ -81,7 +70,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
 
     async removeByUID(uid: string, accountUID: string): Promise<void> {
         try {
-            await this.database.ref(`mu_tags/${accountUID}/${uid}`).remove();
+            await database().ref(`mu_tags/${accountUID}/${uid}`).remove();
         } catch (e) {
             console.log(e);
             throw new FailedToRemove();
@@ -103,7 +92,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         return databaseMuTag;
     }
 
-    private static toMuTagJSON(uid: string, snapshot: DataSnapshot): MuTagJSON {
+    private static toMuTagJSON(uid: string, snapshot: FirebaseDatabaseTypes.DataSnapshot): MuTagJSON {
         if (!snapshot.exists()) {
             throw new DoesNotExist();
         }

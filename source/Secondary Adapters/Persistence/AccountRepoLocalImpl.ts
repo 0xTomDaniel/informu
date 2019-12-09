@@ -7,21 +7,26 @@ import {
     FailedToUpdate,
 } from '../../Core/Ports/AccountRepositoryLocal';
 import Account from '../../Core/Domain/Account';
-import AsyncStorage from '@react-native-community/async-storage';
+import { Database } from './Database';
 
-export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
+export default class AccountRepoLocalImpl implements AccountRepositoryLocal {
 
+    private readonly database: Database;
     private account?: Account;
+
+    constructor(database: Database) {
+        this.database = database;
+    }
 
     async get(): Promise<Account> {
         if (this.account != null) {
             return this.account;
         }
 
-        let rawAccount: string | null;
+        let rawAccount: string | undefined;
 
         try {
-            rawAccount = await AsyncStorage.getItem('account');
+            rawAccount = await this.database.get('account');
         } catch (e) {
             console.log(e);
             throw new FailedToGet();
@@ -40,7 +45,7 @@ export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
         const rawAccount = account.serialize();
 
         try {
-            await AsyncStorage.setItem('account', rawAccount);
+            await this.database.set('account', rawAccount);
         } catch (e) {
             console.log(e);
             throw new FailedToAdd();
@@ -51,9 +56,7 @@ export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
         const rawAccount = account.serialize();
 
         try {
-            // Using 'setItem' because documentation of 'mergeItem' is too vague.
-            // I don't want to have any unforeseen issues.
-            await AsyncStorage.setItem('account', rawAccount);
+            await this.database.set('account', rawAccount);
         } catch (e) {
             console.log(e);
             throw new FailedToUpdate();
@@ -62,7 +65,7 @@ export class AccountRepoRNCAsyncStorage implements AccountRepositoryLocal {
 
     async remove(): Promise<void> {
         try {
-            await AsyncStorage.removeItem('account');
+            await this.database.remove('account');
             this.account = undefined;
         } catch (e) {
             console.log(e);

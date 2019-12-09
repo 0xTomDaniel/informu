@@ -1,7 +1,7 @@
 export interface Authentication {
 
     authenticateWithEmail(emailAddress: string, password: string): Promise<UserData>;
-    isAuthenticatedAs(uid: string): Promise<boolean>;
+    isAuthenticatedAs(uid: string): boolean;
 }
 
 export interface UserData {

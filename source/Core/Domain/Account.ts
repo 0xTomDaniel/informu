@@ -1,20 +1,20 @@
-import Hexadecimal from './Hexadecimal';
-import { BeaconID } from './ProvisionedMuTag';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { pairwise, map } from 'rxjs/operators';
-import _ from 'lodash';
+import Hexadecimal from "./Hexadecimal";
+import { BeaconID } from "./ProvisionedMuTag";
+import { BehaviorSubject, Observable } from "rxjs";
+import { pairwise, map } from "rxjs/operators";
+import _ from "lodash";
 
 class InvalidAccountNumber extends RangeError {
-
     constructor(value: string) {
-        super(`${value} is an invalid account number. Expected a 7-character hexadecimal value.`);
-        this.name = 'InvalidAccountNumber';
+        super(
+            `${value} is an invalid account number. Expected a 7-character hexadecimal value.`
+        );
+        this.name = "InvalidAccountNumber";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
 export class AccountNumber extends Hexadecimal {
-
     static create(hex: string): AccountNumber {
         if (!(hex.length === 7)) {
             throw new InvalidAccountNumber(hex);
@@ -26,10 +26,9 @@ export class AccountNumber extends Hexadecimal {
 }
 
 class NewBeaconIDNotFound extends Error {
-
     constructor(value: string) {
         super(`New beacon ID ${value} not found.`);
-        this.name = 'NewBeaconIDNotFound';
+        this.name = "NewBeaconIDNotFound";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
@@ -55,39 +54,53 @@ export interface AccountJSON {
 }
 
 const isStringArray = (value: any): value is string[] => {
-    return Array.isArray(value) && value.every((item): boolean => typeof item === 'string');
+    return (
+        Array.isArray(value) &&
+        value.every((item): boolean => typeof item === "string")
+    );
 };
 
-export const isAccountJSON = (object: { [key: string]: any }): object is AccountJSON => {
-    const isUIDValid = '_uid' in object && typeof object._uid === 'string';
-    const isAccountNumberValid = '_accountNumber' in object
-        && typeof object._accountNumber === 'string';
-    const isEmailAddressValid = '_emailAddress' in object
-        && typeof object._emailAddress === 'string';
-    const isNextBeaconIDValid = '_nextBeaconID' in object
-        && typeof object._nextBeaconID === 'string';
-    const isRecycledBeaconIDsValid = '_recycledBeaconIDs' in object
-        ? isStringArray(object._recycledBeaconIDs) : true;
-    const isNextMuTagNumberValid = '_nextMuTagNumber' in object
-        && typeof object._nextMuTagNumber === 'number';
-    const isMuTagsValid = '_muTags' in object ? isStringArray(object._muTags) : true;
+export const isAccountJSON = (object: {
+    [key: string]: any;
+}): object is AccountJSON => {
+    const isUIDValid = "_uid" in object && typeof object._uid === "string";
+    const isAccountNumberValid =
+        "_accountNumber" in object && typeof object._accountNumber === "string";
+    const isEmailAddressValid =
+        "_emailAddress" in object && typeof object._emailAddress === "string";
+    const isNextBeaconIDValid =
+        "_nextBeaconID" in object && typeof object._nextBeaconID === "string";
+    const isRecycledBeaconIDsValid =
+        "_recycledBeaconIDs" in object
+            ? isStringArray(object._recycledBeaconIDs)
+            : true;
+    const isNextMuTagNumberValid =
+        "_nextMuTagNumber" in object &&
+        typeof object._nextMuTagNumber === "number";
+    const isMuTagsValid =
+        "_muTags" in object ? isStringArray(object._muTags) : true;
 
-    return isUIDValid && isAccountNumberValid && isEmailAddressValid
-        && isNextBeaconIDValid && isRecycledBeaconIDsValid
-        && isNextMuTagNumberValid && isMuTagsValid;
+    return (
+        isUIDValid &&
+        isAccountNumberValid &&
+        isEmailAddressValid &&
+        isNextBeaconIDValid &&
+        isRecycledBeaconIDsValid &&
+        isNextMuTagNumberValid &&
+        isMuTagsValid
+    );
 };
 
 interface AccessorValue {
     readonly muTags: BehaviorSubject<Set<string>>;
 }
 
-interface MuTagsChange {
+export interface MuTagsChange {
     insertion?: string;
     deletion?: string;
 }
 
 export default class Account {
-
     private readonly _uid: string;
     private readonly _accountNumber: AccountNumber;
     private _emailAddress: string;
@@ -111,7 +124,7 @@ export default class Account {
         this._recycledBeaconIDs = accountData._recycledBeaconIDs;
         this._nextMuTagNumber = accountData._nextMuTagNumber;
         this._accessorValue = {
-            muTags: new BehaviorSubject(accountData._muTags),
+            muTags: new BehaviorSubject(accountData._muTags)
         };
     }
 
@@ -135,15 +148,27 @@ export default class Account {
         return this._nextMuTagNumber;
     }
 
+    get muTags(): Set<string> {
+        return this._muTags;
+    }
+
     get muTagsChange(): Observable<MuTagsChange> {
         return this._accessorValue.muTags.pipe(
             pairwise(),
-            map(([previousMuTags, currentMuTags]): MuTagsChange => {
-                return {
-                    insertion: _.difference([...currentMuTags], [...previousMuTags])[0],
-                    deletion: _.difference([...previousMuTags], [...currentMuTags])[0],
-                };
-            })
+            map(
+                ([previousMuTags, currentMuTags]): MuTagsChange => {
+                    return {
+                        insertion: _.difference(
+                            [...currentMuTags],
+                            [...previousMuTags]
+                        )[0],
+                        deletion: _.difference(
+                            [...previousMuTags],
+                            [...currentMuTags]
+                        )[0]
+                    };
+                }
+            )
         );
     }
 
@@ -182,30 +207,35 @@ export default class Account {
     }
 
     static deserialize(json: string | AccountJSON): Account {
-        let jsonString = typeof json === 'string' ? json : JSON.stringify(json);
+        const jsonString =
+            typeof json === "string" ? json : JSON.stringify(json);
         return JSON.parse(jsonString, Account.reviver);
     }
 
     static replacer(key: string, value: any): any {
         switch (key) {
-            case '':
+            case "":
                 /* Class getters are not actual object properties. Must manually
                  * populate any class getter properties and copy the class object
                  * properties into a new object.
                  */
-                return Object.assign({
-                    _muTags: value._muTags,
-                }, value);
-            case '_accountNumber':
+                return Object.assign(
+                    {
+                        _muTags: value._muTags
+                    },
+                    value
+                );
+            case "_accountNumber":
                 return value.stringValue;
-            case '_nextBeaconID':
+            case "_nextBeaconID":
                 return value.stringValue;
-            case '_recycledBeaconIDs':
+            case "_recycledBeaconIDs": {
                 const beaconIDs: BeaconID[] = Array.from(value);
                 return beaconIDs.map((beaconID): string => beaconID.toString());
-            case '_muTags':
+            }
+            case "_muTags":
                 return Array.from(value);
-            case '_accessorValue':
+            case "_accessorValue":
                 // This property is not part of the model. It only serves to
                 // make some properties observable.
                 return;
@@ -216,7 +246,7 @@ export default class Account {
 
     static reviver(key: string, value: any): any {
         switch (key) {
-            case '':
+            case "":
                 if (value._recycledBeaconIDs == null) {
                     value._recycledBeaconIDs = new Set<BeaconID>();
                 }
@@ -226,15 +256,17 @@ export default class Account {
                 }
 
                 return new Account(value);
-            case '_accountNumber':
+            case "_accountNumber":
                 return AccountNumber.create(value);
-            case '_nextBeaconID':
+            case "_nextBeaconID":
                 return BeaconID.create(value);
-            case '_recycledBeaconIDs':
-                return new Set<BeaconID>(value.map(
-                    (hex: string): BeaconID => BeaconID.fromString(hex)
-                ));
-            case '_muTags':
+            case "_recycledBeaconIDs":
+                return new Set<BeaconID>(
+                    value.map(
+                        (hex: string): BeaconID => BeaconID.fromString(hex)
+                    )
+                );
+            case "_muTags":
                 return new Set<string>(value);
             default:
                 return value;
