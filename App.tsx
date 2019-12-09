@@ -1,47 +1,49 @@
-import React, { FunctionComponent, ReactElement, useEffect } from 'react';
+import React, { FunctionComponent, ReactElement, useEffect } from "react";
 import {
     createSwitchNavigator,
     createStackNavigator,
     createAppContainer,
     NavigationScreenProps,
     NavigationContainerComponent,
-    NavigationActions,
-} from 'react-navigation';
-import { Provider as PaperProvider, DefaultTheme } from 'react-native-paper';
-import LoginViewController from './source/Primary Adapters/Presentation/LoginViewController';
-import LoadSessionViewController from './source/Primary Adapters/Presentation/LoadSessionViewController';
-import Theme from './source/Primary Adapters/Presentation/Theme';
-import { AuthenticationFirebase } from './source/Secondary Adapters/Infrastructure/AuthenticationFirebase';
-import AccountRepoLocalImpl from './source/Secondary Adapters/Persistence/AccountRepoLocalImpl';
-import HomeViewController from './source/Primary Adapters/Presentation/HomeViewController';
-import { AccountRepoRNFirebase } from './source/Secondary Adapters/Persistence/AccountRepoRNFirebase';
-import AppViewModel, { Screen } from './source/Primary Adapters/Presentation/AppViewModel';
-import AppPresenter from './source/Primary Adapters/Presentation/AppPresenter';
-import SessionService from './source/Core/Application/SessionService';
-import { AppStateController } from './source/Primary Adapters/Device/AppStateController';
-import AddMuTagViewController from './source/Primary Adapters/Presentation/AddMuTagViewController';
-import { RSSI } from './source/Core/Domain/Types';
-import Percent from './source/Core/Domain/Percent';
-import { MuTagDevicesRNBLEPLX } from './source/Secondary Adapters/Infrastructure/MuTagDevicesRNBLEPLX';
-import AddMuTagService from './source/Core/Application/AddMuTagService';
-import { HomeViewModel } from './source/Primary Adapters/Presentation/HomeViewModel';
-import AddMuTagPresenter from './source/Primary Adapters/Presentation/AddMuTagPresenter';
-import { AddMuTagViewModel } from './source/Primary Adapters/Presentation/AddMuTagViewModel';
-import MuTagRepoLocalImpl from './source/Secondary Adapters/Persistence/MuTagRepoLocalImpl';
-import { MuTagRepoRNFirebase } from './source/Secondary Adapters/Persistence/MuTagRepoRNFirebase';
-import NameMuTagViewController from './source/Primary Adapters/Presentation/NameMuTagViewController';
-import { NameMuTagViewModel } from './source/Primary Adapters/Presentation/NameMuTagViewModel';
-import { MuTagAddingViewModel } from './source/Primary Adapters/Presentation/MuTagAddingViewModel';
-import MuTagAddingViewController from './source/Primary Adapters/Presentation/MuTagAddingViewController';
-import LogoutService from './source/Core/Application/LogoutService';
-import LogoutPresenter from './source/Primary Adapters/Presentation/LogoutPresenter';
-import BelongingDashboardService from './source/Core/Application/BelongingDashboardService';
-import BelongingDashboardPresenter from './source/Primary Adapters/Presentation/BelongingDashboardPresenter';
-import BelongingDetectionService from './source/Core/Application/BelongingDetectionService';
-import MuTagMonitorRNBM from './source/Secondary Adapters/Infrastructure/MuTagMonitorRNBM';
-import RemoveMuTagService from './source/Core/Application/RemoveMuTagService';
-import RemoveMuTagPresenter from './source/Primary Adapters/Presentation/RemoveMuTagPresenter';
-import DatabaseImplWatermelon from './source/Secondary Adapters/Persistence/DatabaseImplWatermelon';
+    NavigationActions
+} from "react-navigation";
+import { Provider as PaperProvider, DefaultTheme } from "react-native-paper";
+import LoginViewController from "./source/Primary Adapters/Presentation/LoginViewController";
+import LoadSessionViewController from "./source/Primary Adapters/Presentation/LoadSessionViewController";
+import Theme from "./source/Primary Adapters/Presentation/Theme";
+import { AuthenticationFirebase } from "./source/Secondary Adapters/Infrastructure/AuthenticationFirebase";
+import AccountRepoLocalImpl from "./source/Secondary Adapters/Persistence/AccountRepoLocalImpl";
+import HomeViewController from "./source/Primary Adapters/Presentation/HomeViewController";
+import { AccountRepoRNFirebase } from "./source/Secondary Adapters/Persistence/AccountRepoRNFirebase";
+import AppViewModel, {
+    Screen
+} from "./source/Primary Adapters/Presentation/AppViewModel";
+import AppPresenter from "./source/Primary Adapters/Presentation/AppPresenter";
+import SessionService from "./source/Core/Application/SessionService";
+import { AppStateController } from "./source/Primary Adapters/Device/AppStateController";
+import AddMuTagViewController from "./source/Primary Adapters/Presentation/AddMuTagViewController";
+import { RSSI } from "./source/Core/Domain/Types";
+import Percent from "./source/Core/Domain/Percent";
+import { MuTagDevicesRNBLEPLX } from "./source/Secondary Adapters/Infrastructure/MuTagDevicesRNBLEPLX";
+import AddMuTagService from "./source/Core/Application/AddMuTagService";
+import { HomeViewModel } from "./source/Primary Adapters/Presentation/HomeViewModel";
+import AddMuTagPresenter from "./source/Primary Adapters/Presentation/AddMuTagPresenter";
+import { AddMuTagViewModel } from "./source/Primary Adapters/Presentation/AddMuTagViewModel";
+import MuTagRepoLocalImpl from "./source/Secondary Adapters/Persistence/MuTagRepoLocalImpl";
+import { MuTagRepoRNFirebase } from "./source/Secondary Adapters/Persistence/MuTagRepoRNFirebase";
+import NameMuTagViewController from "./source/Primary Adapters/Presentation/NameMuTagViewController";
+import { NameMuTagViewModel } from "./source/Primary Adapters/Presentation/NameMuTagViewModel";
+import { MuTagAddingViewModel } from "./source/Primary Adapters/Presentation/MuTagAddingViewModel";
+import MuTagAddingViewController from "./source/Primary Adapters/Presentation/MuTagAddingViewController";
+import LogoutService from "./source/Core/Application/LogoutService";
+import LogoutPresenter from "./source/Primary Adapters/Presentation/LogoutPresenter";
+import BelongingDashboardService from "./source/Core/Application/BelongingDashboardService";
+import BelongingDashboardPresenter from "./source/Primary Adapters/Presentation/BelongingDashboardPresenter";
+import BelongingDetectionService from "./source/Core/Application/BelongingDetectionService";
+import MuTagMonitorRNBM from "./source/Secondary Adapters/Infrastructure/MuTagMonitorRNBM";
+import RemoveMuTagService from "./source/Core/Application/RemoveMuTagService";
+import RemoveMuTagPresenter from "./source/Primary Adapters/Presentation/RemoveMuTagPresenter";
+import DatabaseImplWatermelon from "./source/Secondary Adapters/Persistence/DatabaseImplWatermelon";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -50,7 +52,6 @@ const appViewModel = new AppViewModel();
 const sessionPresenter = new AppPresenter(appViewModel);
 
 export class Dependencies {
-
     authentication: AuthenticationFirebase;
     database: DatabaseImplWatermelon;
     accountRepoLocal: AccountRepoLocalImpl;
@@ -83,7 +84,10 @@ export class Dependencies {
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
-        this.muTagRepoLocal = new MuTagRepoLocalImpl(this.database, this.accountRepoLocal);
+        this.muTagRepoLocal = new MuTagRepoLocalImpl(
+            this.database,
+            this.accountRepoLocal
+        );
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
         this.connectThreshold = -80 as RSSI;
         this.addMuTagBatteryThreshold = new Percent(20);
@@ -95,7 +99,7 @@ export class Dependencies {
             this.homeViewModel,
             this.addMuTagViewModel,
             this.nameMuTagViewModel,
-            this.muTagAddingViewModel,
+            this.muTagAddingViewModel
         );
         this.muTagDevices = new MuTagDevicesRNBLEPLX();
         this.addMuTagService = new AddMuTagService(
@@ -106,7 +110,7 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.accountRepoLocal,
-            this.accountRepoRemote,
+            this.accountRepoRemote
         );
         this.removeMuTagBatteryThreshold = new Percent(20);
         this.removeMuTagPresenter = new RemoveMuTagPresenter(
@@ -119,7 +123,21 @@ export class Dependencies {
             this.accountRepoRemote,
             this.muTagRepoLocal,
             this.muTagRepoRemote,
-            this.removeMuTagPresenter,
+            this.removeMuTagPresenter
+        );
+        this.belongingDashboardPresenter = new BelongingDashboardPresenter(
+            this.homeViewModel
+        );
+        this.belongingDashboardService = new BelongingDashboardService(
+            this.belongingDashboardPresenter,
+            this.muTagRepoLocal,
+            this.accountRepoLocal
+        );
+        this.muTagMonitor = new MuTagMonitorRNBM();
+        this.belongingDetectionService = new BelongingDetectionService(
+            this.muTagMonitor,
+            this.muTagRepoLocal,
+            this.accountRepoLocal
         );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
         this.logoutService = new LogoutService(
@@ -129,25 +147,14 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.database,
+            this.belongingDetectionService
         );
         this.logoutService.onResetAllDependencies((): void => this.resetAll());
-        this.belongingDashboardPresenter = new BelongingDashboardPresenter(this.homeViewModel);
-        this.belongingDashboardService = new BelongingDashboardService(
-            this.belongingDashboardPresenter,
-            this.muTagRepoLocal,
-            this.accountRepoLocal,
-        );
-        this.muTagMonitor = new MuTagMonitorRNBM();
-        this.belongingDetectionService = new BelongingDetectionService(
-            this.muTagMonitor,
-            this.muTagRepoLocal,
-            this.accountRepoLocal,
-        );
         this.sessionService = new SessionService(
             sessionPresenter,
             this.authentication,
             this.accountRepoLocal,
-            this.belongingDetectionService,
+            this.belongingDetectionService
         );
         this.appStateController = new AppStateController(this.sessionService);
     }
@@ -157,7 +164,10 @@ export class Dependencies {
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
-        this.muTagRepoLocal = new MuTagRepoLocalImpl(this.database, this.accountRepoLocal);
+        this.muTagRepoLocal = new MuTagRepoLocalImpl(
+            this.database,
+            this.accountRepoLocal
+        );
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
         this.connectThreshold = -80 as RSSI;
         this.addMuTagBatteryThreshold = new Percent(20);
@@ -169,7 +179,7 @@ export class Dependencies {
             this.homeViewModel,
             this.addMuTagViewModel,
             this.nameMuTagViewModel,
-            this.muTagAddingViewModel,
+            this.muTagAddingViewModel
         );
         this.muTagDevices = new MuTagDevicesRNBLEPLX();
         this.addMuTagService = new AddMuTagService(
@@ -180,7 +190,7 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.accountRepoLocal,
-            this.accountRepoRemote,
+            this.accountRepoRemote
         );
         this.removeMuTagBatteryThreshold = new Percent(20);
         this.removeMuTagPresenter = new RemoveMuTagPresenter(
@@ -193,7 +203,21 @@ export class Dependencies {
             this.accountRepoRemote,
             this.muTagRepoLocal,
             this.muTagRepoRemote,
-            this.removeMuTagPresenter,
+            this.removeMuTagPresenter
+        );
+        this.belongingDashboardPresenter = new BelongingDashboardPresenter(
+            this.homeViewModel
+        );
+        this.belongingDashboardService = new BelongingDashboardService(
+            this.belongingDashboardPresenter,
+            this.muTagRepoLocal,
+            this.accountRepoLocal
+        );
+        this.muTagMonitor = new MuTagMonitorRNBM();
+        this.belongingDetectionService = new BelongingDetectionService(
+            this.muTagMonitor,
+            this.muTagRepoLocal,
+            this.accountRepoLocal
         );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
         this.logoutService.onResetAllDependencies(undefined);
@@ -204,25 +228,14 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.database,
+            this.belongingDetectionService
         );
         this.logoutService.onResetAllDependencies((): void => this.resetAll());
-        this.belongingDashboardPresenter = new BelongingDashboardPresenter(this.homeViewModel);
-        this.belongingDashboardService = new BelongingDashboardService(
-            this.belongingDashboardPresenter,
-            this.muTagRepoLocal,
-            this.accountRepoLocal,
-        );
-        this.muTagMonitor = new MuTagMonitorRNBM();
-        this.belongingDetectionService = new BelongingDetectionService(
-            this.muTagMonitor,
-            this.muTagRepoLocal,
-            this.accountRepoLocal,
-        );
         this.sessionService = new SessionService(
             sessionPresenter,
             this.authentication,
             this.accountRepoLocal,
-            this.belongingDetectionService,
+            this.belongingDetectionService
         );
         this.appStateController.destructor();
         this.appStateController = new AppStateController(this.sessionService);
@@ -237,13 +250,15 @@ const AppStack = createStackNavigator(
             screen: (props: NavigationScreenProps): Element => (
                 <HomeViewController
                     homeViewModel={dependencies.homeViewModel}
-                    belongingDashboardService={dependencies.belongingDashboardService}
+                    belongingDashboardService={
+                        dependencies.belongingDashboardService
+                    }
                     logoutService={dependencies.logoutService}
                     addMuTagService={dependencies.addMuTagService}
                     removeMuTagService={dependencies.removeMuTagService}
                     {...props}
                 />
-            ),
+            )
         },
         AddMuTag: {
             screen: (props: NavigationScreenProps): Element => (
@@ -252,7 +267,7 @@ const AppStack = createStackNavigator(
                     addMuTagService={dependencies.addMuTagService}
                     {...props}
                 />
-            ),
+            )
         },
         NameMuTag: {
             screen: (props: NavigationScreenProps): Element => (
@@ -261,7 +276,7 @@ const AppStack = createStackNavigator(
                     addMuTagService={dependencies.addMuTagService}
                     {...props}
                 />
-            ),
+            )
         },
         MuTagAdding: {
             screen: (props: NavigationScreenProps): Element => (
@@ -270,14 +285,14 @@ const AppStack = createStackNavigator(
                     addMuTagService={dependencies.addMuTagService}
                     {...props}
                 />
-            ),
-        },
+            )
+        }
     },
     {
         defaultNavigationOptions: {
-            header: null,
-        },
-    },
+            header: null
+        }
+    }
 );
 const EntryStack = createStackNavigator(
     {
@@ -292,11 +307,11 @@ const EntryStack = createStackNavigator(
                     sessionService={dependencies.sessionService}
                     {...props}
                 />
-            ),
-        },
+            )
+        }
     },
     {
-        headerMode: 'none',
+        headerMode: "none"
     }
 );
 
@@ -304,10 +319,10 @@ const AppNavigator = createSwitchNavigator(
     {
         LoadSession: LoadSessionViewController,
         App: AppStack,
-        Entry: EntryStack,
+        Entry: EntryStack
     },
     {
-        initialRouteName: 'LoadSession',
+        initialRouteName: "LoadSession"
     }
 );
 
@@ -321,13 +336,12 @@ const paperTheme = {
         primary: Theme.Color.PrimaryOrange,
         accent: Theme.Color.PrimaryBlue,
         background: Theme.Color.AlmostWhite,
-        surface: 'white',
-        error: Theme.Color.Error,
-    },
+        surface: "white",
+        error: Theme.Color.Error
+    }
 };
 
 const App: FunctionComponent = (): ReactElement => {
-
     let navigator: NavigationContainerComponent | null | undefined;
 
     const navigate = (routeName: string): void => {
@@ -342,13 +356,13 @@ const App: FunctionComponent = (): ReactElement => {
         appViewModel.onNavigate((screen): void => {
             switch (screen) {
                 case Screen.App:
-                    navigate('App');
+                    navigate("App");
                     break;
                 case Screen.Entry:
-                    navigate('Entry');
+                    navigate("Entry");
                     break;
                 case Screen.LoadSession:
-                    navigate('LoadSession');
+                    navigate("LoadSession");
                     break;
             }
         });

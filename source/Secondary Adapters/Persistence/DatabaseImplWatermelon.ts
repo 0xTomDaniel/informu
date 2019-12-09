@@ -1,9 +1,8 @@
-import { Database } from './Database';
-import { Database as WatermelonDB, appSchema } from '@nozbe/watermelondb';
-import SQLiteAdapter from '@nozbe/watermelondb/adapters/sqlite';
+import { Database } from "./Database";
+import { Database as WatermelonDB, appSchema } from "@nozbe/watermelondb";
+import SQLiteAdapter from "@nozbe/watermelondb/adapters/sqlite";
 
 export default class DatabaseImplWatermelon implements Database {
-
     private readonly database: WatermelonDB;
 
     constructor(database?: WatermelonDB) {
@@ -12,16 +11,16 @@ export default class DatabaseImplWatermelon implements Database {
         } else {
             const schema = appSchema({
                 version: 1,
-                tables: [],
+                tables: []
             });
             const adapter = new SQLiteAdapter({
-                dbName: 'InformuApp',
-                schema: schema,
+                dbName: "InformuApp",
+                schema: schema
             });
             this.database = new WatermelonDB({
                 adapter,
                 modelClasses: [],
-                actionsEnabled: false,
+                actionsEnabled: false
             });
         }
     }
@@ -43,8 +42,10 @@ export default class DatabaseImplWatermelon implements Database {
     }
 
     async destroy(): Promise<void> {
-        await this.database.action(async (): Promise<void> => {
-            await this.database.unsafeResetDatabase;
-        });
+        await this.database.action<void>(
+            async (): Promise<void> => {
+                await this.database.unsafeResetDatabase();
+            }
+        );
     }
 }

@@ -1,80 +1,104 @@
-import { Appbar, Text, Portal, Modal, ActivityIndicator, Card, Avatar, IconButton, Menu } from 'react-native-paper';
-import { StyleSheet, Platform, StatusBar, PermissionsAndroid, PermissionStatus, View, FlatList } from 'react-native';
-import Theme from './Theme';
-import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
-import React, { ReactElement, FunctionComponent, useState, useEffect } from 'react';
-import DeviceInfo from 'react-native-device-info';
-import LinearGradient from 'react-native-linear-gradient';
-import { HomeViewModel, BelongingViewData } from './HomeViewModel';
-import AddMuTagService from '../../Core/Application/AddMuTagService';
-import LogoutService from '../../Core/Application/LogoutService';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-import { Images } from './Images';
-import { Scale } from './ResponsiveScaler';
-import BelongingDashboardService from '../../Core/Application/BelongingDashboardService';
-import RemoveMuTagService from '../../Core/Application/RemoveMuTagService';
-import ErrorDialog from './Base Components/ErrorDialog';
+import {
+    Appbar,
+    Text,
+    Portal,
+    Modal,
+    ActivityIndicator,
+    Card,
+    Avatar,
+    IconButton,
+    Menu
+} from "react-native-paper";
+import {
+    StyleSheet,
+    Platform,
+    StatusBar,
+    PermissionsAndroid,
+    View,
+    FlatList
+} from "react-native";
+import Theme from "./Theme";
+import { SafeAreaView, NavigationScreenProps } from "react-navigation";
+import React, {
+    ReactElement,
+    FunctionComponent,
+    useState,
+    useEffect
+} from "react";
+import DeviceInfo from "react-native-device-info";
+import LinearGradient from "react-native-linear-gradient";
+import { HomeViewModel, BelongingViewData } from "./HomeViewModel";
+import AddMuTagService from "../../Core/Application/AddMuTagService";
+import LogoutService from "../../Core/Application/LogoutService";
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import { Images } from "./Images";
+import { Scale } from "./ResponsiveScaler";
+import BelongingDashboardService from "../../Core/Application/BelongingDashboardService";
+import RemoveMuTagService from "../../Core/Application/RemoveMuTagService";
+import ErrorDialog from "./Base Components/ErrorDialog";
 
 const styles = StyleSheet.create({
     safeAreaView: {
         flex: 1,
-        paddingTop: (Platform.OS === 'android' && DeviceInfo.hasNotch())
-            ? StatusBar.currentHeight : 0,
+        paddingTop:
+            Platform.OS === "android" && DeviceInfo.hasNotch()
+                ? StatusBar.currentHeight
+                : 0
     },
     base: {
-        backgroundColor: Theme.Color.AlmostWhiteBackground,
+        backgroundColor: Theme.Color.AlmostWhiteBackground
     },
     appBar: {
-        backgroundColor: 'white',
+        backgroundColor: "white",
         borderBottomWidth: 1,
         borderColor: Theme.Color.AlmostWhiteBorder,
         ...Platform.select({
             ios: {},
             android: {
-                elevation: 0,
-            },
-        }),
+                elevation: 0
+            }
+        })
     },
     appBarLogo: {
         width: undefined,
         height: 26,
         marginLeft: 14,
-        marginRight: -14,
+        marginRight: -14
     },
     appBarContent: {
-        marginBottom: 18,
+        marginBottom: 18
     },
     triangle: {
         width: 0,
         height: 0,
-        backgroundColor: 'transparent',
-        borderStyle: 'solid',
+        backgroundColor: "transparent",
+        borderStyle: "solid",
         borderLeftWidth: 8,
         borderRightWidth: 8,
         borderBottomWidth: 12,
-        borderLeftColor: 'transparent',
-        borderRightColor: 'transparent',
+        borderLeftColor: "transparent",
+        borderRightColor: "transparent",
         borderBottomColor: Theme.Color.SecondaryOrange,
-        alignSelf: 'flex-end',
+        alignSelf: "flex-end",
         marginRight: 68,
         // Fixes 1dp gap on some layouts
-        marginBottom: -1,
+        marginBottom: -1
     },
     tooltipContent: {
-        padding: 20,
+        padding: 20
     },
     tooltipText: {
-        color: 'white',
-        fontWeight: 'bold',
-        fontSize: 16,
+        color: "white",
+        fontWeight: "bold",
+        fontSize: 16
     },
     belongingsContainer: {
         flexGrow: 1,
-        paddingBottom: 16,
+        paddingBottom: 16
     },
     belongingsEmpty: {
         flex: 1,
-        justifyContent: 'center',
+        justifyContent: "center"
     },
     card: {
         paddingVertical: 8,
@@ -82,25 +106,25 @@ const styles = StyleSheet.create({
         marginTop: Scale(12),
         backgroundColor: Theme.Color.AlmostWhite,
         borderWidth: 1,
-        borderColor: Theme.Color.AlmostWhiteBorder,
+        borderColor: Theme.Color.AlmostWhiteBorder
     },
     cardSubtitle: {
-        color: 'gray',
+        color: "gray"
     },
     iconView: {
         backgroundColor: Theme.Color.PrimaryBlue,
-        marginLeft: 4,
+        marginLeft: 4
     },
     cardTitleText: {
-        marginLeft: 8,
+        marginLeft: 8
     },
     activityModal: {
-        alignSelf: 'center',
+        alignSelf: "center",
         width: 80,
         height: 80,
         borderRadius: 40,
-        backgroundColor: Theme.Color.AlmostWhite,
-    },
+        backgroundColor: Theme.Color.AlmostWhite
+    }
 });
 
 const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
@@ -109,9 +133,12 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
             <View>
                 <View style={styles.triangle} />
                 <LinearGradient
-                    start={{x: 0, y: 0}}
-                    end={{x: 1.5, y: 0}}
-                    colors={[Theme.Color.PrimaryOrange, Theme.Color.SecondaryOrange]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1.5, y: 0 }}
+                    colors={[
+                        Theme.Color.PrimaryOrange,
+                        Theme.Color.SecondaryOrange
+                    ]}
                     style={styles.tooltipContent}
                 >
                     <Text style={styles.tooltipText}>
@@ -129,8 +156,9 @@ interface BelongingCardProps {
     removeMuTagService: RemoveMuTagService;
 }
 
-const BelongingCard: FunctionComponent<BelongingCardProps> = (props): ReactElement => {
-
+const BelongingCard: FunctionComponent<BelongingCardProps> = (
+    props
+): ReactElement => {
     const [isMenuVisible, setIsMenuVisible] = useState(false);
 
     const showMenu = (): void => setIsMenuVisible(true);
@@ -153,18 +181,18 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (props): ReactEleme
                             size={10}
                             color={props.viewData.safeStatusColor}
                         />
-                        {' ' + props.viewData.lastSeen}
+                        {" " + props.viewData.lastSeen}
                     </Text>
                 }
-                left={(leftProps: any): Element =>
+                left={(leftProps: any): Element => (
                     <Avatar.Icon
                         {...leftProps}
                         icon="radar"
                         color="white"
                         style={styles.iconView}
                     />
-                }
-                right={(rightProps: any): Element =>
+                )}
+                right={(rightProps: any): Element => (
                     <Menu
                         visible={isMenuVisible}
                         onDismiss={hideMenu}
@@ -182,7 +210,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (props): ReactEleme
                             onPress={removeMuTag}
                         />
                     </Menu>
-                }
+                )}
                 titleStyle={styles.cardTitleText}
                 subtitleStyle={styles.cardTitleText}
             />
@@ -191,7 +219,6 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (props): ReactEleme
 };
 
 interface HomeVCProps extends NavigationScreenProps {
-
     homeViewModel: HomeViewModel;
     belongingDashboardService: BelongingDashboardService;
     logoutService: LogoutService;
@@ -199,12 +226,48 @@ interface HomeVCProps extends NavigationScreenProps {
     removeMuTagService: RemoveMuTagService;
 }
 
-const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement => {
-
+const HomeViewController: FunctionComponent<HomeVCProps> = (
+    props
+): ReactElement => {
     const [state, setState] = useState(props.homeViewModel.state);
 
     const onDismissErrorDialog = (): void => {
-        props.homeViewModel.updateState({ errorDescription: '', isErrorVisible: false });
+        props.homeViewModel.updateState({
+            errorDescription: "",
+            isErrorVisible: false
+        });
+    };
+
+    const requestPermissions = async (): Promise<void> => {
+        const isPermissionGranted = await PermissionsAndroid.check(
+            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
+        );
+
+        if (isPermissionGranted) {
+            console.log("Bluetooth granted!");
+            return;
+        }
+
+        console.log("Bluetooth denied");
+
+        const permissionStatus = await PermissionsAndroid.request(
+            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+            {
+                title: "Cool Photo App Camera Permission",
+                message:
+                    "Cool Photo App needs access to your camera " +
+                    "so you can take awesome pictures.",
+                buttonNeutral: "Ask Me Later",
+                buttonNegative: "Cancel",
+                buttonPositive: "OK"
+            }
+        );
+
+        if (permissionStatus === PermissionsAndroid.RESULTS.GRANTED) {
+            console.log("Bluetooth granted!");
+        } else {
+            console.log("Bluetooth denied");
+        }
     };
 
     useEffect((): (() => void) => {
@@ -212,10 +275,10 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
             setState(newState);
         });
         props.homeViewModel.onNavigateToAddMuTag((): boolean =>
-            props.navigation.navigate('AddMuTag')
+            props.navigation.navigate("AddMuTag")
         );
         props.homeViewModel.onShowLogoutComplete((): boolean =>
-            props.navigation.navigate('Login')
+            props.navigation.navigate("Login")
         );
 
         return (): void => {
@@ -230,50 +293,30 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
     }, [props.belongingDashboardService]);
 
     useEffect((): void => {
-        try {
-            PermissionsAndroid.check(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION).then((granted): Promise<PermissionStatus> | undefined => {
-                if (granted) {
-                    console.log('Bluetooth granted!');
-                } else {
-                    console.log('Bluetooth denied');
-                    return PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION, {
-                        title: 'Cool Photo App Camera Permission',
-                        message:
-                            'Cool Photo App needs access to your camera ' +
-                            'so you can take awesome pictures.',
-                        buttonNeutral: 'Ask Me Later',
-                        buttonNegative: 'Cancel',
-                        buttonPositive: 'OK',
-                    });
-                }
-            }).then((granted): void => {
-                if (granted == null) {
-                    return;
-                }
-
-                if (granted === PermissionsAndroid.RESULTS.GRANTED) {
-                    console.log('Bluetooth granted!');
-                } else {
-                    console.log('Bluetooth denied');
-                }
-            });
-        } catch (err) {
-            console.warn(err);
-        }
+        requestPermissions().catch(e => console.warn(e));
     }, []);
 
     return (
         <SafeAreaView style={[styles.safeAreaView, styles.base]}>
             <Appbar.Header style={styles.appBar}>
                 <Images.MuLogo style={styles.appBarLogo} />
-                <Appbar.Content title="" subtitle="beta" color="gray" style={styles.appBarContent} />
+                <Appbar.Content
+                    title=""
+                    subtitle="beta"
+                    color="gray"
+                    style={styles.appBarContent}
+                />
                 <Appbar.Action
                     icon="plus-circle-outline"
-                    onPress={(): void => { props.addMuTagService.startAddingNewMuTag(); }}
+                    onPress={(): void => {
+                        props.addMuTagService.startAddingNewMuTag();
+                    }}
                 />
                 <Appbar.Action
                     icon="logout"
-                    onPress={(): void => { props.logoutService.logOut(); }}
+                    onPress={(): void => {
+                        props.logoutService.logOut();
+                    }}
                 />
             </Appbar.Header>
             <FlatList
@@ -281,12 +324,12 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
                 ListEmptyComponent={<BelongingsEmpty />}
                 scrollEnabled={!state.showEmptyBelongings}
                 data={state.belongings}
-                renderItem={({ item }): ReactElement =>
+                renderItem={({ item }): ReactElement => (
                     <BelongingCard
                         viewData={item}
                         removeMuTagService={props.removeMuTagService}
                     />
-                }
+                )}
                 keyExtractor={(item): string => item.uid}
             />
             <Portal>
@@ -295,7 +338,10 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (props): ReactElement
                     visible={state.showActivityIndicator}
                     contentContainerStyle={styles.activityModal}
                 >
-                    <ActivityIndicator size="large" color={Theme.Color.PrimaryBlue} />
+                    <ActivityIndicator
+                        size="large"
+                        color={Theme.Color.PrimaryBlue}
+                    />
                 </Modal>
             </Portal>
             <ErrorDialog
