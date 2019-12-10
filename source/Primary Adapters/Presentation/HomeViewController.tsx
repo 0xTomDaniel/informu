@@ -289,7 +289,7 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
     });
 
     useEffect((): void => {
-        props.belongingDashboardService.open();
+        props.belongingDashboardService.open().catch(e => console.warn(e));
     }, [props.belongingDashboardService]);
 
     useEffect((): void => {

@@ -100,8 +100,6 @@ export default class MuTagMonitorRNBM implements MuTagMonitor {
         subscriber: Subscriber<Set<MuTagSignal>>
     ): () => void {
         const listener = (data: RangedBeaconData): void => {
-            //DEBUG
-            console.warn(`detected Mu tag ${JSON.stringify(data.beacons)}`);
             const muTagSignals = MuTagMonitorRNBM.getMuTagSignals(data);
             if (muTagSignals.size > 0) {
                 subscriber.next(muTagSignals);
