@@ -1,22 +1,21 @@
-import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
-import { BelongingDashboardOutput, DashboardBelonging } from '../Ports/BelongingDashboardOutput';
-import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
-import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
+import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import {
+    BelongingDashboardOutput,
+    DashboardBelonging
+} from "../Ports/BelongingDashboardOutput";
+import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
+import ProvisionedMuTag from "../Domain/ProvisionedMuTag";
 
 export default class BelongingDashboardService {
-
-    //private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly belongingDashboardOutput: BelongingDashboardOutput;
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly accountRepoLocal: AccountRepositoryLocal;
 
     constructor(
-        //accountRepoLocal: AccountRepositoryLocal,
         belongingDashboardOutput: BelongingDashboardOutput,
         muTagRepoLocal: MuTagRepositoryLocal,
-        accountRepoLocal: AccountRepositoryLocal,
+        accountRepoLocal: AccountRepositoryLocal
     ) {
-        //this.accountRepoLocal = accountRepoLocal;
         this.belongingDashboardOutput = belongingDashboardOutput;
         this.muTagRepoLocal = muTagRepoLocal;
         this.accountRepoLocal = accountRepoLocal;
@@ -39,29 +38,34 @@ export default class BelongingDashboardService {
                 uid: muTag.uid,
                 name: muTag.name,
                 isSafe: muTag.isSafe,
-                lastSeen: muTag.lastSeen,
+                lastSeen: muTag.lastSeen
             });
         });
 
         this.belongingDashboardOutput.showAll(belongings);
     }
 
-    private async subscribeToMuTagChanges(muTags: Set<ProvisionedMuTag>): Promise<void> {
+    private async subscribeToMuTagChanges(
+        muTags: Set<ProvisionedMuTag>
+    ): Promise<void> {
         const account = await this.accountRepoLocal.get();
         account.muTagsChange.subscribe((change): void => {
             if (change.insertion != null) {
-                this.muTagRepoLocal.getByUID(change.insertion).then((muTag): void => {
-                    const dashboardBelonging = {
-                        uid: muTag.uid,
-                        name: muTag.name,
-                        isSafe: muTag.isSafe,
-                        lastSeen: muTag.lastSeen,
-                    };
-                    this.belongingDashboardOutput.add(dashboardBelonging);
-                    this.updateDashboardOnSafetyStatusChange(muTag);
-                }).catch((e): void => {
-                    console.warn(`muTagRepoLocal.getByUID() - error: ${e}`);
-                });
+                this.muTagRepoLocal
+                    .getByUID(change.insertion)
+                    .then((muTag): void => {
+                        const dashboardBelonging = {
+                            uid: muTag.uid,
+                            name: muTag.name,
+                            isSafe: muTag.isSafe,
+                            lastSeen: muTag.lastSeen
+                        };
+                        this.belongingDashboardOutput.add(dashboardBelonging);
+                        this.updateDashboardOnSafetyStatusChange(muTag);
+                    })
+                    .catch((e): void => {
+                        console.warn(`muTagRepoLocal.getByUID() - error: ${e}`);
+                    });
             }
 
             if (change.deletion != null) {
@@ -79,7 +83,7 @@ export default class BelongingDashboardService {
             this.belongingDashboardOutput.update({
                 uid: muTag.uid,
                 isSafe: update.isSafe,
-                lastSeen: update.lastSeen,
+                lastSeen: update.lastSeen
             });
         });
     }

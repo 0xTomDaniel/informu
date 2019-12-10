@@ -1,41 +1,45 @@
-import { LoginOutput } from '../Ports/LoginOutput';
-import { Authentication, InvalidCredentials, AccountDisabled, AuthenticationException, TooManyAttempts } from '../Ports/Authentication';
-import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
+import { LoginOutput } from "../Ports/LoginOutput";
+import {
+    Authentication,
+    InvalidCredentials,
+    AccountDisabled,
+    AuthenticationException,
+    TooManyAttempts
+} from "../Ports/Authentication";
+import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import {
     DoesNotExist,
     FailedToGet,
     FailedToAdd,
     FailedToRemove,
     AccountRepositoryLocalException,
-    AccountRepositoryLocal,
-} from '../Ports/AccountRepositoryLocal';
-import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
-import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
-import { Session } from './SessionService';
+    AccountRepositoryLocal
+} from "../Ports/AccountRepositoryLocal";
+import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
+import { Session } from "./SessionService";
 
 export class ImproperEmailFormat extends Error {
-
     constructor() {
-        super('This is not a proper email address.');
-        this.name = 'ImproperEmailFormat';
+        super("This is not a proper email address.");
+        this.name = "ImproperEmailFormat";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
 export class ImproperPasswordComplexity extends Error {
-
     constructor() {
-        super('Password doesn\'t meet complexity requirements.');
-        this.name = 'ImproperPasswordComplexity';
+        super("Password doesn't meet complexity requirements.");
+        this.name = "ImproperPasswordComplexity";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
-export type LoginServiceException
-    = ImproperEmailFormat | ImproperPasswordComplexity;
+export type LoginServiceException =
+    | ImproperEmailFormat
+    | ImproperPasswordComplexity;
 
 export class LoginService {
-
     private readonly loginOutput: LoginOutput;
     private readonly authentication: Authentication;
     private readonly accountRepoLocal: AccountRepositoryLocal;
@@ -51,7 +55,7 @@ export class LoginService {
         accountRepoRemote: AccountRepositoryRemote,
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
-        sessionService: Session,
+        sessionService: Session
     ) {
         this.loginOutput = loginOutput;
         this.authentication = authentication;
@@ -62,7 +66,10 @@ export class LoginService {
         this.sessionService = sessionService;
     }
 
-    async logInWithEmail(emailAddress: EmailAddress, password: Password): Promise<void> {
+    async logInWithEmail(
+        emailAddress: EmailAddress,
+        password: Password
+    ): Promise<void> {
         try {
             if (!emailAddress.isValid()) {
                 throw new ImproperEmailFormat();
@@ -85,14 +92,12 @@ export class LoginService {
             const muTags = await this.muTagRepoRemote.getAll(userData.uid);
             await this.muTagRepoLocal.addMultiple(muTags);
 
-            // TODO: Load and save Safe Zones, etc.
-
             this.sessionService.start();
         } catch (e) {
             if (
-                this.isLoginServiceException(e)
-                || this.isAuthenticationException(e)
-                || this.isAccountRepositoryLocalException(e)
+                this.isLoginServiceException(e) ||
+                this.isAuthenticationException(e) ||
+                this.isAccountRepositoryLocalException(e)
             ) {
                 this.loginOutput.showLoginError(e);
             } else {
@@ -104,30 +109,35 @@ export class LoginService {
     private isLoginServiceException(
         value: any
     ): value is LoginServiceException {
-        return value instanceof ImproperEmailFormat
-            || value instanceof ImproperPasswordComplexity;
+        return (
+            value instanceof ImproperEmailFormat ||
+            value instanceof ImproperPasswordComplexity
+        );
     }
 
     private isAuthenticationException(
         value: any
     ): value is AuthenticationException {
-        return value instanceof InvalidCredentials
-            || value instanceof AccountDisabled
-            || value instanceof TooManyAttempts;
+        return (
+            value instanceof InvalidCredentials ||
+            value instanceof AccountDisabled ||
+            value instanceof TooManyAttempts
+        );
     }
 
     private isAccountRepositoryLocalException(
         value: any
     ): value is AccountRepositoryLocalException {
-        return value instanceof DoesNotExist
-            || value instanceof FailedToGet
-            || value instanceof FailedToAdd
-            || value instanceof FailedToRemove;
+        return (
+            value instanceof DoesNotExist ||
+            value instanceof FailedToGet ||
+            value instanceof FailedToAdd ||
+            value instanceof FailedToRemove
+        );
     }
 }
 
 export class EmailAddress {
-
     private readonly emailAddress: string;
 
     constructor(emailAddress: string) {
@@ -146,7 +156,6 @@ export class EmailAddress {
 }
 
 export class Password {
-
     private readonly password: string;
 
     constructor(password: string) {
@@ -158,7 +167,7 @@ export class Password {
         const regexpOne = /^\S$|^\S[ \S]*\S$/;
         const testOne = regexpOne.test(this.password);
 
-        const symbols = '!-/:-@\\[-`{-~';
+        const symbols = "!-/:-@\\[-`{-~";
 
         /*  This should allow any Unicode letter. RegExp currently doesn't
             support '\p{L}'.
@@ -169,8 +178,7 @@ export class Password {
         const letterOrSymbol = `(${anyLetter}|[${symbols}])`;
         const numberOrSymbol = `(\\d|[${symbols}])`;
 
-        const regexTwo
-            = `^(?=.*${letterOrNumber})(?=.*${letterOrSymbol})(?=.*${numberOrSymbol}).{8,}$`;
+        const regexTwo = `^(?=.*${letterOrNumber})(?=.*${letterOrSymbol})(?=.*${numberOrSymbol}).{8,}$`;
         const regexpTwo = new RegExp(regexTwo);
         const testTwo = regexpTwo.test(this.password);
 

@@ -1,26 +1,35 @@
 import {
     MuTagRepositoryLocal,
     FailedToAdd,
-    DoesNotExist,
     FailedToRemove,
     FailedToUpdate,
-} from '../../Core/Ports/MuTagRepositoryLocal';
-import ProvisionedMuTag, { BeaconID } from '../../Core/Domain/ProvisionedMuTag';
-import { AccountRepositoryLocal } from '../../Core/Ports/AccountRepositoryLocal';
-import { Database } from './Database';
+    DoesNotExist as MuTagDoesNotExist
+} from "../../Core/Ports/MuTagRepositoryLocal";
+import ProvisionedMuTag, { BeaconID } from "../../Core/Domain/ProvisionedMuTag";
+import {
+    AccountRepositoryLocal,
+    DoesNotExist as AccountDoesNotExist
+} from "../../Core/Ports/AccountRepositoryLocal";
+import { Database } from "./Database";
 
 interface PromiseExecutor {
     resolve: (value?: void | PromiseLike<void> | undefined) => void;
     reject: (reason?: any) => void;
 }
 
-export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
+enum CacheStatus {
+    Populated,
+    Unpopulated,
+    Populating,
+    PopulationFailed
+}
 
+export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
     private readonly database: Database;
-    private readonly accountRepoLocal: AccountRepositoryLocal
+    private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly muTagCache = new Map<string, ProvisionedMuTag>();
     private readonly muTagBeaconIDToUIDCache = new Map<string, string>();
-    private cachePopulated = false;
+    private cacheStatus = CacheStatus.Unpopulated;
     private readonly executeOnCachePopulated: PromiseExecutor[] = [];
 
     constructor(database: Database, accountRepoLocal: AccountRepositoryLocal) {
@@ -35,7 +44,7 @@ export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
         if (this.muTagCache.has(uid)) {
             return this.muTagCache.get(uid) as ProvisionedMuTag;
         } else {
-            throw new DoesNotExist(uid);
+            throw new MuTagDoesNotExist(uid);
         }
     }
 
@@ -46,7 +55,7 @@ export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
         if (uid != null && this.muTagCache.has(uid)) {
             return this.muTagCache.get(uid) as ProvisionedMuTag;
         } else {
-            throw new DoesNotExist(beaconID.toString());
+            throw new MuTagDoesNotExist(beaconID.toString());
         }
     }
 
@@ -62,7 +71,10 @@ export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
         try {
             await this.database.set(`muTags/${muTag.uid}`, rawMuTag);
             this.muTagCache.set(muTag.uid, muTag);
-            this.muTagBeaconIDToUIDCache.set(muTag.beaconID.toString(), muTag.uid);
+            this.muTagBeaconIDToUIDCache.set(
+                muTag.beaconID.toString(),
+                muTag.uid
+            );
         } catch (e) {
             console.log(e);
             throw new FailedToAdd();
@@ -93,7 +105,9 @@ export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
             const beaconIDs = [...this.muTagBeaconIDToUIDCache]
                 .filter(({ 1: value }): boolean => value === uid)
                 .map(([key]): string => key);
-            beaconIDs.forEach((key): void => { this.muTagBeaconIDToUIDCache.delete(key); });
+            beaconIDs.forEach((key): void => {
+                this.muTagBeaconIDToUIDCache.delete(key);
+            });
         } catch (e) {
             console.log(e);
             throw new FailedToRemove();
@@ -101,42 +115,70 @@ export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
     }
 
     private async onCachePopulated(): Promise<void> {
-        if (this.cachePopulated) {
-            return;
+        switch (this.cacheStatus) {
+            case CacheStatus.Populated:
+                return;
+            case CacheStatus.Unpopulated:
+            case CacheStatus.PopulationFailed:
+                this.populateCache();
         }
 
         return new Promise((resolve, reject): void => {
-            this.executeOnCachePopulated.push({ resolve: resolve, reject: reject });
+            this.executeOnCachePopulated.push({
+                resolve: resolve,
+                reject: reject
+            });
         });
     }
 
     private populateCache(): void {
-        this.getAllMuTagsFromDatabase().then((muTags): void => {
-            muTags.forEach((muTag): void => {
-                this.muTagCache.set(muTag.uid, muTag);
-                this.muTagBeaconIDToUIDCache.set(muTag.beaconID.toString(), muTag.uid);
+        switch (this.cacheStatus) {
+            case CacheStatus.Populated:
+            case CacheStatus.Populating:
+                return;
+        }
+        this.cacheStatus = CacheStatus.Populating;
+        this.getAllMuTagsFromDatabase()
+            .then((muTags): void => {
+                muTags.forEach((muTag): void => {
+                    this.muTagCache.set(muTag.uid, muTag);
+                    this.muTagBeaconIDToUIDCache.set(
+                        muTag.beaconID.toString(),
+                        muTag.uid
+                    );
+                });
+                this.cacheStatus = CacheStatus.Populated;
+                this.executeOnCachePopulated.forEach((executor): void => {
+                    executor.resolve();
+                });
+            })
+            .catch((e): void => {
+                if (e instanceof AccountDoesNotExist) {
+                    this.cacheStatus = CacheStatus.Populated;
+                    this.executeOnCachePopulated.forEach((executor): void => {
+                        executor.resolve();
+                    });
+                    return;
+                }
+
+                this.cacheStatus = CacheStatus.PopulationFailed;
+                this.executeOnCachePopulated.forEach((executor): void => {
+                    executor.reject(e);
+                });
+            })
+            .finally((): void => {
+                this.executeOnCachePopulated.length = 0;
             });
-            this.cachePopulated = true;
-            this.executeOnCachePopulated.forEach((executor): void => {
-                executor.resolve();
-            });
-        }).catch((e): void => {
-            this.executeOnCachePopulated.forEach((executor): void => {
-                executor.reject(e);
-            });
-        }).finally((): void => {
-            this.executeOnCachePopulated.length = 0;
-        });
     }
 
     private async getAllMuTagsFromDatabase(): Promise<Set<ProvisionedMuTag>> {
         const account = await this.accountRepoLocal.get();
         const muTags = new Set<ProvisionedMuTag>();
 
-        for (let muTagUID of account.muTags) {
+        for (const muTagUID of account.muTags) {
             const rawMuTag = await this.database.get(`muTags/${muTagUID}`);
             if (rawMuTag == null) {
-                throw new DoesNotExist(muTagUID);
+                throw new MuTagDoesNotExist(muTagUID);
             }
             muTags.add(ProvisionedMuTag.deserialize(rawMuTag));
         }

@@ -4,13 +4,12 @@ import {
     FailedToGet,
     DoesNotExist,
     FailedToRemove,
-    FailedToUpdate,
-} from '../../Core/Ports/AccountRepositoryLocal';
-import Account from '../../Core/Domain/Account';
-import { Database } from './Database';
+    FailedToUpdate
+} from "../../Core/Ports/AccountRepositoryLocal";
+import Account from "../../Core/Domain/Account";
+import { Database } from "./Database";
 
 export default class AccountRepoLocalImpl implements AccountRepositoryLocal {
-
     private readonly database: Database;
     private account?: Account;
 
@@ -26,13 +25,13 @@ export default class AccountRepoLocalImpl implements AccountRepositoryLocal {
         let rawAccount: string | undefined;
 
         try {
-            rawAccount = await this.database.get('account');
+            rawAccount = await this.database.get("account");
         } catch (e) {
             console.log(e);
             throw new FailedToGet();
         }
 
-        if (typeof rawAccount !== 'string') {
+        if (typeof rawAccount !== "string") {
             throw new DoesNotExist();
         }
 
@@ -45,7 +44,7 @@ export default class AccountRepoLocalImpl implements AccountRepositoryLocal {
         const rawAccount = account.serialize();
 
         try {
-            await this.database.set('account', rawAccount);
+            await this.database.set("account", rawAccount);
         } catch (e) {
             console.log(e);
             throw new FailedToAdd();
@@ -56,7 +55,7 @@ export default class AccountRepoLocalImpl implements AccountRepositoryLocal {
         const rawAccount = account.serialize();
 
         try {
-            await this.database.set('account', rawAccount);
+            await this.database.set("account", rawAccount);
         } catch (e) {
             console.log(e);
             throw new FailedToUpdate();
@@ -65,7 +64,7 @@ export default class AccountRepoLocalImpl implements AccountRepositoryLocal {
 
     async remove(): Promise<void> {
         try {
-            await this.database.remove('account');
+            await this.database.remove("account");
             this.account = undefined;
         } catch (e) {
             console.log(e);
