@@ -21,6 +21,7 @@ describe("user opens saved login session", (): void => {
     const AuthenticationMock = jest.fn<Authentication, any>(
         (): Authentication => ({
             authenticateWithEmail: jest.fn(),
+            authenticateWithGoogle: jest.fn(),
             isAuthenticatedAs: jest.fn()
         })
     );
@@ -57,7 +58,7 @@ describe("user opens saved login session", (): void => {
     const accountMuTags = ["randomUUID"];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
-        _accountNumber: AccountNumber.create("0000000"),
+        _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
         _nextBeaconID: BeaconID.create("3"),
         _recycledBeaconIDs: new Set(recycledBeaconIDs),

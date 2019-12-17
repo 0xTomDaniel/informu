@@ -65,8 +65,8 @@ const belongingDetectionService = new BelongingDetectionService(
     accountRepoLocalMock
 );
 
-const nonAccountNumber = AccountNumber.create("0000002");
-const accountNumber = AccountNumber.create("0000001");
+const nonAccountNumber = AccountNumber.fromString("0000002");
+const accountNumber = AccountNumber.fromString("0000001");
 const accountData: AccountData = {
     _uid: "UUID01",
     _accountNumber: accountNumber,

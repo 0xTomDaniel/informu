@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@nozbe/watermelondb": "^0.15.0",
+    "@react-native-community/google-signin": "^3.0.3",
     "@react-native-firebase/app": "^6.1.0",
     "@react-native-firebase/auth": "^6.1.0",
     "@react-native-firebase/database": "^6.1.0",

@@ -184,7 +184,7 @@ export default class MuTagMonitorRNBM implements MuTagMonitor {
         const majorMinorHex =
             major.toString(16).padStart(4, "0") +
             minor.toString(16).padStart(4, "0");
-        return AccountNumber.create(majorMinorHex.substr(0, 7));
+        return AccountNumber.fromString(majorMinorHex.substr(0, 7));
     }
 
     private static getBeaconID(minor: number): BeaconID {

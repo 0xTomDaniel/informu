@@ -1,39 +1,47 @@
-import ProvisionedMuTag, { BeaconID, MuTagData } from '../Domain/ProvisionedMuTag';
-import Percent from '../Domain/Percent';
-import { BelongingDashboardOutput, DashboardBelonging } from '../Ports/BelongingDashboardOutput';
-import BelongingDashboardService from './BelongingDashboardService';
-import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
-import Account, { AccountNumber, AccountData } from '../Domain/Account';
-import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
-import { MuTagColor } from '../Domain/MuTag';
+import ProvisionedMuTag, {
+    BeaconID,
+    MuTagData
+} from "../Domain/ProvisionedMuTag";
+import Percent from "../Domain/Percent";
+import {
+    BelongingDashboardOutput,
+    DashboardBelonging
+} from "../Ports/BelongingDashboardOutput";
+import BelongingDashboardService from "./BelongingDashboardService";
+import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import Account, { AccountNumber, AccountData } from "../Domain/Account";
+import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
+import { MuTagColor } from "../Domain/MuTag";
 
-describe('Mu tag user views a dashboard of all their belongings', (): void => {
-
-    const BelongingDashboardOutputMock
-        = jest.fn<BelongingDashboardOutput, any>((): BelongingDashboardOutput => ({
+describe("Mu tag user views a dashboard of all their belongings", (): void => {
+    const BelongingDashboardOutputMock = jest.fn<BelongingDashboardOutput, any>(
+        (): BelongingDashboardOutput => ({
             showAll: jest.fn(),
             showNone: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
-            remove: jest.fn(),
-        }));
-    const MuTagRepositoryLocalMock
-        = jest.fn<MuTagRepositoryLocal, any>((): MuTagRepositoryLocal => ({
+            remove: jest.fn()
+        })
+    );
+    const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocal, any>(
+        (): MuTagRepositoryLocal => ({
             getByUID: jest.fn(),
             getByBeaconID: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn(),
-        }));
-    const AccountRepoLocalMock
-        = jest.fn<AccountRepositoryLocal, any>((): AccountRepositoryLocal => ({
+            removeByUID: jest.fn()
+        })
+    );
+    const AccountRepoLocalMock = jest.fn<AccountRepositoryLocal, any>(
+        (): AccountRepositoryLocal => ({
             get: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
-            remove: jest.fn(),
-        }));
+            remove: jest.fn()
+        })
+    );
 
     const belongingDashboardOutputMock = new BelongingDashboardOutputMock();
     const muTagRepoLocalMock = new MuTagRepositoryLocalMock();
@@ -41,55 +49,55 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
     const belongingDashboardService = new BelongingDashboardService(
         belongingDashboardOutputMock,
         muTagRepoLocalMock,
-        accountRepoLocalMock,
+        accountRepoLocalMock
     );
 
     const belongingsData: MuTagData[] = [
         {
-            _uid: 'randomUUID01',
-            _beaconID: BeaconID.create('0'),
+            _uid: "randomUUID01",
+            _beaconID: BeaconID.create("0"),
             _muTagNumber: 0,
-            _name: 'Keys',
+            _name: "Keys",
             _batteryLevel: new Percent(50),
             _isSafe: true,
             _lastSeen: new Date(),
-            _color: MuTagColor.MuOrange,
+            _color: MuTagColor.MuOrange
         },
         {
-            _uid: 'randomUUID02',
-            _beaconID: BeaconID.create('1'),
+            _uid: "randomUUID02",
+            _beaconID: BeaconID.create("1"),
             _muTagNumber: 1,
-            _name: 'Laptop',
+            _name: "Laptop",
             _batteryLevel: new Percent(50),
             _isSafe: false,
-            _lastSeen: new Date('1995-12-17T03:24:00'),
-            _color: MuTagColor.MuOrange,
+            _lastSeen: new Date("1995-12-17T03:24:00"),
+            _color: MuTagColor.MuOrange
         },
         {
-            _uid: 'randomUUID03',
-            _beaconID: BeaconID.create('2'),
+            _uid: "randomUUID03",
+            _beaconID: BeaconID.create("2"),
             _muTagNumber: 3,
-            _name: 'Wallet',
+            _name: "Wallet",
             _batteryLevel: new Percent(80),
             _isSafe: false,
             _lastSeen: new Date(),
-            _color: MuTagColor.MuOrange,
-        },
+            _color: MuTagColor.MuOrange
+        }
     ];
     const muTags = new Set([
         new ProvisionedMuTag(belongingsData[0]),
-        new ProvisionedMuTag(belongingsData[1]),
+        new ProvisionedMuTag(belongingsData[1])
     ]);
-    const recycledBeaconIDs = [BeaconID.create('2'), BeaconID.create('5')];
+    const recycledBeaconIDs = [BeaconID.create("2"), BeaconID.create("5")];
     const accountMuTags = [belongingsData[0]._uid, belongingsData[1]._uid];
     const validAccountData: AccountData = {
-        _uid: 'AZeloSR9jCOUxOWnf5RYN14r2632',
-        _accountNumber: AccountNumber.create('0000000'),
-        _emailAddress: 'support+test@informu.io',
-        _nextBeaconID: BeaconID.create('A'),
+        _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
+        _accountNumber: AccountNumber.fromString("0000000"),
+        _emailAddress: "support+test@informu.io",
+        _nextBeaconID: BeaconID.create("A"),
         _recycledBeaconIDs: new Set(recycledBeaconIDs),
         _nextMuTagNumber: 10,
-        _muTags: new Set(accountMuTags),
+        _muTags: new Set(accountMuTags)
     };
     const account = new Account(validAccountData);
     const accountNoMuTags = new Account({
@@ -99,19 +107,18 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
         _nextBeaconID: validAccountData._nextBeaconID,
         _recycledBeaconIDs: validAccountData._recycledBeaconIDs,
         _nextMuTagNumber: validAccountData._nextMuTagNumber,
-        _muTags: new Set(),
+        _muTags: new Set()
     });
     const addedBeaconID = accountNoMuTags.newBeaconID;
     const newBelongingDashboardData: DashboardBelonging = {
         uid: belongingsData[2]._uid,
         name: belongingsData[2]._name,
         isSafe: belongingsData[2]._isSafe,
-        lastSeen: belongingsData[2]._lastSeen,
+        lastSeen: belongingsData[2]._lastSeen
     };
     const newMuTag = new ProvisionedMuTag(belongingsData[2]);
 
-    describe('dashboard shows current account belongings and details', (): void => {
-
+    describe("dashboard shows current account belongings and details", (): void => {
         // Given that an account is logged in
 
         // Given account contains one or more belongings
@@ -122,23 +129,24 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
                 uid: belongingsData[0]._uid,
                 name: belongingsData[0]._name,
                 isSafe: belongingsData[0]._isSafe,
-                lastSeen: belongingsData[0]._lastSeen,
+                lastSeen: belongingsData[0]._lastSeen
             },
             {
                 uid: belongingsData[1]._uid,
                 name: belongingsData[1]._name,
                 isSafe: belongingsData[1]._isSafe,
-                lastSeen: belongingsData[1]._lastSeen,
-            },
+                lastSeen: belongingsData[1]._lastSeen
+            }
         ];
-        (muTagRepoLocalMock.getAll as jest.Mock)
-            .mockResolvedValueOnce(muTags);
+        (muTagRepoLocalMock.getAll as jest.Mock).mockResolvedValueOnce(muTags);
 
         // When the dashboard is opened
         //
-        beforeAll(async (): Promise<void> => {
-            await belongingDashboardService.open();
-        });
+        beforeAll(
+            async (): Promise<void> => {
+                await belongingDashboardService.open();
+            }
+        );
 
         afterAll((): void => {
             jest.clearAllMocks();
@@ -146,41 +154,52 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
 
         // Then
         //
-        it('should show a list of all belongings with current icon, name, and status details', (): void => {
-            expect(belongingDashboardOutputMock.showAll).toHaveBeenCalledTimes(1);
-            expect(belongingDashboardOutputMock.showAll).toHaveBeenCalledWith(belongingsDashboardData);
+        it("should show a list of all belongings with current icon, name, and status details", (): void => {
+            expect(belongingDashboardOutputMock.showAll).toHaveBeenCalledTimes(
+                1
+            );
+            expect(belongingDashboardOutputMock.showAll).toHaveBeenCalledWith(
+                belongingsDashboardData
+            );
         });
     });
 
-    describe('current account has no belongings', (): void => {
-
+    describe("current account has no belongings", (): void => {
         // Given that an account is logged in
 
         // Given account contains no belongings
         //
-        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(accountNoMuTags);
+        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(
+            accountNoMuTags
+        );
         const noMuTags: Set<ProvisionedMuTag> = new Set();
-        (muTagRepoLocalMock.getAll as jest.Mock)
-            .mockResolvedValueOnce(noMuTags);
+        (muTagRepoLocalMock.getAll as jest.Mock).mockResolvedValueOnce(
+            noMuTags
+        );
 
         // When the dashboard is opened
         //
-        beforeAll(async (): Promise<void> => {
-            await belongingDashboardService.open();
-        });
+        beforeAll(
+            async (): Promise<void> => {
+                await belongingDashboardService.open();
+            }
+        );
 
         // Then
         //
-        it('should show indication that no Mu tags are attached to account and one needs to be added', (): void => {
-            expect(belongingDashboardOutputMock.showNone).toHaveBeenCalledTimes(1);
+        it("should show indication that no Mu tags are attached to account and one needs to be added", (): void => {
+            expect(belongingDashboardOutputMock.showNone).toHaveBeenCalledTimes(
+                1
+            );
         });
     });
 
-    describe('belonging is added to account', (): void => {
-
+    describe("belonging is added to account", (): void => {
         // Given that a new belonging needs to be added to account
         //
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(newMuTag);
+        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(
+            newMuTag
+        );
 
         // When the belonging is added to account
         //
@@ -190,14 +209,17 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
 
         // Then
         //
-        it('should update list of belongings to show newly added belonging', async (): Promise<void> => {
+        it("should update list of belongings to show newly added belonging", async (): Promise<
+            void
+        > => {
             expect(belongingDashboardOutputMock.add).toHaveBeenCalledTimes(1);
-            expect(belongingDashboardOutputMock.add).toHaveBeenCalledWith(newBelongingDashboardData);
+            expect(belongingDashboardOutputMock.add).toHaveBeenCalledWith(
+                newBelongingDashboardData
+            );
         });
     });
 
-    describe('belonging status details change', (): void => {
-
+    describe("belonging status details change", (): void => {
         // Given that a belonging is attached to logged in account
 
         // When the belonging status changes
@@ -210,20 +232,23 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
 
         // Then
         //
-        it('should update belonging status in list of belongings', async (): Promise<void> => {
-            expect(belongingDashboardOutputMock.update).toHaveBeenLastCalledWith({
+        it("should update belonging status in list of belongings", async (): Promise<
+            void
+        > => {
+            expect(
+                belongingDashboardOutputMock.update
+            ).toHaveBeenLastCalledWith({
                 uid: belongingsData[2]._uid,
                 isSafe: true,
-                lastSeen: now,
+                lastSeen: now
             });
         });
     });
 
-    describe('belonging is removed from account', (): void => {
-
+    describe("belonging is removed from account", (): void => {
         // Given that a belonging needs to be removed from account
         //
-        const belongingUID = 'randomUUID03';
+        const belongingUID = "randomUUID03";
 
         // Given account contains one or more belongings
 
@@ -235,9 +260,15 @@ describe('Mu tag user views a dashboard of all their belongings', (): void => {
 
         // Then
         //
-        it('should update list of belongings to no longer show removed belonging', async (): Promise<void> => {
-            expect(belongingDashboardOutputMock.remove).toHaveBeenCalledTimes(1);
-            expect(belongingDashboardOutputMock.remove).toHaveBeenCalledWith(belongingUID);
+        it("should update list of belongings to no longer show removed belonging", async (): Promise<
+            void
+        > => {
+            expect(belongingDashboardOutputMock.remove).toHaveBeenCalledTimes(
+                1
+            );
+            expect(belongingDashboardOutputMock.remove).toHaveBeenCalledWith(
+                belongingUID
+            );
         });
     });
 });
