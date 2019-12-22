@@ -1,24 +1,26 @@
-import { LoginOutput } from '../../Core/Ports/LoginOutput';
-import { LoginViewModel } from './LoginViewModel';
-import { ImproperPasswordComplexity } from '../../Core/Application/LoginService';
+import { LoginOutput } from "../../Core/Ports/LoginOutput";
+import { LoginViewModel } from "./LoginViewModel";
+import { ImproperPasswordComplexity } from "../../Core/Application/LoginService";
 
 export default class LoginPresenter implements LoginOutput {
+    private readonly viewModel: LoginViewModel;
 
-    private readonly loginViewModel: LoginViewModel;
-
-    constructor(loginViewModel: LoginViewModel) {
-        this.loginViewModel = loginViewModel;
+    constructor(viewModel: LoginViewModel) {
+        this.viewModel = viewModel;
     }
 
     showBusyIndicator(): void {
         this.clearErrorMessages();
-        this.loginViewModel.logInButtonDisabled = true;
-        this.loginViewModel.isBusy = true;
+        this.viewModel.updateState({ logInButtonDisabled: true, isBusy: true });
+    }
+
+    hideBusyIndicator(): void {
+        this.viewModel.updateState({ isBusy: false });
     }
 
     showHomeScreen(): void {
         this.hideBusyIndicator();
-        this.loginViewModel.navigateToApp();
+        this.viewModel.navigateToApp();
     }
 
     showLoginError(error: Error): void {
@@ -27,22 +29,20 @@ export default class LoginPresenter implements LoginOutput {
         this.hideBusyIndicator();
 
         if (error instanceof ImproperPasswordComplexity) {
-            this.loginViewModel.passwordErrorMessage = error.message;
-        } else  {
-            this.loginViewModel.emailErrorMessage = error.message;
+            this.viewModel.updateState({ passwordErrorMessage: error.message });
+        } else {
+            this.viewModel.updateState({ emailErrorMessage: error.message });
         }
     }
 
-    private hideBusyIndicator(): void {
-        this.loginViewModel.isBusy = false;
-    }
-
     private enableLogInButton(): void {
-        this.loginViewModel.logInButtonDisabled = false;
+        this.viewModel.updateState({ logInButtonDisabled: false });
     }
 
     private clearErrorMessages(): void {
-        this.loginViewModel.passwordErrorMessage = '';
-        this.loginViewModel.emailErrorMessage = '';
+        this.viewModel.updateState({
+            passwordErrorMessage: "",
+            emailErrorMessage: ""
+        });
     }
 }

@@ -6,7 +6,8 @@ import {
     AuthenticationException,
     TooManyAttempts,
     GooglePlayServicesNotAvailable,
-    GoogleSignInFailed
+    GoogleSignInFailed,
+    SignInCanceled
 } from "../Ports/Authentication";
 import {
     AccountRepositoryRemote,
@@ -120,6 +121,8 @@ export class LoginService {
                 e instanceof GoogleSignInFailed
             ) {
                 this.loginOutput.showLoginError(e);
+            } else if (e instanceof SignInCanceled) {
+                this.loginOutput.hideBusyIndicator();
             } else {
                 throw e;
             }

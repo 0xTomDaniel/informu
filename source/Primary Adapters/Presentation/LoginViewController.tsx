@@ -2,7 +2,8 @@ import React, {
     FunctionComponent,
     ReactElement,
     useState,
-    useEffect
+    useEffect,
+    useReducer
 } from "react";
 import {
     View,
@@ -91,15 +92,29 @@ interface LoginVCProps extends NavigationScreenProps {
     loginService: LoginService;
 }
 
+enum ActivityItem {
+    Facebook,
+    Google,
+    Email,
+    None
+}
+
 const LoginViewController: FunctionComponent<LoginVCProps> = (
     props
 ): ReactElement => {
     const [state, setState] = useState<LoginState>(props.viewModel.state);
+    const [itemWithActivity, setItemWithActivity] = useState(ActivityItem.None);
 
+    const signInWithFacebook = (): void => {
+        setItemWithActivity(ActivityItem.Facebook);
+        //props.loginService.signInWithFacebook().catch(e => console.warn(e));
+    };
     const signInWithGoogle = (): void => {
+        setItemWithActivity(ActivityItem.Google);
         props.loginService.signInWithGoogle().catch(e => console.warn(e));
     };
     /*const signInWithEmail = (): void => {
+        setItemWithActivity(ActivityItem.Email);
         const emailAddress = new EmailAddress(state.emailInput);
         const password = new Password(state.passwordInput);
 
@@ -129,8 +144,11 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                             mode="outlined"
                             color="#3B5998"
                             uppercase={false}
-                            loading={state.isBusy}
-                            onPress={(): void => console.log("Pressed")}
+                            loading={
+                                itemWithActivity === ActivityItem.Facebook &&
+                                state.isBusy
+                            }
+                            onPress={(): void => signInWithFacebook()}
                             style={styles.buttonStyle}
                             contentStyle={styles.buttonContentStyle}
                             labelStyle={styles.buttonLabelStyle}
@@ -142,7 +160,10 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                             mode="outlined"
                             color="#DB4437"
                             uppercase={false}
-                            loading={state.isBusy}
+                            loading={
+                                itemWithActivity === ActivityItem.Google &&
+                                state.isBusy
+                            }
                             onPress={(): void => signInWithGoogle()}
                             style={styles.buttonStyle}
                             contentStyle={styles.buttonContentStyle}
@@ -180,7 +201,10 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                             icon="email-outline"
                             mode="outlined"
                             uppercase={false}
-                            loading={this.state.isBusy}
+                            loading={
+                                itemWithActivity === ActivityItem.Email &&
+                                state.isBusy
+                            }
                             onPress={() => console.log("Pressed")}
                             style={styles.buttonStyle}
                             contentStyle={styles.buttonContentStyle}

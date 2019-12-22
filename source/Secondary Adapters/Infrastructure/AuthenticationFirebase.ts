@@ -5,7 +5,8 @@ import {
     TooManyAttempts,
     GoogleSignInFailed,
     GooglePlayServicesNotAvailable,
-    EmailNotFound
+    EmailNotFound,
+    SignInCanceled
 } from "../../Core/Ports/Authentication";
 import auth, { firebase } from "@react-native-firebase/auth";
 import { UserData } from "../../Core/Ports/UserData";
@@ -92,6 +93,8 @@ export class AuthenticationFirebase implements Authentication {
             switch (e.code) {
                 case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
                     throw new GooglePlayServicesNotAvailable();
+                case statusCodes.SIGN_IN_CANCELLED:
+                    throw new SignInCanceled();
                 default:
                     throw e;
             }

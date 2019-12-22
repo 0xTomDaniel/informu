@@ -1,10 +1,18 @@
-import { BelongingDashboardOutput, DashboardBelonging, DashboardBelongingUpdate } from '../../Core/Ports/BelongingDashboardOutput';
-import { HomeViewModel, BelongingViewData, BelongingViewDataDelta, HomeStateDelta } from './HomeViewModel';
-import Theme from './Theme';
-import _ from 'lodash';
+import {
+    BelongingDashboardOutput,
+    DashboardBelonging,
+    DashboardBelongingUpdate
+} from "../../Core/Ports/BelongingDashboardOutput";
+import {
+    HomeViewModel,
+    BelongingViewData,
+    BelongingViewDataDelta
+} from "./HomeViewModel";
+import Theme from "./Theme";
+import _ from "lodash";
 
-export default class BelongingDashboardPresenter implements BelongingDashboardOutput {
-
+export default class BelongingDashboardPresenter
+    implements BelongingDashboardOutput {
     private static readonly hoursInDay = 24;
     private static readonly minutesInHour = 60;
     private static readonly secondsInMinute = 60;
@@ -23,34 +31,38 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
     showAll(belongings: DashboardBelonging[]): void {
         const belongingsViewData: BelongingViewData[] = [];
         belongings.forEach((belonging): void => {
-            belongingsViewData.push(BelongingDashboardPresenter
-                .toBelongingViewData(belonging));
+            belongingsViewData.push(
+                BelongingDashboardPresenter.toBelongingViewData(belonging)
+            );
             this.belongingsLastSeenCache.set(belonging.uid, belonging.lastSeen);
         });
 
         this.viewModel.updateState({
             showEmptyBelongings: false,
-            belongings: belongingsViewData,
+            belongings: belongingsViewData
         });
         this.startUpdatingLastSeenDisplay();
     }
 
     showNone(): void {
         this.viewModel.updateState({
-            showEmptyBelongings: true,
+            showEmptyBelongings: true
         });
     }
 
     add(belonging: DashboardBelonging): void {
         this.belongingsLastSeenCache.set(belonging.uid, belonging.lastSeen);
 
-        const belongingViewData
-            = BelongingDashboardPresenter.toBelongingViewData(belonging);
-        const allBelongingsWithAdded = this.addExistingBelongings(belongingViewData);
+        const belongingViewData = BelongingDashboardPresenter.toBelongingViewData(
+            belonging
+        );
+        const allBelongingsWithAdded = this.addExistingBelongings(
+            belongingViewData
+        );
 
         this.viewModel.updateState({
             showEmptyBelongings: false,
-            belongings: allBelongingsWithAdded,
+            belongings: allBelongingsWithAdded
         });
 
         if (this.belongingsLastSeenCache.size === 1) {
@@ -65,10 +77,12 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
             this.belongingsSafeStatusCache.set(belonging.uid, belonging.isSafe);
 
             if (
-                belonging.lastSeen == null
-                && this.belongingsLastSeenCache.has(belonging.uid)
+                belonging.lastSeen == null &&
+                this.belongingsLastSeenCache.has(belonging.uid)
             ) {
-                const lastSeen = this.belongingsLastSeenCache.get(belonging.uid);
+                const lastSeen = this.belongingsLastSeenCache.get(
+                    belonging.uid
+                );
                 Object.assign(belongingUpdate, { lastSeen: lastSeen });
             }
         }
@@ -77,29 +91,37 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
             this.belongingsLastSeenCache.set(belonging.uid, belonging.lastSeen);
         }
 
-        const belongingViewDataDelta = Object.entries(belongingUpdate)
-            .reduce((accumulator, [key, value]): BelongingViewDataDelta => {
+        const belongingViewDataDelta = Object.entries(belongingUpdate).reduce(
+            (accumulator, [key, value]): BelongingViewDataDelta => {
                 let convertedKey = key;
                 let convertedValue = value;
                 switch (key) {
-                    case 'isSafe':
-                        convertedKey = 'safeStatusColor';
-                        convertedValue = BelongingDashboardPresenter.safeStatusColor(value);
+                    case "isSafe":
+                        convertedKey = "safeStatusColor";
+                        convertedValue = BelongingDashboardPresenter.safeStatusColor(
+                            value
+                        );
                         break;
-                    case 'lastSeen':
+                    case "lastSeen":
                         convertedValue = BelongingDashboardPresenter.lastSeenDisplay(
-                            value, this.belongingsSafeStatusCache.get(belonging.uid)
+                            value,
+                            this.belongingsSafeStatusCache.get(belonging.uid)
                         );
                         break;
                 }
-                return Object.assign(accumulator, { [convertedKey]: convertedValue });
-            // eslint-disable-next-line @typescript-eslint/no-object-literal-type-assertion
-            }, {} as BelongingViewDataDelta);
+                return Object.assign(accumulator, {
+                    [convertedKey]: convertedValue
+                });
+            },
+            {} as BelongingViewDataDelta
+        );
 
-        const allBelongingsWithDelta = this.addExistingBelongings(belongingViewDataDelta);
+        const allBelongingsWithDelta = this.addExistingBelongings(
+            belongingViewDataDelta
+        );
 
         this.viewModel.updateState({
-            belongings: allBelongingsWithDelta,
+            belongings: allBelongingsWithDelta
         });
     }
 
@@ -108,13 +130,15 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
 
         const existingBelongings = _.map(
             this.viewModel.state.belongings,
-            (belonging): BelongingViewDataDelta => _.pick(belonging, 'uid')
+            (belonging): BelongingViewDataDelta => _.pick(belonging, "uid")
         );
         const belongings = _.differenceBy(
-            existingBelongings, [{ uid: belongingUID }], 'uid'
+            existingBelongings,
+            [{ uid: belongingUID }],
+            "uid"
         );
         const homeStateDelta: { [key: string]: any } = {
-            belongings: belongings,
+            belongings: belongings
         };
 
         if (this.belongingsLastSeenCache.size === 0) {
@@ -130,12 +154,17 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
             const belongingsViewDataDelta: BelongingViewDataDelta[] = [];
             this.belongingsLastSeenCache.forEach((lastSeen, uid): void => {
                 const isSafe = this.belongingsSafeStatusCache.get(uid);
-                const lastSeenDisplay
-                    = BelongingDashboardPresenter.lastSeenDisplay(lastSeen, isSafe);
-                belongingsViewDataDelta.push({ uid: uid, lastSeen: lastSeenDisplay });
+                const lastSeenDisplay = BelongingDashboardPresenter.lastSeenDisplay(
+                    lastSeen,
+                    isSafe
+                );
+                belongingsViewDataDelta.push({
+                    uid: uid,
+                    lastSeen: lastSeenDisplay
+                });
             });
             this.viewModel.updateState({
-                belongings: belongingsViewDataDelta,
+                belongings: belongingsViewDataDelta
             });
         }, this.lastSeenDisplayUpdateMSInterval);
     }
@@ -146,20 +175,24 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
         }
     }
 
-    private addExistingBelongings(belongingDelta: BelongingViewDataDelta): BelongingViewDataDelta[] {
+    private addExistingBelongings(
+        belongingDelta: BelongingViewDataDelta
+    ): BelongingViewDataDelta[] {
         const existingBelongings = _.map(
             this.viewModel.state.belongings,
-            (belonging): BelongingViewDataDelta => _.pick(belonging, 'uid')
+            (belonging): BelongingViewDataDelta => _.pick(belonging, "uid")
         );
-        return _.unionBy([belongingDelta], existingBelongings, 'uid');
+        return _.unionBy([belongingDelta], existingBelongings, "uid");
     }
 
-    private static toBelongingViewData(belonging: DashboardBelonging): BelongingViewData {
+    private static toBelongingViewData(
+        belonging: DashboardBelonging
+    ): BelongingViewData {
         return {
             uid: belonging.uid,
             name: belonging.name,
             safeStatusColor: this.safeStatusColor(belonging.isSafe),
-            lastSeen: this.lastSeenDisplay(belonging.lastSeen, belonging.isSafe),
+            lastSeen: this.lastSeenDisplay(belonging.lastSeen, belonging.isSafe)
         };
     }
 
@@ -167,7 +200,10 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
         return isSafe ? Theme.Color.Green : Theme.Color.Error;
     }
 
-    private static lastSeenDisplay(timestamp: Date, isSafe: boolean | undefined): string {
+    private static lastSeenDisplay(
+        timestamp: Date,
+        isSafe: boolean | undefined
+    ): string {
         const now = new Date();
         const daysSinceLastSeen = this.daysBetween(timestamp, now);
         const hoursSinceLastSeen = this.hoursBetween(timestamp, now);
@@ -182,34 +218,40 @@ export default class BelongingDashboardPresenter implements BelongingDashboardOu
         } else if (minutesSinceLastSeen >= 1) {
             return `${minutesSinceLastSeen}m ago`;
         } else if (isSafe != null && !isSafe) {
-            return 'Seconds ago';
+            return "Seconds ago";
         } else {
-            return 'Just now';
+            return "Just now";
         }
     }
 
     private static daysBetween(firstDate: Date, secondDate: Date): number {
-        const oneDayInMilliseconds = this.hoursInDay
-            * this.minutesInHour
-            * this.secondsInMinute
-            * this.millisecondsInSecond;
+        const oneDayInMilliseconds =
+            this.hoursInDay *
+            this.minutesInHour *
+            this.secondsInMinute *
+            this.millisecondsInSecond;
         const diffInMilliseconds = firstDate.getTime() - secondDate.getTime();
 
-        return Math.floor(Math.abs((diffInMilliseconds) / oneDayInMilliseconds));
+        return Math.floor(Math.abs(diffInMilliseconds / oneDayInMilliseconds));
     }
 
     private static hoursBetween(firstDate: Date, secondDate: Date): number {
-        const oneHourInMilliseconds
-            = this.minutesInHour * this.secondsInMinute * this.millisecondsInSecond;
+        const oneHourInMilliseconds =
+            this.minutesInHour *
+            this.secondsInMinute *
+            this.millisecondsInSecond;
         const diffInMilliseconds = firstDate.getTime() - secondDate.getTime();
 
-        return Math.floor(Math.abs((diffInMilliseconds) / oneHourInMilliseconds));
+        return Math.floor(Math.abs(diffInMilliseconds / oneHourInMilliseconds));
     }
 
     private static minutesBetween(firstDate: Date, secondDate: Date): number {
-        const oneMinuteInMilliseconds = this.secondsInMinute * this.millisecondsInSecond;
+        const oneMinuteInMilliseconds =
+            this.secondsInMinute * this.millisecondsInSecond;
         const diffInMilliseconds = firstDate.getTime() - secondDate.getTime();
 
-        return Math.floor(Math.abs((diffInMilliseconds) / oneMinuteInMilliseconds));
+        return Math.floor(
+            Math.abs(diffInMilliseconds / oneMinuteInMilliseconds)
+        );
     }
 }

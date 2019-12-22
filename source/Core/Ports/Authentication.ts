@@ -35,6 +35,14 @@ export class TooManyAttempts extends Error {
     }
 }
 
+export class SignInCanceled extends Error {
+    constructor() {
+        super("The sign in has been canceled.");
+        this.name = "SignInCanceled";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 export class GooglePlayServicesNotAvailable extends Error {
     constructor() {
         super("Google Play services must be installed to log in with Google.");
