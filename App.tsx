@@ -44,6 +44,11 @@ import MuTagMonitorRNBM from "./source/Secondary Adapters/Infrastructure/MuTagMo
 import RemoveMuTagService from "./source/Core/Application/RemoveMuTagService";
 import RemoveMuTagPresenter from "./source/Primary Adapters/Presentation/RemoveMuTagPresenter";
 import DatabaseImplWatermelon from "./source/Secondary Adapters/Persistence/DatabaseImplWatermelon";
+import { LoginViewModel } from "./source/Primary Adapters/Presentation/LoginViewModel";
+import LoginPresenter from "./source/Primary Adapters/Presentation/LoginPresenter";
+import { LoginService } from "./source/Core/Application/LoginService";
+import AccountRegistrationService from "./source/Core/Application/AccountRegistrationService";
+import NewAccountFactoryImpl from "./source/Core/Domain/NewAccountFactoryImpl";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -77,6 +82,11 @@ export class Dependencies {
     muTagMonitor: MuTagMonitorRNBM;
     belongingDetectionService: BelongingDetectionService;
     sessionService: SessionService;
+    loginViewModel: LoginViewModel;
+    loginPresenter: LoginPresenter;
+    newAccountFactory: NewAccountFactoryImpl;
+    accountRegistrationService: AccountRegistrationService;
+    loginService: LoginService;
     appStateController: AppStateController;
 
     constructor() {
@@ -155,6 +165,24 @@ export class Dependencies {
             this.authentication,
             this.accountRepoLocal,
             this.belongingDetectionService
+        );
+        this.loginViewModel = new LoginViewModel();
+        this.loginPresenter = new LoginPresenter(this.loginViewModel);
+        this.newAccountFactory = new NewAccountFactoryImpl();
+        this.accountRegistrationService = new AccountRegistrationService(
+            this.newAccountFactory,
+            this.accountRepoRemote,
+            this.accountRepoLocal
+        );
+        this.loginService = new LoginService(
+            this.loginPresenter,
+            this.authentication,
+            this.accountRepoLocal,
+            this.accountRepoRemote,
+            this.muTagRepoLocal,
+            this.muTagRepoRemote,
+            this.sessionService,
+            this.accountRegistrationService
         );
         this.appStateController = new AppStateController(this.sessionService);
     }
@@ -237,6 +265,24 @@ export class Dependencies {
             this.accountRepoLocal,
             this.belongingDetectionService
         );
+        this.loginViewModel = new LoginViewModel();
+        this.loginPresenter = new LoginPresenter(this.loginViewModel);
+        this.newAccountFactory = new NewAccountFactoryImpl();
+        this.accountRegistrationService = new AccountRegistrationService(
+            this.newAccountFactory,
+            this.accountRepoRemote,
+            this.accountRepoLocal
+        );
+        this.loginService = new LoginService(
+            this.loginPresenter,
+            this.authentication,
+            this.accountRepoLocal,
+            this.accountRepoRemote,
+            this.muTagRepoLocal,
+            this.muTagRepoRemote,
+            this.sessionService,
+            this.accountRegistrationService
+        );
         this.appStateController.destructor();
         this.appStateController = new AppStateController(this.sessionService);
     }
@@ -299,12 +345,8 @@ const EntryStack = createStackNavigator(
         Login: {
             screen: (props: NavigationScreenProps): Element => (
                 <LoginViewController
-                    authentication={dependencies.authentication}
-                    accountRepoLocal={dependencies.accountRepoLocal}
-                    accountRepoRemote={dependencies.accountRepoRemote}
-                    muTagRepoLocal={dependencies.muTagRepoLocal}
-                    muTagRepoRemote={dependencies.muTagRepoRemote}
-                    sessionService={dependencies.sessionService}
+                    viewModel={dependencies.loginViewModel}
+                    loginService={dependencies.loginService}
                     {...props}
                 />
             )
@@ -337,7 +379,8 @@ const paperTheme = {
         accent: Theme.Color.PrimaryBlue,
         background: Theme.Color.AlmostWhite,
         surface: "white",
-        error: Theme.Color.Error
+        error: Theme.Color.Error,
+        placeholder: Theme.Color.AlmostWhiteBorder
     }
 };
 

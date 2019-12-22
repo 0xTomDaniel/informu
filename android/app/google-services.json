@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "767308727016-p3o3idseoekar55mhgq750meruhp6dd2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.mutagreactnative",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
           "client_id": "767308727016-13p98clpkloddstuonfn69enii3030s4.apps.googleusercontent.com",
           "client_type": 3
         }

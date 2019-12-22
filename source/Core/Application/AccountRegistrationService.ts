@@ -12,11 +12,11 @@ export default class AccountRegistrationService implements AccountRegistration {
     private readonly accountRepoLocal: AccountRepositoryLocal;
 
     constructor(
-        accountFactory: NewAccountFactory,
+        newAccountFactory: NewAccountFactory,
         accountRepoRemote: AccountRepositoryRemote,
         accountRepoLocal: AccountRepositoryLocal
     ) {
-        this.newAccountFactory = accountFactory;
+        this.newAccountFactory = newAccountFactory;
         this.accountRepoRemote = accountRepoRemote;
         this.accountRepoLocal = accountRepoLocal;
     }

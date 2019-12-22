@@ -12,6 +12,14 @@ export class FailedToCreateNewAccount extends Error {
     }
 }
 
+export class FailedToGetNewAccountNumber extends Error {
+    constructor() {
+        super("Failed to get a new account number. Please try again.");
+        this.name = "FailedToGetNewAccountNumber";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 export class AccountLimitReached extends Error {
     constructor() {
         super(
@@ -22,8 +30,22 @@ export class AccountLimitReached extends Error {
     }
 }
 
+export class MalformedData extends Error {
+    constructor() {
+        super("The data received from the database is malformed.");
+        this.name = "MalformedData";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 interface AccountIDs {
     [key: string]: boolean;
+}
+
+function assertIsAccountIDs(val: any): asserts val is AccountIDs {
+    if (typeof val !== "object") {
+        throw new MalformedData();
+    }
 }
 
 export default class NewAccountFactoryImpl implements NewAccountFactory {
@@ -49,10 +71,8 @@ export default class NewAccountFactoryImpl implements NewAccountFactory {
     }
 
     private async getNewAccountNumber(): Promise<AccountNumber> {
-        return (
-            (await this.getRecycledAccountNumber()) ??
-            (await this.getNextAccountNumber())
-        );
+        const recycledAccountNumber = await this.getRecycledAccountNumber();
+        return recycledAccountNumber ?? (await this.getNextAccountNumber());
     }
 
     private async getRecycledAccountNumber(): Promise<
@@ -60,21 +80,27 @@ export default class NewAccountFactoryImpl implements NewAccountFactory {
     > {
         let newAccountNumber: AccountNumber | undefined;
 
+        // https://stackoverflow.com/questions/28811037/data-in-transaction-is-null
+        //
+        // Transaction may return null first from the locally cached value.
+        //
         const transactionUpdate = (
-            currentData?: AccountIDs
-        ): AccountIDs | undefined => {
+            currentData?: any
+        ): AccountIDs | null | undefined => {
             if (currentData == null) {
-                return;
+                return currentData;
             }
+            assertIsAccountIDs(currentData);
             const recycledAccountIDs = _.toPairs(currentData);
-            const newAccountNumberHex = recycledAccountIDs.shift()?.[0];
+            const newAccountNumberHex = recycledAccountIDs
+                .shift()?.[0]
+                .replace(/^"(.*)"$/, "$1");
             if (newAccountNumberHex == null) {
                 return;
             }
             newAccountNumber = AccountNumber.fromString(newAccountNumberHex);
             return _.fromPairs(recycledAccountIDs);
         };
-
         const result = await database()
             .ref("recycled_account_ids")
             .transaction(transactionUpdate);
@@ -82,36 +108,31 @@ export default class NewAccountFactoryImpl implements NewAccountFactory {
     }
 
     private async getNextAccountNumber(): Promise<AccountNumber> {
-        return new Promise((resolve, reject) => {
-            let newAccountNumber: AccountNumber;
-
-            const transactionUpdate = (
-                currentData?: string
-            ): string | undefined => {
-                try {
-                    if (currentData == null) {
-                        newAccountNumber = AccountNumber.fromString("0000000");
-                        return "0000001";
-                    }
-                    if (currentData === "FFFFFFF") {
-                        throw new AccountLimitReached();
-                    }
-                    newAccountNumber = AccountNumber.fromString(currentData);
-                    return AccountNumber.increment(newAccountNumber).toString();
-                } catch (e) {
-                    reject(e);
-                    return;
-                }
-            };
-
-            return database()
-                .ref("next_account_id")
-                .transaction(transactionUpdate)
-                .then((result): void => {
-                    if (result.committed) {
-                        resolve(newAccountNumber);
-                    }
-                });
-        });
+        let error: any | undefined;
+        let newAccountNumber: AccountNumber | undefined;
+        const transactionUpdate = (
+            currentData?: string
+        ): string | undefined => {
+            if (currentData == null) {
+                newAccountNumber = AccountNumber.fromString("0000000");
+                return "0000001";
+            }
+            if (currentData === "FFFFFFF") {
+                error = new AccountLimitReached();
+                return;
+            }
+            newAccountNumber = AccountNumber.fromString(currentData);
+            return AccountNumber.increment(newAccountNumber).toString();
+        };
+        const result = await database()
+            .ref("next_account_id")
+            .transaction(transactionUpdate);
+        if (error != null) {
+            throw error;
+        }
+        if (!result.committed || newAccountNumber == null) {
+            throw new FailedToGetNewAccountNumber();
+        }
+        return newAccountNumber;
     }
 }

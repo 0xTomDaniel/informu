@@ -253,13 +253,13 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
         const permissionStatus = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
             {
-                title: "Cool Photo App Camera Permission",
+                title: "Mu Tags Require 'Coarse Location' Permission",
                 message:
-                    "Cool Photo App needs access to your camera " +
-                    "so you can take awesome pictures.",
-                buttonNeutral: "Ask Me Later",
-                buttonNegative: "Cancel",
-                buttonPositive: "OK"
+                    "Please select 'Allow'. This is required for your " +
+                    "Mu tags to have accurate and up-to-date locations.",
+                //buttonNeutral: "Ask Me Later",
+                buttonNegative: "Deny",
+                buttonPositive: "Allow"
             }
         );
 

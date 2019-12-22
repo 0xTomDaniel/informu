@@ -32,10 +32,8 @@ export class AccountNumber extends Hexadecimal {
     }
 
     static increment<T extends AccountNumber>(value: T): T {
-        const incremented = super.increment(value);
-        const hexString = incremented.toString();
-        this.assertValidLength(hexString.length, hexString);
-        return incremented;
+        const incremented = value.valueOf() + 1;
+        return this.fromNumber(incremented, false, 7);
     }
 
     private static assertValidLength(

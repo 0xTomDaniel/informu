@@ -84,7 +84,8 @@ describe("user logs into their account", (): void => {
     const SessionServiceMock = jest.fn<Session, any>(
         (): Session => ({
             load: jest.fn(),
-            start: jest.fn()
+            start: jest.fn(),
+            pauseLoadOnce: jest.fn()
         })
     );
 
@@ -174,7 +175,7 @@ describe("user logs into their account", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await loginService.logInWithEmail(validEmail, validPassword);
+                await loginService.signInWithEmail(validEmail, validPassword);
             }
         );
 
@@ -240,7 +241,7 @@ describe("user logs into their account", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await loginService.logInWithEmail(validEmail, invalidPassword);
+                await loginService.signInWithEmail(validEmail, invalidPassword);
             }
         );
 
@@ -277,7 +278,7 @@ describe("user logs into their account", (): void => {
             //
             beforeAll(
                 async (): Promise<void> => {
-                    await loginService.logInWithEmail(
+                    await loginService.signInWithEmail(
                         improperEmail,
                         validPassword
                     );
@@ -310,7 +311,7 @@ describe("user logs into their account", (): void => {
             //
             beforeAll(
                 async (): Promise<void> => {
-                    await loginService.logInWithEmail(
+                    await loginService.signInWithEmail(
                         validEmail,
                         improperPassword
                     );
@@ -351,7 +352,7 @@ describe("user logs into their account", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await loginService.logInWithEmail(newEmail, newPassword);
+                await loginService.signInWithEmail(newEmail, newPassword);
             }
         );
 
@@ -399,7 +400,7 @@ describe("user logs into their account", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await loginService.logInWithGoogle();
+                await loginService.signInWithGoogle();
             }
         );
 

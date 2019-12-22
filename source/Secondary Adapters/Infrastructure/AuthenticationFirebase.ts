@@ -15,6 +15,13 @@ import {
 } from "@react-native-community/google-signin";
 
 export class AuthenticationFirebase implements Authentication {
+    constructor() {
+        GoogleSignin.configure({
+            webClientId:
+                "767308727016-13p98clpkloddstuonfn69enii3030s4.apps.googleusercontent.com"
+        });
+    }
+
     async authenticateWithEmail(
         emailAddress: string,
         password: string
@@ -54,6 +61,15 @@ export class AuthenticationFirebase implements Authentication {
     async authenticateWithGoogle(): Promise<UserData> {
         try {
             await GoogleSignin.hasPlayServices();
+
+            // Must sign out so that user can choose a Google account to sign in
+            // with. Otherwise it will automatically use the previously chosen account.
+            //
+            const isSignedIn = await GoogleSignin.isSignedIn();
+            if (isSignedIn) {
+                await GoogleSignin.signOut();
+            }
+
             const user = await GoogleSignin.signIn();
             if (user.idToken == null) {
                 throw new GoogleSignInFailed();

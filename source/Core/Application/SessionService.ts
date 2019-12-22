@@ -7,6 +7,7 @@ import { BelongingDetection } from "./BelongingDetectionService";
 export interface Session {
     load(): Promise<void>;
     start(): Promise<void>;
+    pauseLoadOnce(): void;
 }
 
 export default class SessionService implements Session {
@@ -14,6 +15,7 @@ export default class SessionService implements Session {
     private readonly authentication: Authentication;
     private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly belongingDetectionService: BelongingDetection;
+    private shouldPauseLoad = false;
 
     constructor(
         sessionOutput: SessionOutput,
@@ -28,6 +30,11 @@ export default class SessionService implements Session {
     }
 
     async load(): Promise<void> {
+        if (this.shouldPauseLoad) {
+            this.shouldPauseLoad = false;
+            return;
+        }
+
         this.sessionOutput.showLoadSessionScreen();
 
         try {
@@ -55,5 +62,9 @@ export default class SessionService implements Session {
     async start(): Promise<void> {
         this.sessionOutput.showHomeScreen();
         this.belongingDetectionService.start();
+    }
+
+    pauseLoadOnce(): void {
+        this.shouldPauseLoad = true;
     }
 }

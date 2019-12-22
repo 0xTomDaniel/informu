@@ -57,7 +57,6 @@ export default class LogoutService {
     }
 
     private resetAllDependencies(): void {
-        this.onResetAllDependenciesCallback != null &&
-            this.onResetAllDependenciesCallback();
+        this.onResetAllDependenciesCallback?.();
     }
 }

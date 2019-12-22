@@ -76,7 +76,7 @@ export class LoginService {
         this.accountRegistrationService = accountRegistrationService;
     }
 
-    async logInWithEmail(
+    async signInWithEmail(
         emailAddress: EmailAddress,
         password: Password
     ): Promise<void> {
@@ -107,8 +107,9 @@ export class LoginService {
         }
     }
 
-    async logInWithGoogle(): Promise<void> {
+    async signInWithGoogle(): Promise<void> {
         this.loginOutput.showBusyIndicator();
+        this.sessionService.pauseLoadOnce();
         try {
             const userData = await this.authentication.authenticateWithGoogle();
             await this.loadOrCreateAccount(userData);

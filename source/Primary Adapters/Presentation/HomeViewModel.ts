@@ -1,7 +1,6 @@
-import _ from 'lodash';
+import _ from "lodash";
 
 export interface BelongingViewData {
-
     readonly uid: string;
     readonly name: string;
     readonly safeStatusColor: string;
@@ -9,7 +8,6 @@ export interface BelongingViewData {
 }
 
 export interface BelongingViewDataDelta {
-
     readonly uid: string;
     readonly name?: string;
     readonly safeStatusColor?: string;
@@ -17,7 +15,6 @@ export interface BelongingViewDataDelta {
 }
 
 export interface HomeState {
-
     readonly showEmptyBelongings: boolean;
     readonly showActivityIndicator: boolean;
     readonly errorDescription: string;
@@ -26,7 +23,6 @@ export interface HomeState {
 }
 
 export interface HomeStateDelta {
-
     readonly showEmptyBelongings?: boolean;
     readonly showActivityIndicator?: boolean;
     readonly errorDescription?: string;
@@ -35,14 +31,13 @@ export interface HomeStateDelta {
 }
 
 export class HomeViewModel {
-
     private _state: HomeState = {
         showEmptyBelongings: true,
         showActivityIndicator: false,
-        errorDescription: '',
+        errorDescription: "",
         isErrorVisible: false,
-        belongings: [],
-    }
+        belongings: []
+    };
 
     get state(): HomeState {
         return this._state;
@@ -54,18 +49,19 @@ export class HomeViewModel {
 
     updateState(delta: HomeStateDelta): void {
         const oldState = _.cloneDeep(this._state);
-        _.mergeWith(
-            this._state,
-            delta,
-            (destValue, deltaValue): any[] | undefined => {
-                if (_.isArray(destValue)) {
-                    const merged = _.values(_.merge(
-                        _.keyBy(destValue, 'uid'), _.keyBy(deltaValue, 'uid')
-                    ));
-                    return _.intersectionBy(merged, deltaValue, 'uid');
-                }
+        _.mergeWith(this._state, delta, (destValue, deltaValue):
+            | any[]
+            | undefined => {
+            if (_.isArray(destValue)) {
+                const merged = _.values(
+                    _.merge(
+                        _.keyBy(destValue, "uid"),
+                        _.keyBy(deltaValue, "uid")
+                    )
+                );
+                return _.intersectionBy(merged, deltaValue, "uid");
             }
-        );
+        });
         if (!_.isEqual(this._state, oldState)) {
             this.triggerDidUpdate();
         }
@@ -80,9 +76,7 @@ export class HomeViewModel {
     }
 
     navigateToAddMuTag(): void {
-        if (this.onNavigateToAddMuTagCallback != null) {
-            this.onNavigateToAddMuTagCallback();
-        }
+        this.onNavigateToAddMuTagCallback?.();
     }
 
     onShowLogoutComplete(callback?: () => void): void {
@@ -90,13 +84,11 @@ export class HomeViewModel {
     }
 
     showLogoutComplete(): void {
-        if (this.onShowLogoutCompleteCallback != null) {
-            this.onShowLogoutCompleteCallback();
-        }
+        this.onShowLogoutCompleteCallback?.();
     }
 
     private triggerDidUpdate(): void {
         const newState = _.cloneDeep(this._state);
-        this.onDidUpdateCallback != null && this.onDidUpdateCallback(newState);
+        this.onDidUpdateCallback?.(newState);
     }
 }
