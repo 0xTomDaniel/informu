@@ -7,7 +7,10 @@ import {
     TooManyAttempts,
     GooglePlayServicesNotAvailable,
     GoogleSignInFailed,
-    SignInCanceled
+    SignInCanceled,
+    EmailNotFound,
+    FacebookSignInFailed,
+    IncorrectSignInMethod
 } from "../Ports/Authentication";
 import {
     AccountRepositoryRemote,
@@ -101,10 +104,36 @@ export class LoginService {
                 this.isAuthenticationException(e) ||
                 this.isAccountRepositoryLocalException(e)
             ) {
-                this.loginOutput.showLoginError(e);
+                this.loginOutput.showEmailLoginError(e);
             } else {
                 throw e;
             }
+        } finally {
+            this.loginOutput.hideBusyIndicator();
+        }
+    }
+
+    async signInWithFacebook(): Promise<void> {
+        this.loginOutput.showBusyIndicator();
+        this.sessionService.pauseLoadOnce();
+        try {
+            const userData = await this.authentication.authenticateWithFacebook();
+            await this.loadOrCreateAccount(userData);
+            await this.sessionService.start();
+        } catch (e) {
+            if (
+                e instanceof FacebookSignInFailed ||
+                e instanceof EmailNotFound ||
+                e instanceof IncorrectSignInMethod
+            ) {
+                this.loginOutput.showFederatedLoginError(e);
+            } else if (e instanceof SignInCanceled) {
+                return;
+            } else {
+                throw e;
+            }
+        } finally {
+            this.loginOutput.hideBusyIndicator();
         }
     }
 
@@ -118,14 +147,18 @@ export class LoginService {
         } catch (e) {
             if (
                 e instanceof GooglePlayServicesNotAvailable ||
-                e instanceof GoogleSignInFailed
+                e instanceof GoogleSignInFailed ||
+                e instanceof EmailNotFound ||
+                e instanceof IncorrectSignInMethod
             ) {
-                this.loginOutput.showLoginError(e);
+                this.loginOutput.showFederatedLoginError(e);
             } else if (e instanceof SignInCanceled) {
-                this.loginOutput.hideBusyIndicator();
+                return;
             } else {
                 throw e;
             }
+        } finally {
+            this.loginOutput.hideBusyIndicator();
         }
     }
 
@@ -166,7 +199,13 @@ export class LoginService {
         return (
             value instanceof InvalidCredentials ||
             value instanceof UserDisabled ||
-            value instanceof TooManyAttempts
+            value instanceof IncorrectSignInMethod ||
+            value instanceof TooManyAttempts ||
+            value instanceof SignInCanceled ||
+            value instanceof GooglePlayServicesNotAvailable ||
+            value instanceof GoogleSignInFailed ||
+            value instanceof FacebookSignInFailed ||
+            value instanceof EmailNotFound
         );
     }
 

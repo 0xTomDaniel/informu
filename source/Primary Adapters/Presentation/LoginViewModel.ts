@@ -5,6 +5,7 @@ export interface LoginState {
     passwordInput: string;
     emailErrorMessage: string;
     passwordErrorMessage: string;
+    federatedErrorMessage: string;
     isBusy: boolean;
     logInButtonDisabled: boolean;
 }
@@ -14,6 +15,7 @@ export interface LoginStateDelta {
     passwordInput?: string;
     emailErrorMessage?: string;
     passwordErrorMessage?: string;
+    federatedErrorMessage?: string;
     isBusy?: boolean;
     logInButtonDisabled?: boolean;
 }
@@ -24,6 +26,7 @@ export class LoginViewModel {
         passwordInput: "",
         emailErrorMessage: "",
         passwordErrorMessage: "",
+        federatedErrorMessage: "",
         isBusy: false,
         logInButtonDisabled: false
     };

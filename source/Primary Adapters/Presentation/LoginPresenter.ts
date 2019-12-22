@@ -23,7 +23,7 @@ export default class LoginPresenter implements LoginOutput {
         this.viewModel.navigateToApp();
     }
 
-    showLoginError(error: Error): void {
+    showEmailLoginError(error: Error): void {
         this.clearErrorMessages();
         this.enableLogInButton();
         this.hideBusyIndicator();
@@ -33,6 +33,12 @@ export default class LoginPresenter implements LoginOutput {
         } else {
             this.viewModel.updateState({ emailErrorMessage: error.message });
         }
+    }
+
+    showFederatedLoginError(error: Error): void {
+        this.clearErrorMessages();
+        this.hideBusyIndicator();
+        this.viewModel.updateState({ federatedErrorMessage: error.message });
     }
 
     private enableLogInButton(): void {

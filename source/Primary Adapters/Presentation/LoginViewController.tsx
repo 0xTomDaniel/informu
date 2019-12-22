@@ -2,8 +2,7 @@ import React, {
     FunctionComponent,
     ReactElement,
     useState,
-    useEffect,
-    useReducer
+    useEffect
 } from "react";
 import {
     View,
@@ -20,6 +19,7 @@ import DeviceInfo from "react-native-device-info";
 import { Images } from "./Images";
 import Theme from "./Theme";
 import { Button } from "react-native-paper";
+import ErrorDialog from "./Base Components/ErrorDialog";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -107,7 +107,7 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
 
     const signInWithFacebook = (): void => {
         setItemWithActivity(ActivityItem.Facebook);
-        //props.loginService.signInWithFacebook().catch(e => console.warn(e));
+        props.loginService.signInWithFacebook().catch(e => console.warn(e));
     };
     const signInWithGoogle = (): void => {
         setItemWithActivity(ActivityItem.Google);
@@ -120,6 +120,11 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
 
         props.loginService.logInWithEmail(emailAddress, password);
     };*/
+    const onDismissErrorDialog = (): void => {
+        props.viewModel.updateState({
+            federatedErrorMessage: ""
+        });
+    };
 
     useEffect((): (() => void) => {
         props.viewModel.onDidUpdate((change): void => setState(change));
@@ -214,6 +219,11 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                         </Button>*/}
                     </View>
                 </View>
+                <ErrorDialog
+                    message={state.federatedErrorMessage}
+                    visible={state.federatedErrorMessage !== ""}
+                    onDismiss={onDismissErrorDialog}
+                />
             </SafeAreaView>
         </TouchableWithoutFeedback>
     );

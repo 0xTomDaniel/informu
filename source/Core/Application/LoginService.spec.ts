@@ -28,6 +28,7 @@ describe("user logs into their account", (): void => {
     const LoginOutputMock = jest.fn<LoginOutput, any>(
         (): LoginOutput => ({
             showBusyIndicator: jest.fn(),
+            hideBusyIndicator: jest.fn(),
             showHomeScreen: jest.fn(),
             showLoginError: jest.fn()
         })
@@ -36,6 +37,7 @@ describe("user logs into their account", (): void => {
     const AuthenticationMock = jest.fn<Authentication, any>(
         (): Authentication => ({
             authenticateWithEmail: jest.fn(),
+            authenticateWithFacebook: jest.fn(),
             authenticateWithGoogle: jest.fn(),
             isAuthenticatedAs: jest.fn()
         })
@@ -401,6 +403,62 @@ describe("user logs into their account", (): void => {
         beforeAll(
             async (): Promise<void> => {
                 await loginService.signInWithGoogle();
+            }
+        );
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it("should show activity indicator", (): void => {
+            expect(loginOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should register new account", (): void => {
+            expect(
+                accountRegistrationServiceMock.registerFederated
+            ).toHaveBeenCalledTimes(1);
+            expect(
+                accountRegistrationServiceMock.registerFederated
+            ).toHaveBeenCalledWith(userData.uid, userData.emailAddress);
+        });
+
+        // Then
+        //
+        it("should start login session", (): void => {
+            expect(sessionServiceMock.start).toHaveBeenCalledTimes(1);
+            expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(0);
+        });
+    });
+
+    describe("account does not exist for federated authentication (Facebook)", (): void => {
+        // Given that no account is logged in
+
+        // Given that user has launched federated authentication option
+
+        // Given that credentials are valid for authentication
+        const userData: UserData = {
+            uid: "Z8b0C6BB7pMwTFwlyMShdnOPQ7V2",
+            emailAddress: "newUser2@gmail.com"
+        };
+        (authenticationMock.authenticateWithFacebook as jest.Mock).mockResolvedValueOnce(
+            userData
+        );
+
+        // Given that an account does not exist for the provided credentials
+        (accountRepoRemoteMock.getByUID as jest.Mock).mockRejectedValueOnce(
+            new DoesNotExist()
+        );
+
+        // When the user submits credentials
+        //
+        beforeAll(
+            async (): Promise<void> => {
+                await loginService.signInWithFacebook();
             }
         );
 

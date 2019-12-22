@@ -5,6 +5,7 @@ export interface Authentication {
         emailAddress: string,
         password: string
     ): Promise<UserData>;
+    authenticateWithFacebook(): Promise<UserData>;
     authenticateWithGoogle(): Promise<UserData>;
     isAuthenticatedAs(uid: string): boolean;
 }
@@ -23,6 +24,16 @@ export class UserDisabled extends Error {
             "This user is currently disabled. Please contact support@informu.io."
         );
         this.name = "UserDisabled";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class IncorrectSignInMethod extends Error {
+    constructor() {
+        super(
+            "An account already exists with the same email address but different sign-in credentials. Sign in using a provider already associated with this email address."
+        );
+        this.name = "IncorrectSignInMethod";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
@@ -61,6 +72,16 @@ export class GoogleSignInFailed extends Error {
     }
 }
 
+export class FacebookSignInFailed extends Error {
+    constructor() {
+        super(
+            "Failed to sign in with Facebook. Please contact support@informu.io."
+        );
+        this.name = "FacebookSignInFailed";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
 export class EmailNotFound extends Error {
     constructor() {
         super("Failed to sign in. Email address not found.");
@@ -87,7 +108,10 @@ export class FederatedAccountDoesNotExist extends Error {
 export type AuthenticationException =
     | InvalidCredentials
     | UserDisabled
+    | IncorrectSignInMethod
     | TooManyAttempts
+    | SignInCanceled
     | GooglePlayServicesNotAvailable
     | GoogleSignInFailed
+    | FacebookSignInFailed
     | EmailNotFound;
