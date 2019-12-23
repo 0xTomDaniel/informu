@@ -10,7 +10,11 @@ import {
     DoesNotExist
 } from "../Ports/AccountRepositoryRemote";
 import Account, { AccountNumber, AccountData } from "../Domain/Account";
-import { Authentication, InvalidCredentials } from "../Ports/Authentication";
+import {
+    Authentication,
+    InvalidCredentials,
+    SignInCanceled
+} from "../Ports/Authentication";
 import { LoginOutput } from "../Ports/LoginOutput";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import ProvisionedMuTag, { BeaconID } from "../Domain/ProvisionedMuTag";
@@ -30,7 +34,8 @@ describe("user logs into their account", (): void => {
             showBusyIndicator: jest.fn(),
             hideBusyIndicator: jest.fn(),
             showHomeScreen: jest.fn(),
-            showLoginError: jest.fn()
+            showEmailLoginError: jest.fn(),
+            showFederatedLoginError: jest.fn()
         })
     );
 
@@ -153,7 +158,7 @@ describe("user logs into their account", (): void => {
     const validEmail = new EmailAddress("support+test@informu.io");
     const validPassword = new Password("testPassword!");
 
-    describe("credentials are valid", (): void => {
+    describe("credentials are valid (email)", (): void => {
         // Given that no account is logged in
 
         // Given credentials are valid for authentication
@@ -221,7 +226,154 @@ describe("user logs into their account", (): void => {
         //
         it("should start login session", (): void => {
             expect(sessionServiceMock.start).toHaveBeenCalledTimes(1);
-            expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(0);
+            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledTimes(
+                0
+            );
+            expect(
+                loginOutputMock.showFederatedLoginError
+            ).toHaveBeenCalledTimes(0);
+        });
+    });
+
+    describe("credentials are valid (Facebook)", (): void => {
+        // Given that no account is logged in
+
+        // Given credentials are valid for authentication
+        //
+        const userData: UserData = {
+            uid: validAccountData._uid,
+            emailAddress: validAccountData._emailAddress
+        };
+        (authenticationMock.authenticateWithFacebook as jest.Mock).mockResolvedValueOnce(
+            userData
+        );
+
+        // Given an account exists for the provided credentials
+        //
+        (accountRepoRemoteMock.getByUID as jest.Mock).mockResolvedValueOnce(
+            account
+        );
+        (muTagRepoRemoteMock.getAll as jest.Mock).mockResolvedValueOnce(muTags);
+
+        // When the user submits credentials
+        //
+        beforeAll(
+            async (): Promise<void> => {
+                await loginService.signInWithFacebook();
+            }
+        );
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it("should show activity indicator", (): void => {
+            expect(loginOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should save account login locally", (): void => {
+            expect(
+                authenticationMock.authenticateWithFacebook
+            ).toHaveBeenCalledTimes(1);
+            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledWith(
+                userData.uid
+            );
+            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledTimes(1);
+            expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
+            expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
+            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledWith(
+                userData.uid
+            );
+            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledTimes(1);
+            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledWith(muTags);
+            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should start login session", (): void => {
+            expect(sessionServiceMock.start).toHaveBeenCalledTimes(1);
+            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledTimes(
+                0
+            );
+            expect(
+                loginOutputMock.showFederatedLoginError
+            ).toHaveBeenCalledTimes(0);
+        });
+    });
+
+    describe("credentials are valid (Google)", (): void => {
+        // Given that no account is logged in
+
+        // Given credentials are valid for authentication
+        //
+        const userData: UserData = {
+            uid: validAccountData._uid,
+            emailAddress: validAccountData._emailAddress
+        };
+        (authenticationMock.authenticateWithGoogle as jest.Mock).mockResolvedValueOnce(
+            userData
+        );
+
+        // Given an account exists for the provided credentials
+        //
+        (accountRepoRemoteMock.getByUID as jest.Mock).mockResolvedValueOnce(
+            account
+        );
+        (muTagRepoRemoteMock.getAll as jest.Mock).mockResolvedValueOnce(muTags);
+
+        // When the user submits credentials
+        //
+        beforeAll(
+            async (): Promise<void> => {
+                await loginService.signInWithGoogle();
+            }
+        );
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it("should show activity indicator", (): void => {
+            expect(loginOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should save account login locally", (): void => {
+            expect(
+                authenticationMock.authenticateWithGoogle
+            ).toHaveBeenCalledTimes(1);
+            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledWith(
+                userData.uid
+            );
+            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledTimes(1);
+            expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
+            expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
+            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledWith(
+                userData.uid
+            );
+            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledTimes(1);
+            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledWith(muTags);
+            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should start login session", (): void => {
+            expect(sessionServiceMock.start).toHaveBeenCalledTimes(1);
+            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledTimes(
+                0
+            );
+            expect(
+                loginOutputMock.showFederatedLoginError
+            ).toHaveBeenCalledTimes(0);
         });
     });
 
@@ -260,8 +412,10 @@ describe("user logs into their account", (): void => {
         // Then
         //
         it("should show a message that the log in attempt failed due to invalid credentials", (): void => {
-            expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(1);
-            expect(loginOutputMock.showLoginError).toHaveBeenCalledWith(
+            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledTimes(
+                1
+            );
+            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledWith(
                 new InvalidCredentials()
             );
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
@@ -294,10 +448,12 @@ describe("user logs into their account", (): void => {
             // Then
             //
             it("should show a message that an improper email address was entered", (): void => {
-                expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(1);
-                expect(loginOutputMock.showLoginError).toHaveBeenCalledWith(
-                    new ImproperEmailFormat()
-                );
+                expect(
+                    loginOutputMock.showEmailLoginError
+                ).toHaveBeenCalledTimes(1);
+                expect(
+                    loginOutputMock.showEmailLoginError
+                ).toHaveBeenCalledWith(new ImproperEmailFormat());
                 expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
             });
         });
@@ -327,10 +483,12 @@ describe("user logs into their account", (): void => {
             // Then
             //
             it("should show a message that password doesn't meet complexity requirements", (): void => {
-                expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(1);
-                expect(loginOutputMock.showLoginError).toHaveBeenCalledWith(
-                    new ImproperPasswordComplexity()
-                );
+                expect(
+                    loginOutputMock.showEmailLoginError
+                ).toHaveBeenCalledTimes(1);
+                expect(
+                    loginOutputMock.showEmailLoginError
+                ).toHaveBeenCalledWith(new ImproperPasswordComplexity());
                 expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
             });
         });
@@ -371,8 +529,10 @@ describe("user logs into their account", (): void => {
         // Then
         //
         it("should show a message that the log in attempt failed due to invalid credentials", (): void => {
-            expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(1);
-            expect(loginOutputMock.showLoginError).toHaveBeenCalledWith(
+            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledTimes(
+                1
+            );
+            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledWith(
                 new InvalidCredentials()
             );
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
@@ -431,7 +591,12 @@ describe("user logs into their account", (): void => {
         //
         it("should start login session", (): void => {
             expect(sessionServiceMock.start).toHaveBeenCalledTimes(1);
-            expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(0);
+            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledTimes(
+                0
+            );
+            expect(
+                loginOutputMock.showFederatedLoginError
+            ).toHaveBeenCalledTimes(0);
         });
     });
 
@@ -487,7 +652,45 @@ describe("user logs into their account", (): void => {
         //
         it("should start login session", (): void => {
             expect(sessionServiceMock.start).toHaveBeenCalledTimes(1);
-            expect(loginOutputMock.showLoginError).toHaveBeenCalledTimes(0);
+            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledTimes(
+                0
+            );
+            expect(
+                loginOutputMock.showFederatedLoginError
+            ).toHaveBeenCalledTimes(0);
+        });
+    });
+
+    describe("federated authentication is canceled", (): void => {
+        // Given that no account is logged in
+
+        // Given that user has launched federated authentication option
+
+        // Given that credentials are valid for authentication
+        (authenticationMock.authenticateWithFacebook as jest.Mock).mockRejectedValueOnce(
+            new SignInCanceled()
+        );
+        (authenticationMock.authenticateWithGoogle as jest.Mock).mockRejectedValueOnce(
+            new SignInCanceled()
+        );
+
+        // When the user submits credentials
+        //
+        beforeAll(
+            async (): Promise<void> => {
+                await loginService.signInWithFacebook();
+                await loginService.signInWithGoogle();
+            }
+        );
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it("should hide activity indicator", (): void => {
+            expect(loginOutputMock.hideBusyIndicator).toHaveBeenCalledTimes(2);
         });
     });
 });
