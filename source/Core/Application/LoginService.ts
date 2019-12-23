@@ -2,13 +2,22 @@ import { LoginOutput } from "../Ports/LoginOutput";
 import {
     Authentication,
     InvalidCredentials,
-    AccountDisabled,
+    UserDisabled,
     AuthenticationException,
-    TooManyAttempts
+    TooManyAttempts,
+    GooglePlayServicesNotAvailable,
+    GoogleSignInFailed,
+    SignInCanceled,
+    EmailNotFound,
+    FacebookSignInFailed,
+    IncorrectSignInMethod
 } from "../Ports/Authentication";
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import {
-    DoesNotExist,
+    AccountRepositoryRemote,
+    DoesNotExist as AccountDoesNotExistOnRemote
+} from "../Ports/AccountRepositoryRemote";
+import {
+    DoesNotExist as AccountDoesNotExistOnLocal,
     FailedToGet,
     FailedToAdd,
     FailedToRemove,
@@ -18,6 +27,8 @@ import {
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import { Session } from "./SessionService";
+import { AccountRegistration } from "./AccountRegistrationService";
+import { UserData } from "../Ports/UserData";
 
 export class ImproperEmailFormat extends Error {
     constructor() {
@@ -47,6 +58,7 @@ export class LoginService {
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly muTagRepoRemote: MuTagRepositoryRemote;
     private readonly sessionService: Session;
+    private readonly accountRegistrationService: AccountRegistration;
 
     constructor(
         loginOutput: LoginOutput,
@@ -55,7 +67,8 @@ export class LoginService {
         accountRepoRemote: AccountRepositoryRemote,
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
-        sessionService: Session
+        sessionService: Session,
+        accountRegistrationService: AccountRegistration
     ) {
         this.loginOutput = loginOutput;
         this.authentication = authentication;
@@ -64,9 +77,10 @@ export class LoginService {
         this.muTagRepoLocal = muTagRepoLocal;
         this.muTagRepoRemote = muTagRepoRemote;
         this.sessionService = sessionService;
+        this.accountRegistrationService = accountRegistrationService;
     }
 
-    async logInWithEmail(
+    async signInWithEmail(
         emailAddress: EmailAddress,
         password: Password
     ): Promise<void> {
@@ -74,36 +88,100 @@ export class LoginService {
             if (!emailAddress.isValid()) {
                 throw new ImproperEmailFormat();
             }
-
             if (!password.isValid()) {
                 throw new ImproperPasswordComplexity();
             }
-
             this.loginOutput.showBusyIndicator();
-
             const userData = await this.authentication.authenticateWithEmail(
                 emailAddress.rawValue(),
                 password.rawValue()
             );
-
-            const account = await this.accountRepoRemote.getByUID(userData.uid);
-            await this.accountRepoLocal.add(account);
-
-            const muTags = await this.muTagRepoRemote.getAll(userData.uid);
-            await this.muTagRepoLocal.addMultiple(muTags);
-
-            this.sessionService.start();
+            await this.loadAccountFromRemote(userData.uid);
+            await this.sessionService.start();
         } catch (e) {
             if (
                 this.isLoginServiceException(e) ||
                 this.isAuthenticationException(e) ||
                 this.isAccountRepositoryLocalException(e)
             ) {
-                this.loginOutput.showLoginError(e);
+                this.loginOutput.showEmailLoginError(e);
+            } else {
+                throw e;
+            }
+        } finally {
+            this.loginOutput.hideBusyIndicator();
+        }
+    }
+
+    async signInWithFacebook(): Promise<void> {
+        this.loginOutput.showBusyIndicator();
+        this.sessionService.pauseLoadOnce();
+        try {
+            const userData = await this.authentication.authenticateWithFacebook();
+            await this.loadOrCreateAccount(userData);
+            await this.sessionService.start();
+        } catch (e) {
+            if (
+                e instanceof FacebookSignInFailed ||
+                e instanceof EmailNotFound ||
+                e instanceof IncorrectSignInMethod
+            ) {
+                this.loginOutput.showFederatedLoginError(e);
+            } else if (e instanceof SignInCanceled) {
+                return;
+            } else {
+                throw e;
+            }
+        } finally {
+            this.loginOutput.hideBusyIndicator();
+        }
+    }
+
+    async signInWithGoogle(): Promise<void> {
+        this.loginOutput.showBusyIndicator();
+        this.sessionService.pauseLoadOnce();
+        try {
+            const userData = await this.authentication.authenticateWithGoogle();
+            await this.loadOrCreateAccount(userData);
+            await this.sessionService.start();
+        } catch (e) {
+            if (
+                e instanceof GooglePlayServicesNotAvailable ||
+                e instanceof GoogleSignInFailed ||
+                e instanceof EmailNotFound ||
+                e instanceof IncorrectSignInMethod
+            ) {
+                this.loginOutput.showFederatedLoginError(e);
+            } else if (e instanceof SignInCanceled) {
+                return;
+            } else {
+                throw e;
+            }
+        } finally {
+            this.loginOutput.hideBusyIndicator();
+        }
+    }
+
+    private async loadOrCreateAccount(userData: UserData): Promise<void> {
+        try {
+            await this.loadAccountFromRemote(userData.uid);
+        } catch (e) {
+            if (e instanceof AccountDoesNotExistOnRemote) {
+                await this.accountRegistrationService.registerFederated(
+                    userData.uid,
+                    userData.emailAddress
+                );
             } else {
                 throw e;
             }
         }
+    }
+
+    private async loadAccountFromRemote(uid: string): Promise<void> {
+        const account = await this.accountRepoRemote.getByUID(uid);
+        await this.accountRepoLocal.add(account);
+        const muTags = await this.muTagRepoRemote.getAll(uid);
+        await this.muTagRepoLocal.addMultiple(muTags);
     }
 
     private isLoginServiceException(
@@ -120,8 +198,14 @@ export class LoginService {
     ): value is AuthenticationException {
         return (
             value instanceof InvalidCredentials ||
-            value instanceof AccountDisabled ||
-            value instanceof TooManyAttempts
+            value instanceof UserDisabled ||
+            value instanceof IncorrectSignInMethod ||
+            value instanceof TooManyAttempts ||
+            value instanceof SignInCanceled ||
+            value instanceof GooglePlayServicesNotAvailable ||
+            value instanceof GoogleSignInFailed ||
+            value instanceof FacebookSignInFailed ||
+            value instanceof EmailNotFound
         );
     }
 
@@ -129,7 +213,7 @@ export class LoginService {
         value: any
     ): value is AccountRepositoryLocalException {
         return (
-            value instanceof DoesNotExist ||
+            value instanceof AccountDoesNotExistOnLocal ||
             value instanceof FailedToGet ||
             value instanceof FailedToAdd ||
             value instanceof FailedToRemove

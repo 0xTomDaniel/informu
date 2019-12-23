@@ -15,13 +15,34 @@ class InvalidAccountNumber extends RangeError {
 }
 
 export class AccountNumber extends Hexadecimal {
-    static create(hex: string): AccountNumber {
-        if (!(hex.length === 7)) {
+    static fromString<T extends AccountNumber>(hex: string): T {
+        this.assertValidLength(hex.length, hex);
+        return super.fromString(hex);
+    }
+
+    static fromNumber<T extends AccountNumber>(
+        value: number,
+        prefix = false,
+        minLength?: number
+    ): T {
+        const hex = super.fromNumber<T>(value, prefix, minLength);
+        const hexString = hex.toString();
+        this.assertValidLength(hexString.length, hexString);
+        return hex;
+    }
+
+    static increment<T extends AccountNumber>(value: T): T {
+        const incremented = value.valueOf() + 1;
+        return this.fromNumber(incremented, false, 7);
+    }
+
+    private static assertValidLength(
+        hexLength: number,
+        hex: string
+    ): asserts hexLength is 7 {
+        if (hex.length !== 7) {
             throw new InvalidAccountNumber(hex);
         }
-
-        const numberValue = AccountNumber.numberFromString(hex);
-        return new AccountNumber(hex, numberValue);
     }
 }
 
@@ -257,7 +278,7 @@ export default class Account {
 
                 return new Account(value);
             case "_accountNumber":
-                return AccountNumber.create(value);
+                return AccountNumber.fromString(value);
             case "_nextBeaconID":
                 return BeaconID.create(value);
             case "_recycledBeaconIDs":

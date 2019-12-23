@@ -2,7 +2,6 @@ import ProvisionedMuTag, { BeaconID } from "../../Core/Domain/ProvisionedMuTag";
 import Percent from "../../Core/Domain/Percent";
 import MuTagRepoLocalImpl from "./MuTagRepoLocalImpl";
 import { DoesNotExist as MuTagDoesNotExist } from "../../Core/Ports/MuTagRepositoryLocal";
-import { DoesNotExist as AccountDoesNotExist } from "../../Core/Ports/AccountRepositoryLocal";
 import { MuTagColor } from "../../Core/Domain/MuTag";
 import AccountRepoLocalImpl from "./AccountRepoLocalImpl";
 import Account, { AccountNumber } from "../../Core/Domain/Account";
@@ -104,7 +103,7 @@ test("successfully populate Mu tag cache from logged in account", async (): Prom
 > => {
     const account = new Account({
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
-        _accountNumber: AccountNumber.create("0000000"),
+        _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
         _nextBeaconID: BeaconID.create("B"),
         _recycledBeaconIDs: new Set([

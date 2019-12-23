@@ -94,7 +94,7 @@ describe("user logs out of their account", (): void => {
     const accountMuTags = ["randomUUID1", "randomUUID2"];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
-        _accountNumber: AccountNumber.create("0000000"),
+        _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
         _nextBeaconID: BeaconID.create("A"),
         _recycledBeaconIDs: new Set(recycledBeaconIDs),

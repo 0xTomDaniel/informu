@@ -1,171 +1,232 @@
-import React, { Component } from 'react';
+import React, {
+    FunctionComponent,
+    ReactElement,
+    useState,
+    useEffect
+} from "react";
 import {
-    ActivityIndicator,
-    Text,
     View,
-    TextInput,
     StyleSheet,
     Platform,
     StatusBar,
     TouchableWithoutFeedback,
-    Keyboard,
-} from 'react-native';
-import { SafeAreaView, NavigationScreenProps } from 'react-navigation';
-import { LoginViewModel, LoginState } from './LoginViewModel';
-import { LoginService, EmailAddress, Password } from '../../Core/Application/LoginService';
-import DeviceInfo from 'react-native-device-info';
-import { Images } from './Images';
-import PrimaryButton from './Base Components/PrimaryButton';
-import Theme from './Theme';
-import LoginPresenter from './LoginPresenter';
-import { AccountRepositoryRemote } from '../../Core/Ports/AccountRepositoryRemote';
-import { Authentication } from '../../Core/Ports/Authentication';
-import { AccountRepositoryLocal } from '../../Core/Ports/AccountRepositoryLocal';
-import { MuTagRepositoryLocal } from '../../Core/Ports/MuTagRepositoryLocal';
-import { MuTagRepositoryRemote } from '../../Core/Ports/MuTagRepositoryRemote';
-import SessionService from '../../Core/Application/SessionService';
+    Keyboard
+} from "react-native";
+import { SafeAreaView, NavigationScreenProps } from "react-navigation";
+import { LoginViewModel, LoginState } from "./LoginViewModel";
+import { LoginService } from "../../Core/Application/LoginService";
+import DeviceInfo from "react-native-device-info";
+import { Images } from "./Images";
+import Theme from "./Theme";
+import { Button } from "react-native-paper";
+import ErrorDialog from "./Base Components/ErrorDialog";
 
 const styles = StyleSheet.create({
     safeAreaView: {
         flex: 1,
-        paddingTop: (Platform.OS === 'android' && DeviceInfo.hasNotch())
-            ? StatusBar.currentHeight : 0,
+        paddingTop:
+            Platform.OS === "android" && DeviceInfo.hasNotch()
+                ? StatusBar.currentHeight
+                : 0
     },
-    devBackgroundColor1: { backgroundColor: 'skyblue' },
-    devBackgroundColor2: { backgroundColor: 'steelblue' },
-    devBackgroundColor3: { backgroundColor: 'mediumblue' },
-    devBackgroundColor4: { backgroundColor: 'navy' },
+    devBackgroundColor1: {
+        backgroundColor: "skyblue"
+    },
+    devBackgroundColor2: {
+        backgroundColor: "steelblue"
+    },
+    devBackgroundColor3: {
+        backgroundColor: "mediumblue"
+    },
+    devBackgroundColor4: {
+        backgroundColor: "navy"
+    },
     devSmallBox: {
         width: 50,
-        height: 50,
+        height: 50
     },
 
     base: {
         backgroundColor: Theme.Color.AlmostWhite,
         paddingHorizontal: 16,
-        justifyContent: 'space-around',
+        justifyContent: "space-evenly"
     },
     logo: {
-        resizeMode: 'contain',
+        resizeMode: "contain",
         width: undefined,
         height: undefined,
-        marginHorizontal: 16,
+        marginHorizontal: 16
+    },
+    content: {
+        flex: 0.77,
+        justifyContent: "center" //justifyContent: "space-between" // Use "space-between" for email login
+    },
+    deleteMeForEmailLogin: {
+        height: 80
     },
     textInput: {
-        marginVertical: 4,
-        paddingHorizontal: 16,
-        backgroundColor: 'white',
-        borderRadius: Theme.BorderRadius,
-        borderWidth: 1,
-        borderColor: Theme.Color.AlmostWhiteBackground,
+        backgroundColor: "white"
     },
     textInputError: {
         paddingLeft: 16,
         paddingTop: 4,
         color: Theme.Color.Error,
-        fontWeight: 'bold',
+        fontWeight: "bold"
     },
-    logInButtonContainer: {
-        justifyContent: 'center',
+    buttonContentStyle: {
+        backgroundColor: "#FFFFFF",
+        justifyContent: "space-evenly"
     },
-    logInActivityIndicator: {
-        alignSelf: 'center',
-        position: 'absolute',
+    buttonStyle: {
+        marginTop: 12,
+        marginHorizontal: 16,
+        borderColor: Theme.Color.AlmostWhiteBorder
     },
+    buttonLabelStyle: {
+        flex: 0.8
+    }
 });
 
 interface LoginVCProps extends NavigationScreenProps {
-    authentication: Authentication;
-    accountRepoLocal: AccountRepositoryLocal;
-    accountRepoRemote: AccountRepositoryRemote;
-    muTagRepoLocal: MuTagRepositoryLocal;
-    muTagRepoRemote: MuTagRepositoryRemote;
-    sessionService: SessionService;
+    viewModel: LoginViewModel;
+    loginService: LoginService;
 }
 
-export default class LoginViewController extends Component<LoginVCProps> {
+enum ActivityItem {
+    Facebook,
+    Google,
+    Email,
+    None
+}
 
-    private readonly viewModel = new LoginViewModel();
-    private readonly loginPresenter = new LoginPresenter(this.viewModel);
-    private readonly loginService = new LoginService(
-        this.loginPresenter,
-        this.props.authentication,
-        this.props.accountRepoLocal,
-        this.props.accountRepoRemote,
-        this.props.muTagRepoLocal,
-        this.props.muTagRepoRemote,
-        this.props.sessionService,
-    );
+const LoginViewController: FunctionComponent<LoginVCProps> = (
+    props
+): ReactElement => {
+    const [state, setState] = useState<LoginState>(props.viewModel.state);
+    const [itemWithActivity, setItemWithActivity] = useState(ActivityItem.None);
 
-    state: Readonly<LoginState> = this.viewModel;
+    const signInWithFacebook = (): void => {
+        setItemWithActivity(ActivityItem.Facebook);
+        props.loginService.signInWithFacebook().catch(e => console.warn(e));
+    };
+    const signInWithGoogle = (): void => {
+        setItemWithActivity(ActivityItem.Google);
+        props.loginService.signInWithGoogle().catch(e => console.warn(e));
+    };
+    /*const signInWithEmail = (): void => {
+        setItemWithActivity(ActivityItem.Email);
+        const emailAddress = new EmailAddress(state.emailInput);
+        const password = new Password(state.passwordInput);
 
-    componentDidMount(): void {
-        this.viewModel.onDidUpdate((change): void => this.setState(change));
-        this.viewModel.onNavigateToApp((): boolean => this.props.navigation.navigate('App'));
-    }
+        props.loginService.logInWithEmail(emailAddress, password);
+    };*/
+    const onDismissErrorDialog = (): void => {
+        props.viewModel.updateState({
+            federatedErrorMessage: ""
+        });
+    };
 
-    componentWillUnmount(): void {
-        this.viewModel.onDidUpdate(undefined);
-        this.viewModel.onNavigateToApp(undefined);
-    }
-
-    render(): Element {
-        return (
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-                <SafeAreaView style={[styles.safeAreaView, styles.base]}>
-                    <Images.IconLogoCombo style={[styles.logo]} />
-                    <View>
-                        <Text style={styles.textInputError}>
-                            {this.state.emailErrorMessage}
-                        </Text>
-                        <TextInput
-                            style={styles.textInput}
-                            keyboardType="email-address"
-                            placeholder="Email address"
-                            //onSubmitEditing
-                            onChangeText={(text): void => {
-                                this.viewModel.emailInput = text;
-                            }}
-                            value={this.state.emailInput}
-                        />
-                        <Text style={styles.textInputError}>
-                            {this.state.passwordErrorMessage}
-                        </Text>
-                        <TextInput
-                            style={styles.textInput}
-                            secureTextEntry={true}
-                            placeholder="Password"
-                            //onSubmitEditing
-                            onChangeText={(text): void => {
-                                this.viewModel.passwordInput = text;
-                            }}
-                            value={this.state.passwordInput}
-                        />
-                    </View>
-                    <View style={styles.logInButtonContainer}>
-                        <PrimaryButton
-                            onPress={(): void => this.logInWithEmail()}
-                            title="Log In"
-                            disabled={this.state.logInButtonDisabled}
-                        />
-                        {this.state.isBusy &&
-                            <ActivityIndicator
-                                style={styles.logInActivityIndicator}
-                                size="large"
-                                color={Theme.Color.PrimaryBlue}
-                                animating={this.state.isBusy}
-                            />
-                        }
-                    </View>
-                </SafeAreaView>
-            </TouchableWithoutFeedback>
+    useEffect((): (() => void) => {
+        props.viewModel.onDidUpdate((change): void => setState(change));
+        props.viewModel.onNavigateToApp((): boolean =>
+            props.navigation.navigate("App")
         );
-    }
 
-    private logInWithEmail(): void {
-        const emailAddress = new EmailAddress(this.state.emailInput);
-        const password = new Password(this.state.passwordInput);
+        return (): void => {
+            props.viewModel.onDidUpdate(undefined);
+            props.viewModel.onNavigateToApp(undefined);
+        };
+    });
 
-        this.loginService.logInWithEmail(emailAddress, password);
-    }
-}
+    return (
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+            <SafeAreaView style={[styles.safeAreaView, styles.base]}>
+                <Images.IconLogoCombo style={styles.logo} />
+                <View style={styles.content}>
+                    <View>
+                        <Button
+                            icon="facebook"
+                            mode="outlined"
+                            color="#3B5998"
+                            uppercase={false}
+                            loading={
+                                itemWithActivity === ActivityItem.Facebook &&
+                                state.isBusy
+                            }
+                            onPress={(): void => signInWithFacebook()}
+                            style={styles.buttonStyle}
+                            contentStyle={styles.buttonContentStyle}
+                            labelStyle={styles.buttonLabelStyle}
+                        >
+                            Sign in with Facebook
+                        </Button>
+                        <Button
+                            icon="google"
+                            mode="outlined"
+                            color="#DB4437"
+                            uppercase={false}
+                            loading={
+                                itemWithActivity === ActivityItem.Google &&
+                                state.isBusy
+                            }
+                            onPress={(): void => signInWithGoogle()}
+                            style={styles.buttonStyle}
+                            contentStyle={styles.buttonContentStyle}
+                            labelStyle={styles.buttonLabelStyle}
+                        >
+                            Sign in with Google
+                        </Button>
+                    </View>
+                    <View style={styles.deleteMeForEmailLogin}>
+                        {/*<TextInput
+                            label="Email address"
+                            mode="outlined"
+                            value={this.state.emailInput}
+                            onChangeText={text => this.setState({ text })}
+                            theme={{
+                                colors: {
+                                    primary: Theme.Color.SecondaryOrange
+                                }
+                            }}
+                            style={styles.textInput}
+                        />
+                        <TextInput
+                            label="Password"
+                            mode="outlined"
+                            value={this.state.passwordInput}
+                            onChangeText={text => this.setState({ text })}
+                            theme={{
+                                colors: {
+                                    primary: Theme.Color.SecondaryOrange
+                                }
+                            }}
+                            style={styles.textInput}
+                        />
+                        <Button
+                            icon="email-outline"
+                            mode="outlined"
+                            uppercase={false}
+                            loading={
+                                itemWithActivity === ActivityItem.Email &&
+                                state.isBusy
+                            }
+                            onPress={() => console.log("Pressed")}
+                            style={styles.buttonStyle}
+                            contentStyle={styles.buttonContentStyle}
+                            labelStyle={styles.buttonLabelStyle}
+                        >
+                            Sign in with email
+                        </Button>*/}
+                    </View>
+                </View>
+                <ErrorDialog
+                    message={state.federatedErrorMessage}
+                    visible={state.federatedErrorMessage !== ""}
+                    onDismiss={onDismissErrorDialog}
+                />
+            </SafeAreaView>
+        </TouchableWithoutFeedback>
+    );
+};
+
+export default LoginViewController;
