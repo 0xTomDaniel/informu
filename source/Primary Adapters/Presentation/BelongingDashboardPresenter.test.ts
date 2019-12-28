@@ -1,42 +1,45 @@
-import { DashboardBelonging, DashboardBelongingUpdate } from '../../Core/Ports/BelongingDashboardOutput';
-import { HomeViewModel, BelongingViewData } from './HomeViewModel';
-import BelongingDashboardPresenter from './BelongingDashboardPresenter';
-import Theme from './Theme';
-import lolex from 'lolex';
+import {
+    DashboardBelonging,
+    DashboardBelongingUpdate
+} from "../../Core/Ports/BelongingDashboardOutput";
+import { HomeViewModel, BelongingViewData } from "./HomeViewModel";
+import BelongingDashboardPresenter from "./BelongingDashboardPresenter";
+import Theme from "./Theme";
+import lolex from "lolex";
 
 const clock = lolex.install();
 const belongings: DashboardBelonging[] = [
     {
-        uid: 'randomUUID01',
-        name: 'Keys',
+        uid: "randomUUID01",
+        name: "Keys",
         isSafe: true,
-        lastSeen: new Date(),
+        lastSeen: new Date()
     },
     {
-        uid: 'randomUUID02',
-        name: 'Laptop',
+        uid: "randomUUID02",
+        name: "Laptop",
         isSafe: false,
-        lastSeen: new Date('2011-10-05T14:48:00.000Z'),
-    },
+        lastSeen: new Date("2011-10-05T14:48:00.000Z")
+    }
 ];
 const belongingsViewData: BelongingViewData[] = [
     {
-        uid: 'randomUUID01',
-        name: 'Keys',
+        uid: "randomUUID01",
+        name: "Keys",
         safeStatusColor: Theme.Color.Green,
-        lastSeen: 'Just now',
+        lastSeen: "Just now"
     },
     {
-        uid: 'randomUUID02',
-        name: 'Laptop',
+        uid: "randomUUID02",
+        name: "Laptop",
         safeStatusColor: Theme.Color.Error,
-        lastSeen: '2011-10-5',
-    },
+        lastSeen: "10/5/2011"
+    }
 ];
 const viewModel = new HomeViewModel();
 const belongingDashboardPresenter = new BelongingDashboardPresenter(viewModel);
 
-test('show all current belongings', (): void => {
+test("show all current belongings", (): void => {
     expect.assertions(2);
     viewModel.onDidUpdate((newState): void => {
         expect(newState.belongings).toEqual(belongingsViewData);
@@ -46,7 +49,7 @@ test('show all current belongings', (): void => {
     belongingDashboardPresenter.showAll(belongings);
 });
 
-test('show no current belongings', (): void => {
+test("show no current belongings", (): void => {
     expect.assertions(1);
     viewModel.onDidUpdate((newState): void => {
         expect(newState.showEmptyBelongings).toEqual(true);
@@ -55,18 +58,18 @@ test('show no current belongings', (): void => {
     belongingDashboardPresenter.showNone();
 });
 
-test('show added belonging', (): void => {
+test("show added belonging", (): void => {
     const newBelonging: DashboardBelonging = {
-        uid: 'randomUUID03',
-        name: 'Wallet',
+        uid: "randomUUID03",
+        name: "Wallet",
         isSafe: true,
-        lastSeen: new Date(),
+        lastSeen: new Date()
     };
     const newBelongingViewData: BelongingViewData = {
-        uid: 'randomUUID03',
-        name: 'Wallet',
+        uid: "randomUUID03",
+        name: "Wallet",
         safeStatusColor: Theme.Color.Green,
-        lastSeen: 'Just now',
+        lastSeen: "Just now"
     };
 
     expect.assertions(2);
@@ -78,18 +81,18 @@ test('show added belonging', (): void => {
     belongingDashboardPresenter.add(newBelonging);
 });
 
-test('show belonging update', (): void => {
+test("show belonging update", (): void => {
     const now = new Date();
     const belongingUpdate: DashboardBelongingUpdate = {
-        uid: 'randomUUID02',
+        uid: "randomUUID02",
         isSafe: true,
-        lastSeen: now,
+        lastSeen: now
     };
     const belongingUpdateViewData: BelongingViewData = {
-        uid: 'randomUUID02',
-        name: 'Laptop',
+        uid: "randomUUID02",
+        name: "Laptop",
         safeStatusColor: Theme.Color.Green,
-        lastSeen: 'Just now',
+        lastSeen: "Just now"
     };
 
     expect.assertions(2);
@@ -101,7 +104,7 @@ test('show belonging update', (): void => {
     belongingDashboardPresenter.update(belongingUpdate);
 });
 
-test('continuously update last seen message', (): void => {
+test("continuously update last seen message", (): void => {
     const oneSecondInMS = 1000;
     const oneMinuteInMS = oneSecondInMS * 60;
     const oneHourInMS = oneMinuteInMS * 60;
@@ -110,75 +113,75 @@ test('continuously update last seen message', (): void => {
     viewModel.onDidUpdate(undefined);
 
     clock.tick(oneSecondInMS * 5);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('Just now');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("Just now");
 
     clock.tick(oneSecondInMS * 54);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('Just now');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("Just now");
 
     clock.tick(oneSecondInMS);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('1m ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("1m ago");
 
     clock.tick(oneMinuteInMS);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('2m ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("2m ago");
 
     clock.tick(oneMinuteInMS * 57);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('59m ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("59m ago");
 
     clock.tick(oneMinuteInMS);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('1h ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("1h ago");
 
     clock.tick(oneHourInMS);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('2h ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("2h ago");
 
     clock.tick(oneHourInMS * 21);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('23h ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("23h ago");
 
     clock.tick(oneHourInMS);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('1d ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("1d ago");
 
     clock.tick(oneDayInMS);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('2d ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("2d ago");
 
     clock.tick(oneDayInMS * 4);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('6d ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("6d ago");
 
     clock.tick(oneDayInMS);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('1969-12-31');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("12/31/1969");
 
     belongingDashboardPresenter.update({
-        uid: 'randomUUID03',
+        uid: "randomUUID03",
         isSafe: true,
-        lastSeen: new Date(),
+        lastSeen: new Date()
     });
 
     belongingDashboardPresenter.update({
-        uid: 'randomUUID03',
-        isSafe: false,
+        uid: "randomUUID03",
+        isSafe: false
     });
 
     clock.tick(oneSecondInMS * 5);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('Seconds ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("Seconds ago");
 
     clock.tick(oneSecondInMS * 55);
-    expect(viewModel.state.belongings[2].lastSeen).toEqual('1m ago');
+    expect(viewModel.state.belongings[2].lastSeen).toEqual("1m ago");
 
     clock.uninstall();
 });
 
-test('remove belonging', (): void => {
+test("remove belonging", (): void => {
     const updatedBelongingsViewData: BelongingViewData[] = [
         {
-            uid: 'randomUUID01',
-            name: 'Keys',
+            uid: "randomUUID01",
+            name: "Keys",
             safeStatusColor: Theme.Color.Green,
-            lastSeen: '1969-12-31',
+            lastSeen: "12/31/1969"
         },
         {
-            uid: 'randomUUID03',
-            name: 'Wallet',
+            uid: "randomUUID03",
+            name: "Wallet",
             safeStatusColor: Theme.Color.Error,
-            lastSeen: '1m ago',
-        },
+            lastSeen: "1m ago"
+        }
     ];
 
     //
@@ -187,6 +190,6 @@ test('remove belonging', (): void => {
         expect(newState.showEmptyBelongings).toEqual(false);
     });
 
-    belongingDashboardPresenter.remove('randomUUID02');
+    belongingDashboardPresenter.remove("randomUUID02");
     expect.assertions(2);
 });

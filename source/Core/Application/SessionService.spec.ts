@@ -21,6 +21,7 @@ describe("user opens saved login session", (): void => {
     const AuthenticationMock = jest.fn<Authentication, any>(
         (): Authentication => ({
             authenticateWithEmail: jest.fn(),
+            authenticateWithFacebook: jest.fn(),
             authenticateWithGoogle: jest.fn(),
             isAuthenticatedAs: jest.fn()
         })
