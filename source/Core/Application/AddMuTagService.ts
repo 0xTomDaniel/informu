@@ -1,36 +1,42 @@
-import { AddMuTagOutput } from '../Ports/AddMuTagOutput';
-import { MuTagDevices, ProvisionMuTagFailed, NewMuTagNotFound, BluetoothUnsupported, FindNewMuTagCanceled } from '../Ports/MuTagDevices';
-import { RSSI } from '../Domain/Types';
-import Percent from '../Domain/Percent';
-import UnprovisionedMuTag from '../Domain/UnprovisionedMuTag';
-import { MuTagRepositoryLocal } from '../Ports/MuTagRepositoryLocal';
-import { MuTagRepositoryRemote } from '../Ports/MuTagRepositoryRemote';
-import ProvisionedMuTag from '../Domain/ProvisionedMuTag';
-import { MuTagColor } from '../Domain/MuTag';
-import { AccountRepositoryLocal } from '../Ports/AccountRepositoryLocal';
-import { AccountRepositoryRemote } from '../Ports/AccountRepositoryRemote';
+import { AddMuTagOutput } from "../Ports/AddMuTagOutput";
+import {
+    MuTagDevices,
+    ProvisionMuTagFailed,
+    NewMuTagNotFound,
+    BluetoothUnsupported,
+    FindNewMuTagCanceled,
+    BluetoothPoweredOff
+} from "../Ports/MuTagDevices";
+import { RSSI } from "../Domain/Types";
+import Percent from "../Domain/Percent";
+import UnprovisionedMuTag from "../Domain/UnprovisionedMuTag";
+import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
+import ProvisionedMuTag from "../Domain/ProvisionedMuTag";
+import { MuTagColor } from "../Domain/MuTag";
+import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
+import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 
 export class LowMuTagBattery extends Error {
-
     constructor(lowBatteryThreshold: number) {
-        super('Unable to add Mu tag because its battery is below ' +
-        `${lowBatteryThreshold}%. Please charge Mu tag and try again.`);
-        this.name = 'LowMuTagBattery';
+        super(
+            "Unable to add Mu tag because its battery is below " +
+                `${lowBatteryThreshold}%. Please charge Mu tag and try again.`
+        );
+        this.name = "LowMuTagBattery";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
 export class AddedMuTagNotFound extends Error {
-
     constructor() {
-        super('There was no added Mu tag found.');
-        this.name = 'AddedMuTagNotFound';
+        super("There was no added Mu tag found.");
+        this.name = "AddedMuTagNotFound";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
 export default class AddMuTagService {
-
     private readonly connectThreshold: RSSI;
     private readonly addMuTagBatteryThreshold: Percent;
     private readonly addMuTagOutput: AddMuTagOutput;
@@ -53,7 +59,7 @@ export default class AddMuTagService {
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
         accountRepoLocal: AccountRepositoryLocal,
-        accountRepoRemote: AccountRepositoryRemote,
+        accountRepoRemote: AccountRepositoryRemote
     ) {
         this.connectThreshold = connectThreshold;
         this.addMuTagBatteryThreshold = addMuTagBatteryThreshold;
@@ -69,11 +75,18 @@ export default class AddMuTagService {
         this.addMuTagOutput.showAddMuTagScreen();
 
         try {
-            this.unprovisionedMuTag = await this.muTagDevices
-                .findNewMuTag(this.connectThreshold);
+            this.unprovisionedMuTag = await this.muTagDevices.findNewMuTag(
+                this.connectThreshold
+            );
 
-            if (!this.unprovisionedMuTag.isBatteryAboveThreshold(this.addMuTagBatteryThreshold)) {
-                const error = new LowMuTagBattery(this.addMuTagBatteryThreshold.valueOf());
+            if (
+                !this.unprovisionedMuTag.isBatteryAboveThreshold(
+                    this.addMuTagBatteryThreshold
+                )
+            ) {
+                const error = new LowMuTagBattery(
+                    this.addMuTagBatteryThreshold.valueOf()
+                );
                 this.addMuTagOutput.showLowBatteryError(error);
                 return;
             }
@@ -92,7 +105,11 @@ export default class AddMuTagService {
                 case BluetoothUnsupported:
                     this.addMuTagOutput.showBluetoothUnsupportedError(e);
                     break;
-                case FindNewMuTagCanceled: break;
+                case BluetoothPoweredOff:
+                    this.addMuTagOutput.showError(e);
+                    break;
+                case FindNewMuTagCanceled:
+                    break;
                 default:
                     throw e;
             }
@@ -131,23 +148,19 @@ export default class AddMuTagService {
     }
 
     async completeMuTagSetup(color: MuTagColor): Promise<void> {
-        try {
-            if (this.provisionedMuTag == null) {
-                throw new AddedMuTagNotFound();
-            }
-
-            this.addMuTagOutput.showActivityIndicator();
-
-            this.provisionedMuTag.changeColor(color);
-            await this.muTagRepoLocal.update(this.provisionedMuTag);
-            const accountUID = await this.getAccountUID();
-            await this.muTagRepoRemote.update(this.provisionedMuTag, accountUID);
-
-            this.resetAddNewMuTagState();
-            this.addMuTagOutput.showHomeScreen();
-        } catch (e) {
-            throw e;
+        if (this.provisionedMuTag == null) {
+            throw new AddedMuTagNotFound();
         }
+
+        this.addMuTagOutput.showActivityIndicator();
+
+        this.provisionedMuTag.changeColor(color);
+        await this.muTagRepoLocal.update(this.provisionedMuTag);
+        const accountUID = await this.getAccountUID();
+        await this.muTagRepoRemote.update(this.provisionedMuTag, accountUID);
+
+        this.resetAddNewMuTagState();
+        this.addMuTagOutput.showHomeScreen();
     }
 
     private async addNewMuTag(
@@ -163,7 +176,7 @@ export default class AddMuTagService {
             accountNumber,
             beaconID,
             muTagNumber,
-            name,
+            name
         );
         this.unprovisionedMuTag = undefined;
         await this.muTagRepoLocal.add(this.provisionedMuTag);

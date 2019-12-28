@@ -1,16 +1,22 @@
-import { AddMuTagOutput } from '../../Core/Ports/AddMuTagOutput';
-import { HomeViewModel } from './HomeViewModel';
-import { AddMuTagViewModel } from './AddMuTagViewModel';
-import { LowMuTagBattery } from '../../Core/Application/AddMuTagService';
-import { NewMuTagNotFound, ProvisionMuTagFailed, BluetoothUnsupported } from '../../Core/Ports/MuTagDevices';
-import { NameMuTagViewModel } from './NameMuTagViewModel';
-import { MuTagAddingViewModel } from './MuTagAddingViewModel';
+import { AddMuTagOutput } from "../../Core/Ports/AddMuTagOutput";
+import { HomeViewModel } from "./HomeViewModel";
+import { AddMuTagViewModel } from "./AddMuTagViewModel";
+import { LowMuTagBattery } from "../../Core/Application/AddMuTagService";
+import {
+    NewMuTagNotFound,
+    ProvisionMuTagFailed,
+    BluetoothUnsupported
+} from "../../Core/Ports/MuTagDevices";
+import { NameMuTagViewModel } from "./NameMuTagViewModel";
+import { MuTagAddingViewModel } from "./MuTagAddingViewModel";
 
-type CurrentViewModel
-    = HomeViewModel | AddMuTagViewModel | NameMuTagViewModel | MuTagAddingViewModel;
+type CurrentViewModel =
+    | HomeViewModel
+    | AddMuTagViewModel
+    | NameMuTagViewModel
+    | MuTagAddingViewModel;
 
 export default class AddMuTagPresenter implements AddMuTagOutput {
-
     private readonly homeViewModel: HomeViewModel;
     private readonly addMuTagViewModel: AddMuTagViewModel;
     private readonly nameMuTagViewModel: NameMuTagViewModel;
@@ -21,7 +27,7 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
         homeViewModel: HomeViewModel,
         addMuTagViewModel: AddMuTagViewModel,
         nameMuTagViewModel: NameMuTagViewModel,
-        muTagAddingViewModel: MuTagAddingViewModel,
+        muTagAddingViewModel: MuTagAddingViewModel
     ) {
         this.homeViewModel = homeViewModel;
         this.addMuTagViewModel = addMuTagViewModel;
@@ -46,8 +52,8 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
 
     showMuTagFinalSetupScreen(): void {
         if (
-            this.currentViewModel instanceof NameMuTagViewModel
-            || this.currentViewModel instanceof MuTagAddingViewModel
+            this.currentViewModel instanceof NameMuTagViewModel ||
+            this.currentViewModel instanceof MuTagAddingViewModel
         ) {
             this.currentViewModel.navigateToMuTagSettings();
         }
@@ -61,12 +67,12 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
 
     showHomeScreen(): void {
         if (
-            this.currentViewModel instanceof AddMuTagViewModel
-            || this.currentViewModel instanceof NameMuTagViewModel
-            || this.currentViewModel instanceof MuTagAddingViewModel
+            this.currentViewModel instanceof AddMuTagViewModel ||
+            this.currentViewModel instanceof NameMuTagViewModel ||
+            this.currentViewModel instanceof MuTagAddingViewModel
         ) {
             this.currentViewModel.showError = false;
-            this.currentViewModel.errorDescription = '';
+            this.currentViewModel.errorDescription = "";
             this.currentViewModel.navigateToHomeScreen();
             this.currentViewModel = this.homeViewModel;
         }
@@ -75,26 +81,30 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
     }
 
     showLowBatteryError(error: LowMuTagBattery): void {
-        this.showError(error.message);
+        this.showErrorMessage(error.message);
     }
 
     showFindNewMuTagError(error: NewMuTagNotFound): void {
-        this.showError(error.message);
+        this.showErrorMessage(error.message);
     }
 
     showProvisionFailedError(error: ProvisionMuTagFailed): void {
-        this.showError(error.message);
+        this.showErrorMessage(error.message);
     }
 
     showBluetoothUnsupportedError(error: BluetoothUnsupported): void {
-        this.showError(error.message);
+        this.showErrorMessage(error.message);
     }
 
-    private showError(description: string): void {
+    showError(error: Error): void {
+        this.showErrorMessage(error.message);
+    }
+
+    private showErrorMessage(description: string): void {
         if (
-            this.currentViewModel instanceof AddMuTagViewModel
-            || this.currentViewModel instanceof NameMuTagViewModel
-            || this.currentViewModel instanceof MuTagAddingViewModel
+            this.currentViewModel instanceof AddMuTagViewModel ||
+            this.currentViewModel instanceof NameMuTagViewModel ||
+            this.currentViewModel instanceof MuTagAddingViewModel
         ) {
             this.currentViewModel.errorDescription = description;
             this.currentViewModel.showError = true;
@@ -103,6 +113,6 @@ export default class AddMuTagPresenter implements AddMuTagOutput {
 
     private resetViewModelsToDefault(): void {
         this.nameMuTagViewModel.showActivityIndicator = false;
-        this.nameMuTagViewModel.attachedToInput = '';
+        this.nameMuTagViewModel.attachedToInput = "";
     }
 }
