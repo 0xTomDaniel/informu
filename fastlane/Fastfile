@@ -1,0 +1,104 @@
+# Customise this file, documentation can be found here:
+# https://github.com/fastlane/fastlane/tree/master/fastlane/docs
+# All available actions: https://docs.fastlane.tools/actions
+# can also be listed using the `fastlane actions` command
+
+# Change the syntax highlighting to Ruby
+# All lines starting with a # are ignored when running `fastlane`
+
+# If you want to automatically update fastlane if a new version is available:
+# update_fastlane
+
+# This is the minimum version number required.
+# Update this, if you use features of a newer version
+fastlane_version "2.138.0"
+
+default_platform :android
+
+platform :android do
+  fastlane_require 'dotenv'
+
+  before_all do
+    # ENV["SLACK_URL"] = "https://hooks.slack.com/services/..."
+  end
+
+  desc "Run the development build via adb"
+  lane :develop do
+    Dotenv.load('.env.development')
+
+    debugIconFolders = Dir["../android/app/src/debug/res/mipmap-*"]
+    if debugIconFolders.empty?
+      UI.header "Creating icons for debug build"
+      defaultIconFolders = Dir["../android/app/src/main/res/mipmap-*"]
+      FileUtils.cp_r defaultIconFolders, "../android/app/src/debug/res"
+      #version = get_version_name(app_project_dir: '**/app')
+      add_badge(
+        #shield: "dev-#{version}+-4bbac9",
+        glob: "./**/android/app/src/debug/res/**/*.{png,PNG}",
+        custom: "fastlane/assets/dev_badge_dark_android.png"
+      )
+    end
+
+    # Must run Metro Bundler manually to populate environment variables
+    envDevelopment = IO.read('.env.development').gsub(/\n/,' ').gsub('"','\"')
+    sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envDevelopment} && clear && react-native start --reset-cache\"\'"
+
+    sh "cd .. && react-native run-android"
+  end
+
+  desc "Deploy a new version to Google Play Store"
+  lane :deploy do
+    Dotenv.load('.env.production')
+    keystoreAndKeyPassword = UI.password "Upload keystore and key password: "
+    #store_password = prompt(text: "Upload keystore password: ", secure_text: true)
+    #key_password = prompt(text: "Upload key password: ", secure_text: true)
+    projectDir = 'android'
+    uploadKeyAlias = "upload"
+    uploadKeystoreFilePath = File.join(Dir.pwd, "secrets", "upload-keystore.jks")
+    gradle(task: 'clean', project_dir: projectDir)
+    gradle(
+      task: 'bundle',
+      build_type: 'Release',
+      print_command: false,
+      properties: {
+        "android.injected.signing.store.file" => uploadKeystoreFilePath,
+        "android.injected.signing.store.password" => keystoreAndKeyPassword,
+        "android.injected.signing.key.alias" => uploadKeyAlias,
+        "android.injected.signing.key.password" => keystoreAndKeyPassword,
+      },
+      project_dir: projectDir
+    )
+    #upload_to_play_store(
+    #  track: 'internal'
+    #)
+  end
+
+  desc "Runs all the tests"
+  lane :test do
+    gradle(task: "test")
+  end
+
+  # You can define as many lanes as you want
+
+  after_all do |lane|
+    # This block is called, only if the executed lane was successful
+
+    # slack(
+    #   message: "Successfully deployed new App Update."
+    # )
+  end
+
+  error do |lane, exception|
+    # slack(
+    #   message: exception.message,
+    #   success: false
+    # )
+  end
+end
+
+
+# More information about multiple platforms in fastlane: https://github.com/fastlane/fastlane/blob/master/fastlane/docs/Platforms.md
+# All available actions: https://docs.fastlane.tools/actions
+
+# fastlane reports which actions are used
+# No personal data is sent or shared. Learn more at https://github.com/fastlane/enhancer

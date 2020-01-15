@@ -19,11 +19,8 @@ import {
 import { LoginManager, AccessToken } from "react-native-fbsdk";
 
 export class AuthenticationFirebase implements Authentication {
-    constructor() {
-        GoogleSignin.configure({
-            webClientId:
-                "767308727016-13p98clpkloddstuonfn69enii3030s4.apps.googleusercontent.com"
-        });
+    constructor(webClientID: string) {
+        GoogleSignin.configure({ webClientId: webClientID });
     }
 
     async authenticateWithEmail(

@@ -8,6 +8,50 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:767308727016:android:61c8f65b10fc06bd56ff5d",
+        "android_client_info": {
+          "package_name": "ai.informu.mutag.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "767308727016-crq7lr7me3ekm3i3j20m5tt66racg8m6.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ai.informu.mutag.debug",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "767308727016-13p98clpkloddstuonfn69enii3030s4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmmIBFdpe6Gp8pFCDhV-HqolGkU_NxTFs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "767308727016-13p98clpkloddstuonfn69enii3030s4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "767308727016-qgl72lj36hchuuugjjdlmh45lmefauq3.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "org.reactjs.native.example.MuTagReactNative"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:767308727016:android:f3b66943b734a7d9",
         "android_client_info": {
           "package_name": "com.mutagreactnative"

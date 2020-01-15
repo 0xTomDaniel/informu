@@ -57,6 +57,7 @@ const appViewModel = new AppViewModel();
 const sessionPresenter = new AppPresenter(appViewModel);
 
 export class Dependencies {
+    webClientID: string;
     authentication: AuthenticationFirebase;
     database: DatabaseImplWatermelon;
     accountRepoLocal: AccountRepoLocalImpl;
@@ -89,8 +90,9 @@ export class Dependencies {
     loginService: LoginService;
     appStateController: AppStateController;
 
-    constructor() {
-        this.authentication = new AuthenticationFirebase();
+    constructor(webClientID: string) {
+        this.webClientID = webClientID;
+        this.authentication = new AuthenticationFirebase(webClientID);
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
@@ -188,7 +190,7 @@ export class Dependencies {
     }
 
     private resetAll(): void {
-        this.authentication = new AuthenticationFirebase();
+        this.authentication = new AuthenticationFirebase(this.webClientID);
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
@@ -288,7 +290,17 @@ export class Dependencies {
     }
 }
 
-const dependencies = new Dependencies();
+function assertNotNullOrUndefined(value: unknown): asserts value {
+    if (value == null) {
+        const error = new Error("value is undefined");
+        console.error(error.message);
+        throw error;
+    }
+}
+
+const webClientID = process.env.GOOGLE_WEB_CLIENT_ID;
+assertNotNullOrUndefined(webClientID);
+const dependencies = new Dependencies(webClientID);
 
 const AppStack = createStackNavigator(
     {

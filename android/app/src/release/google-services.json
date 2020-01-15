@@ -1,0 +1,138 @@
+{
+  "project_info": {
+    "project_number": "578567758914",
+    "firebase_url": "https://mutag-release-app.firebaseio.com",
+    "project_id": "mutag-release-app",
+    "storage_bucket": "mutag-release-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:578567758914:android:81836565a0aa41438df9db",
+        "android_client_info": {
+          "package_name": "ai.informu.mutag"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "578567758914-suuicv9v5v6hben401bcdfuqssgkbhto.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ai.informu.mutag",
+            "certificate_hash": "934f52a98965b29c6c15d7a7db3428d1faa97dcc"
+          }
+        },
+        {
+          "client_id": "578567758914-celt2r1t26s3g1kqn2hubic1a95pmsa3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsdF_0BL0tQgBcJ6NQSCVpN4lEmT4Bc2s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "578567758914-celt2r1t26s3g1kqn2hubic1a95pmsa3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "578567758914-q06rrupknj20dkt4ejfg6krvnte9pk8k.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.informu.mu-tag",
+                "app_store_id": "1469326437"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:578567758914:android:e6b794a22e176640",
+        "android_client_info": {
+          "package_name": "com.informu.mutag"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "578567758914-celt2r1t26s3g1kqn2hubic1a95pmsa3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsdF_0BL0tQgBcJ6NQSCVpN4lEmT4Bc2s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "578567758914-celt2r1t26s3g1kqn2hubic1a95pmsa3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "578567758914-q06rrupknj20dkt4ejfg6krvnte9pk8k.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.informu.mu-tag",
+                "app_store_id": "1469326437"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:578567758914:android:162c13dc53b2ce61",
+        "android_client_info": {
+          "package_name": "io.informu.mutag"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "578567758914-dt9jq9siaeih1fov8agadkk5l2kosn1o.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "io.informu.mutag",
+            "certificate_hash": "a81f25b9ed81e5f22cf012ba6cbc2775bf88a8d0"
+          }
+        },
+        {
+          "client_id": "578567758914-celt2r1t26s3g1kqn2hubic1a95pmsa3.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsdF_0BL0tQgBcJ6NQSCVpN4lEmT4Bc2s"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "578567758914-celt2r1t26s3g1kqn2hubic1a95pmsa3.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "578567758914-q06rrupknj20dkt4ejfg6krvnte9pk8k.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "io.informu.mu-tag",
+                "app_store_id": "1469326437"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

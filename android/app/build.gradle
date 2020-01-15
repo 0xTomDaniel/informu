@@ -129,11 +129,11 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.mutagreactnative"
+        applicationId "ai.informu.mutag"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "0.1.0"
         multiDexEnabled true
     }
     splits {
@@ -154,6 +154,7 @@ android {
     }
     buildTypes {
         debug {
+            applicationIdSuffix ".debug"
             signingConfig signingConfigs.debug
         }
         release {
