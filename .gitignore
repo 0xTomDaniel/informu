@@ -78,3 +78,6 @@ buck-out/
 
 # Android Debug Build Icons
 android/app/src/debug/res/mipmap-*
+
+# Logs
+*.log
