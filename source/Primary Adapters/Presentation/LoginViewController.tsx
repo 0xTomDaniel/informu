@@ -14,11 +14,15 @@ import {
 } from "react-native";
 import { SafeAreaView, NavigationScreenProps } from "react-navigation";
 import { LoginViewModel, LoginState } from "./LoginViewModel";
-import { LoginService } from "../../Core/Application/LoginService";
+import {
+    LoginService,
+    EmailAddress,
+    Password
+} from "../../Core/Application/LoginService";
 import DeviceInfo from "react-native-device-info";
 import { Images } from "./Images";
 import Theme from "./Theme";
-import { Button } from "react-native-paper";
+import { Button, TextInput } from "react-native-paper";
 import ErrorDialog from "./Base Components/ErrorDialog";
 
 const styles = StyleSheet.create({
@@ -181,8 +185,12 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                         {/*<TextInput
                             label="Email address"
                             mode="outlined"
-                            value={this.state.emailInput}
-                            onChangeText={text => this.setState({ text })}
+                            value={state.emailInput}
+                            onChangeText={text =>
+                                props.viewModel.updateState({
+                                    emailInput: text
+                                })
+                            }
                             theme={{
                                 colors: {
                                     primary: Theme.Color.SecondaryOrange
@@ -193,8 +201,13 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                         <TextInput
                             label="Password"
                             mode="outlined"
-                            value={this.state.passwordInput}
-                            onChangeText={text => this.setState({ text })}
+                            secureTextEntry={true}
+                            value={state.passwordInput}
+                            onChangeText={text =>
+                                props.viewModel.updateState({
+                                    passwordInput: text
+                                })
+                            }
                             theme={{
                                 colors: {
                                     primary: Theme.Color.SecondaryOrange
@@ -210,7 +223,7 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                                 itemWithActivity === ActivityItem.Email &&
                                 state.isBusy
                             }
-                            onPress={() => console.log("Pressed")}
+                            onPress={(): void => signInWithEmail()}
                             style={styles.buttonStyle}
                             contentStyle={styles.buttonContentStyle}
                             labelStyle={styles.buttonLabelStyle}
