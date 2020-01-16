@@ -33,6 +33,7 @@ describe("Mu tag user adds Mu tag", (): void => {
             showMuTagFinalSetupScreen: jest.fn(),
             showActivityIndicator: jest.fn(),
             showHomeScreen: jest.fn(),
+            showError: jest.fn(),
             showLowBatteryError: jest.fn(),
             showFindNewMuTagError: jest.fn(),
             showProvisionFailedError: jest.fn(),
