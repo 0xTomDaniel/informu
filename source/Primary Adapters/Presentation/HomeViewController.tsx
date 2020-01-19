@@ -49,7 +49,7 @@ const styles = StyleSheet.create({
         backgroundColor: Theme.Color.AlmostWhiteBackground
     },
     appBar: {
-        backgroundColor: "white",
+        backgroundColor: Theme.Color.AlmostWhite,
         borderBottomWidth: 1,
         borderColor: Theme.Color.AlmostWhiteBorder,
         ...Platform.select({
