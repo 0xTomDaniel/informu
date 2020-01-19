@@ -23,7 +23,8 @@ describe("Mu tag user removes Mu tag", (): void => {
             disconnectFromProvisionedMuTag: jest.fn(),
             provisionMuTag: jest.fn(),
             unprovisionMuTag: jest.fn(),
-            readBatteryLevel: jest.fn()
+            readBatteryLevel: jest.fn(),
+            changeTXPower: jest.fn()
         })
     );
 
