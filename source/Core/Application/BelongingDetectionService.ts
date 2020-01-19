@@ -95,7 +95,7 @@ export default class BelongingDetectionService implements BelongingDetection {
         this.muTagMonitor.onMuTagDetection.subscribe((detectedMuTags): void => {
             detectedMuTags.forEach((muTagSignal): void => {
                 this.updateDetectedMuTag(muTagSignal).catch((e): void => {
-                    console.warn(`updateDetectedMuTag() - error: ${e}`);
+                    console.log(`updateDetectedMuTag() - error: ${e}`);
                 });
             });
         });
