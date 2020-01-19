@@ -15,7 +15,8 @@ import {
     BluetoothUnsupported,
     InvalidProvisioning,
     MuTagNotFound,
-    BluetoothPoweredOff
+    BluetoothPoweredOff,
+    TXPowerSetting
 } from "../../Core/Ports/MuTagDevices";
 import { RSSI } from "../../Core/Domain/Types";
 import UnprovisionedMuTag from "../../Core/Domain/UnprovisionedMuTag";
@@ -289,6 +290,40 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevices {
             MuTagBLEGATT.DeviceInformation.BatteryLevel
         );
         return new Percent(batteryLevel.valueOf());
+    }
+
+    async changeTXPower(
+        txPower: TXPowerSetting,
+        accountNumber: AccountNumber,
+        beaconID: BeaconID
+    ): Promise<void> {
+        const muTagDevice = await this.getProvisionedMuTagDevice(
+            accountNumber,
+            beaconID
+        );
+        let txPowerHex: Hexadecimal;
+        switch (txPower) {
+            case TXPowerSetting["+6 dBm"]:
+                txPowerHex = Hexadecimal.fromString("01");
+                break;
+            case TXPowerSetting["0 dBm"]:
+                txPowerHex = Hexadecimal.fromString("02");
+                break;
+            case TXPowerSetting["-8 dBm"]:
+                txPowerHex = Hexadecimal.fromString("03");
+                break;
+            case TXPowerSetting["-15 dBm"]:
+                txPowerHex = Hexadecimal.fromString("04");
+                break;
+            case TXPowerSetting["-20 dBm"]:
+                txPowerHex = Hexadecimal.fromString("05");
+                break;
+        }
+        await MuTagDevicesRNBLEPLX.writeCharacteristic(
+            muTagDevice,
+            MuTagBLEGATT.MuTagConfiguration.TXPower,
+            txPowerHex
+        );
     }
 
     private moveToProvisionedCache(

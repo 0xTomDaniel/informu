@@ -5,7 +5,8 @@ import {
     NewMuTagNotFound,
     BluetoothUnsupported,
     FindNewMuTagCanceled,
-    BluetoothPoweredOff
+    BluetoothPoweredOff,
+    TXPowerSetting
 } from "../Ports/MuTagDevices";
 import { RSSI } from "../Domain/Types";
 import Percent from "../Domain/Percent";
@@ -178,7 +179,6 @@ export default class AddMuTagService {
             muTagNumber,
             name
         );
-        this.unprovisionedMuTag = undefined;
         await this.muTagRepoLocal.add(this.provisionedMuTag);
         this.accountUID = account.uid;
         await this.muTagRepoRemote.add(this.provisionedMuTag, this.accountUID);
@@ -186,6 +186,16 @@ export default class AddMuTagService {
         account.addNewMuTag(this.provisionedMuTag.uid, beaconID);
         await this.accountRepoLocal.update(account);
         await this.accountRepoRemote.update(account);
+
+        await this.muTagDevices.connectToProvisionedMuTag(
+            accountNumber,
+            beaconID
+        );
+        await this.muTagDevices.changeTXPower(
+            TXPowerSetting["+6 dBm"],
+            accountNumber,
+            beaconID
+        );
 
         this.addMuTagOutput.showMuTagFinalSetupScreen();
     }

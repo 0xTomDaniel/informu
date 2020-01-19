@@ -1,5 +1,5 @@
 import AddMuTagService, { LowMuTagBattery } from "./AddMuTagService";
-import { MuTagDevices } from "../Ports/MuTagDevices";
+import { MuTagDevices, TXPowerSetting } from "../Ports/MuTagDevices";
 import UnprovisionedMuTag from "../Domain/UnprovisionedMuTag";
 import ProvisionedMuTag, { BeaconID } from "../Domain/ProvisionedMuTag";
 import { AddMuTagOutput } from "../Ports/AddMuTagOutput";
@@ -21,7 +21,8 @@ describe("Mu tag user adds Mu tag", (): void => {
             disconnectFromProvisionedMuTag: jest.fn(),
             provisionMuTag: jest.fn(),
             unprovisionMuTag: jest.fn(),
-            readBatteryLevel: jest.fn()
+            readBatteryLevel: jest.fn(),
+            changeTXPower: jest.fn()
         })
     );
 
@@ -271,6 +272,26 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
             expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should set TX power to highest option (+6; 0x01)", (): void => {
+            expect(
+                muTagDevicesMock.connectToProvisionedMuTag
+            ).toHaveBeenCalledWith(
+                validAccountData._accountNumber,
+                newMuTagBeaconID
+            );
+            expect(
+                muTagDevicesMock.connectToProvisionedMuTag
+            ).toHaveBeenCalledTimes(1);
+            expect(muTagDevicesMock.changeTXPower).toHaveBeenCalledWith(
+                TXPowerSetting["+6 dBm"],
+                validAccountData._accountNumber,
+                newMuTagBeaconID
+            );
+            expect(muTagDevicesMock.changeTXPower).toHaveBeenCalledTimes(1);
         });
 
         // Then

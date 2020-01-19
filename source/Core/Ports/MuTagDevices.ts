@@ -97,6 +97,14 @@ export class InvalidProvisioning extends Error {
     }
 }
 
+export enum TXPowerSetting {
+    "+6 dBm",
+    "0 dBm",
+    "-8 dBm",
+    "-15 dBm",
+    "-20 dBm"
+}
+
 export interface MuTagDevices {
     findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
     cancelFindNewMuTag(): void;
@@ -123,4 +131,9 @@ export interface MuTagDevices {
         accountNumber: AccountNumber,
         beaconID: BeaconID
     ): Promise<Percent>;
+    changeTXPower(
+        txPower: TXPowerSetting,
+        accountNumber: AccountNumber,
+        beaconID: BeaconID
+    ): Promise<void>;
 }

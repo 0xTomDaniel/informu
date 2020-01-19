@@ -117,13 +117,13 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
         setItemWithActivity(ActivityItem.Google);
         props.loginService.signInWithGoogle().catch(e => console.warn(e));
     };
-    /*const signInWithEmail = (): void => {
+    const signInWithEmail = (): void => {
         setItemWithActivity(ActivityItem.Email);
         const emailAddress = new EmailAddress(state.emailInput);
         const password = new Password(state.passwordInput);
 
-        props.loginService.logInWithEmail(emailAddress, password);
-    };*/
+        props.loginService.signInWithEmail(emailAddress, password);
+    };
     const onDismissErrorDialog = (): void => {
         props.viewModel.updateState({
             federatedErrorMessage: ""
