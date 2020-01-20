@@ -1,20 +1,28 @@
-import AddMuTagService, { LowMuTagBattery } from "./AddMuTagService";
-import { MuTagDevices, TXPowerSetting } from "../Ports/MuTagDevices";
-import UnprovisionedMuTag from "../Domain/UnprovisionedMuTag";
-import ProvisionedMuTag, { BeaconID } from "../Domain/ProvisionedMuTag";
-import { AddMuTagOutput } from "../Ports/AddMuTagOutput";
-import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
-import Percent from "../Domain/Percent";
-import { RSSI, Millisecond } from "../Domain/Types";
-import { MuTagColor } from "../Domain/MuTag";
-import Account, { AccountNumber, AccountData } from "../Domain/Account";
-import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
+import AddMuTagInteractor, { LowMuTagBattery } from "./AddMuTagInteractor";
+import {
+    MuTagDevicesPort,
+    TXPowerSetting
+} from "./MuTagDevicesPort";
+import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
+import ProvisionedMuTag, {
+    BeaconID
+} from "../../../source/Core/Domain/ProvisionedMuTag";
+import { AddMuTagOutputPort } from "./AddMuTagOutputPort";
+import { MuTagRepositoryRemote } from "../../../source/Core/Ports/MuTagRepositoryRemote";
+import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
+import Percent from "../../../source/Core/Domain/Percent";
+import { RSSI, Millisecond } from "../../../source/Core/Domain/Types";
+import { MuTagColor } from "../../../source/Core/Domain/MuTag";
+import Account, {
+    AccountNumber,
+    AccountData
+} from "../../../source/Core/Domain/Account";
+import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
+import { AccountRepositoryRemote } from "../../../source/Core/Ports/AccountRepositoryRemote";
 
 describe("Mu tag user adds Mu tag", (): void => {
-    const MuTagDevicesMock = jest.fn<MuTagDevices, any>(
-        (): MuTagDevices => ({
+    const MuTagDevicesMock = jest.fn<MuTagDevicesPort, any>(
+        (): MuTagDevicesPort => ({
             findNewMuTag: jest.fn(),
             cancelFindNewMuTag: jest.fn(),
             connectToProvisionedMuTag: jest.fn(),
@@ -26,8 +34,8 @@ describe("Mu tag user adds Mu tag", (): void => {
         })
     );
 
-    const AddMuTagOutputMock = jest.fn<AddMuTagOutput, any>(
-        (): AddMuTagOutput => ({
+    const AddMuTagOutputMock = jest.fn<AddMuTagOutputPort, any>(
+        (): AddMuTagOutputPort => ({
             showAddMuTagScreen: jest.fn(),
             showMuTagNamingScreen: jest.fn(),
             showMuTagConnectingScreen: jest.fn(),
@@ -98,7 +106,7 @@ describe("Mu tag user adds Mu tag", (): void => {
 
     const connectMuTagScanThreshold = -72 as RSSI;
     const addMuTagBatteryThreshold = new Percent(15);
-    const addMuTagService = new AddMuTagService(
+    const addMuTagService = new AddMuTagInteractor(
         connectMuTagScanThreshold,
         addMuTagBatteryThreshold,
         addMuTagOutputMock,

@@ -1,9 +1,9 @@
-import UnprovisionedMuTag from "../Domain/UnprovisionedMuTag";
-import ProvisionedMuTag from "../Domain/ProvisionedMuTag";
-import { RSSI } from "../Domain/Types";
-import { BeaconID } from "../Domain/ProvisionedMuTag";
-import { AccountNumber } from "../Domain/Account";
-import Percent from "../Domain/Percent";
+import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
+import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
+import { RSSI } from "../../../source/Core/Domain/Types";
+import { BeaconID } from "../../../source/Core/Domain/ProvisionedMuTag";
+import { AccountNumber } from "../../../source/Core/Domain/Account";
+import Percent from "../../../source/Core/Domain/Percent";
 
 export class UnprovisionMuTagDeviceNotFound extends Error {
     constructor() {
@@ -105,7 +105,7 @@ export enum TXPowerSetting {
     "-20 dBm"
 }
 
-export interface MuTagDevices {
+export interface MuTagDevicesPort {
     findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
     cancelFindNewMuTag(): void;
     connectToProvisionedMuTag(

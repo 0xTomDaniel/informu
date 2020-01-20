@@ -20,7 +20,7 @@ import { SafeAreaView, NavigationScreenProps } from "react-navigation";
 import React, { Component } from "react";
 import DeviceInfo from "react-native-device-info";
 import { NameMuTagViewModel, NameMuTagState } from "./NameMuTagViewModel";
-import AddMuTagService from "../../Core/Application/AddMuTagService";
+import AddMuTagInteractor from "../../../source (restructure)/useCases/addMuTag/AddMuTagInteractor";
 import { Scale } from "./ResponsiveScaler";
 import { MuTagColor } from "../../Core/Domain/MuTag";
 
@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
 
 interface NameMuTagVCProps extends NavigationScreenProps {
     viewModel: NameMuTagViewModel;
-    addMuTagService: AddMuTagService;
+    addMuTagService: AddMuTagInteractor;
 }
 
 export default class NameMuTagViewController extends Component<

@@ -1,22 +1,29 @@
-import Percent from "../Domain/Percent";
-import ProvisionedMuTag, { BeaconID } from "../Domain/ProvisionedMuTag";
+import Percent from "../../../source/Core/Domain/Percent";
+import ProvisionedMuTag, {
+    BeaconID
+} from "../../../source/Core/Domain/ProvisionedMuTag";
 import {
-    MuTagDevices,
+    MuTagDevicesPort,
     MuTagNotFound,
     UnprovisionMuTagFailed
-} from "../Ports/MuTagDevices";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
-import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
-import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
-import Account, { AccountData, AccountNumber } from "../Domain/Account";
-import { MuTagColor } from "../Domain/MuTag";
-import RemoveMuTagService, { LowMuTagBattery } from "./RemoveMuTagService";
-import { RemoveMuTagOutput } from "../Ports/RemoveMuTagOutput";
+} from "../addMuTag/MuTagDevicesPort";
+import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
+import { MuTagRepositoryRemote } from "../../../source/Core/Ports/MuTagRepositoryRemote";
+import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
+import { AccountRepositoryRemote } from "../../../source/Core/Ports/AccountRepositoryRemote";
+import Account, {
+    AccountData,
+    AccountNumber
+} from "../../../source/Core/Domain/Account";
+import { MuTagColor } from "../../../source/Core/Domain/MuTag";
+import RemoveMuTagInteractor, {
+    LowMuTagBattery
+} from "./RemoveMuTagInteractor";
+import { RemoveMuTagOutputPort } from "./RemoveMuTagOutputPort";
 
 describe("Mu tag user removes Mu tag", (): void => {
-    const MuTagDevicesMock = jest.fn<MuTagDevices, any>(
-        (): MuTagDevices => ({
+    const MuTagDevicesMock = jest.fn<MuTagDevicesPort, any>(
+        (): MuTagDevicesPort => ({
             findNewMuTag: jest.fn(),
             cancelFindNewMuTag: jest.fn(),
             connectToProvisionedMuTag: jest.fn(),
@@ -68,8 +75,8 @@ describe("Mu tag user removes Mu tag", (): void => {
         })
     );
 
-    const RemoveMuTagOutputMock = jest.fn<RemoveMuTagOutput, any>(
-        (): RemoveMuTagOutput => ({
+    const RemoveMuTagOutputMock = jest.fn<RemoveMuTagOutputPort, any>(
+        (): RemoveMuTagOutputPort => ({
             showBusyIndicator: jest.fn(),
             hideBusyIndicator: jest.fn(),
             showMuTagNotFoundError: jest.fn(),
@@ -87,7 +94,7 @@ describe("Mu tag user removes Mu tag", (): void => {
     const removeMuTagOutputMock = new RemoveMuTagOutputMock();
 
     const removeMuTagBatteryThreshold = new Percent(15);
-    const removeMuTagService = new RemoveMuTagService(
+    const removeMuTagService = new RemoveMuTagInteractor(
         removeMuTagBatteryThreshold,
         muTagDevicesMock,
         accountRepoLocalMock,

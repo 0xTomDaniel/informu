@@ -6,7 +6,7 @@ import {
     BleError
 } from "react-native-ble-plx";
 import {
-    MuTagDevices,
+    MuTagDevicesPort,
     FindNewMuTagAlreadyRunning,
     FindNewMuTagCanceled,
     UnprovisionMuTagDeviceNotFound,
@@ -17,21 +17,23 @@ import {
     MuTagNotFound,
     BluetoothPoweredOff,
     TXPowerSetting
-} from "../../Core/Ports/MuTagDevices";
-import { RSSI } from "../../Core/Domain/Types";
-import UnprovisionedMuTag from "../../Core/Domain/UnprovisionedMuTag";
-import ProvisionedMuTag, { BeaconID } from "../../Core/Domain/ProvisionedMuTag";
-import { MuTagBLEGATT } from "../../Core/Domain/MuTagBLEGATT/MuTagBLEGATT";
+} from "../../useCases/addMuTag/MuTagDevicesPort";
+import { RSSI } from "../../../source/Core/Domain/Types";
+import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
+import ProvisionedMuTag, {
+    BeaconID
+} from "../../../source/Core/Domain/ProvisionedMuTag";
+import { MuTagBLEGATT } from "../../../source/Core/Domain/MuTagBLEGATT/MuTagBLEGATT";
 import { v4 as UUIDv4 } from "uuid";
-import Percent from "../../Core/Domain/Percent";
+import Percent from "../../../source/Core/Domain/Percent";
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
-} from "../../Core/Domain/MuTagBLEGATT/Characteristic";
-import { AccountNumber } from "../../Core/Domain/Account";
-import { MuTagColor } from "../../Core/Domain/MuTag";
+} from "../../../source/Core/Domain/MuTagBLEGATT/Characteristic";
+import { AccountNumber } from "../../../source/Core/Domain/Account";
+import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import { Buffer } from "buffer";
-import Hexadecimal from "../../Core/Domain/Hexadecimal";
+import Hexadecimal from "../../../source/Core/Domain/Hexadecimal";
 
 export class MuTagNotFoundInUnprovisionedCache extends Error {
     constructor() {
@@ -58,7 +60,7 @@ type ProvisionID = string & { readonly _: unique symbol };
 type MuTagUID = string & { readonly _: unique symbol };
 type DeviceID = string & { readonly _: unique symbol };
 
-export class MuTagDevicesRNBLEPLX implements MuTagDevices {
+export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
     private static readonly muTagDeviceUUID =
         "de7ec7ed1055b055c0dedefea7edfa7e";
 

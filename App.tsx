@@ -21,14 +21,14 @@ import AppViewModel, {
 import AppPresenter from "./source/Primary Adapters/Presentation/AppPresenter";
 import SessionService from "./source/Core/Application/SessionService";
 import { AppStateController } from "./source/Primary Adapters/Device/AppStateController";
-import AddMuTagViewController from "./source/Primary Adapters/Presentation/AddMuTagViewController";
+import AddMuTagViewController from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewController";
 import { RSSI } from "./source/Core/Domain/Types";
 import Percent from "./source/Core/Domain/Percent";
-import { MuTagDevicesRNBLEPLX } from "./source/Secondary Adapters/Infrastructure/MuTagDevicesRNBLEPLX";
-import AddMuTagService from "./source/Core/Application/AddMuTagService";
+import { MuTagDevicesRNBLEPLX } from "./source (restructure)/shared/muTagDevices/MuTagDevicesRNBLEPLX";
+import AddMuTagInteractor from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
 import { HomeViewModel } from "./source/Primary Adapters/Presentation/HomeViewModel";
-import AddMuTagPresenter from "./source/Primary Adapters/Presentation/AddMuTagPresenter";
-import { AddMuTagViewModel } from "./source/Primary Adapters/Presentation/AddMuTagViewModel";
+import AddMuTagPresenter from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagPresenter";
+import { AddMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewModel";
 import MuTagRepoLocalImpl from "./source/Secondary Adapters/Persistence/MuTagRepoLocalImpl";
 import { MuTagRepoRNFirebase } from "./source/Secondary Adapters/Persistence/MuTagRepoRNFirebase";
 import NameMuTagViewController from "./source/Primary Adapters/Presentation/NameMuTagViewController";
@@ -41,7 +41,7 @@ import BelongingDashboardService from "./source/Core/Application/BelongingDashbo
 import BelongingDashboardPresenter from "./source/Primary Adapters/Presentation/BelongingDashboardPresenter";
 import BelongingDetectionService from "./source/Core/Application/BelongingDetectionService";
 import MuTagMonitorRNBM from "./source/Secondary Adapters/Infrastructure/MuTagMonitorRNBM";
-import RemoveMuTagService from "./source/Core/Application/RemoveMuTagService";
+import RemoveMuTagInteractor from "./source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
 import RemoveMuTagPresenter from "./source/Primary Adapters/Presentation/RemoveMuTagPresenter";
 import DatabaseImplWatermelon from "./source/Secondary Adapters/Persistence/DatabaseImplWatermelon";
 import { LoginViewModel } from "./source/Primary Adapters/Presentation/LoginViewModel";
@@ -72,10 +72,10 @@ export class Dependencies {
     muTagAddingViewModel: MuTagAddingViewModel;
     addMuTagPresenter: AddMuTagPresenter;
     muTagDevices: MuTagDevicesRNBLEPLX;
-    addMuTagService: AddMuTagService;
+    addMuTagService: AddMuTagInteractor;
     removeMuTagBatteryThreshold: Percent;
     removeMuTagPresenter: RemoveMuTagPresenter;
-    removeMuTagService: RemoveMuTagService;
+    removeMuTagService: RemoveMuTagInteractor;
     logoutPresenter: LogoutPresenter;
     logoutService: LogoutService;
     belongingDashboardPresenter: BelongingDashboardPresenter;
@@ -114,7 +114,7 @@ export class Dependencies {
             this.muTagAddingViewModel
         );
         this.muTagDevices = new MuTagDevicesRNBLEPLX();
-        this.addMuTagService = new AddMuTagService(
+        this.addMuTagService = new AddMuTagInteractor(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,
             this.addMuTagPresenter,
@@ -128,7 +128,7 @@ export class Dependencies {
         this.removeMuTagPresenter = new RemoveMuTagPresenter(
             this.homeViewModel
         );
-        this.removeMuTagService = new RemoveMuTagService(
+        this.removeMuTagService = new RemoveMuTagInteractor(
             this.removeMuTagBatteryThreshold,
             this.muTagDevices,
             this.accountRepoLocal,
@@ -212,7 +212,7 @@ export class Dependencies {
             this.muTagAddingViewModel
         );
         this.muTagDevices = new MuTagDevicesRNBLEPLX();
-        this.addMuTagService = new AddMuTagService(
+        this.addMuTagService = new AddMuTagInteractor(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,
             this.addMuTagPresenter,
@@ -226,7 +226,7 @@ export class Dependencies {
         this.removeMuTagPresenter = new RemoveMuTagPresenter(
             this.homeViewModel
         );
-        this.removeMuTagService = new RemoveMuTagService(
+        this.removeMuTagService = new RemoveMuTagInteractor(
             this.removeMuTagBatteryThreshold,
             this.muTagDevices,
             this.accountRepoLocal,

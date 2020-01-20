@@ -1,8 +1,10 @@
-import { MuTagNotFound, UnprovisionMuTagFailed } from './MuTagDevices';
-import { LowMuTagBattery } from '../Application/RemoveMuTagService';
+import {
+    MuTagNotFound,
+    UnprovisionMuTagFailed
+} from "../addMuTag/MuTagDevicesPort";
+import { LowMuTagBattery } from "./RemoveMuTagInteractor";
 
-export interface RemoveMuTagOutput {
-
+export interface RemoveMuTagOutputPort {
     showBusyIndicator(): void;
     hideBusyIndicator(): void;
     showMuTagNotFoundError(error: MuTagNotFound): void;

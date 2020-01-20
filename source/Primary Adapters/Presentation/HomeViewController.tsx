@@ -28,13 +28,13 @@ import React, {
 import DeviceInfo from "react-native-device-info";
 import LinearGradient from "react-native-linear-gradient";
 import { HomeViewModel, BelongingViewData } from "./HomeViewModel";
-import AddMuTagService from "../../Core/Application/AddMuTagService";
+import AddMuTagInteractor from "../../../source (restructure)/useCases/addMuTag/AddMuTagInteractor";
 import LogoutService from "../../Core/Application/LogoutService";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Images } from "./Images";
 import { Scale } from "./ResponsiveScaler";
 import BelongingDashboardService from "../../Core/Application/BelongingDashboardService";
-import RemoveMuTagService from "../../Core/Application/RemoveMuTagService";
+import RemoveMuTagInteractor from "../../../source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
 import ErrorDialog from "./Base Components/ErrorDialog";
 
 const styles = StyleSheet.create({
@@ -153,7 +153,7 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
 
 interface BelongingCardProps {
     viewData: BelongingViewData;
-    removeMuTagService: RemoveMuTagService;
+    removeMuTagService: RemoveMuTagInteractor;
 }
 
 const BelongingCard: FunctionComponent<BelongingCardProps> = (
@@ -222,8 +222,8 @@ interface HomeVCProps extends NavigationScreenProps {
     homeViewModel: HomeViewModel;
     belongingDashboardService: BelongingDashboardService;
     logoutService: LogoutService;
-    addMuTagService: AddMuTagService;
-    removeMuTagService: RemoveMuTagService;
+    addMuTagService: AddMuTagInteractor;
+    removeMuTagService: RemoveMuTagInteractor;
 }
 
 const HomeViewController: FunctionComponent<HomeVCProps> = (

@@ -1,10 +1,12 @@
-import { RemoveMuTagOutput } from '../../Core/Ports/RemoveMuTagOutput';
-import { HomeViewModel } from './HomeViewModel';
-import { MuTagNotFound, UnprovisionMuTagFailed } from '../../Core/Ports/MuTagDevices';
-import { LowMuTagBattery } from '../../Core/Application/AddMuTagService';
+import { RemoveMuTagOutputPort } from "../../../source (restructure)/useCases/removeMuTag/RemoveMuTagOutputPort";
+import { HomeViewModel } from "./HomeViewModel";
+import {
+    MuTagNotFound,
+    UnprovisionMuTagFailed
+} from "../../../source (restructure)/useCases/addMuTag/MuTagDevicesPort";
+import { LowMuTagBattery } from "../../../source (restructure)/useCases/addMuTag/AddMuTagInteractor";
 
-export default class RemoveMuTagPresenter implements RemoveMuTagOutput {
-
+export default class RemoveMuTagPresenter implements RemoveMuTagOutputPort {
     private readonly viewModel: HomeViewModel;
 
     constructor(viewModel: HomeViewModel) {
@@ -38,7 +40,7 @@ export default class RemoveMuTagPresenter implements RemoveMuTagOutput {
     private showError(message: string): void {
         this.viewModel.updateState({
             errorDescription: message,
-            isErrorVisible: true,
+            isErrorVisible: true
         });
     }
 }

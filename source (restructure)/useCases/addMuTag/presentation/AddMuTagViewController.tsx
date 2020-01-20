@@ -13,15 +13,15 @@ import {
     View,
     Dimensions
 } from "react-native";
-import Theme from "./Theme";
+import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { SafeAreaView, NavigationScreenProps } from "react-navigation";
 import React, { Component } from "react";
 import DeviceInfo from "react-native-device-info";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { ImageBackgrounds } from "./Images";
+import { ImageBackgrounds } from "../../../../source/Primary Adapters/Presentation/Images";
 import { AddMuTagViewModel, AddMuTagState } from "./AddMuTagViewModel";
-import AddMuTagService from "../../Core/Application/AddMuTagService";
-import { Scale } from "./ResponsiveScaler";
+import AddMuTagInteractor from "../AddMuTagInteractor";
+import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -105,7 +105,7 @@ const styles = StyleSheet.create({
 
 interface AddMuTagVCProps extends NavigationScreenProps {
     viewModel: AddMuTagViewModel;
-    addMuTagService: AddMuTagService;
+    addMuTagService: AddMuTagInteractor;
 }
 
 export default class AddMuTagViewController extends Component<AddMuTagVCProps> {

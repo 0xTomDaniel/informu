@@ -1,11 +1,11 @@
-import { LowMuTagBattery } from "../Application/AddMuTagService";
+import { LowMuTagBattery } from "./AddMuTagInteractor";
 import {
     ProvisionMuTagFailed,
     NewMuTagNotFound,
     BluetoothUnsupported
-} from "./MuTagDevices";
+} from "./MuTagDevicesPort";
 
-export interface AddMuTagOutput {
+export interface AddMuTagOutputPort {
     showAddMuTagScreen(): void;
     showMuTagNamingScreen(): void;
     showMuTagConnectingScreen(): void;

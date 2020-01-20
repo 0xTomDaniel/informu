@@ -1,22 +1,22 @@
-import { AddMuTagOutput } from "../Ports/AddMuTagOutput";
+import { AddMuTagOutputPort } from "./AddMuTagOutputPort";
 import {
-    MuTagDevices,
+    MuTagDevicesPort,
     ProvisionMuTagFailed,
     NewMuTagNotFound,
     BluetoothUnsupported,
     FindNewMuTagCanceled,
     BluetoothPoweredOff,
     TXPowerSetting
-} from "../Ports/MuTagDevices";
-import { RSSI } from "../Domain/Types";
-import Percent from "../Domain/Percent";
-import UnprovisionedMuTag from "../Domain/UnprovisionedMuTag";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
-import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
-import ProvisionedMuTag from "../Domain/ProvisionedMuTag";
-import { MuTagColor } from "../Domain/MuTag";
-import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
+} from "./MuTagDevicesPort";
+import { RSSI } from "../../../source/Core/Domain/Types";
+import Percent from "../../../source/Core/Domain/Percent";
+import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
+import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
+import { MuTagRepositoryRemote } from "../../../source/Core/Ports/MuTagRepositoryRemote";
+import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
+import { MuTagColor } from "../../../source/Core/Domain/MuTag";
+import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
+import { AccountRepositoryRemote } from "../../../source/Core/Ports/AccountRepositoryRemote";
 
 export class LowMuTagBattery extends Error {
     constructor(lowBatteryThreshold: number) {
@@ -37,11 +37,11 @@ export class AddedMuTagNotFound extends Error {
     }
 }
 
-export default class AddMuTagService {
+export default class AddMuTagInteractor {
     private readonly connectThreshold: RSSI;
     private readonly addMuTagBatteryThreshold: Percent;
-    private readonly addMuTagOutput: AddMuTagOutput;
-    private readonly muTagDevices: MuTagDevices;
+    private readonly addMuTagOutput: AddMuTagOutputPort;
+    private readonly muTagDevices: MuTagDevicesPort;
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly muTagRepoRemote: MuTagRepositoryRemote;
     private readonly accountRepoLocal: AccountRepositoryLocal;
@@ -55,8 +55,8 @@ export default class AddMuTagService {
     constructor(
         connectThreshold: RSSI,
         addMuTagBatteryThreshold: Percent,
-        addMuTagOutput: AddMuTagOutput,
-        muTagDevices: MuTagDevices,
+        addMuTagOutput: AddMuTagOutputPort,
+        muTagDevices: MuTagDevicesPort,
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
         accountRepoLocal: AccountRepositoryLocal,

@@ -1,14 +1,14 @@
-import { AddMuTagOutput } from "../../Core/Ports/AddMuTagOutput";
-import { HomeViewModel } from "./HomeViewModel";
+import { AddMuTagOutputPort } from "../AddMuTagOutputPort";
+import { HomeViewModel } from "../../../../source/Primary Adapters/Presentation/HomeViewModel";
 import { AddMuTagViewModel } from "./AddMuTagViewModel";
-import { LowMuTagBattery } from "../../Core/Application/AddMuTagService";
+import { LowMuTagBattery } from "../AddMuTagInteractor";
 import {
     NewMuTagNotFound,
     ProvisionMuTagFailed,
     BluetoothUnsupported
-} from "../../Core/Ports/MuTagDevices";
-import { NameMuTagViewModel } from "./NameMuTagViewModel";
-import { MuTagAddingViewModel } from "./MuTagAddingViewModel";
+} from "../MuTagDevicesPort";
+import { NameMuTagViewModel } from "../../../../source/Primary Adapters/Presentation/NameMuTagViewModel";
+import { MuTagAddingViewModel } from "../../../../source/Primary Adapters/Presentation/MuTagAddingViewModel";
 
 type CurrentViewModel =
     | HomeViewModel
@@ -16,7 +16,7 @@ type CurrentViewModel =
     | NameMuTagViewModel
     | MuTagAddingViewModel;
 
-export default class AddMuTagPresenter implements AddMuTagOutput {
+export default class AddMuTagPresenter implements AddMuTagOutputPort {
     private readonly homeViewModel: HomeViewModel;
     private readonly addMuTagViewModel: AddMuTagViewModel;
     private readonly nameMuTagViewModel: NameMuTagViewModel;
