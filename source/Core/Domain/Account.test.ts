@@ -1,12 +1,12 @@
 import Account, { AccountData, AccountNumber, AccountJSON } from "./Account";
-import { BeaconID } from "./ProvisionedMuTag";
+import { BeaconId } from "./ProvisionedMuTag";
 
 const accountData: AccountData = {
     _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
     _emailAddress: "support+test@informu.io",
-    _nextBeaconID: BeaconID.create("A"),
-    _recycledBeaconIDs: new Set([BeaconID.create("8"), BeaconID.create("9")]),
+    _nextBeaconID: BeaconId.create("A"),
+    _recycledBeaconIDs: new Set([BeaconId.create("8"), BeaconId.create("9")]),
     _nextMuTagNumber: 10,
     _muTags: new Set(["UUID00"])
 };
@@ -49,7 +49,7 @@ const accountDataEmptyCollections: AccountData = {
     _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
     _emailAddress: "support+test@informu.io",
-    _nextBeaconID: BeaconID.create("A"),
+    _nextBeaconID: BeaconId.create("A"),
     _recycledBeaconIDs: new Set(),
     _nextMuTagNumber: 10,
     _muTags: new Set()

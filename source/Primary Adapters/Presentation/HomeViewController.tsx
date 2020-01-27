@@ -36,6 +36,7 @@ import { Scale } from "./ResponsiveScaler";
 import BelongingDashboardService from "../../Core/Application/BelongingDashboardService";
 import RemoveMuTagInteractor from "../../../source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
 import ErrorDialog from "./Base Components/ErrorDialog";
+import BluetoothImplRnBleManager from "../../../source (restructure)/shared/muTagDevices/BluetoothImplRnBleManager";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -230,6 +231,19 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
     props
 ): ReactElement => {
     const [state, setState] = useState(props.homeViewModel.state);
+
+    //DEBUG
+    /*const scanMuTags = (): void => {
+        console.warn("scanMuTags");
+        const ble = new BluetoothImplRnBleManager();
+        ble.discoveredPeripheral.subscribe(peripheral => {
+            console.warn("Peripheral RSSI: ", peripheral.rssi);
+            if (peripheral.rssi > -40) {
+                console.warn(JSON.stringify(peripheral));
+            }
+        });
+        ble.startScan([], 0).catch(e => console.warn(e));
+    };*/
 
     const onDismissErrorDialog = (): void => {
         props.homeViewModel.updateState({

@@ -1,8 +1,8 @@
 import ProvisionedMuTag, {
-    BeaconID,
+    BeaconId,
     MuTagData
 } from "../Domain/ProvisionedMuTag";
-import Percent from "../Domain/Percent";
+import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import {
     BelongingDashboardOutput,
     DashboardBelonging
@@ -55,7 +55,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
     const belongingsData: MuTagData[] = [
         {
             _uid: "randomUUID01",
-            _beaconID: BeaconID.create("0"),
+            _beaconID: BeaconId.create("0"),
             _muTagNumber: 0,
             _name: "Keys",
             _batteryLevel: new Percent(50),
@@ -65,7 +65,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         },
         {
             _uid: "randomUUID02",
-            _beaconID: BeaconID.create("1"),
+            _beaconID: BeaconId.create("1"),
             _muTagNumber: 1,
             _name: "Laptop",
             _batteryLevel: new Percent(50),
@@ -75,7 +75,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         },
         {
             _uid: "randomUUID03",
-            _beaconID: BeaconID.create("2"),
+            _beaconID: BeaconId.create("2"),
             _muTagNumber: 3,
             _name: "Wallet",
             _batteryLevel: new Percent(80),
@@ -88,13 +88,13 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         new ProvisionedMuTag(belongingsData[0]),
         new ProvisionedMuTag(belongingsData[1])
     ]);
-    const recycledBeaconIDs = [BeaconID.create("2"), BeaconID.create("5")];
+    const recycledBeaconIDs = [BeaconId.create("2"), BeaconId.create("5")];
     const accountMuTags = [belongingsData[0]._uid, belongingsData[1]._uid];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconID.create("A"),
+        _nextBeaconID: BeaconId.create("A"),
         _recycledBeaconIDs: new Set(recycledBeaconIDs),
         _nextMuTagNumber: 10,
         _muTags: new Set(accountMuTags)

@@ -1,5 +1,5 @@
-import ProvisionedMuTag, { BeaconID } from "../Domain/ProvisionedMuTag";
-import Percent from "../Domain/Percent";
+import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
+import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import { MuTagColor } from "../Domain/MuTag";
 import {
     MuTagSignal,
@@ -71,13 +71,13 @@ const accountData: AccountData = {
     _uid: "UUID01",
     _accountNumber: accountNumber,
     _emailAddress: "user@email.com",
-    _nextBeaconID: BeaconID.create("2"),
+    _nextBeaconID: BeaconId.create("2"),
     _recycledBeaconIDs: new Set(),
     _nextMuTagNumber: 2,
     _muTags: new Set()
 };
 const account = new Account(accountData);
-const muTagBeaconID = BeaconID.create("0");
+const muTagBeaconID = BeaconId.create("0");
 const muTagData = {
     _uid: "UUID01",
     _beaconID: muTagBeaconID,

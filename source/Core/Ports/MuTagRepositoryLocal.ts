@@ -1,4 +1,4 @@
-import ProvisionedMuTag, { BeaconID } from '../Domain/ProvisionedMuTag';
+import ProvisionedMuTag, { BeaconId } from '../Domain/ProvisionedMuTag';
 
 export class DoesNotExist extends Error {
     constructor(id: string) {
@@ -51,7 +51,7 @@ export class FailedToRemove extends Error {
 export interface MuTagRepositoryLocal {
 
     getByUID(uid: string): Promise<ProvisionedMuTag>;
-    getByBeaconID(beaconID: BeaconID): Promise<ProvisionedMuTag>;
+    getByBeaconID(beaconID: BeaconId): Promise<ProvisionedMuTag>;
     getAll(): Promise<Set<ProvisionedMuTag>>;
     add(muTag: ProvisionedMuTag): Promise<void>;
     addMultiple(muTags: Set<ProvisionedMuTag>): Promise<void>;

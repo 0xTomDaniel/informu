@@ -5,7 +5,7 @@ import {
     FailedToUpdate,
     DoesNotExist as MuTagDoesNotExist
 } from "../../Core/Ports/MuTagRepositoryLocal";
-import ProvisionedMuTag, { BeaconID } from "../../Core/Domain/ProvisionedMuTag";
+import ProvisionedMuTag, { BeaconId } from "../../Core/Domain/ProvisionedMuTag";
 import {
     AccountRepositoryLocal,
     DoesNotExist as AccountDoesNotExist
@@ -48,7 +48,7 @@ export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
         }
     }
 
-    async getByBeaconID(beaconID: BeaconID): Promise<ProvisionedMuTag> {
+    async getByBeaconID(beaconID: BeaconId): Promise<ProvisionedMuTag> {
         await this.onCachePopulated();
 
         const uid = this.muTagBeaconIDToUIDCache.get(beaconID.toString());

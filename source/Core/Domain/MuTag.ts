@@ -1,4 +1,4 @@
-import Percent from './Percent';
+import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 
 export enum MuTagColor {
     Charcoal,
@@ -8,11 +8,10 @@ export enum MuTagColor {
     MuOrange,
     Scarlet,
     Sky,
-    Smoke,
+    Smoke
 }
 
 export default abstract class MuTag {
-
     protected abstract readonly _uid: string;
     protected abstract _batteryLevel: Percent;
 

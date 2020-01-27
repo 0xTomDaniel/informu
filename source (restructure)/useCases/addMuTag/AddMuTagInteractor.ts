@@ -8,8 +8,8 @@ import {
     BluetoothPoweredOff,
     TXPowerSetting
 } from "./MuTagDevicesPort";
-import { RSSI } from "../../../source/Core/Domain/Types";
-import Percent from "../../../source/Core/Domain/Percent";
+import { Rssi } from "../../shared/metaLanguage/Types";
+import Percent from "../../shared/metaLanguage/Percent";
 import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
 import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../../../source/Core/Ports/MuTagRepositoryRemote";
@@ -38,7 +38,7 @@ export class AddedMuTagNotFound extends Error {
 }
 
 export default class AddMuTagInteractor {
-    private readonly connectThreshold: RSSI;
+    private readonly connectThreshold: Rssi;
     private readonly addMuTagBatteryThreshold: Percent;
     private readonly addMuTagOutput: AddMuTagOutputPort;
     private readonly muTagDevices: MuTagDevicesPort;
@@ -53,7 +53,7 @@ export default class AddMuTagInteractor {
     private accountUID: string | undefined;
 
     constructor(
-        connectThreshold: RSSI,
+        connectThreshold: Rssi,
         addMuTagBatteryThreshold: Percent,
         addMuTagOutput: AddMuTagOutputPort,
         muTagDevices: MuTagDevicesPort,

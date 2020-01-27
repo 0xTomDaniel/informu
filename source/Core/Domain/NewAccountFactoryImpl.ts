@@ -2,7 +2,7 @@ import { NewAccountFactory } from "../Ports/NewAccountFactory";
 import Account, { AccountNumber } from "./Account";
 import database from "@react-native-firebase/database";
 import _ from "lodash";
-import { BeaconID } from "./ProvisionedMuTag";
+import { BeaconId } from "./ProvisionedMuTag";
 
 export class FailedToCreateNewAccount extends Error {
     constructor() {
@@ -56,7 +56,7 @@ export default class NewAccountFactoryImpl implements NewAccountFactory {
                 _uid: uid,
                 _accountNumber: newAccountNumber,
                 _emailAddress: emailAddress,
-                _nextBeaconID: BeaconID.create("0"),
+                _nextBeaconID: BeaconId.create("0"),
                 _recycledBeaconIDs: new Set(),
                 _nextMuTagNumber: 0,
                 _muTags: new Set()

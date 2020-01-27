@@ -1,16 +1,9 @@
+import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
+import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import { Rssi } from "../../shared/metaLanguage/Types";
 import { BeaconId } from "../../../source/Core/Domain/ProvisionedMuTag";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
 import Percent from "../../shared/metaLanguage/Percent";
-import { Observable } from "rxjs";
-import Hexadecimal from "../../../source/Core/Domain/Hexadecimal";
-
-export type MuTagUid = string & { readonly _: unique symbol };
-
-export interface UnprovisionedMuTag {
-    uid: MuTagUid;
-    batteryLevel: Percent;
-}
 
 export enum TXPowerSetting {
     "+6 dBm",
@@ -21,13 +14,6 @@ export enum TXPowerSetting {
 }
 
 export default interface MuTagDevicesPort {
-    readonly unprovisionedMuTag: Observable<UnprovisionedMuTag>;
-    startFindingUnprovisionedMuTags(proximityThreshold: Rssi): Promise<void>;
-    provisionMuTag(
-        muTagUid: MuTagUid,
-        accountNumber: Hexadecimal,
-        beaconId: Hexadecimal
-    ): Promise<void>;
     /*findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
     cancelFindNewMuTag(): void;
     connectToProvisionedMuTag(

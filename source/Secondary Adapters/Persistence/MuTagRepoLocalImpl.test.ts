@@ -1,5 +1,5 @@
-import ProvisionedMuTag, { BeaconID } from "../../Core/Domain/ProvisionedMuTag";
-import Percent from "../../Core/Domain/Percent";
+import ProvisionedMuTag, { BeaconId } from "../../Core/Domain/ProvisionedMuTag";
+import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import MuTagRepoLocalImpl from "./MuTagRepoLocalImpl";
 import { DoesNotExist as MuTagDoesNotExist } from "../../Core/Ports/MuTagRepositoryLocal";
 import { MuTagColor } from "../../Core/Domain/MuTag";
@@ -21,7 +21,7 @@ const database = new DatabaseImplWatermelonMock(watermelonDBMock);
 const accountRepoLocalImpl = new AccountRepoLocalImpl(database);
 const existingMuTag07 = new ProvisionedMuTag({
     _uid: "randomUUID07",
-    _beaconID: BeaconID.create("7"),
+    _beaconID: BeaconId.create("7"),
     _muTagNumber: 7,
     _name: "wallet",
     _batteryLevel: new Percent(31),
@@ -31,7 +31,7 @@ const existingMuTag07 = new ProvisionedMuTag({
 });
 const existingMuTag08 = new ProvisionedMuTag({
     _uid: "randomUUID08",
-    _beaconID: BeaconID.create("8"),
+    _beaconID: BeaconId.create("8"),
     _muTagNumber: 8,
     _name: "bag",
     _batteryLevel: new Percent(53),
@@ -54,7 +54,7 @@ const muTagRepoLocalImpl = new MuTagRepoLocalImpl(
     accountRepoLocalImpl
 );
 const muTag01UID = "randomUUID01";
-const muTag01BeaconID = BeaconID.create("A");
+const muTag01BeaconID = BeaconId.create("A");
 const muTag01 = new ProvisionedMuTag({
     _uid: muTag01UID,
     _beaconID: muTag01BeaconID,
@@ -66,7 +66,7 @@ const muTag01 = new ProvisionedMuTag({
     _color: MuTagColor.MuOrange
 });
 const muTag02UID = "randomUUID02";
-const muTag02BeaconID = BeaconID.create("B");
+const muTag02BeaconID = BeaconId.create("B");
 const muTag02 = new ProvisionedMuTag({
     _uid: muTag02UID,
     _beaconID: muTag02BeaconID,
@@ -78,7 +78,7 @@ const muTag02 = new ProvisionedMuTag({
     _color: MuTagColor.MuOrange
 });
 const muTag03UID = "randomUUID03";
-const muTag03BeaconID = BeaconID.create("C");
+const muTag03BeaconID = BeaconId.create("C");
 const muTag03 = new ProvisionedMuTag({
     _uid: muTag03UID,
     _beaconID: muTag03BeaconID,
@@ -140,10 +140,10 @@ test("successfully populate Mu tag cache from logged in account", async (): Prom
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconID.create("B"),
+        _nextBeaconID: BeaconId.create("B"),
         _recycledBeaconIDs: new Set([
-            BeaconID.create("2"),
-            BeaconID.create("D")
+            BeaconId.create("2"),
+            BeaconId.create("D")
         ]),
         _nextMuTagNumber: 4,
         _muTags: new Set(["randomUUID07", "randomUUID08"])

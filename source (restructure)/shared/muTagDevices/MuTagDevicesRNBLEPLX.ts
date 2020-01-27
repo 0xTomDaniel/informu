@@ -5,9 +5,8 @@ import {
     fullUUID,
     BleError
 } from "react-native-ble-plx";
-import {
-    MuTagDevicesPort,
-    FindNewMuTagAlreadyRunning,
+import MuTagDevicesPort, {
+    /*FindNewMuTagAlreadyRunning,
     FindNewMuTagCanceled,
     UnprovisionMuTagDeviceNotFound,
     ProvisionMuTagFailed,
@@ -15,25 +14,117 @@ import {
     BluetoothUnsupported,
     InvalidProvisioning,
     MuTagNotFound,
-    BluetoothPoweredOff,
+    BluetoothPoweredOff,*/
     TXPowerSetting
 } from "../../useCases/addMuTag/MuTagDevicesPort";
-import { RSSI } from "../../../source/Core/Domain/Types";
-import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
+import { Rssi } from "../metaLanguage/Types";
+//import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
 import ProvisionedMuTag, {
-    BeaconID
+    BeaconId
 } from "../../../source/Core/Domain/ProvisionedMuTag";
-import { MuTagBLEGATT } from "../../../source/Core/Domain/MuTagBLEGATT/MuTagBLEGATT";
+import { MuTagBLEGATT } from "./MuTagBLEGATT/MuTagBLEGATT";
 import { v4 as UUIDv4 } from "uuid";
-import Percent from "../../../source/Core/Domain/Percent";
+import Percent from "../metaLanguage/Percent";
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
-} from "../../../source/Core/Domain/MuTagBLEGATT/Characteristic";
+} from "./MuTagBLEGATT/Characteristic";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import { Buffer } from "buffer";
 import Hexadecimal from "../../../source/Core/Domain/Hexadecimal";
+
+export class UnprovisionMuTagDeviceNotFound extends Error {
+    constructor() {
+        super("Could not find new Mu tag. Please scan for new Mu tag again.");
+        this.name = "UnprovisionMuTagDeviceNotFound";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class BluetoothUnsupported extends Error {
+    constructor() {
+        super(
+            "This device doesn't support Bluetooth. Mu tags cannot be added."
+        );
+        this.name = "BluetoothUnsupported";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class BluetoothPoweredOff extends Error {
+    constructor() {
+        super("Bluetooth is powered off. Please turn it on and try again.");
+        this.name = "BluetoothPoweredOff";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class NewMuTagNotFound extends Error {
+    constructor() {
+        super(
+            "Could not find new Mu tag. Please ensure the Mu tag light is flashing and move it closer to the app."
+        );
+        this.name = "NewMuTagNotFound";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class ProvisionMuTagFailed extends Error {
+    constructor() {
+        super(
+            "Failed to add Mu tag. Please ensure the Mu tag light is flashing and move it closer to the app."
+        );
+        this.name = "ProvisionMuTagFailed";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class UnprovisionMuTagFailed extends Error {
+    constructor() {
+        super(
+            "Failed to remove Mu tag. Please ensure the Mu tag is charged and move it closer to the app."
+        );
+        this.name = "UnprovisionMuTagFailed";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class FindNewMuTagAlreadyRunning extends Error {
+    constructor() {
+        super("Already searching for new Mu tag.");
+        this.name = "FindNewMuTagAlreadyRunning";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class FindNewMuTagCanceled extends Error {
+    constructor() {
+        super("Find new Mu tag was canceled.");
+        this.name = "FindNewMuTagCanceled";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class MuTagNotFound extends Error {
+    constructor() {
+        super(
+            "Could not find Mu tag. Please ensure the Mu tag is charged and move it closer to the app."
+        );
+        this.name = "MuTagNotFound";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
+
+export class InvalidProvisioning extends Error {
+    constructor() {
+        super(
+            "Mu tag provisioning is invalid. Please contact customer support."
+        );
+        this.name = "InvalidProvisioning";
+        Object.setPrototypeOf(this, new.target.prototype);
+    }
+}
 
 export class MuTagNotFoundInUnprovisionedCache extends Error {
     constructor() {
@@ -78,7 +169,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
         this.manager = new BleManager();
     }
 
-    async findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag> {
+    async findNewMuTag(scanThreshold: Rssi): Promise<any> {
         if (this.isFindingNewMuTag) {
             throw new FindNewMuTagAlreadyRunning();
         }
@@ -127,7 +218,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     async connectToProvisionedMuTag(
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): Promise<void> {
         let muTagDevice: Device | undefined;
 
@@ -159,7 +250,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     disconnectFromProvisionedMuTag(
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): void {
         this.getProvisionedMuTagDevice(accountNumber, beaconID)
             .then(
@@ -173,9 +264,9 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
     }
 
     async provisionMuTag(
-        unprovisionedMuTag: UnprovisionedMuTag,
+        unprovisionedMuTag: any,
         accountNumber: AccountNumber,
-        beaconID: BeaconID,
+        beaconID: BeaconId,
         muTagNumber: number,
         muTagName: string
     ): Promise<ProvisionedMuTag> {
@@ -244,7 +335,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     async unprovisionMuTag(
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): Promise<void> {
         const muTagDevice = await this.getProvisionedMuTagDevice(
             accountNumber,
@@ -281,7 +372,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     async readBatteryLevel(
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): Promise<Percent> {
         const muTagDevice = await this.getProvisionedMuTagDevice(
             accountNumber,
@@ -297,7 +388,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
     async changeTXPower(
         txPower: TXPowerSetting,
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): Promise<void> {
         const muTagDevice = await this.getProvisionedMuTagDevice(
             accountNumber,
@@ -331,7 +422,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
     private moveToProvisionedCache(
         deviceID: DeviceID,
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): void {
         const uid = this.muTagUIDCache.get(deviceID);
         if (uid == null) {
@@ -365,7 +456,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     private async getProvisionedMuTagDevice(
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): Promise<Device> {
         let muTagDevice: Device | undefined;
         const provisionID = MuTagDevicesRNBLEPLX.getProvisionID(
@@ -382,9 +473,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
         return muTagDevice;
     }
 
-    private async findUnprovisionedMuTag(
-        scanThreshold: RSSI
-    ): Promise<UnprovisionedMuTag> {
+    private async findUnprovisionedMuTag(scanThreshold: Rssi): Promise<any> {
         return new Promise((resolve, reject): void => {
             this.rejectFindUnprovisionedMuTag = reject;
 
@@ -413,9 +502,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
                             }
                         )
                         .then(
-                            (
-                                provisionState
-                            ): Promise<UnprovisionedMuTag | undefined> => {
+                            (provisionState): Promise<any | undefined> => {
                                 if (
                                     provisionState ===
                                     ProvisionState.Unprovisioned
@@ -449,7 +536,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
         provisionID: ProvisionID
     ): Promise<Device> {
         return new Promise((resolve, reject): void => {
-            const scanThreshold = -90 as RSSI;
+            const scanThreshold = -90 as Rssi;
             this.connectToMuTagDevices(
                 scanThreshold,
                 (muTagDevice, error): void => {
@@ -504,7 +591,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
     }
 
     private connectToMuTagDevices(
-        scanThreshold: RSSI,
+        scanThreshold: Rssi,
         callback: (muTagDevice?: Device, error?: BleError) => void
     ): void {
         const scanOptions: ScanOptions = {
@@ -615,9 +702,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
         }
     }
 
-    private async createUnprovisionedMuTag(
-        device: Device
-    ): Promise<UnprovisionedMuTag> {
+    private async createUnprovisionedMuTag(device: Device): Promise<any> {
         const batteryLevelValue = await MuTagDevicesRNBLEPLX.readCharacteristic(
             device,
             MuTagBLEGATT.DeviceInformation.BatteryLevel
@@ -629,7 +714,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
             throw Error(`Mu tag UID not found for device ${device.id}.`);
         }
 
-        return new UnprovisionedMuTag(muTagUID, batteryLevel);
+        return {}; //new UnprovisionedMuTag(muTagUID, batteryLevel);
     }
 
     private static isMuTag(device: Device): boolean {
@@ -655,7 +740,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     private static getMinor(
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): Hexadecimal {
         const majorMinorHex = accountNumber.toString() + beaconID.toString();
         const minorHex = majorMinorHex.toString().substr(4, 4);
@@ -671,7 +756,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     private static getProvisionID(
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): ProvisionID {
         return (accountNumber.toString() + beaconID.toString()) as ProvisionID;
     }
@@ -699,7 +784,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
         characteristic: Characteristic<T> & ReadableCharacteristic<T>
     ): Promise<T> {
         const deviceCharacteristic = await device.readCharacteristicForService(
-            fullUUID(characteristic.serviceUUID),
+            fullUUID(characteristic.serviceUuid),
             fullUUID(characteristic.uuid)
         );
 
@@ -718,14 +803,14 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
         if (characteristic.withResponse) {
             await device.writeCharacteristicWithResponseForService(
-                fullUUID(characteristic.serviceUUID),
+                fullUUID(characteristic.serviceUuid),
                 fullUUID(characteristic.uuid),
                 base64Value,
                 transactionId
             );
         } else {
             await device.writeCharacteristicWithoutResponseForService(
-                fullUUID(characteristic.serviceUUID),
+                fullUUID(characteristic.serviceUuid),
                 fullUUID(characteristic.uuid),
                 base64Value,
                 transactionId

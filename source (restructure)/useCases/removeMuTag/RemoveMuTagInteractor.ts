@@ -3,7 +3,7 @@ import {
     MuTagNotFound,
     UnprovisionMuTagFailed
 } from "../addMuTag/MuTagDevicesPort";
-import Percent from "../../../source/Core/Domain/Percent";
+import Percent from "../../shared/metaLanguage/Percent";
 import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
 import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../../../source/Core/Ports/MuTagRepositoryRemote";

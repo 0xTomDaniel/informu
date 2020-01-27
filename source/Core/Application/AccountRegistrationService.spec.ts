@@ -3,7 +3,7 @@ import Account, { AccountNumber, AccountData } from "../Domain/Account";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import AccountRegistrationService from "./AccountRegistrationService";
 import { NewAccountFactory } from "../Ports/NewAccountFactory";
-import { BeaconID } from "../Domain/ProvisionedMuTag";
+import { BeaconId } from "../Domain/ProvisionedMuTag";
 
 describe("user registers new account", (): void => {
     const AccountRepositoryRemoteMock = jest.fn<AccountRepositoryRemote, any>(
@@ -43,7 +43,7 @@ describe("user registers new account", (): void => {
         _uid: newUID,
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: newEmail,
-        _nextBeaconID: BeaconID.create("0"),
+        _nextBeaconID: BeaconId.create("0"),
         _recycledBeaconIDs: new Set(),
         _nextMuTagNumber: 15,
         _muTags: new Set()

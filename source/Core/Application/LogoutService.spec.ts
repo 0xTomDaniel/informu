@@ -3,8 +3,8 @@ import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import Account, { AccountNumber, AccountData } from "../Domain/Account";
 import { LogoutOutput } from "../Ports/LogoutOutput";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
-import ProvisionedMuTag, { BeaconID } from "../Domain/ProvisionedMuTag";
-import Percent from "../Domain/Percent";
+import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
+import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import { MuTagColor } from "../Domain/MuTag";
@@ -90,13 +90,13 @@ describe("user logs out of their account", (): void => {
         belongingDetectionServiceMock
     );
 
-    const recycledBeaconIDs = [BeaconID.create("2"), BeaconID.create("5")];
+    const recycledBeaconIDs = [BeaconId.create("2"), BeaconId.create("5")];
     const accountMuTags = ["randomUUID1", "randomUUID2"];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconID.create("A"),
+        _nextBeaconID: BeaconId.create("A"),
         _recycledBeaconIDs: new Set(recycledBeaconIDs),
         _nextMuTagNumber: 15,
         _muTags: new Set(accountMuTags)
@@ -104,7 +104,7 @@ describe("user logs out of their account", (): void => {
     const account = new Account(validAccountData);
     const muTag1 = new ProvisionedMuTag({
         _uid: "randomUUID1",
-        _beaconID: BeaconID.fromString("0"),
+        _beaconID: BeaconId.fromString("0"),
         _muTagNumber: 0,
         _name: "keys",
         _batteryLevel: new Percent(80),
@@ -114,7 +114,7 @@ describe("user logs out of their account", (): void => {
     });
     const muTag2 = new ProvisionedMuTag({
         _uid: "randomUUID2",
-        _beaconID: BeaconID.fromString("1"),
+        _beaconID: BeaconId.fromString("1"),
         _muTagNumber: 1,
         _name: "laptop",
         _batteryLevel: new Percent(80),

@@ -22,8 +22,8 @@ import AppPresenter from "./source/Primary Adapters/Presentation/AppPresenter";
 import SessionService from "./source/Core/Application/SessionService";
 import { AppStateController } from "./source/Primary Adapters/Device/AppStateController";
 import AddMuTagViewController from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewController";
-import { RSSI } from "./source/Core/Domain/Types";
-import Percent from "./source/Core/Domain/Percent";
+import { Rssi } from "./source (restructure)/shared/metaLanguage/Types";
+import Percent from "./source (restructure)/shared/metaLanguage/Percent";
 import { MuTagDevicesRNBLEPLX } from "./source (restructure)/shared/muTagDevices/MuTagDevicesRNBLEPLX";
 import AddMuTagInteractor from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
 import { HomeViewModel } from "./source/Primary Adapters/Presentation/HomeViewModel";
@@ -64,7 +64,7 @@ export class Dependencies {
     accountRepoRemote: AccountRepoRNFirebase;
     muTagRepoLocal: MuTagRepoLocalImpl;
     muTagRepoRemote: MuTagRepoRNFirebase;
-    connectThreshold: RSSI;
+    connectThreshold: Rssi;
     addMuTagBatteryThreshold: Percent;
     homeViewModel: HomeViewModel;
     addMuTagViewModel: AddMuTagViewModel;
@@ -101,7 +101,7 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
-        this.connectThreshold = -80 as RSSI;
+        this.connectThreshold = -80 as Rssi;
         this.addMuTagBatteryThreshold = new Percent(20);
         this.homeViewModel = new HomeViewModel();
         this.addMuTagViewModel = new AddMuTagViewModel();
@@ -199,7 +199,7 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
-        this.connectThreshold = -80 as RSSI;
+        this.connectThreshold = -80 as Rssi;
         this.addMuTagBatteryThreshold = new Percent(20);
         this.homeViewModel = new HomeViewModel();
         this.addMuTagViewModel = new AddMuTagViewModel();

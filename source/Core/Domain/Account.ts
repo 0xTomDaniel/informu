@@ -1,5 +1,5 @@
 import Hexadecimal from "./Hexadecimal";
-import { BeaconID } from "./ProvisionedMuTag";
+import { BeaconId } from "./ProvisionedMuTag";
 import { BehaviorSubject, Observable } from "rxjs";
 import { pairwise, map } from "rxjs/operators";
 import _ from "lodash";
@@ -58,8 +58,8 @@ export interface AccountData {
     readonly _uid: string;
     readonly _accountNumber: AccountNumber;
     readonly _emailAddress: string;
-    readonly _nextBeaconID: BeaconID;
-    readonly _recycledBeaconIDs: Set<BeaconID>;
+    readonly _nextBeaconID: BeaconId;
+    readonly _recycledBeaconIDs: Set<BeaconId>;
     readonly _nextMuTagNumber: number;
     readonly _muTags: Set<string>;
 }
@@ -125,8 +125,8 @@ export default class Account {
     private readonly _uid: string;
     private readonly _accountNumber: AccountNumber;
     private _emailAddress: string;
-    private _nextBeaconID: BeaconID;
-    private readonly _recycledBeaconIDs: Set<BeaconID>;
+    private _nextBeaconID: BeaconId;
+    private readonly _recycledBeaconIDs: Set<BeaconId>;
     private _nextMuTagNumber: number;
     private get _muTags(): Set<string> {
         return this._accessorValue.muTags.value;
@@ -157,7 +157,7 @@ export default class Account {
         return this._accountNumber;
     }
 
-    get newBeaconID(): BeaconID {
+    get newBeaconID(): BeaconId {
         if (this._recycledBeaconIDs.size !== 0) {
             return this._recycledBeaconIDs.values().next().value;
         }
@@ -198,7 +198,7 @@ export default class Account {
         return JSON.parse(json);
     }
 
-    addNewMuTag(muTagUID: string, beaconID: BeaconID): void {
+    addNewMuTag(muTagUID: string, beaconID: BeaconId): void {
         if (this._recycledBeaconIDs.has(beaconID)) {
             this._recycledBeaconIDs.delete(beaconID);
         } else if (this._nextBeaconID === beaconID) {
@@ -213,7 +213,7 @@ export default class Account {
         this._muTags = new Set(this._muTags).add(muTagUID);
     }
 
-    removeMuTag(muTagUID: string, beaconID: BeaconID): void {
+    removeMuTag(muTagUID: string, beaconID: BeaconId): void {
         this._recycledBeaconIDs.add(beaconID);
         // Must copy _muTags set or behavior subject's previous value will be
         // mutated
@@ -251,7 +251,7 @@ export default class Account {
             case "_nextBeaconID":
                 return value.stringValue;
             case "_recycledBeaconIDs": {
-                const beaconIDs: BeaconID[] = Array.from(value);
+                const beaconIDs: BeaconId[] = Array.from(value);
                 return beaconIDs.map((beaconID): string => beaconID.toString());
             }
             case "_muTags":
@@ -269,7 +269,7 @@ export default class Account {
         switch (key) {
             case "":
                 if (value._recycledBeaconIDs == null) {
-                    value._recycledBeaconIDs = new Set<BeaconID>();
+                    value._recycledBeaconIDs = new Set<BeaconId>();
                 }
 
                 if (value._muTags == null) {
@@ -280,11 +280,11 @@ export default class Account {
             case "_accountNumber":
                 return AccountNumber.fromString(value);
             case "_nextBeaconID":
-                return BeaconID.create(value);
+                return BeaconId.create(value);
             case "_recycledBeaconIDs":
-                return new Set<BeaconID>(
+                return new Set<BeaconId>(
                     value.map(
-                        (hex: string): BeaconID => BeaconID.fromString(hex)
+                        (hex: string): BeaconId => BeaconId.fromString(hex)
                     )
                 );
             case "_muTags":
@@ -298,7 +298,7 @@ export default class Account {
         const previousBeaconID = this._nextBeaconID.valueOf();
         const nextBeaconIDNumber = previousBeaconID + 1;
         const nextBeaconIDHex = nextBeaconIDNumber.toString(16).toUpperCase();
-        const nextBeaconID = BeaconID.create(nextBeaconIDHex);
+        const nextBeaconID = BeaconId.create(nextBeaconIDHex);
         this._nextBeaconID = nextBeaconID;
     }
 }

@@ -5,13 +5,13 @@ import {
 } from "./MuTagDevicesPort";
 import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
 import ProvisionedMuTag, {
-    BeaconID
+    BeaconId
 } from "../../../source/Core/Domain/ProvisionedMuTag";
 import { AddMuTagOutputPort } from "./AddMuTagOutputPort";
 import { MuTagRepositoryRemote } from "../../../source/Core/Ports/MuTagRepositoryRemote";
 import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
-import Percent from "../../../source/Core/Domain/Percent";
-import { RSSI, Millisecond } from "../../../source/Core/Domain/Types";
+import Percent from "../../shared/metaLanguage/Percent";
+import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import Account, {
     AccountNumber,
@@ -104,7 +104,7 @@ describe("Mu tag user adds Mu tag", (): void => {
     const accountRepoLocalMock = new AccountRepoLocalMock();
     const accountRepoRemoteMock = new AccountRepoRemoteMock();
 
-    const connectMuTagScanThreshold = -72 as RSSI;
+    const connectMuTagScanThreshold = -72 as Rssi;
     const addMuTagBatteryThreshold = new Percent(15);
     const addMuTagService = new AddMuTagInteractor(
         connectMuTagScanThreshold,
@@ -117,12 +117,12 @@ describe("Mu tag user adds Mu tag", (): void => {
         accountRepoRemoteMock
     );
 
-    const recycledBeaconIDs = [BeaconID.create("2"), BeaconID.create("5")];
+    const recycledBeaconIDs = [BeaconId.create("2"), BeaconId.create("5")];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconID.create("A"),
+        _nextBeaconID: BeaconId.create("A"),
         _recycledBeaconIDs: new Set(recycledBeaconIDs),
         _nextMuTagNumber: 10,
         _muTags: new Set(["randomUUID#1"])

@@ -7,7 +7,7 @@ import {
 import { Observable, Subscriber } from "rxjs";
 import { DeviceEventEmitter } from "react-native";
 import Beacons, { BeaconRegion } from "react-native-beacons-manager";
-import { BeaconID } from "../../Core/Domain/ProvisionedMuTag";
+import { BeaconId } from "../../Core/Domain/ProvisionedMuTag";
 import { AccountNumber } from "../../Core/Domain/Account";
 
 interface RangedRegion {
@@ -150,7 +150,7 @@ export default class MuTagMonitorRNBM implements MuTagMonitor {
 
     private static getMinor(
         accountNumber: AccountNumber,
-        beaconID: BeaconID
+        beaconID: BeaconId
     ): number {
         const majorMinorHex = accountNumber.toString() + beaconID.toString();
         const minorHex = majorMinorHex.toString().substr(4, 4);
@@ -187,8 +187,8 @@ export default class MuTagMonitorRNBM implements MuTagMonitor {
         return AccountNumber.fromString(majorMinorHex.substr(0, 7));
     }
 
-    private static getBeaconID(minor: number): BeaconID {
+    private static getBeaconID(minor: number): BeaconId {
         const minorHex = minor.toString(16).padStart(4, "0");
-        return BeaconID.create(minorHex.substr(3, 1));
+        return BeaconId.create(minorHex.substr(3, 1));
     }
 }

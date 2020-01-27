@@ -1,6 +1,6 @@
-import Percent from "../../../source/Core/Domain/Percent";
+import Percent from "../../shared/metaLanguage/Percent";
 import ProvisionedMuTag, {
-    BeaconID
+    BeaconId
 } from "../../../source/Core/Domain/ProvisionedMuTag";
 import {
     MuTagDevicesPort,
@@ -104,12 +104,12 @@ describe("Mu tag user removes Mu tag", (): void => {
         removeMuTagOutputMock
     );
 
-    const recycledBeaconIDs = [BeaconID.create("2"), BeaconID.create("5")];
+    const recycledBeaconIDs = [BeaconId.create("2"), BeaconId.create("5")];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconID.create("A"),
+        _nextBeaconID: BeaconId.create("A"),
         _recycledBeaconIDs: new Set(recycledBeaconIDs),
         _nextMuTagNumber: 10,
         _muTags: new Set(["randomUUID#1"])
@@ -118,7 +118,7 @@ describe("Mu tag user removes Mu tag", (): void => {
     const removeMuTagSpy = jest.spyOn(account, "removeMuTag");
 
     const muTagUID = "randomUUID#1";
-    const beaconID = BeaconID.create("1");
+    const beaconID = BeaconId.create("1");
     const muTagBatteryLevel = new Percent(17);
     const newMuTagAttachedTo = "keys";
     const muTagColorSetting = MuTagColor.Scarlet;

@@ -1,10 +1,10 @@
 import MuTag, { MuTagColor } from './MuTag';
-import Percent from './Percent';
+import Percent from '../../../source (restructure)/shared/metaLanguage/Percent';
 import Hexadecimal from './Hexadecimal';
 import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 
-class InvalidBeaconID extends RangeError {
+class InvalidBeaconId extends RangeError {
 
     constructor(value: string) {
         super(`${value} is an invalid beacon ID. Expected a 1-character hexadecimal value.`);
@@ -13,21 +13,21 @@ class InvalidBeaconID extends RangeError {
     }
 }
 
-export class BeaconID extends Hexadecimal {
+export class BeaconId extends Hexadecimal {
 
-    static create(hex: string): BeaconID {
+    static create(hex: string): BeaconId {
         if (!(hex.length === 1)) {
-            throw new InvalidBeaconID(hex);
+            throw new InvalidBeaconId(hex);
         }
 
-        const numberValue = BeaconID.numberFromString(hex);
-        return new BeaconID(hex, numberValue);
+        const numberValue = BeaconId.numberFromString(hex);
+        return new BeaconId(hex, numberValue);
     }
 }
 
 export interface MuTagData {
     _uid: string;
-    _beaconID: BeaconID;
+    _beaconID: BeaconId;
     _muTagNumber: number;
     _name: string;
     _batteryLevel: Percent;
@@ -71,7 +71,7 @@ interface AccessorValue {
 export default class ProvisionedMuTag extends MuTag {
 
     protected readonly _uid: string;
-    private readonly _beaconID: BeaconID;
+    private readonly _beaconID: BeaconId;
     private readonly _muTagNumber: number;
     private _name: string;
     protected _batteryLevel: Percent;
@@ -110,7 +110,7 @@ export default class ProvisionedMuTag extends MuTag {
         };
     }
 
-    get beaconID(): BeaconID {
+    get beaconID(): BeaconId {
         return this._beaconID;
     }
 
@@ -190,7 +190,7 @@ export default class ProvisionedMuTag extends MuTag {
             case '':
                 return new ProvisionedMuTag(value);
             case '_beaconID':
-                return BeaconID.create(value);
+                return BeaconId.create(value);
             case '_batteryLevel':
                 return new Percent(value);
             case '_lastSeen':
