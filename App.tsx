@@ -24,17 +24,16 @@ import { AppStateController } from "./source/Primary Adapters/Device/AppStateCon
 import AddMuTagViewController from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewController";
 import { Rssi } from "./source (restructure)/shared/metaLanguage/Types";
 import Percent from "./source (restructure)/shared/metaLanguage/Percent";
-import { MuTagDevicesRNBLEPLX } from "./source (restructure)/shared/muTagDevices/MuTagDevicesRNBLEPLX";
 import AddMuTagInteractor from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
 import { HomeViewModel } from "./source/Primary Adapters/Presentation/HomeViewModel";
 import AddMuTagPresenter from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagPresenter";
 import { AddMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewModel";
 import MuTagRepoLocalImpl from "./source/Secondary Adapters/Persistence/MuTagRepoLocalImpl";
 import { MuTagRepoRNFirebase } from "./source/Secondary Adapters/Persistence/MuTagRepoRNFirebase";
-import NameMuTagViewController from "./source/Primary Adapters/Presentation/NameMuTagViewController";
-import { NameMuTagViewModel } from "./source/Primary Adapters/Presentation/NameMuTagViewModel";
-import { MuTagAddingViewModel } from "./source/Primary Adapters/Presentation/MuTagAddingViewModel";
-import MuTagAddingViewController from "./source/Primary Adapters/Presentation/MuTagAddingViewController";
+import NameMuTagViewController from "./source (restructure)/useCases/addMuTag/presentation/NameMuTagViewController";
+import { NameMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/NameMuTagViewModel";
+import { MuTagAddingViewModel } from "./source (restructure)/useCases/addMuTag/presentation/MuTagAddingViewModel";
+import MuTagAddingViewController from "./source (restructure)/useCases/addMuTag/presentation/MuTagAddingViewController";
 import LogoutService from "./source/Core/Application/LogoutService";
 import LogoutPresenter from "./source/Primary Adapters/Presentation/LogoutPresenter";
 import BelongingDashboardService from "./source/Core/Application/BelongingDashboardService";
@@ -49,6 +48,11 @@ import LoginPresenter from "./source/Primary Adapters/Presentation/LoginPresente
 import { LoginService } from "./source/Core/Application/LoginService";
 import AccountRegistrationService from "./source/Core/Application/AccountRegistrationService";
 import NewAccountFactoryImpl from "./source/Core/Domain/NewAccountFactoryImpl";
+import MuTagDevices from "./source (restructure)/shared/muTagDevices/MuTagDevices";
+import BluetoothImplRnBleManager from "./source (restructure)/shared/muTagDevices/BluetoothImplRnBleManager";
+import MuTagDevicesPortAddMuTag from "./source (restructure)/useCases/addMuTag/MuTagDevicesPort";
+import MuTagDevicesPortRemoveMuTag from "./source (restructure)/useCases/removeMuTag/MuTagDevicesPort";
+import Bluetooth from "./source (restructure)/shared/muTagDevices/Bluetooth";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -71,7 +75,8 @@ export class Dependencies {
     nameMuTagViewModel: NameMuTagViewModel;
     muTagAddingViewModel: MuTagAddingViewModel;
     addMuTagPresenter: AddMuTagPresenter;
-    muTagDevices: MuTagDevicesRNBLEPLX;
+    bluetooth: Bluetooth;
+    muTagDevices: MuTagDevicesPortAddMuTag & MuTagDevicesPortRemoveMuTag;
     addMuTagService: AddMuTagInteractor;
     removeMuTagBatteryThreshold: Percent;
     removeMuTagPresenter: RemoveMuTagPresenter;
@@ -113,7 +118,8 @@ export class Dependencies {
             this.nameMuTagViewModel,
             this.muTagAddingViewModel
         );
-        this.muTagDevices = new MuTagDevicesRNBLEPLX();
+        this.bluetooth = new BluetoothImplRnBleManager();
+        this.muTagDevices = new MuTagDevices(this.bluetooth);
         this.addMuTagService = new AddMuTagInteractor(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,
@@ -211,7 +217,7 @@ export class Dependencies {
             this.nameMuTagViewModel,
             this.muTagAddingViewModel
         );
-        this.muTagDevices = new MuTagDevicesRNBLEPLX();
+        this.muTagDevices = new MuTagDevices(this.bluetooth);
         this.addMuTagService = new AddMuTagInteractor(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,

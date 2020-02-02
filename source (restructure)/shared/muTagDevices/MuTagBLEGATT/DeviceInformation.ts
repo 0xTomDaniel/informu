@@ -4,7 +4,7 @@ import {
     UTF8Characteristic
 } from "./Characteristic";
 import Service from "./Service";
-import Hexadecimal from "../../../../source/Core/Domain/Hexadecimal";
+import Hexadecimal from "../../metaLanguage/Hexadecimal";
 
 abstract class DeviceInformationHexCharacteristic extends HexCharacteristic {
     readonly serviceUuid = "0000180A-0000-1000-8000-00805F9B34FB";

@@ -1,20 +1,20 @@
-import MuTag, { MuTagColor } from './MuTag';
-import Percent from '../../../source (restructure)/shared/metaLanguage/Percent';
-import Hexadecimal from './Hexadecimal';
-import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
-import { map } from 'rxjs/operators';
+import MuTag, { MuTagColor } from "./MuTag";
+import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
+import Hexadecimal from "../../../source (restructure)/shared/metaLanguage/Hexadecimal";
+import { BehaviorSubject, Observable, combineLatest } from "rxjs";
+import { map } from "rxjs/operators";
 
 class InvalidBeaconId extends RangeError {
-
     constructor(value: string) {
-        super(`${value} is an invalid beacon ID. Expected a 1-character hexadecimal value.`);
-        this.name = 'InvalidBeaconID';
+        super(
+            `${value} is an invalid beacon ID. Expected a 1-character hexadecimal value.`
+        );
+        this.name = "InvalidBeaconID";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
 export class BeaconId extends Hexadecimal {
-
     static create(hex: string): BeaconId {
         if (!(hex.length === 1)) {
             throw new InvalidBeaconId(hex);
@@ -47,15 +47,27 @@ export interface MuTagJSON {
     _lastSeen: string;
 }
 
-export const isMuTagJSON = (object: { [key: string]: any }): object is MuTagJSON => {
-    return '_uid' in object && typeof object._uid === 'string'
-        && '_beaconID' in object && typeof object._beaconID === 'string'
-        && '_muTagNumber' in object && typeof object._muTagNumber === 'number'
-        && '_name' in object && typeof object._name === 'string'
-        && '_batteryLevel' in object && typeof object._batteryLevel === 'number'
-        && '_color' in object && typeof object._color === 'number'
-        && '_isSafe' in object && typeof object._isSafe === 'boolean'
-        && '_lastSeen' in object && typeof object._lastSeen === 'string';
+export const isMuTagJSON = (object: {
+    [key: string]: any;
+}): object is MuTagJSON => {
+    return (
+        "_uid" in object &&
+        typeof object._uid === "string" &&
+        "_beaconID" in object &&
+        typeof object._beaconID === "string" &&
+        "_muTagNumber" in object &&
+        typeof object._muTagNumber === "number" &&
+        "_name" in object &&
+        typeof object._name === "string" &&
+        "_batteryLevel" in object &&
+        typeof object._batteryLevel === "number" &&
+        "_color" in object &&
+        typeof object._color === "number" &&
+        "_isSafe" in object &&
+        typeof object._isSafe === "boolean" &&
+        "_lastSeen" in object &&
+        typeof object._lastSeen === "string"
+    );
 };
 
 interface SafetyStatus {
@@ -69,7 +81,6 @@ interface AccessorValue {
 }
 
 export default class ProvisionedMuTag extends MuTag {
-
     protected readonly _uid: string;
     private readonly _beaconID: BeaconId;
     private readonly _muTagNumber: number;
@@ -106,7 +117,7 @@ export default class ProvisionedMuTag extends MuTag {
         this._color = muTagData._color;
         this._accessorValue = {
             isSafe: new BehaviorSubject(muTagData._isSafe),
-            lastSeen: new BehaviorSubject(muTagData._lastSeen),
+            lastSeen: new BehaviorSubject(muTagData._lastSeen)
         };
     }
 
@@ -127,8 +138,16 @@ export default class ProvisionedMuTag extends MuTag {
     }
 
     get safetyStatus(): Observable<SafetyStatus> {
-        return combineLatest(this._accessorValue.isSafe, this._accessorValue.lastSeen).pipe(
-            map(([isSafe, lastSeen]): SafetyStatus => ({ isSafe: isSafe, lastSeen: lastSeen}))
+        return combineLatest(
+            this._accessorValue.isSafe,
+            this._accessorValue.lastSeen
+        ).pipe(
+            map(
+                ([isSafe, lastSeen]): SafetyStatus => ({
+                    isSafe: isSafe,
+                    lastSeen: lastSeen
+                })
+            )
         );
     }
 
@@ -155,28 +174,32 @@ export default class ProvisionedMuTag extends MuTag {
     }
 
     static deserialize(json: string | MuTagJSON): ProvisionedMuTag {
-        let jsonString = typeof json === 'string' ? json : JSON.stringify(json);
+        const jsonString =
+            typeof json === "string" ? json : JSON.stringify(json);
         return JSON.parse(jsonString, ProvisionedMuTag.reviver);
     }
 
     static replacer(key: string, value: any): any {
         switch (key) {
-            case '':
+            case "":
                 /* Class getters are not actual object properties. Must manually
                  * populate any class getter properties and copy the class object
                  * properties into a new object.
                  */
-                return Object.assign({
-                    _isSafe: value._isSafe,
-                    _lastSeen: value._lastSeen,
-                }, value);
-            case '_beaconID':
+                return Object.assign(
+                    {
+                        _isSafe: value._isSafe,
+                        _lastSeen: value._lastSeen
+                    },
+                    value
+                );
+            case "_beaconID":
                 return value.toString();
-            case '_batteryLevel':
+            case "_batteryLevel":
                 return value.valueOf();
             /*case 'lastSeen':
                 return value.toISOString();*/
-            case '_accessorValue':
+            case "_accessorValue":
                 // This property is not part of the model. It only serves to
                 // make some properties observable.
                 return;
@@ -187,13 +210,13 @@ export default class ProvisionedMuTag extends MuTag {
 
     static reviver(key: string, value: any): any {
         switch (key) {
-            case '':
+            case "":
                 return new ProvisionedMuTag(value);
-            case '_beaconID':
+            case "_beaconID":
                 return BeaconId.create(value);
-            case '_batteryLevel':
+            case "_batteryLevel":
                 return new Percent(value);
-            case '_lastSeen':
+            case "_lastSeen":
                 return new Date(value);
             default:
                 return value;

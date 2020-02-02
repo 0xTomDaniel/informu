@@ -1,6 +1,6 @@
 import { WritableCharacteristic, HexCharacteristic } from "./Characteristic";
 import Service from "./Service";
-import Hexadecimal from "../../../../source/Core/Domain/Hexadecimal";
+import Hexadecimal from "../../metaLanguage/Hexadecimal";
 
 abstract class SiliconLabsOTAHexCharacteristic extends HexCharacteristic {
     readonly serviceUuid = "1D14D6EE-FD63-4FA1-BFA4-8F47B42119F0";

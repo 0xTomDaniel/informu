@@ -5,7 +5,7 @@ import Characteristic, {
     UTF8Characteristic
 } from "./Characteristic";
 import Service from "./Service";
-import Hexadecimal from "../../../../source/Core/Domain/Hexadecimal";
+import Hexadecimal from "../../metaLanguage/Hexadecimal";
 
 abstract class MuTagConfigurationCharacteristic<T> extends Characteristic<T> {
     readonly serviceUuid = "A173424A-9708-4C4C-AEED-0AB1AF539797";
@@ -19,7 +19,7 @@ abstract class MuTagConfigurationUTF8Characteristic extends UTF8Characteristic {
     readonly serviceUuid = "A173424A-9708-4C4C-AEED-0AB1AF539797";
 }
 
-class DeviceUUID extends MuTagConfigurationUTF8Characteristic
+class DeviceUuid extends MuTagConfigurationUTF8Characteristic
     implements ReadableCharacteristic<string> {
     readonly uuid = "AC9B44EA-AA5E-40F4-888A-C2637573AB01";
     readonly byteLength = 16;
@@ -75,7 +75,7 @@ class Minor extends MuTagConfigurationCharacteristic<Hexadecimal | undefined>
     }
 }
 
-class TXPower extends MuTagConfigurationHexCharacteristic
+class TxPower extends MuTagConfigurationHexCharacteristic
     implements
         ReadableCharacteristic<Hexadecimal>,
         WritableCharacteristic<Hexadecimal> {
@@ -166,7 +166,7 @@ class DebugMode extends MuTagConfigurationHexCharacteristic
     readonly withResponse = true;
 }
 
-class LEDColor extends MuTagConfigurationHexCharacteristic
+class LedColor extends MuTagConfigurationHexCharacteristic
     implements
         ReadableCharacteristic<Hexadecimal>,
         WritableCharacteristic<Hexadecimal> {
@@ -175,7 +175,7 @@ class LEDColor extends MuTagConfigurationHexCharacteristic
     readonly withResponse = true;
 }
 
-class LEDControl extends MuTagConfigurationHexCharacteristic
+class LedControl extends MuTagConfigurationHexCharacteristic
     implements
         ReadableCharacteristic<Hexadecimal>,
         WritableCharacteristic<Hexadecimal> {
@@ -187,10 +187,10 @@ class LEDControl extends MuTagConfigurationHexCharacteristic
 export default class MuTagConfiguration extends Service {
     static readonly uuid = "A173424A-9708-4C4C-AEED-0AB1AF539797";
 
-    static readonly DeviceUUID = new DeviceUUID();
+    static readonly DeviceUuid = new DeviceUuid();
     static readonly Major = new Major();
     static readonly Minor = new Minor();
-    static readonly TXPower = new TXPower();
+    static readonly TxPower = new TxPower();
     static readonly Authenticate = new Authenticate();
     static readonly TagColor = new TagColor();
     static readonly DeepSleep = new DeepSleep();
@@ -198,6 +198,6 @@ export default class MuTagConfiguration extends Service {
     static readonly AdvertisingInterval = new AdvertisingInterval();
     static readonly RawBattery = new RawBattery();
     static readonly DebugMode = new DebugMode();
-    static readonly LEDColor = new LEDColor();
-    static readonly LEDControl = new LEDControl();
+    static readonly LedColor = new LedColor();
+    static readonly LedControl = new LedControl();
 }

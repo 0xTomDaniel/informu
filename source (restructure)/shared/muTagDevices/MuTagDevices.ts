@@ -1,130 +1,355 @@
 import MuTagDevicesPortAddMuTag, {
-    UnprovisionedMuTag
+    UnprovisionedMuTag,
+    MuTagDeviceId,
+    TxPowerSetting
 } from "../../useCases/addMuTag/MuTagDevicesPort";
 import MuTagDevicesPortRemoveMuTag from "../../useCases/removeMuTag/MuTagDevicesPort";
 import Bluetooth, { Peripheral, PeripheralId } from "./Bluetooth";
-import { Subscription, Subject, NEVER, from } from "rxjs";
-import { switchMap, filter, mergeMap, mapTo } from "rxjs/operators";
+import { NEVER, from, Observable, BehaviorSubject } from "rxjs";
+import { switchMap, filter, mergeMap, mapTo, map } from "rxjs/operators";
 import { Buffer } from "buffer";
-import { v4 as uuidV4 } from "uuid";
 import Percent from "../metaLanguage/Percent";
-import { Rssi } from "../metaLanguage/Types";
+import { Rssi, Millisecond } from "../metaLanguage/Types";
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
 } from "./MuTagBLEGATT/Characteristic";
 import { MuTagBLEGATT } from "./MuTagBLEGATT/MuTagBLEGATT";
+import Hexadecimal from "../metaLanguage/Hexadecimal";
 
-export class MuTagDevices
+type MuTagProvisionId = string & { readonly _: unique symbol };
+type MuTagPeripheralId = PeripheralId & { readonly _: unique symbol };
+interface MuTagPeripheral extends Peripheral {
+    id: MuTagPeripheralId;
+}
+
+export default class MuTagDevices
     implements MuTagDevicesPortAddMuTag, MuTagDevicesPortRemoveMuTag {
     private readonly muTagDeviceUuid = "de7ec7ed1055b055c0dedefea7edfa7e";
-
     private readonly bluetooth: Bluetooth;
-    private discoveredPeripheralSubscription?: Subscription;
-    private readonly pauseUnprovisionedMuTag = new Subject<boolean>();
-    private findUnprovisionedMuTagsProximityThreshold = -90 as Rssi;
-    private ignoredPeripheralCache = new Set<PeripheralId>();
-    private muTagUidToPeripheralIdCache = new Map<MuTagUid, PeripheralId>();
-    private peripheralIdToMuTagUidCache = new Map<PeripheralId, MuTagUid>();
+    private readonly pauseUnprovisionedMuTag = new BehaviorSubject(true);
+    private readonly pauseProvisionedMuTag = new BehaviorSubject(true);
+    private unprovisionedMuTagProximityThreshold = -90 as Rssi;
+    private provisionedMuTagProximityThreshold = -90 as Rssi;
+    private readonly ignoredPeripheralCache = new Set<PeripheralId>();
+    private readonly muTagPeripheralCache = new Set<MuTagPeripheralId>();
+    private readonly muTagProvisionIdCache = new Map<
+        MuTagProvisionId,
+        MuTagPeripheralId
+    >();
 
+    private readonly discoveredMuTagPeripheral: Observable<MuTagPeripheral>;
     readonly unprovisionedMuTag = this.pauseUnprovisionedMuTag.pipe(
-        switchMap(paused =>
-            paused ? NEVER : this.bluetooth.discoveredPeripheral
-        ),
+        switchMap(paused => (paused ? NEVER : this.discoveredMuTagPeripheral)),
         filter(
-            peripheral =>
-                peripheral.rssi >=
-                this.findUnprovisionedMuTagsProximityThreshold
+            muTagPeripheral =>
+                muTagPeripheral.rssi >=
+                this.unprovisionedMuTagProximityThreshold
         ),
-        mergeMap(peripheral =>
-            from(this.isUnprovisionedMuTag(peripheral)).pipe(
+        mergeMap(muTagPeripheral =>
+            from(this.isUnprovisionedMuTag(muTagPeripheral.id)).pipe(
                 filter(Boolean),
-                mapTo(peripheral)
+                mapTo(muTagPeripheral)
             )
         ),
-        mergeMap(async peripheral => {
-            const unprovisionedMuTag = await this.createUnprovisionedMuTag(
-                peripheral.id
+        mergeMap(async muTagPeripheral => {
+            return await this.createUnprovisionedMuTag(
+                muTagPeripheral.id
+            ).finally(() =>
+                this.bluetooth
+                    .disconnect(muTagPeripheral.id)
+                    .catch(e => console.log(e))
             );
-            await this.bluetooth.disconnect(peripheral.id);
-            return unprovisionedMuTag;
+        })
+    );
+
+    private readonly provisionedMuTag = this.pauseProvisionedMuTag.pipe(
+        switchMap(paused => (paused ? NEVER : this.discoveredMuTagPeripheral)),
+        filter(
+            muTagPeripheral =>
+                muTagPeripheral.rssi >= this.provisionedMuTagProximityThreshold
+        ),
+        mergeMap(muTagPeripheral =>
+            from(this.isProvisionedMuTag(muTagPeripheral.id)).pipe(
+                filter(Boolean),
+                mapTo(muTagPeripheral)
+            )
+        ),
+        mergeMap(async muTagPeripheral => {
+            const muTagProvisionId = await this.readMuTagProvisionId(
+                muTagPeripheral.id
+            ).finally(() =>
+                this.bluetooth
+                    .disconnect(muTagPeripheral.id)
+                    .catch(e => console.log(e))
+            );
+            if (!this.muTagProvisionIdCache.has(muTagProvisionId)) {
+                this.muTagProvisionIdCache.set(
+                    muTagProvisionId,
+                    muTagPeripheral.id
+                );
+            }
+            return muTagProvisionId;
         })
     );
 
     constructor(bluetooth: Bluetooth) {
         this.bluetooth = bluetooth;
-    }
-
-    destructor(): void {
-        this.discoveredPeripheralSubscription?.unsubscribe();
+        this.discoveredMuTagPeripheral = this.bluetooth.discoveredPeripheral.pipe(
+            filter(peripheral => {
+                const isMuTag = this.isMuTag(peripheral);
+                this.cacheIfNeeded(peripheral.id, isMuTag);
+                return isMuTag;
+            }),
+            map(peripheral => peripheral as MuTagPeripheral)
+        );
     }
 
     async startFindingUnprovisionedMuTags(
-        proximityThreshold: Rssi
+        proximityThreshold: Rssi,
+        timeout: Millisecond
     ): Promise<void> {
-        this.findUnprovisionedMuTagsProximityThreshold = proximityThreshold;
+        this.unprovisionedMuTagProximityThreshold = proximityThreshold;
         this.pauseUnprovisionedMuTag.next(false);
-        await this.bluetooth.startScan([], 5);
+        await this.bluetooth.startScan([], timeout);
     }
 
     stopFindingUnprovisionedMuTags(): void {
         this.pauseUnprovisionedMuTag.next(true);
+        this.stopScanIfNotInUse();
     }
 
-    provisionMuTag(
-        muTagUid: MuTagUid,
+    async provisionMuTag(
+        id: MuTagDeviceId,
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
-    ): Promise<void> {}
-
-    private async connectAndAuthenticateToMuTag(
-        muTagUid: MuTagUid
     ): Promise<void> {
-        const peripheralId = this.getPeripheralId(muTagUid);
-        await this.bluetooth.connect(peripheralId);
-        await this.authenticateToMuTag(muTagUid);
+        const muTagPeripheralId = (id as string) as MuTagPeripheralId;
+        await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
+        try {
+            const major = MuTagDevices.getMajor(accountNumber);
+            await this.writeCharacteristic(
+                muTagPeripheralId,
+                MuTagBLEGATT.MuTagConfiguration.Major,
+                major
+            );
+            const minor = MuTagDevices.getMinor(accountNumber, beaconId);
+            await this.writeCharacteristic(
+                muTagPeripheralId,
+                MuTagBLEGATT.MuTagConfiguration.Minor,
+                minor
+            );
+            await this.writeCharacteristic(
+                muTagPeripheralId,
+                MuTagBLEGATT.MuTagConfiguration.Provision,
+                MuTagBLEGATT.MuTagConfiguration.Provision.provisionCode
+            );
+            const provisionId = MuTagDevices.getMuTagProvisionIdFrom(
+                accountNumber,
+                beaconId
+            );
+            this.muTagProvisionIdCache.set(provisionId, muTagPeripheralId);
+        } finally {
+            this.bluetooth
+                .disconnect(muTagPeripheralId)
+                .catch(e => console.log(e));
+        }
     }
 
-    private async authenticateToMuTag(muTagUid: MuTagUid): Promise<void> {
-        const peripheralId = this.getPeripheralId(muTagUid);
-        const authenticate = MuTagBLEGATT.MuTagConfiguration.Authenticate;
+    async unprovisionMuTag(
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): Promise<void> {
+        const muTagProvisionId = MuTagDevices.getMuTagProvisionIdFrom(
+            accountNumber,
+            beaconId
+        );
+        const timeout = 5000 as Millisecond;
+        const muTagPeripheralId = await this.getProvisionedMuTagPeripheralId(
+            muTagProvisionId,
+            timeout
+        );
+        await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
+        this.muTagProvisionIdCache.delete(muTagProvisionId);
+
+        // Write fails because Mu tag restarts as soon as it is unprovisioned
         await this.writeCharacteristic(
-            peripheralId,
-            authenticate,
-            authenticate.authCode
+            muTagPeripheralId,
+            MuTagBLEGATT.MuTagConfiguration.Provision,
+            MuTagBLEGATT.MuTagConfiguration.Provision.unprovisionCode
+        ).catch(e => console.log(e));
+    }
+
+    async connectToProvisionedMuTag(
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): Promise<void> {
+        const muTagProvisionId = MuTagDevices.getMuTagProvisionIdFrom(
+            accountNumber,
+            beaconId
+        );
+        const timeout = 5000 as Millisecond;
+        const muTagPeripheralId = await this.getProvisionedMuTagPeripheralId(
+            muTagProvisionId,
+            timeout
+        );
+        await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
+        await this.bluetooth.retrieveServices(muTagPeripheralId);
+    }
+
+    disconnectFromProvisionedMuTag(
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): void {
+        const muTagProvisionId = MuTagDevices.getMuTagProvisionIdFrom(
+            accountNumber,
+            beaconId
+        );
+        const timeout = 5000 as Millisecond;
+        this.getProvisionedMuTagPeripheralId(muTagProvisionId, timeout)
+            .then(muTagPeripheralId =>
+                this.bluetooth.disconnect(muTagPeripheralId)
+            )
+            .catch(e => console.log(e));
+    }
+
+    async changeTxPower(
+        txPower: TxPowerSetting,
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): Promise<void> {
+        const muTagProvisionId = MuTagDevices.getMuTagProvisionIdFrom(
+            accountNumber,
+            beaconId
+        );
+        const timeout = 5000 as Millisecond;
+        const muTagPeripheralId = await this.getProvisionedMuTagPeripheralId(
+            muTagProvisionId,
+            timeout
+        );
+        let txPowerHex: Hexadecimal;
+        switch (txPower) {
+            case TxPowerSetting["+6 dBm"]:
+                txPowerHex = Hexadecimal.fromString("01");
+                break;
+            case TxPowerSetting["0 dBm"]:
+                txPowerHex = Hexadecimal.fromString("02");
+                break;
+            case TxPowerSetting["-8 dBm"]:
+                txPowerHex = Hexadecimal.fromString("03");
+                break;
+            case TxPowerSetting["-15 dBm"]:
+                txPowerHex = Hexadecimal.fromString("04");
+                break;
+            case TxPowerSetting["-20 dBm"]:
+                txPowerHex = Hexadecimal.fromString("05");
+                break;
+        }
+        await this.writeCharacteristic(
+            muTagPeripheralId,
+            MuTagBLEGATT.MuTagConfiguration.TxPower,
+            txPowerHex
         );
     }
 
-    private async isUnprovisionedMuTag(
-        peripheral: Peripheral
-    ): Promise<boolean> {
-        if (!this.isMuTag(peripheral)) {
-            this.ignoredPeripheralCache.add(peripheral.id);
-            return false;
-        }
+    private async startFindingProvisionedMuTags(
+        proximityThreshold: Rssi,
+        timeout: Millisecond
+    ): Promise<void> {
+        this.provisionedMuTagProximityThreshold = proximityThreshold;
+        this.pauseProvisionedMuTag.next(false);
+        await this.bluetooth.startScan([], timeout);
+    }
 
-        let muTagUid: MuTagUid;
+    private stopFindingProvisionedMuTags(): void {
+        this.pauseProvisionedMuTag.next(true);
+        this.stopScanIfNotInUse();
+    }
+
+    private stopScanIfNotInUse(): void {
+        if (
+            this.pauseProvisionedMuTag.getValue() &&
+            this.pauseUnprovisionedMuTag.getValue()
+        ) {
+            this.bluetooth.stopScan().catch(e => console.log(e));
+        }
+    }
+
+    private async getProvisionedMuTagPeripheralId(
+        muTagProvisionId: MuTagProvisionId,
+        timeout: Millisecond
+    ): Promise<MuTagPeripheralId> {
+        let muTagPeripheralId: MuTagPeripheralId;
         try {
-            muTagUid = this.getMuTagUid(peripheral.id);
+            muTagPeripheralId = this.getMuTagPeripheralIdFromCache(
+                muTagProvisionId
+            );
         } catch {
-            muTagUid = this.createMuTagUid();
-            this.cacheMuTagUid(muTagUid, peripheral.id);
+            muTagPeripheralId = await this.findProvisionedMuTag(
+                muTagProvisionId,
+                timeout
+            );
         }
+        return muTagPeripheralId;
+    }
 
-        await this.connectAndAuthenticateToMuTag(muTagUid);
-        const isMuTagProvisioned = await this.isMuTagProvisioned(muTagUid);
-        if (isMuTagProvisioned) {
-            await this.bluetooth.disconnect(peripheral.id);
-            return false;
-        }
-        return true;
+    private async findProvisionedMuTag(
+        muTagProvisionId: MuTagProvisionId,
+        timeout: Millisecond
+    ): Promise<MuTagPeripheralId> {
+        return new Promise((resolve, reject) => {
+            let hasPromiseCompleted = false;
+            const subscription = this.provisionedMuTag.subscribe(
+                discoveredMuTagProvisionId => {
+                    if (
+                        discoveredMuTagProvisionId.toString() ===
+                        muTagProvisionId.toString()
+                    ) {
+                        const muTagPeripheralId = this.muTagProvisionIdCache.get(
+                            muTagProvisionId
+                        );
+                        if (muTagPeripheralId != null && !hasPromiseCompleted) {
+                            hasPromiseCompleted = true;
+                            subscription.unsubscribe();
+                            resolve(muTagPeripheralId);
+                        }
+                    }
+                }
+            );
+            this.startFindingProvisionedMuTags(-80 as Rssi, timeout);
+            setTimeout((): void => {
+                if (!hasPromiseCompleted) {
+                    hasPromiseCompleted = true;
+                    subscription.unsubscribe();
+                    reject();
+                }
+            }, timeout);
+        });
+    }
+
+    private async connectAndAuthenticateToMuTag(
+        muTagPeripheralId: MuTagPeripheralId
+    ): Promise<void> {
+        await this.bluetooth.connect(muTagPeripheralId);
+        await this.authenticateToMuTag(muTagPeripheralId);
+    }
+
+    private async authenticateToMuTag(
+        muTagPeripheralId: MuTagPeripheralId
+    ): Promise<void> {
+        const authenticate = MuTagBLEGATT.MuTagConfiguration.Authenticate;
+        await this.writeCharacteristic(
+            muTagPeripheralId,
+            authenticate,
+            authenticate.authCode
+        );
     }
 
     private isMuTag(peripheral: Peripheral): boolean {
         if (this.ignoredPeripheralCache.has(peripheral.id)) {
             return false;
         }
-        return this.peripheralIdToMuTagUidCache.has(peripheral.id)
+        return this.muTagPeripheralCache.has(peripheral.id as MuTagPeripheralId)
             ? true
             : MuTagDevices.getDeviceUuid(peripheral) === this.muTagDeviceUuid;
     }
@@ -136,69 +361,148 @@ export class MuTagDevices
         return bytes.toString("hex").substring(18, 50);
     }
 
-    private createMuTagUid(): MuTagUid {
-        return uuidV4() as MuTagUid;
-    }
-
-    private cacheMuTagUid(
-        muTagUid: MuTagUid,
-        peripheralId: PeripheralId
-    ): void {
-        this.muTagUidToPeripheralIdCache.set(muTagUid, peripheralId);
-        this.peripheralIdToMuTagUidCache.set(peripheralId, muTagUid);
-    }
-
-    private getMuTagUid(peripheralId: PeripheralId): MuTagUid {
-        const muTagUid = this.peripheralIdToMuTagUidCache.get(peripheralId);
-        if (muTagUid == null) {
-            throw Error("Peripheral ID not found in cache.");
+    private cacheIfNeeded(peripheralId: PeripheralId, isMuTag: boolean): void {
+        if (isMuTag) {
+            const muTagPeripheralId = peripheralId as MuTagPeripheralId;
+            if (!this.muTagPeripheralCache.has(muTagPeripheralId)) {
+                this.muTagPeripheralCache.add(muTagPeripheralId);
+            }
+        } else {
+            if (!this.ignoredPeripheralCache.has(peripheralId)) {
+                this.ignoredPeripheralCache.add(peripheralId);
+            }
         }
-        return muTagUid;
     }
 
-    private getPeripheralId(muTagUid: MuTagUid): PeripheralId {
-        const peripheralId = this.muTagUidToPeripheralIdCache.get(muTagUid);
-        if (peripheralId == null) {
-            throw Error("Mu tag UID not found in cache.");
+    private async isUnprovisionedMuTag(
+        muTagPeripheralId: MuTagPeripheralId
+    ): Promise<boolean> {
+        await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
+        await this.bluetooth.retrieveServices(muTagPeripheralId);
+        const isMuTagProvisioned = await this.isMuTagProvisionedRead(
+            muTagPeripheralId
+        );
+        if (isMuTagProvisioned) {
+            this.bluetooth
+                .disconnect(muTagPeripheralId)
+                .catch(e => console.log(e));
         }
-        return peripheralId;
+        return !isMuTagProvisioned;
     }
 
-    private async isMuTagProvisioned(muTagUid: MuTagUid): Promise<boolean> {
-        const peripheralId = this.getPeripheralId(muTagUid);
+    private async isProvisionedMuTag(
+        muTagPeripheralId: MuTagPeripheralId
+    ): Promise<boolean> {
+        await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
+        await this.bluetooth.retrieveServices(muTagPeripheralId);
+        const isMuTagProvisioned = await this.isMuTagProvisionedRead(
+            muTagPeripheralId
+        );
+        if (!isMuTagProvisioned) {
+            this.bluetooth
+                .disconnect(muTagPeripheralId)
+                .catch(e => console.log(e));
+        }
+        return isMuTagProvisioned;
+    }
+
+    private async isMuTagProvisionedRead(
+        muTagPeripheralId: MuTagPeripheralId
+    ): Promise<boolean> {
         const provisioned = await this.readCharacteristic(
-            peripheralId,
+            muTagPeripheralId,
             MuTagBLEGATT.MuTagConfiguration.Provision
         );
         return provisioned !== undefined;
     }
 
     private async createUnprovisionedMuTag(
-        peripheralId: PeripheralId
+        muTagPeripheralId: MuTagPeripheralId
     ): Promise<UnprovisionedMuTag> {
         const batteryLevelHex = await this.readCharacteristic(
-            peripheralId,
+            muTagPeripheralId,
             MuTagBLEGATT.DeviceInformation.BatteryLevel
         );
-        const muTagUid = this.getMuTagUid(peripheralId);
         return {
-            uid: muTagUid,
+            id: (muTagPeripheralId as string) as MuTagDeviceId,
             batteryLevel: new Percent(batteryLevelHex.valueOf())
         };
     }
 
     private async readCharacteristic<T>(
-        peripheralId: PeripheralId,
+        muTagPeripheralId: MuTagPeripheralId,
         characteristic: Characteristic<T> & ReadableCharacteristic<T>
     ): Promise<T> {
-        return await this.bluetooth.read(peripheralId, characteristic);
+        return await this.bluetooth.read(muTagPeripheralId, characteristic);
     }
 
     private async writeCharacteristic<T>(
-        peripheralId: PeripheralId,
+        muTagPeripheralId: MuTagPeripheralId,
         characteristic: Characteristic<T> & WritableCharacteristic<T>,
         value: T
     ): Promise<void> {
-        await this.bluetooth.write(peripheralId, characteristic, value);
+        await this.bluetooth.write(muTagPeripheralId, characteristic, value);
+    }
+
+    private getMuTagPeripheralIdFromCache(
+        muTagProvisionId: MuTagProvisionId
+    ): MuTagPeripheralId {
+        const muTagPeripheralId = this.muTagProvisionIdCache.get(
+            muTagProvisionId
+        );
+        if (muTagPeripheralId == null) {
+            throw Error(
+                `Mu tag not found in cache with provision ID: ${muTagProvisionId}`
+            );
+        }
+        return muTagPeripheralId;
+    }
+
+    private async readMuTagProvisionId(
+        muTagPeripheralId: MuTagPeripheralId
+    ): Promise<MuTagProvisionId> {
+        const major = await this.readCharacteristic(
+            muTagPeripheralId,
+            MuTagBLEGATT.MuTagConfiguration.Major
+        );
+        const minor = await this.readCharacteristic(
+            muTagPeripheralId,
+            MuTagBLEGATT.MuTagConfiguration.Minor
+        );
+        if (major == null || minor == null) {
+            throw Error(
+                `Mu tag provisioning is invalid (peripheral ID: ${muTagPeripheralId}).`
+            );
+        }
+        return MuTagDevices.getMuTagProvisionIdFromMajorMinor(major, minor);
+    }
+
+    private static getMajor(accountNumber: Hexadecimal): Hexadecimal {
+        const majorHexString = accountNumber.toString().substr(0, 4);
+        return Hexadecimal.fromString(majorHexString);
+    }
+
+    private static getMinor(
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): Hexadecimal {
+        const majorMinorHex = accountNumber.toString() + beaconId.toString();
+        const minorHex = majorMinorHex.toString().substr(4, 4);
+        return Hexadecimal.fromString(minorHex);
+    }
+
+    private static getMuTagProvisionIdFromMajorMinor(
+        major: Hexadecimal,
+        minor: Hexadecimal
+    ): MuTagProvisionId {
+        return (major.toString() + minor.toString()) as MuTagProvisionId;
+    }
+
+    private static getMuTagProvisionIdFrom(
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): MuTagProvisionId {
+        return (accountNumber.toString() +
+            beaconId.toString()) as MuTagProvisionId;
     }
 }

@@ -77,7 +77,7 @@ test("successfully serializes and deserializes Account (empty collections)", ():
 });
 
 describe("adding and removing Mu tags", (): void => {
-    const beaconIDOne = referenceAccount.newBeaconID;
+    const beaconIDOne = referenceAccount.newBeaconId;
     const muTagUIDOne = "UUID01";
     const muTagUIDTwo = "UUID02";
 
@@ -105,7 +105,7 @@ describe("adding and removing Mu tags", (): void => {
     });
 
     test("successfully adds another Mu tag to account", (): void => {
-        const beaconIDTwo = referenceAccount.newBeaconID;
+        const beaconIDTwo = referenceAccount.newBeaconId;
 
         expect.assertions(3);
         const subscription = referenceAccount.muTagsChange.subscribe(
@@ -129,7 +129,7 @@ describe("adding and removing Mu tags", (): void => {
             }
         );
         referenceAccount.removeMuTag(muTagUIDOne, beaconIDOne);
-        expect(referenceAccount.newBeaconID.toString()).toEqual("8");
+        expect(referenceAccount.newBeaconId.toString()).toEqual("8");
 
         subscription.unsubscribe();
     });

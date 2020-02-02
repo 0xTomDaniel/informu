@@ -238,7 +238,7 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                             </Dialog.Title>
                             <Dialog.Content>
                                 <Paragraph>
-                                    {this.state.errorDescription}
+                                    {this.state.userErrorDescription}
                                 </Paragraph>
                             </Dialog.Content>
                             <Dialog.Actions>

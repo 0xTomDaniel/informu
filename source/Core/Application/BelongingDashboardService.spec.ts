@@ -109,7 +109,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         _nextMuTagNumber: validAccountData._nextMuTagNumber,
         _muTags: new Set()
     });
-    const addedBeaconID = accountNoMuTags.newBeaconID;
+    const addedBeaconID = accountNoMuTags.newBeaconId;
     const newBelongingDashboardData: DashboardBelonging = {
         uid: belongingsData[2]._uid,
         name: belongingsData[2]._name,

@@ -94,7 +94,7 @@ const muTagBeacon: MuTagBeacon = {
     accountNumber: accountNumber,
     beaconID: muTagBeaconID
 };
-const addedBeaconID = account.newBeaconID;
+const addedBeaconID = account.newBeaconId;
 const addedMuTagNumber = account.newMuTagNumber;
 const addedMuTagData = {
     _uid: "UUID02",

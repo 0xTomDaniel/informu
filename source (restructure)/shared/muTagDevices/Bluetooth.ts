@@ -1,5 +1,5 @@
 import { Observable } from "rxjs";
-import { Rssi } from "../metaLanguage/Types";
+import { Rssi, Millisecond } from "../metaLanguage/Types";
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
@@ -31,9 +31,11 @@ export interface Peripheral {
 export default interface Bluetooth {
     discoveredPeripheral: Observable<Peripheral>;
     start(): Promise<void>;
-    startScan(serviceUUIDs: Array<string>, seconds: number): Promise<void>;
+    startScan(serviceUUIDs: Array<string>, timeout: Millisecond): Promise<void>;
+    stopScan(): Promise<void>;
     connect(peripheralId: PeripheralId): Promise<void>;
     disconnect(peripheralId: PeripheralId): Promise<void>;
+    retrieveServices(peripheralId: PeripheralId): Promise<object>;
     read<T>(
         peripheralId: PeripheralId,
         characteristic: Characteristic<T> & ReadableCharacteristic<T>

@@ -14,6 +14,7 @@ import ProvisionedMuTag, {
     MuTagJSON,
     isMuTagJSON
 } from "../../Core/Domain/ProvisionedMuTag";
+import { v4 as uuidV4 } from "uuid";
 
 interface DatabaseMuTag {
     beacon_id: string;
@@ -101,6 +102,14 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
             console.log(e);
             throw new FailedToRemove();
         }
+    }
+
+    createNewUid(accountUID: string): string {
+        return (
+            database()
+                .ref(`mu_tags/${accountUID}`)
+                .push().key || uuidV4()
+        );
     }
 
     private static toDatabaseMuTag(muTag: ProvisionedMuTag): DatabaseMuTag {

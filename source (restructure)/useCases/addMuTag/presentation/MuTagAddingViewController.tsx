@@ -8,15 +8,15 @@ import {
     Text
 } from "react-native-paper";
 import { StyleSheet, Platform, StatusBar, View } from "react-native";
-import Theme from "./Theme";
+import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { SafeAreaView, NavigationScreenProps } from "react-navigation";
 import React, { Component } from "react";
 import DeviceInfo from "react-native-device-info";
 import { MuTagAddingViewModel, MuTagAddingState } from "./MuTagAddingViewModel";
-import AddMuTagInteractor from "../../../source (restructure)/useCases/addMuTag/AddMuTagInteractor";
-import { Scale } from "./ResponsiveScaler";
+import AddMuTagInteractor from "../AddMuTagInteractor";
+import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { MuTagColor } from "../../Core/Domain/MuTag";
+import { MuTagColor } from "../../../../source/Core/Domain/MuTag";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -180,7 +180,9 @@ export default class MuTagAddingViewController extends Component<
                             Something went wrong :(
                         </Dialog.Title>
                         <Dialog.Content>
-                            <Paragraph>{this.state.errorDescription}</Paragraph>
+                            <Paragraph>
+                                {this.state.userErrorDescription}
+                            </Paragraph>
                         </Dialog.Content>
                         <Dialog.Actions>
                             <Button

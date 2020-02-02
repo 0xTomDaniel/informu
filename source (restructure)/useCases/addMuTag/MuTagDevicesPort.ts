@@ -1,18 +1,16 @@
 import { Rssi } from "../../shared/metaLanguage/Types";
-import { BeaconId } from "../../../source/Core/Domain/ProvisionedMuTag";
-import { AccountNumber } from "../../../source/Core/Domain/Account";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Observable } from "rxjs";
-import Hexadecimal from "../../../source/Core/Domain/Hexadecimal";
+import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 
-export type MuTagUid = string & { readonly _: unique symbol };
+export type MuTagDeviceId = string & { readonly _: unique symbol };
 
 export interface UnprovisionedMuTag {
-    uid: MuTagUid;
+    id: MuTagDeviceId;
     batteryLevel: Percent;
 }
 
-export enum TXPowerSetting {
+export enum TxPowerSetting {
     "+6 dBm",
     "0 dBm",
     "-8 dBm",
@@ -22,40 +20,34 @@ export enum TXPowerSetting {
 
 export default interface MuTagDevicesPort {
     readonly unprovisionedMuTag: Observable<UnprovisionedMuTag>;
-    startFindingUnprovisionedMuTags(proximityThreshold: Rssi): Promise<void>;
+
+    /**
+     * @function startFindingUnprovisionedMuTags
+     * @param {Rssi} proximityThreshold - Mu tag with an RSSI less than this threshold will be ignored.
+     * @param {number} timeout - Promise will resolve when timeout in seconds has been reached.
+     */
+    startFindingUnprovisionedMuTags(
+        proximityThreshold: Rssi,
+        timeout: number
+    ): Promise<void>;
+
+    stopFindingUnprovisionedMuTags(): void;
     provisionMuTag(
-        muTagUid: MuTagUid,
+        id: MuTagDeviceId,
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
     ): Promise<void>;
-    /*findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
-    cancelFindNewMuTag(): void;
     connectToProvisionedMuTag(
-        accountNumber: AccountNumber,
-        beaconID: BeaconID
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
     ): Promise<void>;
     disconnectFromProvisionedMuTag(
-        accountNumber: AccountNumber,
-        beaconID: BeaconID
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
     ): void;
-    provisionMuTag(
-        unprovisionedMuTag: UnprovisionedMuTag,
-        accountNumber: AccountNumber,
-        beaconID: BeaconID,
-        muTagNumber: number,
-        muTagName: string
-    ): Promise<ProvisionedMuTag>;
-    unprovisionMuTag(
-        accountNumber: AccountNumber,
-        beaconID: BeaconID
+    changeTxPower(
+        txPower: TxPowerSetting,
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
     ): Promise<void>;
-    readBatteryLevel(
-        accountNumber: AccountNumber,
-        beaconID: BeaconID
-    ): Promise<Percent>;
-    changeTXPower(
-        txPower: TXPowerSetting,
-        accountNumber: AccountNumber,
-        beaconID: BeaconID
-    ): Promise<void>;*/
 }

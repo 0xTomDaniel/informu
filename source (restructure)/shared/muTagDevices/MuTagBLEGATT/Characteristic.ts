@@ -1,5 +1,5 @@
 import { Buffer } from "buffer";
-import Hexadecimal from "../../../../source/Core/Domain/Hexadecimal";
+import Hexadecimal from "../../metaLanguage/Hexadecimal";
 
 export interface ReadableCharacteristic<T> {
     fromBase64(base64?: string): T;

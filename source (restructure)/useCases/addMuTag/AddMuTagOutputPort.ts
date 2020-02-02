@@ -1,20 +1,13 @@
-import { LowMuTagBattery } from "./AddMuTagInteractor";
-import {
-    ProvisionMuTagFailed,
-    NewMuTagNotFound,
-    BluetoothUnsupported
-} from "./MuTagDevicesPort";
+import UserError from "../../shared/metaLanguage/UserError";
+import UserWarning from "../../shared/metaLanguage/UserWarning";
 
-export interface AddMuTagOutputPort {
+export default interface AddMuTagOutputPort {
     showAddMuTagScreen(): void;
     showMuTagNamingScreen(): void;
     showMuTagConnectingScreen(): void;
     showMuTagFinalSetupScreen(): void;
     showActivityIndicator(): void;
     showHomeScreen(): void;
-    showLowBatteryError(error: LowMuTagBattery): void;
-    showFindNewMuTagError(error: NewMuTagNotFound): void;
-    showProvisionFailedError(error: ProvisionMuTagFailed): void;
-    showBluetoothUnsupportedError(error: BluetoothUnsupported): void;
-    showError(error: Error): void;
+    showWarning(warning: UserWarning): void;
+    showError(error: UserError): void;
 }

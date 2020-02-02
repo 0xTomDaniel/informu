@@ -1,4 +1,4 @@
-import Hexadecimal from "./Hexadecimal";
+import Hexadecimal from "../../../source (restructure)/shared/metaLanguage/Hexadecimal";
 import { BeaconId } from "./ProvisionedMuTag";
 import { BehaviorSubject, Observable } from "rxjs";
 import { pairwise, map } from "rxjs/operators";
@@ -157,7 +157,7 @@ export default class Account {
         return this._accountNumber;
     }
 
-    get newBeaconID(): BeaconId {
+    get newBeaconId(): BeaconId {
         if (this._recycledBeaconIDs.size !== 0) {
             return this._recycledBeaconIDs.values().next().value;
         }

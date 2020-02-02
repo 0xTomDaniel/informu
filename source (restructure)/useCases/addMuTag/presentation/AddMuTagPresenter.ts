@@ -1,14 +1,10 @@
-import { AddMuTagOutputPort } from "../AddMuTagOutputPort";
+import AddMuTagOutputPort from "../AddMuTagOutputPort";
 import { HomeViewModel } from "../../../../source/Primary Adapters/Presentation/HomeViewModel";
 import { AddMuTagViewModel } from "./AddMuTagViewModel";
-import { LowMuTagBattery } from "../AddMuTagInteractor";
-import {
-    NewMuTagNotFound,
-    ProvisionMuTagFailed,
-    BluetoothUnsupported
-} from "../MuTagDevicesPort";
-import { NameMuTagViewModel } from "../../../../source/Primary Adapters/Presentation/NameMuTagViewModel";
-import { MuTagAddingViewModel } from "../../../../source/Primary Adapters/Presentation/MuTagAddingViewModel";
+import { NameMuTagViewModel } from "./NameMuTagViewModel";
+import { MuTagAddingViewModel } from "./MuTagAddingViewModel";
+import UserError from "../../../shared/metaLanguage/UserError";
+import UserWarning from "../../../shared/metaLanguage/UserWarning";
 
 type CurrentViewModel =
     | HomeViewModel
@@ -72,7 +68,8 @@ export default class AddMuTagPresenter implements AddMuTagOutputPort {
             this.currentViewModel instanceof MuTagAddingViewModel
         ) {
             this.currentViewModel.showError = false;
-            this.currentViewModel.errorDescription = "";
+            this.currentViewModel.userErrorDescription = "";
+            this.currentViewModel.detailedErrorDescription = "";
             this.currentViewModel.navigateToHomeScreen();
             this.currentViewModel = this.homeViewModel;
         }
@@ -80,33 +77,33 @@ export default class AddMuTagPresenter implements AddMuTagOutputPort {
         this.resetViewModelsToDefault();
     }
 
-    showLowBatteryError(error: LowMuTagBattery): void {
-        this.showErrorMessage(error.message);
+    showWarning(warning: UserWarning): void {
+        if (
+            this.currentViewModel instanceof NameMuTagViewModel ||
+            this.currentViewModel instanceof MuTagAddingViewModel
+        ) {
+            this.currentViewModel.userWarningDescription =
+                warning.userWarningDescription;
+            this.currentViewModel.detailedWarningDescription =
+                warning.originatingError != null
+                    ? JSON.stringify(warning.originatingError)
+                    : "";
+            this.currentViewModel.showWarning = true;
+        }
     }
 
-    showFindNewMuTagError(error: NewMuTagNotFound): void {
-        this.showErrorMessage(error.message);
-    }
-
-    showProvisionFailedError(error: ProvisionMuTagFailed): void {
-        this.showErrorMessage(error.message);
-    }
-
-    showBluetoothUnsupportedError(error: BluetoothUnsupported): void {
-        this.showErrorMessage(error.message);
-    }
-
-    showError(error: Error): void {
-        this.showErrorMessage(error.message);
-    }
-
-    private showErrorMessage(description: string): void {
+    showError(error: UserError): void {
         if (
             this.currentViewModel instanceof AddMuTagViewModel ||
             this.currentViewModel instanceof NameMuTagViewModel ||
             this.currentViewModel instanceof MuTagAddingViewModel
         ) {
-            this.currentViewModel.errorDescription = description;
+            this.currentViewModel.userErrorDescription =
+                error.userErrorDescription;
+            this.currentViewModel.detailedErrorDescription =
+                error.originatingError != null
+                    ? JSON.stringify(error.originatingError)
+                    : "";
             this.currentViewModel.showError = true;
         }
     }

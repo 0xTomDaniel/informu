@@ -3,7 +3,8 @@ import BleManager from "react-native-ble-manager";
 import { fromEvent } from "rxjs";
 import { NativeModules, NativeEventEmitter } from "react-native";
 import Characteristic, {
-    ReadableCharacteristic
+    ReadableCharacteristic,
+    WritableCharacteristic
 } from "./MuTagBLEGATT/Characteristic";
 
 export default class BluetoothImplRnBleManager implements Bluetooth {
@@ -17,24 +18,29 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
         "BleManagerDiscoverPeripheral"
     );
 
-    constructor() {}
-
     async start(): Promise<void> {
         await BleManager.start();
         this.bleManagerStarted = true;
     }
 
     async startScan(serviceUUIDs: string[], seconds: number): Promise<void> {
-        await this.start();
-        await BleManager.scan([], 10);
+        await BleManager.scan(serviceUUIDs, seconds);
+    }
+
+    async stopScan(): Promise<void> {
+        await BleManager.stopScan();
     }
 
     async connect(peripheralId: PeripheralId): Promise<void> {
-        throw new Error("Method not implemented.");
+        await BleManager.connect(peripheralId);
     }
 
     async disconnect(peripheralId: PeripheralId): Promise<void> {
-        throw new Error("Method not implemented.");
+        await BleManager.disconnect(peripheralId);
+    }
+
+    async retrieveServices(peripheralId: PeripheralId): Promise<object> {
+        return await BleManager.retrieveServices(peripheralId);
     }
 
     async read<T>(
@@ -51,25 +57,22 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
 
     async write<T>(
         peripheralId: PeripheralId,
-        characteristic: Characteristic<T> &
-            import("./MuTagBLEGATT/Characteristic").WritableCharacteristic<T>,
+        characteristic: Characteristic<T> & WritableCharacteristic<T>,
         value: T
     ): Promise<void> {
-        throw new Error("Method not implemented.");
-
         if (characteristic.withResponse) {
-            await device.writeCharacteristicWithResponseForService(
-                fullUUID(characteristic.serviceUuid),
-                fullUUID(characteristic.uuid),
-                base64Value,
-                transactionId
+            await BleManager.write(
+                peripheralId,
+                characteristic.serviceUuid,
+                characteristic.uuid,
+                characteristic.toData(value)
             );
         } else {
-            await device.writeCharacteristicWithoutResponseForService(
-                fullUUID(characteristic.serviceUuid),
-                fullUUID(characteristic.uuid),
-                base64Value,
-                transactionId
+            await BleManager.writeWithoutResponse(
+                peripheralId,
+                characteristic.serviceUuid,
+                characteristic.uuid,
+                characteristic.toData(value)
             );
         }
     }

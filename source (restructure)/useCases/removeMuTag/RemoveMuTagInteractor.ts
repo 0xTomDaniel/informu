@@ -1,8 +1,3 @@
-import {
-    MuTagDevicesPort,
-    MuTagNotFound,
-    UnprovisionMuTagFailed
-} from "../addMuTag/MuTagDevicesPort";
 import Percent from "../../shared/metaLanguage/Percent";
 import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
 import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
@@ -11,6 +6,7 @@ import { AccountRepositoryRemote } from "../../../source/Core/Ports/AccountRepos
 import { RemoveMuTagOutputPort } from "./RemoveMuTagOutputPort";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Account from "../../../source/Core/Domain/Account";
+import MuTagDevicesPort from "./MuTagDevicesPort";
 
 export class LowMuTagBattery extends Error {
     constructor(lowBatteryThreshold: number) {

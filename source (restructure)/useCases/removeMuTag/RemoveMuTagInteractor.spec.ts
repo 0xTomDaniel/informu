@@ -2,11 +2,6 @@ import Percent from "../../shared/metaLanguage/Percent";
 import ProvisionedMuTag, {
     BeaconId
 } from "../../../source/Core/Domain/ProvisionedMuTag";
-import {
-    MuTagDevicesPort,
-    MuTagNotFound,
-    UnprovisionMuTagFailed
-} from "../addMuTag/MuTagDevicesPort";
 import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../../../source/Core/Ports/MuTagRepositoryRemote";
 import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
@@ -20,18 +15,12 @@ import RemoveMuTagInteractor, {
     LowMuTagBattery
 } from "./RemoveMuTagInteractor";
 import { RemoveMuTagOutputPort } from "./RemoveMuTagOutputPort";
+import MuTagDevicesPort from "./MuTagDevicesPort";
 
 describe("Mu tag user removes Mu tag", (): void => {
     const MuTagDevicesMock = jest.fn<MuTagDevicesPort, any>(
         (): MuTagDevicesPort => ({
-            findNewMuTag: jest.fn(),
-            cancelFindNewMuTag: jest.fn(),
-            connectToProvisionedMuTag: jest.fn(),
-            disconnectFromProvisionedMuTag: jest.fn(),
-            provisionMuTag: jest.fn(),
-            unprovisionMuTag: jest.fn(),
-            readBatteryLevel: jest.fn(),
-            changeTXPower: jest.fn()
+            unprovisionMuTag: jest.fn()
         })
     );
 

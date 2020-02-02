@@ -1,13 +1,46 @@
-export interface AddMuTagState {
+export interface MuTagAddingState {
+    userWarningDescription: string;
+    detailedWarningDescription: string;
+    showWarning: boolean;
     userErrorDescription: string;
     detailedErrorDescription: string;
     showError: boolean;
 }
 
-export class AddMuTagViewModel {
+export class MuTagAddingViewModel {
+    private _userWarningDescription = "";
+    private _detailedWarningDescription = "";
+    private _showWarning = false;
     private _userErrorDescription = "";
     private _detailedErrorDescription = "";
     private _showError = false;
+
+    get userWarningDescription(): string {
+        return this._userWarningDescription;
+    }
+
+    set userWarningDescription(newValue: string) {
+        this._userWarningDescription = newValue;
+        this.triggerDidUpdate({ userWarningDescription: newValue });
+    }
+
+    get detailedWarningDescription(): string {
+        return this._detailedWarningDescription;
+    }
+
+    set detailedWarningDescription(newValue: string) {
+        this._detailedWarningDescription = newValue;
+        this.triggerDidUpdate({ detailedWarningDescription: newValue });
+    }
+
+    get showWarning(): boolean {
+        return this._showWarning;
+    }
+
+    set showWarning(newValue: boolean) {
+        this._showWarning = newValue;
+        this.triggerDidUpdate({ showWarning: newValue });
+    }
 
     get userErrorDescription(): string {
         return this._userErrorDescription;
@@ -37,20 +70,20 @@ export class AddMuTagViewModel {
     }
 
     private onDidUpdateCallback?: (change: object) => void;
-    private onNavigateToNameMuTagCallback?: () => void;
+    private onNavigateToMuTagSettingsCallback?: () => void;
     private onNavigateToHomeScreenCallback?: () => void;
 
     onDidUpdate(callback?: (change: object) => void): void {
         this.onDidUpdateCallback = callback;
     }
 
-    onNavigateToNameMuTag(callback?: () => void): void {
-        this.onNavigateToNameMuTagCallback = callback;
+    onNavigateToMuTagSettings(callback?: () => void): void {
+        this.onNavigateToMuTagSettingsCallback = callback;
     }
 
-    navigateToNameMuTag(): void {
-        this.onNavigateToNameMuTagCallback &&
-            this.onNavigateToNameMuTagCallback();
+    navigateToMuTagSettings(): void {
+        this.onNavigateToMuTagSettingsCallback &&
+            this.onNavigateToMuTagSettingsCallback();
     }
 
     onNavigateToHomeScreen(callback?: () => void): void {

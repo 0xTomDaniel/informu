@@ -1,9 +1,4 @@
-import UnprovisionedMuTag from "../../../source/Core/Domain/UnprovisionedMuTag";
-import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
-import { Rssi } from "../../shared/metaLanguage/Types";
-import { BeaconId } from "../../../source/Core/Domain/ProvisionedMuTag";
-import { AccountNumber } from "../../../source/Core/Domain/Account";
-import Percent from "../../shared/metaLanguage/Percent";
+import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 
 export enum TXPowerSetting {
     "+6 dBm",
@@ -14,6 +9,10 @@ export enum TXPowerSetting {
 }
 
 export default interface MuTagDevicesPort {
+    unprovisionMuTag(
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): Promise<void>;
     /*findNewMuTag(scanThreshold: RSSI): Promise<UnprovisionedMuTag>;
     cancelFindNewMuTag(): void;
     connectToProvisionedMuTag(

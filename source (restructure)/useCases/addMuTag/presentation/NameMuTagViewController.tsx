@@ -15,14 +15,14 @@ import {
     TouchableWithoutFeedback,
     Keyboard
 } from "react-native";
-import Theme from "./Theme";
+import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { SafeAreaView, NavigationScreenProps } from "react-navigation";
 import React, { Component } from "react";
 import DeviceInfo from "react-native-device-info";
 import { NameMuTagViewModel, NameMuTagState } from "./NameMuTagViewModel";
-import AddMuTagInteractor from "../../../source (restructure)/useCases/addMuTag/AddMuTagInteractor";
-import { Scale } from "./ResponsiveScaler";
-import { MuTagColor } from "../../Core/Domain/MuTag";
+import AddMuTagInteractor from "../AddMuTagInteractor";
+import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
+import { MuTagColor } from "../../../../source/Core/Domain/MuTag";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -172,7 +172,7 @@ export default class NameMuTagViewController extends Component<
                             </Dialog.Title>
                             <Dialog.Content>
                                 <Paragraph>
-                                    {this.state.errorDescription}
+                                    {this.state.userErrorDescription}
                                 </Paragraph>
                             </Dialog.Content>
                             <Dialog.Actions>
