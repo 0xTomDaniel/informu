@@ -9,6 +9,8 @@ buildscript {
         targetSdkVersion = 28
         supportLibVersion = "28.0.0"
         kotlin_version = '1.3.21'
+        // This is a temporary fix for react-native-fbsdk v1.1.2
+        facebookSdkVersion = "5.15.3"
     }
     repositories {
         google()
