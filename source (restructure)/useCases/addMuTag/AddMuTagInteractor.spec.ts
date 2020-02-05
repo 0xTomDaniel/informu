@@ -62,6 +62,7 @@ const BluetoothMock = jest.fn<Bluetooth, any>(
     })
 );
 const bluetoothMock = new BluetoothMock();
+(bluetoothMock.start as jest.Mock).mockResolvedValue(undefined);
 const muTagDevices = new MuTagDevices(bluetoothMock);
 const MuTagRepoLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
     (): MuTagRepositoryLocalPort => ({
@@ -137,7 +138,7 @@ describe("Mu tag user adds Mu tag", (): void => {
     const manufacturerData: ManufacturerData = {
         bytes: manufacturerDataBytes,
         data: manufacturerDataBase64,
-        CDVType: "ArrayBuffer"
+        cdvType: "ArrayBuffer"
     };
     const discoveredPeripheral: Peripheral = {
         id: uuidV4() as PeripheralId,
@@ -145,7 +146,7 @@ describe("Mu tag user adds Mu tag", (): void => {
         rssi: -55 as Rssi,
         advertising: {
             isConnectable: true,
-            serviceUUIDs: [],
+            serviceUuids: [],
             manufacturerData: manufacturerData,
             serviceData: {},
             txPowerLevel: 6

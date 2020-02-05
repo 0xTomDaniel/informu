@@ -1,4 +1,4 @@
-import { LoginOutput } from "../Ports/LoginOutput";
+import LoginOutput from "../Ports/LoginOutput";
 import {
     Authentication,
     InvalidCredentials,

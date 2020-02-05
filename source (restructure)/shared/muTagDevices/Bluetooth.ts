@@ -5,15 +5,21 @@ import Characteristic, {
     WritableCharacteristic
 } from "./MuTagBLEGATT/Characteristic";
 
+export enum ScanMode {
+    lowPower,
+    balanced,
+    lowLatency
+}
+
 export interface ManufacturerData {
     bytes: ArrayBuffer;
     data: string;
-    CDVType: string;
+    cdvType: string;
 }
 
 export interface Advertising {
     isConnectable: boolean;
-    serviceUUIDs: Array<string>;
+    serviceUuids: Array<string>;
     manufacturerData: ManufacturerData;
     serviceData: object;
     txPowerLevel: number;
@@ -31,7 +37,11 @@ export interface Peripheral {
 export default interface Bluetooth {
     discoveredPeripheral: Observable<Peripheral>;
     start(): Promise<void>;
-    startScan(serviceUUIDs: Array<string>, timeout: Millisecond): Promise<void>;
+    startScan(
+        serviceUuids: Array<string>,
+        timeout: Millisecond,
+        scanMode?: ScanMode
+    ): Promise<void>;
     stopScan(): Promise<void>;
     connect(peripheralId: PeripheralId): Promise<void>;
     disconnect(peripheralId: PeripheralId): Promise<void>;

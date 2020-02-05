@@ -30,6 +30,7 @@ const BluetoothMock = jest.fn<Bluetooth, any>(
     })
 );
 const bluetoothMock = new BluetoothMock();
+(bluetoothMock.start as jest.Mock).mockResolvedValue(undefined);
 (bluetoothMock.retrieveServices as jest.Mock).mockResolvedValue({});
 (bluetoothMock.stopScan as jest.Mock).mockResolvedValue(undefined);
 (bluetoothMock.connect as jest.Mock).mockResolvedValue(undefined);
@@ -45,7 +46,7 @@ const manufacturerDataBase64 =
 const manufacturerData: ManufacturerData = {
     bytes: manufacturerDataBytes,
     data: manufacturerDataBase64,
-    CDVType: "ArrayBuffer"
+    cdvType: "ArrayBuffer"
 };
 const discoveredPeripheral01: Peripheral = {
     id: uuidV4() as PeripheralId,
@@ -53,13 +54,17 @@ const discoveredPeripheral01: Peripheral = {
     rssi: -55 as Rssi,
     advertising: {
         isConnectable: true,
-        serviceUUIDs: [],
+        serviceUuids: [],
         manufacturerData: manufacturerData,
         serviceData: {},
         txPowerLevel: 6
     }
 };
 let unprovisionedMuTag01: UnprovisionedMuTag;
+
+test("successfully starts bluetooth", async (): Promise<void> => {
+    expect(bluetoothMock.start).toHaveBeenCalled();
+});
 
 test("successfully finds two unprovisioned Mu tags", async (): Promise<
     void
@@ -70,7 +75,7 @@ test("successfully finds two unprovisioned Mu tags", async (): Promise<
         rssi: -55 as Rssi,
         advertising: {
             isConnectable: true,
-            serviceUUIDs: [],
+            serviceUuids: [],
             manufacturerData: manufacturerData,
             serviceData: {},
             txPowerLevel: 6
@@ -148,7 +153,7 @@ test("successfully unprovisions provisioned Mu tag that's not cached", async ():
         rssi: -67 as Rssi,
         advertising: {
             isConnectable: true,
-            serviceUUIDs: [],
+            serviceUuids: [],
             manufacturerData: manufacturerData,
             serviceData: {},
             txPowerLevel: 6

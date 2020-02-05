@@ -1,4 +1,4 @@
-import { LoginOutput } from "../../Core/Ports/LoginOutput";
+import LoginOutput from "../../Core/Ports/LoginOutput";
 import { LoginViewModel } from "./LoginViewModel";
 import { ImproperPasswordComplexity } from "../../Core/Application/LoginService";
 
@@ -31,14 +31,18 @@ export default class LoginPresenter implements LoginOutput {
         if (error instanceof ImproperPasswordComplexity) {
             this.viewModel.updateState({ passwordErrorMessage: error.message });
         } else {
-            this.viewModel.updateState({ emailErrorMessage: error.message });
+            this.viewModel.updateState({
+                emailErrorMessage: error.message
+            });
         }
     }
 
     showFederatedLoginError(error: Error): void {
         this.clearErrorMessages();
         this.hideBusyIndicator();
-        this.viewModel.updateState({ federatedErrorMessage: error.message });
+        this.viewModel.updateState({
+            federatedErrorMessage: error.message
+        });
     }
 
     private enableLogInButton(): void {

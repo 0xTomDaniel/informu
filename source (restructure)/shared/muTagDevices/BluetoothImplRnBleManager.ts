@@ -1,4 +1,4 @@
-import Bluetooth, { Peripheral, PeripheralId } from "./Bluetooth";
+import Bluetooth, { Peripheral, PeripheralId, ScanMode } from "./Bluetooth";
 import BleManager from "react-native-ble-manager";
 import { fromEvent } from "rxjs";
 import { NativeModules, NativeEventEmitter } from "react-native";
@@ -6,16 +6,32 @@ import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
 } from "./MuTagBLEGATT/Characteristic";
+import { Buffer } from "buffer";
+import { Millisecond } from "../metaLanguage/Types";
+import { filter } from "rxjs/operators";
 
 export default class BluetoothImplRnBleManager implements Bluetooth {
     private readonly bleManagerEmitter = new NativeEventEmitter(
         NativeModules.BleManager
     );
     private bleManagerStarted = false;
+    private readonly scanCache = new Set<PeripheralId>();
+    private readonly scanStopped = fromEvent<undefined>(
+        this.bleManagerEmitter,
+        "BleManagerStopScan"
+    );
 
     readonly discoveredPeripheral = fromEvent<Peripheral>(
         this.bleManagerEmitter,
         "BleManagerDiscoverPeripheral"
+    ).pipe(
+        filter(peripheral => {
+            if (this.scanCache.has(peripheral.id)) {
+                return false;
+            }
+            this.scanCache.add(peripheral.id);
+            return true;
+        })
     );
 
     async start(): Promise<void> {
@@ -23,23 +39,51 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
         this.bleManagerStarted = true;
     }
 
-    async startScan(serviceUUIDs: string[], seconds: number): Promise<void> {
-        await BleManager.scan(serviceUUIDs, seconds);
+    async startScan(
+        serviceUuids: string[],
+        timeout: Millisecond,
+        scanMode: ScanMode = ScanMode.balanced
+    ): Promise<void> {
+        //debugger;
+        const seconds = timeout / 1000;
+        const iosAllowDuplicates = false;
+        const androidOptions: BleManager.ScanOptions = {
+            scanMode: scanMode,
+            matchMode: 1, // MATCH_MODE_AGGRESSIVE
+            numberOfMatches: 1 //MATCH_NUM_ONE_ADVERTISEMENT
+        };
+        await BleManager.scan(
+            serviceUuids,
+            seconds,
+            iosAllowDuplicates,
+            androidOptions
+        );
+        //await new Promise(resolve => setTimeout(() => resolve(), timeout));
+        await new Promise(resolve => {
+            const subscription = this.scanStopped.subscribe(() => {
+                resolve();
+                subscription.unsubscribe();
+            });
+        });
     }
 
     async stopScan(): Promise<void> {
-        await BleManager.stopScan();
+        //debugger;
+        await BleManager.stopScan().finally(() => this.scanCache.clear());
     }
 
     async connect(peripheralId: PeripheralId): Promise<void> {
+        //debugger;
         await BleManager.connect(peripheralId);
     }
 
     async disconnect(peripheralId: PeripheralId): Promise<void> {
+        //debugger;
         await BleManager.disconnect(peripheralId);
     }
 
     async retrieveServices(peripheralId: PeripheralId): Promise<object> {
+        //debugger;
         return await BleManager.retrieveServices(peripheralId);
     }
 
@@ -47,12 +91,15 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
         peripheralId: PeripheralId,
         characteristic: Characteristic<T> & ReadableCharacteristic<T>
     ): Promise<T> {
+        //debugger;
         const characteristicData = await BleManager.read(
             peripheralId,
             characteristic.serviceUuid,
             characteristic.uuid
         );
-        return characteristic.fromData(characteristicData || undefined);
+        //DEBUG
+        console.log("characteristicData: ", characteristicData);
+        return characteristic.fromData(this.convertToBytes(characteristicData));
     }
 
     async write<T>(
@@ -60,20 +107,26 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
         characteristic: Characteristic<T> & WritableCharacteristic<T>,
         value: T
     ): Promise<void> {
+        const data = [...characteristic.toData(value)];
+        //debugger;
         if (characteristic.withResponse) {
             await BleManager.write(
                 peripheralId,
                 characteristic.serviceUuid,
                 characteristic.uuid,
-                characteristic.toData(value)
+                data
             );
         } else {
             await BleManager.writeWithoutResponse(
                 peripheralId,
                 characteristic.serviceUuid,
                 characteristic.uuid,
-                characteristic.toData(value)
+                data
             );
         }
+    }
+
+    private convertToBytes(byteArray: number[]): Buffer | undefined {
+        return byteArray.length === 0 ? undefined : Buffer.from(byteArray);
     }
 }

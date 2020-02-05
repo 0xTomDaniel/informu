@@ -1,4 +1,4 @@
-export interface LoginOutput {
+export default interface LoginOutput {
     showBusyIndicator(): void;
     hideBusyIndicator(): void;
     showHomeScreen(): void;

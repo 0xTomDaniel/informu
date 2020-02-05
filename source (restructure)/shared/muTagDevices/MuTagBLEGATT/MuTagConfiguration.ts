@@ -6,6 +6,7 @@ import Characteristic, {
 } from "./Characteristic";
 import Service from "./Service";
 import Hexadecimal from "../../metaLanguage/Hexadecimal";
+import { Buffer } from "buffer";
 
 abstract class MuTagConfigurationCharacteristic<T> extends Characteristic<T> {
     readonly serviceUuid = "A173424A-9708-4C4C-AEED-0AB1AF539797";
@@ -37,7 +38,7 @@ class Major extends MuTagConfigurationCharacteristic<Hexadecimal | undefined>
         return base64 == null ? undefined : Characteristic.base64ToHex(base64);
     }
 
-    fromData(data: Buffer): Hexadecimal | undefined {
+    fromData(data?: Buffer): Hexadecimal | undefined {
         return data == null ? undefined : Characteristic.dataToHex(data);
     }
 
@@ -62,7 +63,7 @@ class Minor extends MuTagConfigurationCharacteristic<Hexadecimal | undefined>
         return base64 == null ? undefined : Characteristic.base64ToHex(base64);
     }
 
-    fromData(data: Buffer): Hexadecimal | undefined {
+    fromData(data?: Buffer): Hexadecimal | undefined {
         return data == null ? undefined : Characteristic.dataToHex(data);
     }
 
@@ -129,7 +130,9 @@ class Provision
         return base64 == null ? undefined : Characteristic.base64ToHex(base64);
     }
 
-    fromData(data: Buffer): Hexadecimal | undefined {
+    fromData(data?: Buffer): Hexadecimal | undefined {
+        //DEBUG
+        console.log(data);
         return data == null ? undefined : Characteristic.dataToHex(data);
     }
 

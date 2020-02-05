@@ -15,7 +15,7 @@ import {
     InvalidCredentials,
     SignInCanceled
 } from "../Ports/Authentication";
-import { LoginOutput } from "../Ports/LoginOutput";
+import LoginOutput from "../Ports/LoginOutput";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
 import { MuTagColor } from "../Domain/MuTag";

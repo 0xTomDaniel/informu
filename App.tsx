@@ -311,7 +311,7 @@ const dependencies = new Dependencies(webClientID);
 const AppStack = createStackNavigator(
     {
         Home: {
-            screen: (props: NavigationScreenProps): Element => (
+            screen: (props: NavigationScreenProps): ReactElement => (
                 <HomeViewController
                     homeViewModel={dependencies.homeViewModel}
                     belongingDashboardService={
@@ -325,7 +325,7 @@ const AppStack = createStackNavigator(
             )
         },
         AddMuTag: {
-            screen: (props: NavigationScreenProps): Element => (
+            screen: (props: NavigationScreenProps): ReactElement => (
                 <AddMuTagViewController
                     viewModel={dependencies.addMuTagViewModel}
                     addMuTagService={dependencies.addMuTagService}
@@ -334,7 +334,7 @@ const AppStack = createStackNavigator(
             )
         },
         NameMuTag: {
-            screen: (props: NavigationScreenProps): Element => (
+            screen: (props: NavigationScreenProps): ReactElement => (
                 <NameMuTagViewController
                     viewModel={dependencies.nameMuTagViewModel}
                     addMuTagService={dependencies.addMuTagService}
@@ -343,7 +343,7 @@ const AppStack = createStackNavigator(
             )
         },
         MuTagAdding: {
-            screen: (props: NavigationScreenProps): Element => (
+            screen: (props: NavigationScreenProps): ReactElement => (
                 <MuTagAddingViewController
                     viewModel={dependencies.muTagAddingViewModel}
                     addMuTagService={dependencies.addMuTagService}
@@ -361,7 +361,7 @@ const AppStack = createStackNavigator(
 const EntryStack = createStackNavigator(
     {
         Login: {
-            screen: (props: NavigationScreenProps): Element => (
+            screen: (props: NavigationScreenProps): ReactElement => (
                 <LoginViewController
                     viewModel={dependencies.loginViewModel}
                     loginService={dependencies.loginService}

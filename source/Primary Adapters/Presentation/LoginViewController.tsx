@@ -22,7 +22,7 @@ import {
 import DeviceInfo from "react-native-device-info";
 import { Images } from "./Images";
 import Theme from "./Theme";
-import { Button, TextInput } from "react-native-paper";
+import { Button } from "react-native-paper";
 import ErrorDialog from "./Base Components/ErrorDialog";
 
 const styles = StyleSheet.create({
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
         resizeMode: "contain",
         width: undefined,
         height: undefined,
-        marginHorizontal: 16
+        marginHorizontal: 32
     },
     content: {
         flex: 0.77,
@@ -234,6 +234,7 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                 </View>
                 <ErrorDialog
                     message={state.federatedErrorMessage}
+                    detailMessage={state.detailedErrorDescription}
                     visible={state.federatedErrorMessage !== ""}
                     onDismiss={onDismissErrorDialog}
                 />

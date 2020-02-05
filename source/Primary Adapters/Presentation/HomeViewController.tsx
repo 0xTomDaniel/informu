@@ -36,7 +36,6 @@ import { Scale } from "./ResponsiveScaler";
 import BelongingDashboardService from "../../Core/Application/BelongingDashboardService";
 import RemoveMuTagInteractor from "../../../source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
 import ErrorDialog from "./Base Components/ErrorDialog";
-import BluetoothImplRnBleManager from "../../../source (restructure)/shared/muTagDevices/BluetoothImplRnBleManager";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -95,6 +94,7 @@ const styles = StyleSheet.create({
     },
     belongingsContainer: {
         flexGrow: 1,
+        paddingTop: 4,
         paddingBottom: 16
     },
     belongingsEmpty: {
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     },
     card: {
         paddingVertical: 8,
-        marginHorizontal: Scale(12),
+        marginHorizontal: Scale(8),
         marginTop: Scale(12),
         backgroundColor: Theme.Color.AlmostWhite,
         borderWidth: 1,
@@ -185,7 +185,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         {" " + props.viewData.lastSeen}
                     </Text>
                 }
-                left={(leftProps: any): Element => (
+                left={(leftProps: any): ReactElement => (
                     <Avatar.Icon
                         {...leftProps}
                         icon="radar"
@@ -193,7 +193,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         style={styles.iconView}
                     />
                 )}
-                right={(rightProps: any): Element => (
+                right={(rightProps: any): ReactElement => (
                     <Menu
                         visible={isMenuVisible}
                         onDismiss={hideMenu}
@@ -360,6 +360,7 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
             </Portal>
             <ErrorDialog
                 message={state.errorDescription}
+                detailMessage={state.detailedErrorDescription}
                 visible={state.isErrorVisible}
                 onDismiss={onDismissErrorDialog}
             />

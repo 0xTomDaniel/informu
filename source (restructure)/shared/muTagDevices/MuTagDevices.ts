@@ -26,6 +26,7 @@ interface MuTagPeripheral extends Peripheral {
 export default class MuTagDevices
     implements MuTagDevicesPortAddMuTag, MuTagDevicesPortRemoveMuTag {
     private readonly muTagDeviceUuid = "de7ec7ed1055b055c0dedefea7edfa7e";
+    private hasBluetoothStarted = false;
     private readonly bluetooth: Bluetooth;
     private readonly pauseUnprovisionedMuTag = new BehaviorSubject(true);
     private readonly pauseProvisionedMuTag = new BehaviorSubject(true);
@@ -95,6 +96,10 @@ export default class MuTagDevices
 
     constructor(bluetooth: Bluetooth) {
         this.bluetooth = bluetooth;
+        bluetooth
+            .start()
+            .then(() => (this.hasBluetoothStarted = true))
+            .catch(e => console.log(e));
         this.discoveredMuTagPeripheral = this.bluetooth.discoveredPeripheral.pipe(
             filter(peripheral => {
                 const isMuTag = this.isMuTag(peripheral);
@@ -109,6 +114,9 @@ export default class MuTagDevices
         proximityThreshold: Rssi,
         timeout: Millisecond
     ): Promise<void> {
+        if (!this.hasBluetoothStarted) {
+            throw Error("Bluetooth has not started.");
+        }
         this.unprovisionedMuTagProximityThreshold = proximityThreshold;
         this.pauseUnprovisionedMuTag.next(false);
         await this.bluetooth.startScan([], timeout);
@@ -194,7 +202,6 @@ export default class MuTagDevices
             timeout
         );
         await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
-        await this.bluetooth.retrieveServices(muTagPeripheralId);
     }
 
     disconnectFromProvisionedMuTag(
@@ -331,6 +338,7 @@ export default class MuTagDevices
         muTagPeripheralId: MuTagPeripheralId
     ): Promise<void> {
         await this.bluetooth.connect(muTagPeripheralId);
+        await this.bluetooth.retrieveServices(muTagPeripheralId);
         await this.authenticateToMuTag(muTagPeripheralId);
     }
 
@@ -377,8 +385,9 @@ export default class MuTagDevices
     private async isUnprovisionedMuTag(
         muTagPeripheralId: MuTagPeripheralId
     ): Promise<boolean> {
+        //DEBUG
+        console.log(muTagPeripheralId);
         await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
-        await this.bluetooth.retrieveServices(muTagPeripheralId);
         const isMuTagProvisioned = await this.isMuTagProvisionedRead(
             muTagPeripheralId
         );
@@ -387,6 +396,8 @@ export default class MuTagDevices
                 .disconnect(muTagPeripheralId)
                 .catch(e => console.log(e));
         }
+        //DEBUG
+        console.log("isMuTagProvisioned: ", isMuTagProvisioned);
         return !isMuTagProvisioned;
     }
 
@@ -394,7 +405,6 @@ export default class MuTagDevices
         muTagPeripheralId: MuTagPeripheralId
     ): Promise<boolean> {
         await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
-        await this.bluetooth.retrieveServices(muTagPeripheralId);
         const isMuTagProvisioned = await this.isMuTagProvisionedRead(
             muTagPeripheralId
         );
