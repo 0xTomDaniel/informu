@@ -259,6 +259,26 @@ export default class MuTagDevices
         );
     }
 
+    async readBatteryLevel(
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): Promise<Percent> {
+        const muTagProvisionId = MuTagDevices.getMuTagProvisionIdFrom(
+            accountNumber,
+            beaconId
+        );
+        const timeout = 5000 as Millisecond;
+        const muTagPeripheralId = await this.getProvisionedMuTagPeripheralId(
+            muTagProvisionId,
+            timeout
+        );
+        const batteryLevelHex = await this.readCharacteristic(
+            muTagPeripheralId,
+            MuTagBLEGATT.DeviceInformation.BatteryLevel
+        );
+        return new Percent(batteryLevelHex.valueOf());
+    }
+
     private async startFindingProvisionedMuTags(
         proximityThreshold: Rssi,
         timeout: Millisecond
@@ -328,7 +348,12 @@ export default class MuTagDevices
                 if (!hasPromiseCompleted) {
                     hasPromiseCompleted = true;
                     subscription.unsubscribe();
-                    reject();
+                    const timeoutSeconds = timeout / 1000;
+                    reject(
+                        Error(
+                            `Provisioned Mu tag (${muTagProvisionId}) could not be found before ${timeoutSeconds} second timeout.`
+                        )
+                    );
                 }
             }, timeout);
         });

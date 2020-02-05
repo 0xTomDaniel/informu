@@ -77,10 +77,10 @@ export class Dependencies {
     addMuTagPresenter: AddMuTagPresenter;
     bluetooth: Bluetooth;
     muTagDevices: MuTagDevicesPortAddMuTag & MuTagDevicesPortRemoveMuTag;
-    addMuTagService: AddMuTagInteractor;
+    addMuTagInteractor: AddMuTagInteractor;
     removeMuTagBatteryThreshold: Percent;
     removeMuTagPresenter: RemoveMuTagPresenter;
-    removeMuTagService: RemoveMuTagInteractor;
+    removeMuTagInteractor: RemoveMuTagInteractor;
     logoutPresenter: LogoutPresenter;
     logoutService: LogoutService;
     belongingDashboardPresenter: BelongingDashboardPresenter;
@@ -120,7 +120,7 @@ export class Dependencies {
         );
         this.bluetooth = new BluetoothImplRnBleManager();
         this.muTagDevices = new MuTagDevices(this.bluetooth);
-        this.addMuTagService = new AddMuTagInteractor(
+        this.addMuTagInteractor = new AddMuTagInteractor(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,
             this.addMuTagPresenter,
@@ -134,7 +134,7 @@ export class Dependencies {
         this.removeMuTagPresenter = new RemoveMuTagPresenter(
             this.homeViewModel
         );
-        this.removeMuTagService = new RemoveMuTagInteractor(
+        this.removeMuTagInteractor = new RemoveMuTagInteractor(
             this.removeMuTagBatteryThreshold,
             this.muTagDevices,
             this.accountRepoLocal,
@@ -218,7 +218,7 @@ export class Dependencies {
             this.muTagAddingViewModel
         );
         this.muTagDevices = new MuTagDevices(this.bluetooth);
-        this.addMuTagService = new AddMuTagInteractor(
+        this.addMuTagInteractor = new AddMuTagInteractor(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,
             this.addMuTagPresenter,
@@ -232,7 +232,7 @@ export class Dependencies {
         this.removeMuTagPresenter = new RemoveMuTagPresenter(
             this.homeViewModel
         );
-        this.removeMuTagService = new RemoveMuTagInteractor(
+        this.removeMuTagInteractor = new RemoveMuTagInteractor(
             this.removeMuTagBatteryThreshold,
             this.muTagDevices,
             this.accountRepoLocal,
@@ -318,8 +318,8 @@ const AppStack = createStackNavigator(
                         dependencies.belongingDashboardService
                     }
                     logoutService={dependencies.logoutService}
-                    addMuTagService={dependencies.addMuTagService}
-                    removeMuTagService={dependencies.removeMuTagService}
+                    addMuTagService={dependencies.addMuTagInteractor}
+                    removeMuTagService={dependencies.removeMuTagInteractor}
                     {...props}
                 />
             )
@@ -328,7 +328,7 @@ const AppStack = createStackNavigator(
             screen: (props: NavigationScreenProps): ReactElement => (
                 <AddMuTagViewController
                     viewModel={dependencies.addMuTagViewModel}
-                    addMuTagService={dependencies.addMuTagService}
+                    addMuTagService={dependencies.addMuTagInteractor}
                     {...props}
                 />
             )
@@ -337,7 +337,7 @@ const AppStack = createStackNavigator(
             screen: (props: NavigationScreenProps): ReactElement => (
                 <NameMuTagViewController
                     viewModel={dependencies.nameMuTagViewModel}
-                    addMuTagService={dependencies.addMuTagService}
+                    addMuTagService={dependencies.addMuTagInteractor}
                     {...props}
                 />
             )
@@ -346,7 +346,7 @@ const AppStack = createStackNavigator(
             screen: (props: NavigationScreenProps): ReactElement => (
                 <MuTagAddingViewController
                     viewModel={dependencies.muTagAddingViewModel}
-                    addMuTagService={dependencies.addMuTagService}
+                    addMuTagService={dependencies.addMuTagInteractor}
                     {...props}
                 />
             )

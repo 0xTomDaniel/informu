@@ -12,7 +12,9 @@ import Account, {
 } from "../../../source/Core/Domain/Account";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import RemoveMuTagInteractor, {
-    LowMuTagBattery
+    LowMuTagBattery,
+    FailedToConnectToMuTag,
+    MuTagCommunicationFailure
 } from "./RemoveMuTagInteractor";
 import { RemoveMuTagOutputPort } from "./RemoveMuTagOutputPort";
 import MuTagDevicesPort from "./MuTagDevicesPort";
@@ -20,7 +22,10 @@ import MuTagDevicesPort from "./MuTagDevicesPort";
 describe("Mu tag user removes Mu tag", (): void => {
     const MuTagDevicesMock = jest.fn<MuTagDevicesPort, any>(
         (): MuTagDevicesPort => ({
-            unprovisionMuTag: jest.fn()
+            unprovisionMuTag: jest.fn(),
+            connectToProvisionedMuTag: jest.fn(),
+            disconnectFromProvisionedMuTag: jest.fn(),
+            readBatteryLevel: jest.fn()
         })
     );
 
@@ -68,10 +73,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         (): RemoveMuTagOutputPort => ({
             showBusyIndicator: jest.fn(),
             hideBusyIndicator: jest.fn(),
-            showMuTagNotFoundError: jest.fn(),
-            showUnprovisionMuTagFailedError: jest.fn(),
-            showLowBatteryError: jest.fn(),
-            showUnknownError: jest.fn()
+            showError: jest.fn()
         })
     );
 
@@ -234,9 +236,9 @@ describe("Mu tag user removes Mu tag", (): void => {
 
         // Given Mu tag is unconnectable
         //
-        const muTagNoTFoundError = new MuTagNotFound();
+        const originatingError = Error();
         (muTagDevicesMock.connectToProvisionedMuTag as jest.Mock).mockRejectedValueOnce(
-            muTagNoTFoundError
+            originatingError
         );
 
         // When
@@ -279,12 +281,10 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Then
         //
         it("should show message to move Mu tag closer to mobile device, check Mu tag battery level, and try again", (): void => {
-            expect(
-                removeMuTagOutputMock.showMuTagNotFoundError
-            ).toHaveBeenCalledTimes(1);
-            expect(
-                removeMuTagOutputMock.showMuTagNotFoundError
-            ).toHaveBeenCalledWith(muTagNoTFoundError);
+            expect(removeMuTagOutputMock.showError).toHaveBeenCalledTimes(1);
+            expect(removeMuTagOutputMock.showError).toHaveBeenCalledWith(
+                new FailedToConnectToMuTag(originatingError)
+            );
         });
     });
 
@@ -308,9 +308,9 @@ describe("Mu tag user removes Mu tag", (): void => {
 
         // Given Mu tag hardware fails to unprovision
         //
-        const unprovisionMuTagFailedError = new UnprovisionMuTagFailed();
+        const originatingError = Error();
         (muTagDevicesMock.unprovisionMuTag as jest.Mock).mockRejectedValueOnce(
-            unprovisionMuTagFailedError
+            originatingError
         );
 
         // When
@@ -373,12 +373,10 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Then
         //
         it("should show message that Mu tag failed to remove, to move closer to mobile device, and try again", (): void => {
-            expect(
-                removeMuTagOutputMock.showUnprovisionMuTagFailedError
-            ).toHaveBeenCalledTimes(1);
-            expect(
-                removeMuTagOutputMock.showUnprovisionMuTagFailedError
-            ).toHaveBeenCalledWith(unprovisionMuTagFailedError);
+            expect(removeMuTagOutputMock.showError).toHaveBeenCalledTimes(1);
+            expect(removeMuTagOutputMock.showError).toHaveBeenCalledWith(
+                new MuTagCommunicationFailure(originatingError)
+            );
         });
     });
 
@@ -396,9 +394,8 @@ describe("Mu tag user removes Mu tag", (): void => {
 
         // Given the Mu tag battery is below threshold
         //
-        const muTagBatteryLevelLow = new Percent(15);
         (muTagDevicesMock.readBatteryLevel as jest.Mock).mockResolvedValueOnce(
-            muTagBatteryLevelLow
+            new Percent(14)
         );
 
         // When
@@ -455,12 +452,8 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Then
         //
         it("should show message that removal failed, Mu tag battery needs to be charged, and then try again", (): void => {
-            expect(
-                removeMuTagOutputMock.showLowBatteryError
-            ).toHaveBeenCalledTimes(1);
-            expect(
-                removeMuTagOutputMock.showLowBatteryError
-            ).toHaveBeenCalledWith(
+            expect(removeMuTagOutputMock.showError).toHaveBeenCalledTimes(1);
+            expect(removeMuTagOutputMock.showError).toHaveBeenCalledWith(
                 new LowMuTagBattery(removeMuTagBatteryThreshold.valueOf())
             );
         });

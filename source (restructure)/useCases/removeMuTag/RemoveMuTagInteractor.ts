@@ -7,16 +7,36 @@ import { RemoveMuTagOutputPort } from "./RemoveMuTagOutputPort";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Account from "../../../source/Core/Domain/Account";
 import MuTagDevicesPort from "./MuTagDevicesPort";
+import UserError from "../../shared/metaLanguage/UserError";
 
-export class LowMuTagBattery extends Error {
-    constructor(lowBatteryThreshold: number) {
-        super(
-            "Unable to remove Mu tag because its battery is below " +
-                `${lowBatteryThreshold}%. Please charge Mu tag and try again.`
-        );
-        this.name = "LowMuTagBattery";
-        Object.setPrototypeOf(this, new.target.prototype);
+export class LowMuTagBattery extends UserError {
+    name = "LowMuTagBattery";
+    userErrorDescription: string;
+    constructor(
+        lowBatteryThreshold: number,
+        originatingError?: Error | undefined
+    ) {
+        super(originatingError);
+        this.userErrorDescription = `Unable to remove Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.`;
     }
+}
+
+export class FailedToConnectToMuTag extends UserError {
+    name = "FailedToConnectToMuTag";
+    userErrorDescription =
+        "Could not connect to Mu tag. Please ensure that Mu tag is charged and move it closer to the app.";
+}
+
+export class MuTagCommunicationFailure extends UserError {
+    name = "MuTagCommunicationFailure";
+    userErrorDescription =
+        "There was a problem communicating with the Mu tag. Please move Mu tag closer to the app.";
+}
+
+export class FailedToRemoveMuTagFromAccount extends UserError {
+    name = "FailedToRemoveMuTagFromAccount";
+    userErrorDescription =
+        "The Mu tag device successfully reset and disconnected from your account, but there was a problem removing the Mu tag from the app. Please notify support@informu.io.";
 }
 
 export default class RemoveMuTagInteractor {
@@ -55,57 +75,63 @@ export default class RemoveMuTagInteractor {
         try {
             account = await this.accountRepoLocal.get();
             muTag = await this.muTagRepoLocal.getByUID(uid);
-
             await this.muTagDevices.connectToProvisionedMuTag(
                 account.accountNumber,
                 muTag.beaconID
             );
+        } catch (e) {
+            this.removeMuTagOutput.hideBusyIndicator();
+            this.removeMuTagOutput.showError(new FailedToConnectToMuTag(e));
+            return;
+        }
+
+        try {
             const batteryLevel = await this.muTagDevices.readBatteryLevel(
                 account.accountNumber,
                 muTag.beaconID
             );
-            if (batteryLevel <= this.removeMuTagBatteryThreshold) {
-                throw new LowMuTagBattery(
+            if (batteryLevel < this.removeMuTagBatteryThreshold) {
+                const lowBatteryError = new LowMuTagBattery(
                     this.removeMuTagBatteryThreshold.valueOf()
                 );
+                this.removeMuTagOutput.hideBusyIndicator();
+                this.removeMuTagOutput.showError(lowBatteryError);
+                return;
             }
-
             await this.muTagDevices.unprovisionMuTag(
                 account.accountNumber,
                 muTag.beaconID
             );
-
-            account.removeMuTag(uid, muTag.beaconID);
-
-            await this.accountRepoLocal.update(account);
-            await this.muTagRepoLocal.removeByUID(uid);
-            await this.accountRepoRemote.update(account);
-            await this.muTagRepoRemote.removeByUID(uid, account.uid);
         } catch (e) {
-            if (
-                e.constructor !== MuTagNotFound &&
-                account != null &&
-                muTag != null
-            ) {
+            this.removeMuTagOutput.hideBusyIndicator();
+            this.removeMuTagOutput.showError(new MuTagCommunicationFailure(e));
+            return;
+        } finally {
+            if (account != null && muTag != null) {
                 this.muTagDevices.disconnectFromProvisionedMuTag(
                     account.accountNumber,
                     muTag.beaconID
                 );
             }
+        }
 
-            switch (e.constructor) {
-                case LowMuTagBattery:
-                    this.removeMuTagOutput.showLowBatteryError(e);
-                    break;
-                case MuTagNotFound:
-                    this.removeMuTagOutput.showMuTagNotFoundError(e);
-                    break;
-                case UnprovisionMuTagFailed:
-                    this.removeMuTagOutput.showUnprovisionMuTagFailedError(e);
-                    break;
-                default:
-                    this.removeMuTagOutput.showUnknownError(e);
-            }
+        try {
+            account.removeMuTag(uid, muTag.beaconID);
+            await this.accountRepoLocal.update(account);
+            await this.muTagRepoLocal.removeByUID(uid);
+        } catch (e) {
+            this.removeMuTagOutput.hideBusyIndicator();
+            this.removeMuTagOutput.showError(
+                new FailedToRemoveMuTagFromAccount(e)
+            );
+            return;
+        }
+
+        try {
+            await this.accountRepoRemote.update(account);
+            await this.muTagRepoRemote.removeByUID(uid, account.uid);
+        } catch (e) {
+            console.log(e);
         } finally {
             this.removeMuTagOutput.hideBusyIndicator();
         }
