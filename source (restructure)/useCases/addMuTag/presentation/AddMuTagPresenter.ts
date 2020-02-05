@@ -102,7 +102,7 @@ export default class AddMuTagPresenter implements AddMuTagOutputPort {
                 error.userErrorDescription;
             this.currentViewModel.detailedErrorDescription =
                 error.originatingError != null
-                    ? JSON.stringify(error.originatingError)
+                    ? String(error.originatingError)
                     : "";
             this.currentViewModel.showError = true;
         }

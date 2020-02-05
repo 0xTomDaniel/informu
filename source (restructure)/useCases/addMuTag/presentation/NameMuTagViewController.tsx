@@ -1,12 +1,4 @@
-import {
-    Appbar,
-    Button,
-    TextInput,
-    Headline,
-    Portal,
-    Dialog,
-    Paragraph
-} from "react-native-paper";
+import { Appbar, Button, TextInput, Headline } from "react-native-paper";
 import {
     StyleSheet,
     Platform,
@@ -17,12 +9,13 @@ import {
 } from "react-native";
 import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { SafeAreaView, NavigationScreenProps } from "react-navigation";
-import React, { Component } from "react";
+import React, { Component, ReactElement } from "react";
 import DeviceInfo from "react-native-device-info";
 import { NameMuTagViewModel, NameMuTagState } from "./NameMuTagViewModel";
 import AddMuTagInteractor from "../AddMuTagInteractor";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
 import { MuTagColor } from "../../../../source/Core/Domain/MuTag";
+import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -114,7 +107,7 @@ export default class NameMuTagViewController extends Component<
         this.props.viewModel.onNavigateToHomeScreen(undefined);
     }
 
-    render(): Element {
+    render(): ReactElement {
         return (
             <TouchableWithoutFeedback
                 onPress={Keyboard.dismiss}
@@ -160,32 +153,14 @@ export default class NameMuTagViewController extends Component<
                     >
                         {this.state.showActivityIndicator ? "Adding" : "Add"}
                     </Button>
-                    <Portal>
-                        <Dialog
-                            visible={this.state.showError}
-                            onDismiss={(): void =>
-                                this.props.addMuTagService.stopAddingNewMuTag()
-                            }
-                        >
-                            <Dialog.Title style={styles.errorDialogTitle}>
-                                Something went wrong :(
-                            </Dialog.Title>
-                            <Dialog.Content>
-                                <Paragraph>
-                                    {this.state.userErrorDescription}
-                                </Paragraph>
-                            </Dialog.Content>
-                            <Dialog.Actions>
-                                <Button
-                                    onPress={(): void =>
-                                        this.props.addMuTagService.stopAddingNewMuTag()
-                                    }
-                                >
-                                    Exit
-                                </Button>
-                            </Dialog.Actions>
-                        </Dialog>
-                    </Portal>
+                    <ErrorDialog
+                        message={this.state.userErrorDescription}
+                        detailMessage={this.state.detailedErrorDescription}
+                        visible={this.state.showError}
+                        onDismiss={(): void =>
+                            this.props.addMuTagService.stopAddingNewMuTag()
+                        }
+                    />
                 </SafeAreaView>
             </TouchableWithoutFeedback>
         );
