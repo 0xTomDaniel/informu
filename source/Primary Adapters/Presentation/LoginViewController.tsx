@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold"
     },
     buttonContentStyle: {
-        backgroundColor: "#FFFFFF",
+        //backgroundColor: "#FFFFFF",
         justifyContent: "space-evenly"
     },
     buttonStyle: {
@@ -150,7 +150,7 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                     <View>
                         <Button
                             icon="facebook"
-                            mode="outlined"
+                            mode="contained"
                             color="#3B5998"
                             uppercase={false}
                             loading={
@@ -166,7 +166,7 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                         </Button>
                         <Button
                             icon="google"
-                            mode="outlined"
+                            mode="contained"
                             color="#DB4437"
                             uppercase={false}
                             loading={
