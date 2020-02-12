@@ -7,7 +7,10 @@ import {
     Card,
     Avatar,
     IconButton,
-    Menu
+    Menu,
+    Dialog,
+    Paragraph,
+    Button
 } from "react-native-paper";
 import {
     StyleSheet,
@@ -231,19 +234,7 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
     props
 ): ReactElement => {
     const [state, setState] = useState(props.homeViewModel.state);
-
-    //DEBUG
-    /*const scanMuTags = (): void => {
-        console.warn("scanMuTags");
-        const ble = new BluetoothImplRnBleManager();
-        ble.discoveredPeripheral.subscribe(peripheral => {
-            console.warn("Peripheral RSSI: ", peripheral.rssi);
-            if (peripheral.rssi > -40) {
-                console.warn(JSON.stringify(peripheral));
-            }
-        });
-        ble.startScan([], 0).catch(e => console.warn(e));
-    };*/
+    const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
     const onDismissErrorDialog = (): void => {
         props.homeViewModel.updateState({
@@ -328,9 +319,7 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
                 />
                 <Appbar.Action
                     icon="logout"
-                    onPress={(): void => {
-                        props.logoutService.logOut();
-                    }}
+                    onPress={(): void => setShowSignOutDialog(true)}
                 />
             </Appbar.Header>
             <FlatList
@@ -346,6 +335,29 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
                 )}
                 keyExtractor={(item): string => item.uid}
             />
+            <Portal>
+                <Dialog
+                    visible={showSignOutDialog}
+                    onDismiss={() => setShowSignOutDialog(false)}
+                >
+                    <Dialog.Content>
+                        <Paragraph>
+                            Are you sure you want to sign out?
+                        </Paragraph>
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setShowSignOutDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            mode="contained"
+                            onPress={() => props.logoutService.logOut()}
+                        >
+                            Sign Out
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
             <Portal>
                 <Modal
                     dismissable={false}
