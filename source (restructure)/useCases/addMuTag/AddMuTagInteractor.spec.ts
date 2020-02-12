@@ -482,7 +482,7 @@ describe("Mu tag user adds Mu tag", (): void => {
         // Then
         //
         it("should attempt connection to unprovisioned Mu tag", (): void => {
-            expect(bluetoothMock.startScan).toHaveBeenCalledWith([], 5000);
+            expect(bluetoothMock.startScan).toHaveBeenCalledWith([], 120000, 2);
             expect(bluetoothMock.startScan).toHaveBeenCalledTimes(1);
         });
 

@@ -159,9 +159,12 @@ test("successfully unprovisions provisioned Mu tag that's not cached", async ():
             txPowerLevel: 6
         }
     };
-    (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(() => {
-        discoveredPeripheralSubscriber.next(discoveredPeripheralUncached);
-    });
+    (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
+        (serviceUuids, timeout) => {
+            discoveredPeripheralSubscriber.next(discoveredPeripheralUncached);
+            return new Promise(resolve => setTimeout(() => resolve(), timeout));
+        }
+    );
     (bluetoothMock.read as jest.Mock).mockResolvedValueOnce("01");
     (bluetoothMock.read as jest.Mock).mockResolvedValueOnce("0000");
     (bluetoothMock.read as jest.Mock).mockResolvedValueOnce("0072");

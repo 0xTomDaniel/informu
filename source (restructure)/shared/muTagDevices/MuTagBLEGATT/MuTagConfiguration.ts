@@ -131,8 +131,6 @@ class Provision
     }
 
     fromData(data?: Buffer): Hexadecimal | undefined {
-        //DEBUG
-        console.log(data);
         return data == null ? undefined : Characteristic.dataToHex(data);
     }
 
