@@ -3,5 +3,10 @@ module.exports = {
     plugins: [
         ["@babel/plugin-proposal-decorators", { legacy: true }],
         ["transform-inline-environment-variables"]
-    ]
+    ],
+    env: {
+        production: {
+            plugins: ["transform-remove-console"]
+        }
+    }
 };
