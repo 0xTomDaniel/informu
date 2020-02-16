@@ -11,6 +11,7 @@ import {
     DoesNotExist as AccountDoesNotExist
 } from "../../Core/Ports/AccountRepositoryLocal";
 import { Database } from "./Database";
+import MuTagRepositoryLocalPort from "../../../source (restructure)/useCases/addMuTag/MuTagRepositoryLocalPort";
 
 interface PromiseExecutor {
     resolve: (value?: void | PromiseLike<void> | undefined) => void;
@@ -24,7 +25,8 @@ enum CacheStatus {
     PopulationFailed
 }
 
-export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
+export default class MuTagRepoLocalImpl
+    implements MuTagRepositoryLocal, MuTagRepositoryLocalPort {
     private readonly database: Database;
     private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly muTagCache = new Map<string, ProvisionedMuTag>();
@@ -38,7 +40,7 @@ export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
         this.populateCache();
     }
 
-    async getByUID(uid: string): Promise<ProvisionedMuTag> {
+    async getByUid(uid: string): Promise<ProvisionedMuTag> {
         await this.onCachePopulated();
 
         if (this.muTagCache.has(uid)) {
@@ -48,7 +50,7 @@ export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
         }
     }
 
-    async getByBeaconID(beaconID: BeaconId): Promise<ProvisionedMuTag> {
+    async getByBeaconId(beaconID: BeaconId): Promise<ProvisionedMuTag> {
         await this.onCachePopulated();
 
         const uid = this.muTagBeaconIDToUIDCache.get(beaconID.toString());
@@ -98,7 +100,7 @@ export default class MuTagRepoLocalImpl implements MuTagRepositoryLocal {
         }
     }
 
-    async removeByUID(uid: string): Promise<void> {
+    async removeByUid(uid: string): Promise<void> {
         try {
             await this.database.remove(`muTags/${uid}`);
             this.muTagCache.delete(uid);
