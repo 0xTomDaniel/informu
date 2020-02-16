@@ -1,6 +1,7 @@
 import LoginOutput from "../../Core/Ports/LoginOutput";
 import { LoginViewModel } from "./LoginViewModel";
 import { ImproperPasswordComplexity } from "../../Core/Application/LoginService";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export default class LoginPresenter implements LoginOutput {
     private readonly viewModel: LoginViewModel;
@@ -37,11 +38,11 @@ export default class LoginPresenter implements LoginOutput {
         }
     }
 
-    showFederatedLoginError(error: Error): void {
+    showFederatedLoginError(error: UserError): void {
         this.clearErrorMessages();
         this.hideBusyIndicator();
         this.viewModel.updateState({
-            federatedErrorMessage: error.message
+            federatedErrorMessage: error.userErrorDescription
         });
     }
 
