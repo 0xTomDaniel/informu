@@ -78,7 +78,7 @@ export default class MuTagDevices
         bluetooth
             .start()
             .then(() => (this.hasBluetoothStarted = true))
-            .catch(e => console.log(e));
+            .catch(e => console.warn(e));
         this.discoveredMuTagPeripheral = this.bluetooth.discoveredPeripheral.pipe(
             filter(peripheral => {
                 const isMuTag = this.isMuTag(peripheral);
@@ -139,7 +139,7 @@ export default class MuTagDevices
         } finally {
             this.bluetooth
                 .disconnect(muTagPeripheralId)
-                .catch(e => console.log(e));
+                .catch(e => console.warn(e));
         }
     }
 
@@ -156,15 +156,14 @@ export default class MuTagDevices
             muTagProvisionId,
             timeout
         );
-        await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
         this.muTagProvisionIdCache.delete(muTagProvisionId);
 
         // Write fails because Mu tag restarts as soon as it is unprovisioned
-        await this.writeCharacteristic(
+        this.writeCharacteristic(
             muTagPeripheralId,
             MuTagBLEGATT.MuTagConfiguration.Provision,
             MuTagBLEGATT.MuTagConfiguration.Provision.unprovisionCode
-        ).catch(e => console.log(e));
+        ).catch(e => console.warn(e));
     }
 
     async connectToProvisionedMuTag(
@@ -196,7 +195,7 @@ export default class MuTagDevices
             .then(muTagPeripheralId =>
                 this.bluetooth.disconnect(muTagPeripheralId)
             )
-            .catch(e => console.log(e));
+            .catch(e => console.warn(e));
     }
 
     async changeTxPower(
@@ -264,7 +263,9 @@ export default class MuTagDevices
     ): Promise<void> {
         this.provisionedMuTagProximityThreshold = proximityThreshold;
         this.pauseProvisionedMuTag.next(false);
-        await this.bluetooth.startScan([], timeout);
+        await this.bluetooth
+            .startScan([], timeout)
+            .finally(() => this.pauseProvisionedMuTag.next(true));
     }
 
     private stopFindingProvisionedMuTags(): void {
@@ -277,7 +278,7 @@ export default class MuTagDevices
             this.pauseProvisionedMuTag.getValue() &&
             this.pauseUnprovisionedMuTag.getValue()
         ) {
-            this.bluetooth.stopScan().catch(e => console.log(e));
+            this.bluetooth.stopScan().catch(e => console.warn(e));
         }
     }
 
@@ -290,7 +291,8 @@ export default class MuTagDevices
             muTagPeripheralId = this.getMuTagPeripheralIdFromCache(
                 muTagProvisionId
             );
-        } catch {
+        } catch (e) {
+            console.warn(e);
             muTagPeripheralId = await this.findProvisionedMuTag(
                 muTagProvisionId,
                 timeout
@@ -316,6 +318,7 @@ export default class MuTagDevices
                         );
                         if (muTagPeripheralId != null && !hasPromiseCompleted) {
                             hasPromiseCompleted = true;
+                            this.stopFindingProvisionedMuTags();
                             subscription.unsubscribe();
                             resolve(muTagPeripheralId);
                         }

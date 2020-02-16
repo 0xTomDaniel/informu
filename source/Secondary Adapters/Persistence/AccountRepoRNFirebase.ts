@@ -5,20 +5,29 @@ import {
     PersistedDataMalformed,
     FailedToAdd,
     FailedToRemove,
-    FailedToUpdate,
-} from '../../Core/Ports/AccountRepositoryRemote';
-import Account, { AccountJSON, isAccountJSON } from '../../Core/Domain/Account';
-import database, { FirebaseDatabaseTypes } from '@react-native-firebase/database';
+    FailedToUpdate
+} from "../../Core/Ports/AccountRepositoryRemote";
+import Account, { AccountJSON, isAccountJSON } from "../../Core/Domain/Account";
+import database, {
+    FirebaseDatabaseTypes
+} from "@react-native-firebase/database";
+import AccountRepositoryRemotePortAddMuTag from "../../../source (restructure)/useCases/addMuTag/AccountRepositoryRemotePort";
+import AccountRepositoryRemotePortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/AccountRepositoryRemotePort";
 
-export class AccountRepoRNFirebase implements AccountRepositoryRemote {
-
-    async getByUID(uid: string): Promise<Account> {
+export class AccountRepoRNFirebase
+    implements
+        AccountRepositoryRemote,
+        AccountRepositoryRemotePortAddMuTag,
+        AccountRepositoryRemotePortRemoveMuTag {
+    async getByUid(uid: string): Promise<Account> {
         let snapshot: FirebaseDatabaseTypes.DataSnapshot;
 
         try {
-            snapshot = await database().ref(`accounts/${uid}`).once('value');
+            snapshot = await database()
+                .ref(`accounts/${uid}`)
+                .once("value");
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToGet();
         }
 
@@ -30,30 +39,32 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
         const accountData = account.json;
 
         /*eslint-disable @typescript-eslint/camelcase*/
-        const databaseData: {[key: string]: any} = {
+        const databaseData: { [key: string]: any } = {
             account_id: accountData._accountNumber,
             email: accountData._emailAddress,
             next_beacon_id: accountData._nextBeaconID,
-            next_mu_tag_number: accountData._nextMuTagNumber,
+            next_mu_tag_number: accountData._nextMuTagNumber
         };
 
         if (accountData._recycledBeaconIDs != null) {
             databaseData.recycled_beacon_ids = accountData._recycledBeaconIDs.map(
-                (beaconID): object => ( { [beaconID]: true } )
+                (beaconID): object => ({ [beaconID]: true })
             );
         }
 
         if (accountData._muTags != null) {
             databaseData.mu_tags = accountData._muTags.map(
-                (beaconID): object => ( { [beaconID]: true } )
+                (beaconID): object => ({ [beaconID]: true })
             );
         }
         /*eslint-enable */
 
         try {
-            await database().ref(`accounts/${accountData._uid}`).set(databaseData);
+            await database()
+                .ref(`accounts/${accountData._uid}`)
+                .set(databaseData);
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToAdd();
         }
     }
@@ -62,72 +73,85 @@ export class AccountRepoRNFirebase implements AccountRepositoryRemote {
         const accountData = account.json;
 
         /*eslint-disable @typescript-eslint/camelcase*/
-        const databaseData: {[key: string]: any} = {
+        const databaseData: { [key: string]: any } = {
             account_id: accountData._accountNumber,
             email: accountData._emailAddress,
             next_beacon_id: accountData._nextBeaconID,
-            next_mu_tag_number: accountData._nextMuTagNumber,
+            next_mu_tag_number: accountData._nextMuTagNumber
         };
 
         if (accountData._recycledBeaconIDs != null) {
             const initialValue: { [key: string]: any } = {};
-            databaseData.recycled_beacon_ids = accountData._recycledBeaconIDs
-                .reduce((allBeaconIDs, beaconID): object => {
+            databaseData.recycled_beacon_ids = accountData._recycledBeaconIDs.reduce(
+                (allBeaconIDs, beaconID): object => {
                     allBeaconIDs[beaconID] = true;
                     return allBeaconIDs;
-                }, initialValue);
+                },
+                initialValue
+            );
         }
 
         if (accountData._muTags != null) {
             const initialValue: { [key: string]: any } = {};
-            databaseData.mu_tags = accountData._muTags
-                .reduce((allMuTags, beaconID): object => {
+            databaseData.mu_tags = accountData._muTags.reduce(
+                (allMuTags, beaconID): object => {
                     allMuTags[beaconID] = true;
                     return allMuTags;
-                }, initialValue);
+                },
+                initialValue
+            );
         }
         /*eslint-enable */
 
         try {
-            await database().ref(`accounts/${accountData._uid}`).update(databaseData);
+            await database()
+                .ref(`accounts/${accountData._uid}`)
+                .update(databaseData);
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToUpdate();
         }
     }
 
-    async removeByUID(uid: string): Promise<void> {
+    async removeByUid(uid: string): Promise<void> {
         try {
-            await database().ref(`accounts/${uid}`).remove();
+            await database()
+                .ref(`accounts/${uid}`)
+                .remove();
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToRemove();
         }
     }
 
-    private static toAccountData(uid: string, snapshot: FirebaseDatabaseTypes.DataSnapshot): AccountJSON {
+    private static toAccountData(
+        uid: string,
+        snapshot: FirebaseDatabaseTypes.DataSnapshot
+    ): AccountJSON {
         if (!snapshot.exists()) {
             throw new DoesNotExist();
         }
 
         const snapshotData = snapshot.val();
-        if (typeof snapshotData !== 'object') {
+        if (typeof snapshotData !== "object") {
             throw new PersistedDataMalformed(uid);
         }
 
-        const data: {[key: string]: any} = {
+        const data: { [key: string]: any } = {
             _uid: uid,
             _accountNumber: snapshotData.account_id,
             _emailAddress: snapshotData.email,
             _nextBeaconID: snapshotData.next_beacon_id,
-            _nextMuTagNumber: snapshotData.next_mu_tag_number,
+            _nextMuTagNumber: snapshotData.next_mu_tag_number
         };
 
-        if (snapshotData.hasOwnProperty('recycled_beacon_ids')) {
-            data._recycledBeaconIDs = Object.keys(snapshotData.recycled_beacon_ids);
+        if ("recycled_beacon_ids" in snapshotData) {
+            data._recycledBeaconIDs = Object.keys(
+                snapshotData.recycled_beacon_ids
+            );
         }
 
-        if (snapshotData.hasOwnProperty('mu_tags')) {
+        if ("mu_tags" in snapshotData) {
             data._muTags = Object.keys(snapshotData.mu_tags);
         }
 

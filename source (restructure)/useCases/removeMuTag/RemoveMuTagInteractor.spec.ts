@@ -2,10 +2,10 @@ import Percent from "../../shared/metaLanguage/Percent";
 import ProvisionedMuTag, {
     BeaconId
 } from "../../../source/Core/Domain/ProvisionedMuTag";
-import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
-import { MuTagRepositoryRemote } from "../../../source/Core/Ports/MuTagRepositoryRemote";
-import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
-import { AccountRepositoryRemote } from "../../../source/Core/Ports/AccountRepositoryRemote";
+import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
+import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
+import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
+import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import Account, {
     AccountData,
     AccountNumber
@@ -29,43 +29,29 @@ describe("Mu tag user removes Mu tag", (): void => {
         })
     );
 
-    const MuTagRepoLocalMock = jest.fn<MuTagRepositoryLocal, any>(
-        (): MuTagRepositoryLocal => ({
+    const MuTagRepoLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
+        (): MuTagRepositoryLocalPort => ({
             getByUid: jest.fn(),
-            getByBeaconId: jest.fn(),
-            getAll: jest.fn(),
-            add: jest.fn(),
-            addMultiple: jest.fn(),
-            update: jest.fn(),
             removeByUid: jest.fn()
         })
     );
 
-    const MuTagRepoRemoteMock = jest.fn<MuTagRepositoryRemote, any>(
-        (): MuTagRepositoryRemote => ({
-            getAll: jest.fn(),
-            add: jest.fn(),
-            update: jest.fn(),
-            updateMultiple: jest.fn(),
+    const MuTagRepoRemoteMock = jest.fn<MuTagRepositoryRemotePort, any>(
+        (): MuTagRepositoryRemotePort => ({
             removeByUid: jest.fn()
         })
     );
 
-    const AccountRepoLocalMock = jest.fn<AccountRepositoryLocal, any>(
-        (): AccountRepositoryLocal => ({
+    const AccountRepoLocalMock = jest.fn<AccountRepositoryLocalPort, any>(
+        (): AccountRepositoryLocalPort => ({
             get: jest.fn(),
-            add: jest.fn(),
-            update: jest.fn(),
-            remove: jest.fn()
+            update: jest.fn()
         })
     );
 
-    const AccountRepoRemoteMock = jest.fn<AccountRepositoryRemote, any>(
-        (): AccountRepositoryRemote => ({
-            getByUid: jest.fn(),
-            add: jest.fn(),
-            update: jest.fn(),
-            removeByUid: jest.fn()
+    const AccountRepoRemoteMock = jest.fn<AccountRepositoryRemotePort, any>(
+        (): AccountRepositoryRemotePort => ({
+            update: jest.fn()
         })
     );
 
@@ -357,9 +343,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Then
         //
         it("should disconnect from the Mu tag", (): void => {
-            expect(
-                muTagDevicesMock.disconnectFromProvisionedMuTag
-            ).toHaveBeenCalledTimes(1);
+            // This happens automatically because Mu tag restarts upon unprovision
         });
 
         // Then
@@ -436,9 +420,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Then
         //
         it("should disconnect from the Mu tag", (): void => {
-            expect(
-                muTagDevicesMock.disconnectFromProvisionedMuTag
-            ).toHaveBeenCalledTimes(1);
+            // This happens automatically because Mu tag restarts upon unprovision
         });
 
         // Then

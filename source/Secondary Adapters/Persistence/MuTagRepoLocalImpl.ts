@@ -11,7 +11,8 @@ import {
     DoesNotExist as AccountDoesNotExist
 } from "../../Core/Ports/AccountRepositoryLocal";
 import { Database } from "./Database";
-import MuTagRepositoryLocalPort from "../../../source (restructure)/useCases/addMuTag/MuTagRepositoryLocalPort";
+import MuTagRepositoryLocalPortAddMuTag from "../../../source (restructure)/useCases/addMuTag/MuTagRepositoryLocalPort";
+import MuTagRepositoryLocalPortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/MuTagRepositoryLocalPort";
 
 interface PromiseExecutor {
     resolve: (value?: void | PromiseLike<void> | undefined) => void;
@@ -26,7 +27,10 @@ enum CacheStatus {
 }
 
 export default class MuTagRepoLocalImpl
-    implements MuTagRepositoryLocal, MuTagRepositoryLocalPort {
+    implements
+        MuTagRepositoryLocal,
+        MuTagRepositoryLocalPortAddMuTag,
+        MuTagRepositoryLocalPortRemoveMuTag {
     private readonly database: Database;
     private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly muTagCache = new Map<string, ProvisionedMuTag>();

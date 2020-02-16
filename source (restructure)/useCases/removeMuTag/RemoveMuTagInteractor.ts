@@ -1,13 +1,13 @@
 import Percent from "../../shared/metaLanguage/Percent";
-import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
-import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
-import { MuTagRepositoryRemote } from "../../../source/Core/Ports/MuTagRepositoryRemote";
-import { AccountRepositoryRemote } from "../../../source/Core/Ports/AccountRepositoryRemote";
 import { RemoveMuTagOutputPort } from "./RemoveMuTagOutputPort";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Account from "../../../source/Core/Domain/Account";
 import MuTagDevicesPort from "./MuTagDevicesPort";
 import UserError from "../../shared/metaLanguage/UserError";
+import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
+import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
+import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
+import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 
 export class LowMuTagBattery extends UserError {
     name = "LowMuTagBattery";
@@ -42,19 +42,19 @@ export class FailedToRemoveMuTagFromAccount extends UserError {
 export default class RemoveMuTagInteractor {
     private readonly removeMuTagBatteryThreshold: Percent;
     private readonly muTagDevices: MuTagDevicesPort;
-    private readonly accountRepoLocal: AccountRepositoryLocal;
-    private readonly accountRepoRemote: AccountRepositoryRemote;
-    private readonly muTagRepoLocal: MuTagRepositoryLocal;
-    private readonly muTagRepoRemote: MuTagRepositoryRemote;
+    private readonly accountRepoLocal: AccountRepositoryLocalPort;
+    private readonly accountRepoRemote: AccountRepositoryRemotePort;
+    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
+    private readonly muTagRepoRemote: MuTagRepositoryRemotePort;
     private readonly removeMuTagOutput: RemoveMuTagOutputPort;
 
     constructor(
         removeMuTagBatteryThreshold: Percent,
         muTagDevices: MuTagDevicesPort,
-        accountRepoLocal: AccountRepositoryLocal,
-        accountRepoRemote: AccountRepositoryRemote,
-        muTagRepoLocal: MuTagRepositoryLocal,
-        muTagRepoRemote: MuTagRepositoryRemote,
+        accountRepoLocal: AccountRepositoryLocalPort,
+        accountRepoRemote: AccountRepositoryRemotePort,
+        muTagRepoLocal: MuTagRepositoryLocalPort,
+        muTagRepoRemote: MuTagRepositoryRemotePort,
         removeMuTagOutput: RemoveMuTagOutputPort
     ) {
         this.removeMuTagBatteryThreshold = removeMuTagBatteryThreshold;
@@ -68,23 +68,21 @@ export default class RemoveMuTagInteractor {
 
     async remove(uid: string): Promise<void> {
         this.removeMuTagOutput.showBusyIndicator();
-
         let account: Account | undefined;
         let muTag: ProvisionedMuTag | undefined;
-
         try {
             account = await this.accountRepoLocal.get();
-            muTag = await this.muTagRepoLocal.getByUID(uid);
+            muTag = await this.muTagRepoLocal.getByUid(uid);
             await this.muTagDevices.connectToProvisionedMuTag(
                 account.accountNumber,
                 muTag.beaconID
             );
         } catch (e) {
+            console.warn(e);
             this.removeMuTagOutput.hideBusyIndicator();
             this.removeMuTagOutput.showError(new FailedToConnectToMuTag(e));
             return;
         }
-
         try {
             const batteryLevel = await this.muTagDevices.readBatteryLevel(
                 account.accountNumber,
@@ -106,19 +104,11 @@ export default class RemoveMuTagInteractor {
             this.removeMuTagOutput.hideBusyIndicator();
             this.removeMuTagOutput.showError(new MuTagCommunicationFailure(e));
             return;
-        } finally {
-            if (account != null && muTag != null) {
-                this.muTagDevices.disconnectFromProvisionedMuTag(
-                    account.accountNumber,
-                    muTag.beaconID
-                );
-            }
         }
-
         try {
             account.removeMuTag(uid, muTag.beaconID);
             await this.accountRepoLocal.update(account);
-            await this.muTagRepoLocal.removeByUID(uid);
+            await this.muTagRepoLocal.removeByUid(uid);
         } catch (e) {
             this.removeMuTagOutput.hideBusyIndicator();
             this.removeMuTagOutput.showError(
@@ -126,12 +116,11 @@ export default class RemoveMuTagInteractor {
             );
             return;
         }
-
         try {
             await this.accountRepoRemote.update(account);
-            await this.muTagRepoRemote.removeByUID(uid, account.uid);
+            await this.muTagRepoRemote.removeByUid(uid, account.uid);
         } catch (e) {
-            console.log(e);
+            console.warn(e);
         } finally {
             this.removeMuTagOutput.hideBusyIndicator();
         }

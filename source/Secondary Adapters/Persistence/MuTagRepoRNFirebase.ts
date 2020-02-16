@@ -15,6 +15,8 @@ import ProvisionedMuTag, {
     isMuTagJSON
 } from "../../Core/Domain/ProvisionedMuTag";
 import { v4 as uuidV4 } from "uuid";
+import MuTagRepositoryRemotePortAddMuTag from "../../../source (restructure)/useCases/addMuTag/MuTagRepositoryRemotePort";
+import MuTagRepositoryRemotePortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/MuTagRepositoryRemotePort";
 
 interface DatabaseMuTag {
     beacon_id: string;
@@ -25,7 +27,11 @@ interface DatabaseMuTag {
     color: number;
 }
 
-export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
+export class MuTagRepoRNFirebase
+    implements
+        MuTagRepositoryRemote,
+        MuTagRepositoryRemotePortAddMuTag,
+        MuTagRepositoryRemotePortRemoveMuTag {
     async getAll(accountUID: string): Promise<Set<ProvisionedMuTag>> {
         let snapshot: FirebaseDatabaseTypes.DataSnapshot;
 
@@ -34,7 +40,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
                 .ref(`mu_tags/${accountUID}`)
                 .once("value");
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToGet();
         }
 
@@ -66,7 +72,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
                 .ref(`mu_tags/${accountUID}/${muTag.uid}`)
                 .set(databaseMuTag);
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToAdd();
         }
     }
@@ -79,7 +85,7 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
                 .ref(`mu_tags/${accountUID}/${muTag.uid}`)
                 .update(databaseMuTag);
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToUpdate();
         }
     }
@@ -93,13 +99,13 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         }
     }
 
-    async removeByUID(uid: string, accountUID: string): Promise<void> {
+    async removeByUid(uid: string, accountUID: string): Promise<void> {
         try {
             await database()
                 .ref(`mu_tags/${accountUID}/${uid}`)
                 .remove();
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToRemove();
         }
     }
