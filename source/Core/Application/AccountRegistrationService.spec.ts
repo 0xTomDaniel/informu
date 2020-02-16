@@ -8,10 +8,10 @@ import { BeaconId } from "../Domain/ProvisionedMuTag";
 describe("user registers new account", (): void => {
     const AccountRepositoryRemoteMock = jest.fn<AccountRepositoryRemote, any>(
         (): AccountRepositoryRemote => ({
-            getByUID: jest.fn(),
+            getByUid: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
     const accountRepoRemoteMock = new AccountRepositoryRemoteMock();

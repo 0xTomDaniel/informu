@@ -33,22 +33,22 @@ describe("user logs out of their account", (): void => {
 
     const AccountRepositoryRemoteMock = jest.fn<AccountRepositoryRemote, any>(
         (): AccountRepositoryRemote => ({
-            getByUID: jest.fn(),
+            getByUid: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
 
     const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocal, any>(
         (): MuTagRepositoryLocal => ({
-            getByUID: jest.fn(),
-            getByBeaconID: jest.fn(),
+            getByUid: jest.fn(),
+            getByBeaconId: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
 
@@ -58,7 +58,7 @@ describe("user logs out of their account", (): void => {
             add: jest.fn(),
             update: jest.fn(),
             updateMultiple: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
 

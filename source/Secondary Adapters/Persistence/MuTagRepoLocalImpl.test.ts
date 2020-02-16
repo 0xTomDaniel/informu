@@ -100,11 +100,11 @@ test("successfully gets added Mu tag", async (): Promise<void> => {
     const muTagJSON = muTag01.serialize();
     (database.get as jest.Mock).mockResolvedValueOnce(muTagJSON);
     expect.assertions(2);
-    await expect(muTagRepoLocalImpl.getByUID(muTag01UID)).resolves.toEqual(
+    await expect(muTagRepoLocalImpl.getByUid(muTag01UID)).resolves.toEqual(
         muTag01
     );
     await expect(
-        muTagRepoLocalImpl.getByBeaconID(muTag01BeaconID)
+        muTagRepoLocalImpl.getByBeaconId(muTag01BeaconID)
     ).resolves.toEqual(muTag01);
 });
 
@@ -120,7 +120,7 @@ test("successfully adds two Mu tags", async (): Promise<void> => {
 test("successfully removes Mu tag", async (): Promise<void> => {
     (database.remove as jest.Mock).mockResolvedValueOnce(undefined);
     expect.assertions(1);
-    await expect(muTagRepoLocalImpl.removeByUID(muTag01UID)).resolves.toEqual(
+    await expect(muTagRepoLocalImpl.removeByUid(muTag01UID)).resolves.toEqual(
         undefined
     );
 });
@@ -128,7 +128,7 @@ test("successfully removes Mu tag", async (): Promise<void> => {
 test("failed to get Mu tag that does not exist", async (): Promise<void> => {
     (database.get as jest.Mock).mockResolvedValueOnce(null);
     expect.assertions(1);
-    await expect(muTagRepoLocalImpl.getByUID(muTag01UID)).rejects.toEqual(
+    await expect(muTagRepoLocalImpl.getByUid(muTag01UID)).rejects.toEqual(
         new MuTagDoesNotExist(muTag01UID)
     );
 });

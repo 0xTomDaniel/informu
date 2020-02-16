@@ -25,13 +25,13 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
     );
     const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocal, any>(
         (): MuTagRepositoryLocal => ({
-            getByUID: jest.fn(),
-            getByBeaconID: jest.fn(),
+            getByUid: jest.fn(),
+            getByBeaconId: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
     const AccountRepoLocalMock = jest.fn<AccountRepositoryLocal, any>(
@@ -197,7 +197,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
     describe("belonging is added to account", (): void => {
         // Given that a new belonging needs to be added to account
         //
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
             newMuTag
         );
 

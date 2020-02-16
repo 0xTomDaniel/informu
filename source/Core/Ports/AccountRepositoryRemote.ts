@@ -1,10 +1,10 @@
 import Account from "../Domain/Account";
 
 export interface AccountRepositoryRemote {
-    getByUID(uid: string): Promise<Account>;
+    getByUid(uid: string): Promise<Account>;
     add(account: Account): Promise<void>;
     update(account: Account): Promise<void>;
-    removeByUID(uid: string): Promise<void>;
+    removeByUid(uid: string): Promise<void>;
 }
 
 export class DoesNotExist extends Error {

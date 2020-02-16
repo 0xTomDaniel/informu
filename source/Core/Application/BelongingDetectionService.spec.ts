@@ -36,13 +36,13 @@ const MuTagMonitorMock = jest.fn<MuTagMonitor, any>(
 
 const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocal, any>(
     (): MuTagRepositoryLocal => ({
-        getByUID: jest.fn(),
-        getByBeaconID: jest.fn(),
+        getByUid: jest.fn(),
+        getByBeaconId: jest.fn(),
         getAll: jest.fn(),
         add: jest.fn(),
         addMultiple: jest.fn(),
         update: jest.fn(),
-        removeByUID: jest.fn()
+        removeByUid: jest.fn()
     })
 );
 
@@ -117,7 +117,7 @@ describe("last seen status of belongings continuously updates", (): void => {
         (muTagRepoLocalMock.getAll as jest.Mock).mockResolvedValueOnce(
             new Set([muTag])
         );
-        (muTagRepoLocalMock.getByBeaconID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByBeaconId as jest.Mock).mockResolvedValueOnce(
             muTag
         );
 
@@ -179,7 +179,7 @@ describe("last seen status of belongings continuously updates", (): void => {
     describe("app device has exited belonging beacon region outside of assigned Safe Zone", (): void => {
         // Given that the account connected to the current belonging is logged in
         //
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given app device has exited belonging beacon region outside of Safe Zone
         //
@@ -220,10 +220,10 @@ describe("last seen status of belongings continuously updates", (): void => {
     describe("belonging is added to account", (): void => {
         // Given that an account is logged in
 
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
             addedMuTag
         );
-        (muTagRepoLocalMock.getByBeaconID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByBeaconId as jest.Mock).mockResolvedValueOnce(
             addedMuTag
         );
 
@@ -264,7 +264,7 @@ describe("last seen status of belongings continuously updates", (): void => {
     describe("belonging is removed from account", (): void => {
         // Given that an account is logged in
 
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
             addedMuTag
         );
         const addedMuTagBeacon: MuTagBeacon = {

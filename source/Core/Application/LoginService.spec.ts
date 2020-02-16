@@ -59,22 +59,22 @@ describe("user logs into their account", (): void => {
 
     const AccountRepositoryRemoteMock = jest.fn<AccountRepositoryRemote, any>(
         (): AccountRepositoryRemote => ({
-            getByUID: jest.fn(),
+            getByUid: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
 
     const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocal, any>(
         (): MuTagRepositoryLocal => ({
-            getByUID: jest.fn(),
-            getByBeaconID: jest.fn(),
+            getByUid: jest.fn(),
+            getByBeaconId: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
 
@@ -84,7 +84,7 @@ describe("user logs into their account", (): void => {
             add: jest.fn(),
             update: jest.fn(),
             updateMultiple: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
 
@@ -173,7 +173,7 @@ describe("user logs into their account", (): void => {
 
         // Given an account exists for the provided credentials
         //
-        (accountRepoRemoteMock.getByUID as jest.Mock).mockResolvedValueOnce(
+        (accountRepoRemoteMock.getByUid as jest.Mock).mockResolvedValueOnce(
             account
         );
         (muTagRepoRemoteMock.getAll as jest.Mock).mockResolvedValueOnce(muTags);
@@ -208,10 +208,10 @@ describe("user logs into their account", (): void => {
             expect(
                 authenticationMock.authenticateWithEmail
             ).toHaveBeenCalledTimes(1);
-            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledWith(
+            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledWith(
                 userData.uid
             );
-            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledTimes(1);
+            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledTimes(1);
             expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
             expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
             expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledWith(
@@ -250,7 +250,7 @@ describe("user logs into their account", (): void => {
 
         // Given an account exists for the provided credentials
         //
-        (accountRepoRemoteMock.getByUID as jest.Mock).mockResolvedValueOnce(
+        (accountRepoRemoteMock.getByUid as jest.Mock).mockResolvedValueOnce(
             account
         );
         (muTagRepoRemoteMock.getAll as jest.Mock).mockResolvedValueOnce(muTags);
@@ -279,10 +279,10 @@ describe("user logs into their account", (): void => {
             expect(
                 authenticationMock.authenticateWithFacebook
             ).toHaveBeenCalledTimes(1);
-            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledWith(
+            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledWith(
                 userData.uid
             );
-            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledTimes(1);
+            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledTimes(1);
             expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
             expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
             expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledWith(
@@ -321,7 +321,7 @@ describe("user logs into their account", (): void => {
 
         // Given an account exists for the provided credentials
         //
-        (accountRepoRemoteMock.getByUID as jest.Mock).mockResolvedValueOnce(
+        (accountRepoRemoteMock.getByUid as jest.Mock).mockResolvedValueOnce(
             account
         );
         (muTagRepoRemoteMock.getAll as jest.Mock).mockResolvedValueOnce(muTags);
@@ -350,10 +350,10 @@ describe("user logs into their account", (): void => {
             expect(
                 authenticationMock.authenticateWithGoogle
             ).toHaveBeenCalledTimes(1);
-            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledWith(
+            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledWith(
                 userData.uid
             );
-            expect(accountRepoRemoteMock.getByUID).toHaveBeenCalledTimes(1);
+            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledTimes(1);
             expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
             expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
             expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledWith(
@@ -554,7 +554,7 @@ describe("user logs into their account", (): void => {
         );
 
         // Given that an account does not exist for the provided credentials
-        (accountRepoRemoteMock.getByUID as jest.Mock).mockRejectedValueOnce(
+        (accountRepoRemoteMock.getByUid as jest.Mock).mockRejectedValueOnce(
             new DoesNotExist()
         );
 
@@ -615,7 +615,7 @@ describe("user logs into their account", (): void => {
         );
 
         // Given that an account does not exist for the provided credentials
-        (accountRepoRemoteMock.getByUID as jest.Mock).mockRejectedValueOnce(
+        (accountRepoRemoteMock.getByUid as jest.Mock).mockRejectedValueOnce(
             new DoesNotExist()
         );
 

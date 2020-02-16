@@ -31,13 +31,13 @@ describe("Mu tag user removes Mu tag", (): void => {
 
     const MuTagRepoLocalMock = jest.fn<MuTagRepositoryLocal, any>(
         (): MuTagRepositoryLocal => ({
-            getByUID: jest.fn(),
-            getByBeaconID: jest.fn(),
+            getByUid: jest.fn(),
+            getByBeaconId: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
 
@@ -47,7 +47,7 @@ describe("Mu tag user removes Mu tag", (): void => {
             add: jest.fn(),
             update: jest.fn(),
             updateMultiple: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
 
@@ -62,10 +62,10 @@ describe("Mu tag user removes Mu tag", (): void => {
 
     const AccountRepoRemoteMock = jest.fn<AccountRepositoryRemote, any>(
         (): AccountRepositoryRemote => ({
-            getByUID: jest.fn(),
+            getByUid: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
 
@@ -130,7 +130,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Given that the account connected to the current Mu tag is logged in
         //
         (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given Mu tag is connectable
         //
@@ -200,10 +200,10 @@ describe("Mu tag user removes Mu tag", (): void => {
 
             expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
-            expect(muTagRepoLocalMock.removeByUID).toHaveBeenCalledWith(
+            expect(muTagRepoLocalMock.removeByUid).toHaveBeenCalledWith(
                 muTagUID
             );
-            expect(muTagRepoLocalMock.removeByUID).toHaveBeenCalledTimes(1);
+            expect(muTagRepoLocalMock.removeByUid).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -212,11 +212,11 @@ describe("Mu tag user removes Mu tag", (): void => {
             expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
 
-            expect(muTagRepoRemoteMock.removeByUID).toHaveBeenCalledWith(
+            expect(muTagRepoRemoteMock.removeByUid).toHaveBeenCalledWith(
                 muTagUID,
                 validAccountData._uid
             );
-            expect(muTagRepoRemoteMock.removeByUID).toHaveBeenCalledTimes(1);
+            expect(muTagRepoRemoteMock.removeByUid).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -232,7 +232,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Given that the account connected to the current Mu tag is logged in
         //
         (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given Mu tag is unconnectable
         //
@@ -292,7 +292,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Given that the account connected to the current Mu tag is logged in
         //
         (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given Mu tag is connectable
         //
@@ -384,7 +384,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Given that the account connected to the current Mu tag is logged in
         //
         (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given Mu tag is connectable
         //
