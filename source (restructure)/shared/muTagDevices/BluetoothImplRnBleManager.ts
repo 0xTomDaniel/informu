@@ -134,13 +134,14 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
         }, 500);
         return new Promise((resolve, reject) => {
             const timeoutId = setTimeout(() => {
-                this.stopScan()
-                    .then(() => resolve())
-                    .catch(e => reject(e));
+                this.stopScan().catch(e => reject(e));
             }, timeout);
             this.scanState
                 .pipe(takeWhile(state => state !== ScanState.Stopped))
-                .subscribe(undefined, undefined, () => clearTimeout(timeoutId));
+                .subscribe(undefined, undefined, () => {
+                    clearTimeout(timeoutId);
+                    resolve();
+                });
         });
     }
 

@@ -67,14 +67,16 @@ const muTagDevices = new MuTagDevices(bluetoothMock);
 const MuTagRepoLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
     (): MuTagRepositoryLocalPort => ({
         add: jest.fn(),
-        update: jest.fn()
+        update: jest.fn(),
+        removeByUid: jest.fn()
     })
 );
 const MuTagRepoRemoteMock = jest.fn<MuTagRepositoryRemotePort, any>(
     (): MuTagRepositoryRemotePort => ({
         add: jest.fn(),
         update: jest.fn(),
-        createNewUid: jest.fn()
+        createNewUid: jest.fn(),
+        removeByUid: jest.fn()
     })
 );
 const AccountRepoLocalMock = jest.fn<AccountRepositoryLocalPort, any>(
@@ -280,6 +282,18 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // Then
         //
+        it("should add Mu tag to remote persistence", (): void => {
+            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should add Mu tag to local persistence", (): void => {
+            expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
         it("should provision the Mu tag hardware", (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
 
@@ -312,18 +326,6 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
             expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should add Mu tag to local persistence", (): void => {
-            expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should add Mu tag to remote persistence", (): void => {
-            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -523,6 +525,18 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // Then
         //
+        it("should add Mu tag to remote persistence", (): void => {
+            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should add Mu tag to local persistence", (): void => {
+            expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
         it("should provision the Mu tag hardware", (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
 
@@ -555,18 +569,6 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
             expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should add Mu tag to local persistence", (): void => {
-            expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should add Mu tag to remote persistence", (): void => {
-            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
         });
 
         // Then

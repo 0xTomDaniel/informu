@@ -192,11 +192,6 @@ export default class AddMuTagInteractor {
         const account = await this.accountRepoLocal.get();
         const beaconId = account.newBeaconId;
         const accountNumber = account.accountNumber;
-        await this.muTagDevices.provisionMuTag(
-            unprovisionedMuTag.id,
-            accountNumber,
-            beaconId
-        );
         const uid = this.muTagRepoRemote.createNewUid(account.uid);
         this.provisionedMuTag = new ProvisionedMuTag({
             _uid: uid,
@@ -208,26 +203,76 @@ export default class AddMuTagInteractor {
             _lastSeen: new Date(),
             _color: MuTagColor.MuOrange
         });
-        await this.muTagRepoLocal.add(this.provisionedMuTag);
+
         await this.muTagRepoRemote.add(this.provisionedMuTag, account.uid);
 
-        account.addNewMuTag(this.provisionedMuTag.uid, beaconId);
-        await this.accountRepoLocal.update(account);
-        await this.accountRepoRemote.update(account);
-
-        await this.muTagDevices.connectToProvisionedMuTag(
-            accountNumber,
-            beaconId
-        );
-        await this.muTagDevices.changeTxPower(
-            TxPowerSetting["+6 dBm"],
-            accountNumber,
-            beaconId
-        );
-        this.muTagDevices.disconnectFromProvisionedMuTag(
-            accountNumber,
-            beaconId
-        );
+        // Mu tag must be added to local persistence before being added to
+        // account. It's probably best to refactor so that Mu tags don't need to
+        // be added to the account object. That's probably better domain driven
+        // design.
+        try {
+            await this.muTagRepoLocal.add(this.provisionedMuTag);
+        } catch (e) {
+            await this.muTagRepoRemote.removeByUid(uid, account.uid);
+            throw e;
+        }
+        try {
+            account.addNewMuTag(this.provisionedMuTag.uid, beaconId);
+        } catch (e) {
+            await this.muTagRepoRemote.removeByUid(uid, account.uid);
+            await this.muTagRepoLocal.removeByUid(uid);
+        }
+        try {
+            await this.accountRepoRemote.update(account);
+        } catch (e) {
+            await this.muTagRepoRemote.removeByUid(uid, account.uid);
+            await this.muTagRepoLocal.removeByUid(uid);
+            account.removeMuTag(uid, beaconId);
+            throw e;
+        }
+        try {
+            await this.accountRepoLocal.update(account);
+        } catch (e) {
+            await this.muTagRepoRemote.removeByUid(uid, account.uid);
+            await this.muTagRepoLocal.removeByUid(uid);
+            account.removeMuTag(uid, beaconId);
+            await this.accountRepoRemote.update(account);
+            throw e;
+        }
+        try {
+            await this.muTagDevices.provisionMuTag(
+                unprovisionedMuTag.id,
+                accountNumber,
+                beaconId
+            );
+        } catch (e) {
+            await this.muTagRepoRemote.removeByUid(uid, account.uid);
+            await this.muTagRepoLocal.removeByUid(uid);
+            account.removeMuTag(uid, beaconId);
+            await this.accountRepoRemote.update(account);
+            await this.accountRepoLocal.update(account);
+            throw e;
+        }
+        try {
+            await this.muTagDevices.connectToProvisionedMuTag(
+                accountNumber,
+                beaconId
+            );
+            await this.muTagDevices
+                .changeTxPower(
+                    TxPowerSetting["+6 dBm"],
+                    accountNumber,
+                    beaconId
+                )
+                .finally(() =>
+                    this.muTagDevices.disconnectFromProvisionedMuTag(
+                        accountNumber,
+                        beaconId
+                    )
+                );
+        } catch (e) {
+            console.warn(e);
+        }
 
         this.addMuTagOutput.showMuTagFinalSetupScreen();
     }
