@@ -15,11 +15,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "578567758914-suuicv9v5v6hben401bcdfuqssgkbhto.apps.googleusercontent.com",
+          "client_id": "578567758914-mhodnv7ske3vd2vqcofphsdi8s93demg.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "ai.informu.mutag",
-            "certificate_hash": "934f52a98965b29c6c15d7a7db3428d1faa97dcc"
+            "certificate_hash": "afd5844ceb0cce0fe0b54ba1556ccdebf602b2b4"
           }
         },
         {
