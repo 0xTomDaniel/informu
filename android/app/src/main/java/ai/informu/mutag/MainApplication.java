@@ -1,4 +1,4 @@
-package com.mutagreactnative;
+package ai.informu.mutag;
 
 import android.app.Application;
 import android.util.Log;

@@ -21,6 +21,11 @@ or alternatively using `brew cask install fastlane`
 fastlane android develop
 ```
 Run the development build via adb
+### android production
+```
+fastlane android production
+```
+Run the production build via adb
 ### android deploy
 ```
 fastlane android deploy

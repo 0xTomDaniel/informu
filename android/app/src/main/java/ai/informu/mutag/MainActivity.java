@@ -1,4 +1,4 @@
-package com.mutagreactnative;
+package ai.informu.mutag;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;
