@@ -56,8 +56,8 @@ export default class NewAccountFactoryImpl implements NewAccountFactory {
                 _uid: uid,
                 _accountNumber: newAccountNumber,
                 _emailAddress: emailAddress,
-                _nextBeaconID: BeaconId.create("0"),
-                _recycledBeaconIDs: new Set(),
+                _nextBeaconId: BeaconId.create("0"),
+                _recycledBeaconIds: new Set(),
                 _nextMuTagNumber: 0,
                 _muTags: new Set()
             });

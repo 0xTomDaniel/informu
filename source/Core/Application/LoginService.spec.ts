@@ -121,36 +121,53 @@ describe("user logs into their account", (): void => {
         accountRegistrationServiceMock
     );
 
+    const dateNow = new Date();
     const muTags = new Set([
         new ProvisionedMuTag({
-            _uid: "randomUUID01",
-            _beaconID: BeaconId.create("0"),
+            _advertisingInterval: 1,
+            _batteryLevel: new Percent(50),
+            _beaconId: BeaconId.create("0"),
+            _color: MuTagColor.MuOrange,
+            _dateAdded: dateNow,
+            _didExitRegion: false,
+            _firmwareVersion: "1.6.1",
+            _isSafe: true,
+            _lastSeen: dateNow,
+            _modelNumber: "REV8",
             _muTagNumber: 0,
             _name: "Keys",
-            _batteryLevel: new Percent(50),
-            _isSafe: true,
-            _lastSeen: new Date(),
-            _color: MuTagColor.MuOrange
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: "randomUUID01"
         }),
         new ProvisionedMuTag({
-            _uid: "randomUUID02",
-            _beaconID: BeaconId.create("1"),
+            _advertisingInterval: 1,
+            _batteryLevel: new Percent(50),
+            _beaconId: BeaconId.create("1"),
+            _color: MuTagColor.MuOrange,
+            _dateAdded: dateNow,
+            _didExitRegion: false,
+            _firmwareVersion: "1.6.1",
+            _isSafe: true,
+            _lastSeen: dateNow,
+            _modelNumber: "REV8",
             _muTagNumber: 1,
             _name: "Laptop",
-            _batteryLevel: new Percent(50),
-            _isSafe: true,
-            _lastSeen: new Date(),
-            _color: MuTagColor.MuOrange
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: "randomUUID02"
         })
     ]);
-    const recycledBeaconIDs = [BeaconId.create("2"), BeaconId.create("5")];
+    const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
     const accountMuTags = ["randomUUID01", "randomUUID02"];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconId.create("A"),
-        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _nextBeaconId: BeaconId.create("A"),
+        _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 15,
         _muTags: new Set(accountMuTags)
     };

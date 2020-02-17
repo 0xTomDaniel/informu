@@ -116,8 +116,8 @@ describe("Mu tag user adds Mu tag", (): void => {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconId.create("A"),
-        _recycledBeaconIDs: new Set(recycledBeaconIds),
+        _nextBeaconId: BeaconId.create("A"),
+        _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 10,
         _muTags: new Set(["randomUUID01"])
     };
@@ -371,7 +371,8 @@ describe("Mu tag user adds Mu tag", (): void => {
         it("should update Mu tag to remote persistence", (): void => {
             expect(muTagRepoRemoteMock.update).toHaveBeenLastCalledWith(
                 newMuTag,
-                validAccountData._uid
+                validAccountData._uid,
+                validAccountData._accountNumber
             );
             expect(muTagRepoRemoteMock.update).toHaveBeenCalledTimes(1);
         });
@@ -614,7 +615,8 @@ describe("Mu tag user adds Mu tag", (): void => {
         it("should update Mu tag to remote persistence", (): void => {
             expect(muTagRepoRemoteMock.update).toHaveBeenLastCalledWith(
                 newMuTag,
-                validAccountData._uid
+                validAccountData._uid,
+                validAccountData._accountNumber
             );
             expect(muTagRepoRemoteMock.update).toHaveBeenCalledTimes(1);
         });

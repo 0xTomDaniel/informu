@@ -20,8 +20,8 @@ const account = new Account({
     _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
     _emailAddress: "support+test@informu.io",
-    _nextBeaconID: BeaconId.create("B"),
-    _recycledBeaconIDs: new Set([BeaconId.create("2"), BeaconId.create("D")]),
+    _nextBeaconId: BeaconId.create("B"),
+    _recycledBeaconIds: new Set([BeaconId.create("2"), BeaconId.create("D")]),
     _nextMuTagNumber: 4,
     _muTags: new Set(["randomUUID"])
 });

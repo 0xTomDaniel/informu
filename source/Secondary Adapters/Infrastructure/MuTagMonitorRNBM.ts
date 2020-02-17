@@ -133,7 +133,7 @@ export default class MuTagMonitorRNBM implements MuTagMonitor {
         const major = MuTagMonitorRNBM.getMajor(muTag.accountNumber);
         const minor = MuTagMonitorRNBM.getMinor(
             muTag.accountNumber,
-            muTag.beaconID
+            muTag.beaconId
         );
         return {
             identifier: muTag.uid,
@@ -150,9 +150,9 @@ export default class MuTagMonitorRNBM implements MuTagMonitor {
 
     private static getMinor(
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): number {
-        const majorMinorHex = accountNumber.toString() + beaconID.toString();
+        const majorMinorHex = accountNumber.toString() + beaconId.toString();
         const minorHex = majorMinorHex.toString().substr(4, 4);
         return parseInt(minorHex, 16);
     }
@@ -169,7 +169,7 @@ export default class MuTagMonitorRNBM implements MuTagMonitor {
                             rangedBeacon.major,
                             rangedBeacon.minor
                         ),
-                        beaconID: this.getBeaconID(rangedBeacon.minor),
+                        beaconId: this.getBeaconId(rangedBeacon.minor),
                         timestamp: now
                     };
                 }
@@ -187,7 +187,7 @@ export default class MuTagMonitorRNBM implements MuTagMonitor {
         return AccountNumber.fromString(majorMinorHex.substr(0, 7));
     }
 
-    private static getBeaconID(minor: number): BeaconId {
+    private static getBeaconId(minor: number): BeaconId {
         const minorHex = minor.toString(16).padStart(4, "0");
         return BeaconId.create(minorHex.substr(3, 1));
     }

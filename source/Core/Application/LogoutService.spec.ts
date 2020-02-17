@@ -90,37 +90,54 @@ describe("user logs out of their account", (): void => {
         belongingDetectionServiceMock
     );
 
-    const recycledBeaconIDs = [BeaconId.create("2"), BeaconId.create("5")];
+    const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
     const accountMuTags = ["randomUUID1", "randomUUID2"];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconId.create("A"),
-        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _nextBeaconId: BeaconId.create("A"),
+        _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 15,
         _muTags: new Set(accountMuTags)
     };
     const account = new Account(validAccountData);
+    const dateNow = new Date();
     const muTag1 = new ProvisionedMuTag({
-        _uid: "randomUUID1",
-        _beaconID: BeaconId.fromString("0"),
+        _advertisingInterval: 1,
+        _batteryLevel: new Percent(80),
+        _beaconId: BeaconId.fromString("0"),
+        _color: MuTagColor.MuOrange,
+        _dateAdded: dateNow,
+        _didExitRegion: false,
+        _firmwareVersion: "1.6.1",
+        _isSafe: true,
+        _lastSeen: dateNow,
+        _modelNumber: "REV8",
         _muTagNumber: 0,
         _name: "keys",
-        _batteryLevel: new Percent(80),
-        _isSafe: true,
-        _lastSeen: new Date(),
-        _color: MuTagColor.MuOrange
+        _recentLatitude: 0,
+        _recentLongitude: 0,
+        _txPower: 1,
+        _uid: "randomUUID1"
     });
     const muTag2 = new ProvisionedMuTag({
-        _uid: "randomUUID2",
-        _beaconID: BeaconId.fromString("1"),
+        _advertisingInterval: 1,
+        _batteryLevel: new Percent(80),
+        _beaconId: BeaconId.fromString("1"),
+        _color: MuTagColor.MuOrange,
+        _dateAdded: dateNow,
+        _didExitRegion: false,
+        _firmwareVersion: "1.6.1",
+        _isSafe: true,
+        _lastSeen: dateNow,
+        _modelNumber: "REV8",
         _muTagNumber: 1,
         _name: "laptop",
-        _batteryLevel: new Percent(80),
-        _isSafe: true,
-        _lastSeen: new Date(),
-        _color: MuTagColor.MuOrange
+        _recentLatitude: 0,
+        _recentLongitude: 0,
+        _txPower: 1,
+        _uid: "randomUUID2"
     });
     const muTags = new Set([muTag1, muTag2]);
 
@@ -162,7 +179,8 @@ describe("user logs out of their account", (): void => {
             expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
             expect(muTagRepoRemoteMock.updateMultiple).toHaveBeenCalledWith(
                 muTags,
-                validAccountData._uid
+                validAccountData._uid,
+                validAccountData._accountNumber
             );
             expect(muTagRepoRemoteMock.updateMultiple).toHaveBeenCalledTimes(1);
         });

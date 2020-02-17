@@ -218,14 +218,14 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     async connectToProvisionedMuTag(
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): Promise<void> {
         let muTagDevice: Device | undefined;
 
         try {
             muTagDevice = await this.getProvisionedMuTagDevice(
                 accountNumber,
-                beaconID
+                beaconId
             );
             const isConnected = await muTagDevice.isConnected();
             if (!isConnected) {
@@ -250,9 +250,9 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     disconnectFromProvisionedMuTag(
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): void {
-        this.getProvisionedMuTagDevice(accountNumber, beaconID)
+        this.getProvisionedMuTagDevice(accountNumber, beaconId)
             .then(
                 (muTagDevice): Promise<Device> => {
                     return muTagDevice.cancelConnection();
@@ -266,7 +266,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
     async provisionMuTag(
         unprovisionedMuTag: any,
         accountNumber: AccountNumber,
-        beaconID: BeaconId,
+        beaconId: BeaconId,
         muTagNumber: number,
         muTagName: string
     ): Promise<ProvisionedMuTag> {
@@ -295,7 +295,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
             );
             const minor = MuTagDevicesRNBLEPLX.getMinor(
                 accountNumber,
-                beaconID
+                beaconId
             );
             await MuTagDevicesRNBLEPLX.writeCharacteristic(
                 device,
@@ -312,12 +312,12 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
             this.moveToProvisionedCache(
                 device.id as DeviceID,
                 accountNumber,
-                beaconID
+                beaconId
             );
 
             const muTag = new ProvisionedMuTag({
                 _uid: unprovisionedMuTag.uid,
-                _beaconID: beaconID,
+                _beaconId: beaconId,
                 _muTagNumber: muTagNumber,
                 _name: muTagName,
                 _batteryLevel: unprovisionedMuTag.batteryLevel,
@@ -335,11 +335,11 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     async unprovisionMuTag(
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): Promise<void> {
         const muTagDevice = await this.getProvisionedMuTagDevice(
             accountNumber,
-            beaconID
+            beaconId
         );
         const transactionID = UUIDv4();
 
@@ -372,11 +372,11 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     async readBatteryLevel(
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): Promise<Percent> {
         const muTagDevice = await this.getProvisionedMuTagDevice(
             accountNumber,
-            beaconID
+            beaconId
         );
         const batteryLevel = await MuTagDevicesRNBLEPLX.readCharacteristic(
             muTagDevice,
@@ -388,11 +388,11 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
     async changeTXPower(
         txPower: TxPowerSetting,
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): Promise<void> {
         const muTagDevice = await this.getProvisionedMuTagDevice(
             accountNumber,
-            beaconID
+            beaconId
         );
         let txPowerHex: Hexadecimal;
         switch (txPower) {
@@ -422,7 +422,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
     private moveToProvisionedCache(
         deviceID: DeviceID,
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): void {
         const uid = this.muTagUIDCache.get(deviceID);
         if (uid == null) {
@@ -436,7 +436,7 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
         const provisionID = MuTagDevicesRNBLEPLX.getProvisionID(
             accountNumber,
-            beaconID
+            beaconId
         );
         this.muTagProvisionIDCache.set(deviceID, provisionID);
         this.provisionedMuTagCache.set(provisionID, device);
@@ -456,12 +456,12 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     private async getProvisionedMuTagDevice(
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): Promise<Device> {
         let muTagDevice: Device | undefined;
         const provisionID = MuTagDevicesRNBLEPLX.getProvisionID(
             accountNumber,
-            beaconID
+            beaconId
         );
 
         muTagDevice = this.provisionedMuTagCache.get(provisionID);
@@ -740,9 +740,9 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     private static getMinor(
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): Hexadecimal {
-        const majorMinorHex = accountNumber.toString() + beaconID.toString();
+        const majorMinorHex = accountNumber.toString() + beaconId.toString();
         const minorHex = majorMinorHex.toString().substr(4, 4);
         return Hexadecimal.fromString(minorHex);
     }
@@ -756,9 +756,9 @@ export class MuTagDevicesRNBLEPLX implements MuTagDevicesPort {
 
     private static getProvisionID(
         accountNumber: AccountNumber,
-        beaconID: BeaconId
+        beaconId: BeaconId
     ): ProvisionID {
-        return (accountNumber.toString() + beaconID.toString()) as ProvisionID;
+        return (accountNumber.toString() + beaconId.toString()) as ProvisionID;
     }
 
     /*private static async isMuTag(device: Device): Promise<boolean> {

@@ -55,14 +55,14 @@ describe("user opens saved login session", (): void => {
         belongingDetectionService
     );
 
-    const recycledBeaconIDs = [BeaconId.create("1")];
+    const recycledBeaconIds = [BeaconId.create("1")];
     const accountMuTags = ["randomUUID"];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconId.create("3"),
-        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _nextBeaconId: BeaconId.create("3"),
+        _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 5,
         _muTags: new Set(accountMuTags)
     };

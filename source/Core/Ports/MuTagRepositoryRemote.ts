@@ -1,4 +1,5 @@
 import ProvisionedMuTag from "../Domain/ProvisionedMuTag";
+import { AccountNumber } from "../Domain/Account";
 
 export class DoesNotExist extends Error {
     constructor() {
@@ -50,11 +51,20 @@ export class FailedToRemove extends Error {
 
 export interface MuTagRepositoryRemote {
     getAll(accountUid: string): Promise<Set<ProvisionedMuTag>>;
-    add(muTag: ProvisionedMuTag, accountUid: string): Promise<void>;
-    update(muTag: ProvisionedMuTag, accountUid: string): Promise<void>;
+    add(
+        muTag: ProvisionedMuTag,
+        accountUid: string,
+        accountNumber: AccountNumber
+    ): Promise<void>;
+    update(
+        muTag: ProvisionedMuTag,
+        accountUid: string,
+        accountNumber: AccountNumber
+    ): Promise<void>;
     updateMultiple(
         muTags: Set<ProvisionedMuTag>,
-        accountUid: string
+        accountUid: string,
+        accountNumber: AccountNumber
     ): Promise<void>;
     removeByUid(uid: string, accountUid: string): Promise<void>;
 }

@@ -1,7 +1,7 @@
 import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 
 export enum MuTagColor {
-    Charcoal,
+    Charcoal = 1,
     Cloud,
     Indiegogo,
     Kickstarter,

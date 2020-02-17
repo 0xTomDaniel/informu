@@ -75,7 +75,7 @@ export default class RemoveMuTagInteractor {
             muTag = await this.muTagRepoLocal.getByUid(uid);
             await this.muTagDevices.connectToProvisionedMuTag(
                 account.accountNumber,
-                muTag.beaconID
+                muTag.beaconId
             );
         } catch (e) {
             console.warn(e);
@@ -86,7 +86,7 @@ export default class RemoveMuTagInteractor {
         try {
             const batteryLevel = await this.muTagDevices.readBatteryLevel(
                 account.accountNumber,
-                muTag.beaconID
+                muTag.beaconId
             );
             if (batteryLevel < this.removeMuTagBatteryThreshold) {
                 const lowBatteryError = new LowMuTagBattery(
@@ -98,7 +98,7 @@ export default class RemoveMuTagInteractor {
             }
             await this.muTagDevices.unprovisionMuTag(
                 account.accountNumber,
-                muTag.beaconID
+                muTag.beaconId
             );
         } catch (e) {
             this.removeMuTagOutput.hideBusyIndicator();
@@ -106,7 +106,7 @@ export default class RemoveMuTagInteractor {
             return;
         }
         try {
-            account.removeMuTag(uid, muTag.beaconID);
+            account.removeMuTag(uid, muTag.beaconId);
             await this.accountRepoLocal.update(account);
             await this.muTagRepoLocal.removeByUid(uid);
         } catch (e) {

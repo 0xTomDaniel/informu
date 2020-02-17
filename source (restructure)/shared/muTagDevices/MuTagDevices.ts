@@ -498,12 +498,12 @@ export default class MuTagDevices
         return MuTagDevices.getMuTagProvisionIdFromMajorMinor(major, minor);
     }
 
-    private static getMajor(accountNumber: Hexadecimal): Hexadecimal {
+    static getMajor(accountNumber: Hexadecimal): Hexadecimal {
         const majorHexString = accountNumber.toString().substr(0, 4);
         return Hexadecimal.fromString(majorHexString);
     }
 
-    private static getMinor(
+    static getMinor(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
     ): Hexadecimal {

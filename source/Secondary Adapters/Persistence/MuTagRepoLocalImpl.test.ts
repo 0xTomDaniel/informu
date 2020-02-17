@@ -19,25 +19,42 @@ const DatabaseImplWatermelonMock = DatabaseImplWatermelon as jest.Mock<
 const watermelonDBMock = new WatermelonDBMock();
 const database = new DatabaseImplWatermelonMock(watermelonDBMock);
 const accountRepoLocalImpl = new AccountRepoLocalImpl(database);
+const dateNow = new Date();
 const existingMuTag07 = new ProvisionedMuTag({
-    _uid: "randomUUID07",
-    _beaconID: BeaconId.create("7"),
+    _advertisingInterval: 1,
+    _batteryLevel: new Percent(31),
+    _beaconId: BeaconId.create("7"),
+    _color: MuTagColor.Kickstarter,
+    _dateAdded: dateNow,
+    _didExitRegion: false,
+    _firmwareVersion: "1.6.1",
+    _isSafe: true,
+    _lastSeen: dateNow,
+    _modelNumber: "REV8",
     _muTagNumber: 7,
     _name: "wallet",
-    _batteryLevel: new Percent(31),
-    _isSafe: true,
-    _lastSeen: new Date(),
-    _color: MuTagColor.Kickstarter
+    _recentLatitude: 0,
+    _recentLongitude: 0,
+    _txPower: 1,
+    _uid: "randomUUID07"
 });
 const existingMuTag08 = new ProvisionedMuTag({
-    _uid: "randomUUID08",
-    _beaconID: BeaconId.create("8"),
+    _advertisingInterval: 1,
+    _batteryLevel: new Percent(53),
+    _beaconId: BeaconId.create("8"),
+    _color: MuTagColor.Cloud,
+    _dateAdded: dateNow,
+    _didExitRegion: false,
+    _firmwareVersion: "1.6.1",
+    _isSafe: true,
+    _lastSeen: dateNow,
+    _modelNumber: "REV8",
     _muTagNumber: 8,
     _name: "bag",
-    _batteryLevel: new Percent(53),
-    _isSafe: true,
-    _lastSeen: new Date(),
-    _color: MuTagColor.Cloud
+    _recentLatitude: 0,
+    _recentLongitude: 0,
+    _txPower: 1,
+    _uid: "randomUUID08"
 });
 
 // If the user is logged out then Account will not exist when the
@@ -54,40 +71,64 @@ const muTagRepoLocalImpl = new MuTagRepoLocalImpl(
     accountRepoLocalImpl
 );
 const muTag01UID = "randomUUID01";
-const muTag01BeaconID = BeaconId.create("A");
+const muTag01BeaconId = BeaconId.create("A");
 const muTag01 = new ProvisionedMuTag({
-    _uid: muTag01UID,
-    _beaconID: muTag01BeaconID,
+    _advertisingInterval: 1,
+    _batteryLevel: new Percent(30),
+    _beaconId: muTag01BeaconId,
+    _color: MuTagColor.MuOrange,
+    _dateAdded: dateNow,
+    _didExitRegion: false,
+    _firmwareVersion: "1.6.1",
+    _isSafe: true,
+    _lastSeen: dateNow,
+    _modelNumber: "REV8",
     _muTagNumber: 12,
     _name: "keys",
-    _batteryLevel: new Percent(30),
-    _isSafe: true,
-    _lastSeen: new Date(),
-    _color: MuTagColor.MuOrange
+    _recentLatitude: 0,
+    _recentLongitude: 0,
+    _txPower: 1,
+    _uid: muTag01UID
 });
 const muTag02UID = "randomUUID02";
-const muTag02BeaconID = BeaconId.create("B");
+const muTag02BeaconId = BeaconId.create("B");
 const muTag02 = new ProvisionedMuTag({
-    _uid: muTag02UID,
-    _beaconID: muTag02BeaconID,
+    _advertisingInterval: 1,
+    _batteryLevel: new Percent(30),
+    _beaconId: muTag02BeaconId,
+    _color: MuTagColor.MuOrange,
+    _dateAdded: dateNow,
+    _didExitRegion: false,
+    _firmwareVersion: "1.6.1",
+    _isSafe: true,
+    _lastSeen: dateNow,
+    _modelNumber: "REV8",
     _muTagNumber: 13,
     _name: "laptop",
-    _batteryLevel: new Percent(30),
-    _isSafe: true,
-    _lastSeen: new Date(),
-    _color: MuTagColor.MuOrange
+    _recentLatitude: 0,
+    _recentLongitude: 0,
+    _txPower: 1,
+    _uid: muTag02UID
 });
 const muTag03UID = "randomUUID03";
-const muTag03BeaconID = BeaconId.create("C");
+const muTag03BeaconId = BeaconId.create("C");
 const muTag03 = new ProvisionedMuTag({
-    _uid: muTag03UID,
-    _beaconID: muTag03BeaconID,
+    _advertisingInterval: 1,
+    _batteryLevel: new Percent(30),
+    _beaconId: muTag03BeaconId,
+    _color: MuTagColor.MuOrange,
+    _dateAdded: dateNow,
+    _didExitRegion: false,
+    _firmwareVersion: "1.6.1",
+    _isSafe: true,
+    _lastSeen: dateNow,
+    _modelNumber: "REV8",
     _muTagNumber: 14,
     _name: "bag",
-    _batteryLevel: new Percent(30),
-    _isSafe: true,
-    _lastSeen: new Date(),
-    _color: MuTagColor.MuOrange
+    _recentLatitude: 0,
+    _recentLongitude: 0,
+    _txPower: 1,
+    _uid: muTag03UID
 });
 
 test("successfully adds Mu tag", async (): Promise<void> => {
@@ -104,7 +145,7 @@ test("successfully gets added Mu tag", async (): Promise<void> => {
         muTag01
     );
     await expect(
-        muTagRepoLocalImpl.getByBeaconId(muTag01BeaconID)
+        muTagRepoLocalImpl.getByBeaconId(muTag01BeaconId)
     ).resolves.toEqual(muTag01);
 });
 
@@ -140,8 +181,8 @@ test("successfully populate Mu tag cache from logged in account", async (): Prom
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconId.create("B"),
-        _recycledBeaconIDs: new Set([
+        _nextBeaconId: BeaconId.create("B"),
+        _recycledBeaconIds: new Set([
             BeaconId.create("2"),
             BeaconId.create("D")
         ]),

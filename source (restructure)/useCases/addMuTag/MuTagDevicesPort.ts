@@ -11,7 +11,7 @@ export interface UnprovisionedMuTag {
 }
 
 export enum TxPowerSetting {
-    "+6 dBm",
+    "+6 dBm" = 1,
     "0 dBm",
     "-8 dBm",
     "-15 dBm",

@@ -43,8 +43,8 @@ describe("user registers new account", (): void => {
         _uid: newUID,
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: newEmail,
-        _nextBeaconID: BeaconId.create("0"),
-        _recycledBeaconIDs: new Set(),
+        _nextBeaconId: BeaconId.create("0"),
+        _recycledBeaconIds: new Set(),
         _nextMuTagNumber: 15,
         _muTags: new Set()
     };

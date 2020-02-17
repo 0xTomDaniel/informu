@@ -42,8 +42,11 @@ export default class LogoutService {
         await this.accountRepoRemote.update(account);
 
         const muTags = await this.muTagRepoLocal.getAll();
-        const accountUID = account.uid;
-        await this.muTagRepoRemote.updateMultiple(muTags, accountUID);
+        await this.muTagRepoRemote.updateMultiple(
+            muTags,
+            account.uid,
+            account.accountNumber
+        );
 
         await this.belongingDetectionService.stop();
         await this.database.destroy();

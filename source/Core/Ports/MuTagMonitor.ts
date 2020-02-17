@@ -5,7 +5,7 @@ import { AccountNumber } from "../Domain/Account";
 // In the future this interface will have more data while MuTagRegionExit will not
 export interface MuTagSignal {
     readonly accountNumber: AccountNumber;
-    readonly beaconID: BeaconId;
+    readonly beaconId: BeaconId;
     readonly timestamp: Date;
 }
 
@@ -17,7 +17,7 @@ export interface MuTagRegionExit {
 export interface MuTagBeacon {
     readonly uid: string;
     readonly accountNumber: AccountNumber;
-    readonly beaconID: BeaconId;
+    readonly beaconId: BeaconId;
 }
 
 export interface MuTagMonitor {

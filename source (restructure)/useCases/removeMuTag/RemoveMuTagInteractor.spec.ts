@@ -81,13 +81,13 @@ describe("Mu tag user removes Mu tag", (): void => {
         removeMuTagOutputMock
     );
 
-    const recycledBeaconIDs = [BeaconId.create("2"), BeaconId.create("5")];
+    const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconId.create("A"),
-        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _nextBeaconId: BeaconId.create("A"),
+        _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 10,
         _muTags: new Set(["randomUUID#1"])
     };
@@ -95,21 +95,29 @@ describe("Mu tag user removes Mu tag", (): void => {
     const removeMuTagSpy = jest.spyOn(account, "removeMuTag");
 
     const muTagUID = "randomUUID#1";
-    const beaconID = BeaconId.create("1");
+    const beaconId = BeaconId.create("1");
     const muTagBatteryLevel = new Percent(17);
     const newMuTagAttachedTo = "keys";
     const muTagColorSetting = MuTagColor.Scarlet;
     const muTagIsSafe = true;
     const muTagLastSeen = new Date();
     const muTag = new ProvisionedMuTag({
-        _uid: muTagUID,
-        _beaconID: beaconID,
-        _muTagNumber: 1,
-        _name: newMuTagAttachedTo,
+        _advertisingInterval: 1,
         _batteryLevel: muTagBatteryLevel,
+        _beaconId: beaconId,
+        _color: muTagColorSetting,
+        _dateAdded: muTagLastSeen,
+        _didExitRegion: false,
+        _firmwareVersion: "1.6.1",
         _isSafe: muTagIsSafe,
         _lastSeen: muTagLastSeen,
-        _color: muTagColorSetting
+        _modelNumber: "REV8",
+        _muTagNumber: 1,
+        _name: newMuTagAttachedTo,
+        _recentLatitude: 0,
+        _recentLongitude: 0,
+        _txPower: 1,
+        _uid: muTagUID
     });
 
     describe("Mu tag removes successfully", (): void => {
@@ -181,8 +189,8 @@ describe("Mu tag user removes Mu tag", (): void => {
         //
         it("should remove the Mu tag from local persistence", (): void => {
             expect(removeMuTagSpy).toHaveBeenCalledTimes(1);
-            const _recycledBeaconIDs = account.json._recycledBeaconIDs;
-            expect(_recycledBeaconIDs).toContain(beaconID.toString());
+            const _recycledBeaconIds = account.json._recycledBeaconIds;
+            expect(_recycledBeaconIds).toContain(beaconId.toString());
 
             expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);

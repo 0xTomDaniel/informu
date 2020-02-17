@@ -117,7 +117,7 @@ export default class BelongingDetectionService implements BelongingDetection {
         }
 
         const muTag = await this.muTagRepoLocal.getByBeaconId(
-            muTagSignal.beaconID
+            muTagSignal.beaconId
         );
         muTag.userDidDetect(muTagSignal.timestamp);
         this.muTagRepoLocal.update(muTag);
@@ -140,7 +140,7 @@ export default class BelongingDetectionService implements BelongingDetection {
                     return {
                         uid: muTag.uid,
                         accountNumber: accountNumber,
-                        beaconID: muTag.beaconID
+                        beaconId: muTag.beaconId
                     };
                 }
             )

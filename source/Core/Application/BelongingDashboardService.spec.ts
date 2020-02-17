@@ -52,50 +52,75 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         accountRepoLocalMock
     );
 
+    const dateNow = new Date();
     const belongingsData: MuTagData[] = [
         {
-            _uid: "randomUUID01",
-            _beaconID: BeaconId.create("0"),
+            _advertisingInterval: 1,
+            _batteryLevel: new Percent(50),
+            _beaconId: BeaconId.create("0"),
+            _color: MuTagColor.MuOrange,
+            _dateAdded: dateNow,
+            _didExitRegion: false,
+            _firmwareVersion: "1.6.1",
+            _isSafe: true,
+            _lastSeen: dateNow,
+            _modelNumber: "REV8",
             _muTagNumber: 0,
             _name: "Keys",
-            _batteryLevel: new Percent(50),
-            _isSafe: true,
-            _lastSeen: new Date(),
-            _color: MuTagColor.MuOrange
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: "randomUUID01"
         },
         {
-            _uid: "randomUUID02",
-            _beaconID: BeaconId.create("1"),
-            _muTagNumber: 1,
-            _name: "Laptop",
+            _advertisingInterval: 1,
             _batteryLevel: new Percent(50),
+            _beaconId: BeaconId.create("1"),
+            _color: MuTagColor.MuOrange,
+            _dateAdded: new Date("1995-12-17T03:24:00"),
+            _didExitRegion: true,
+            _firmwareVersion: "1.6.1",
             _isSafe: false,
             _lastSeen: new Date("1995-12-17T03:24:00"),
-            _color: MuTagColor.MuOrange
+            _modelNumber: "REV8",
+            _muTagNumber: 1,
+            _name: "Laptop",
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: "randomUUID02"
         },
         {
-            _uid: "randomUUID03",
-            _beaconID: BeaconId.create("2"),
+            _advertisingInterval: 1,
+            _batteryLevel: new Percent(80),
+            _beaconId: BeaconId.create("2"),
+            _color: MuTagColor.MuOrange,
+            _dateAdded: dateNow,
+            _didExitRegion: true,
+            _firmwareVersion: "1.6.1",
+            _isSafe: false,
+            _lastSeen: dateNow,
+            _modelNumber: "REV8",
             _muTagNumber: 3,
             _name: "Wallet",
-            _batteryLevel: new Percent(80),
-            _isSafe: false,
-            _lastSeen: new Date(),
-            _color: MuTagColor.MuOrange
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: "randomUUID03"
         }
     ];
     const muTags = new Set([
         new ProvisionedMuTag(belongingsData[0]),
         new ProvisionedMuTag(belongingsData[1])
     ]);
-    const recycledBeaconIDs = [BeaconId.create("2"), BeaconId.create("5")];
+    const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
     const accountMuTags = [belongingsData[0]._uid, belongingsData[1]._uid];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconId.create("A"),
-        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _nextBeaconId: BeaconId.create("A"),
+        _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 10,
         _muTags: new Set(accountMuTags)
     };
@@ -104,12 +129,12 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         _uid: validAccountData._uid,
         _accountNumber: validAccountData._accountNumber,
         _emailAddress: validAccountData._emailAddress,
-        _nextBeaconID: validAccountData._nextBeaconID,
-        _recycledBeaconIDs: validAccountData._recycledBeaconIDs,
+        _nextBeaconId: validAccountData._nextBeaconId,
+        _recycledBeaconIds: validAccountData._recycledBeaconIds,
         _nextMuTagNumber: validAccountData._nextMuTagNumber,
         _muTags: new Set()
     });
-    const addedBeaconID = accountNoMuTags.newBeaconId;
+    const addedBeaconId = accountNoMuTags.newBeaconId;
     const newBelongingDashboardData: DashboardBelonging = {
         uid: belongingsData[2]._uid,
         name: belongingsData[2]._name,
@@ -204,7 +229,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         // When the belonging is added to account
         //
         beforeAll((): void => {
-            accountNoMuTags.addNewMuTag(belongingsData[2]._uid, addedBeaconID);
+            accountNoMuTags.addNewMuTag(belongingsData[2]._uid, addedBeaconId);
         });
 
         // Then
@@ -255,7 +280,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         // When the belonging is removed from account
         //
         beforeAll((): void => {
-            accountNoMuTags.removeMuTag(belongingUID, addedBeaconID);
+            accountNoMuTags.removeMuTag(belongingUID, addedBeaconId);
         });
 
         // Then

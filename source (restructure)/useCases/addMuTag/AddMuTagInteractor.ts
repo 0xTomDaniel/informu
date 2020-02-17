@@ -13,6 +13,7 @@ import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import UserError from "../../shared/metaLanguage/UserError";
 import UserWarning from "../../shared/metaLanguage/UserWarning";
+import { AccountNumber } from "../../../source/Core/Domain/Account";
 
 class LowMuTagBattery extends UserError {
     name = "LowMuTagBattery";
@@ -55,6 +56,7 @@ export default class AddMuTagInteractor {
     private provisionedMuTag: ProvisionedMuTag | undefined;
     private muTagName: string | undefined;
     private accountUid: string | undefined;
+    private accountNumber: AccountNumber | undefined;
 
     constructor(
         connectThreshold: Rssi,
@@ -84,7 +86,7 @@ export default class AddMuTagInteractor {
                 findTimeout
             );
         } catch (e) {
-            this.addMuTagOutput.showError(new NewMuTagNotFound(e));
+            this.showError(new NewMuTagNotFound(e));
             return;
         }
         if (
@@ -94,7 +96,7 @@ export default class AddMuTagInteractor {
             const error = new LowMuTagBattery(
                 this.addMuTagBatteryThreshold.valueOf()
             );
-            this.addMuTagOutput.showError(error);
+            this.showError(error);
             return;
         }
 
@@ -102,9 +104,7 @@ export default class AddMuTagInteractor {
             await this.addNewMuTag(
                 this.unprovisionedMuTag,
                 this.muTagName
-            ).catch(e =>
-                this.addMuTagOutput.showError(new FailedToAddMuTag(e))
-            );
+            ).catch(e => this.showError(new FailedToAddMuTag(e)));
         }
     }
 
@@ -123,7 +123,7 @@ export default class AddMuTagInteractor {
 
         if (this.unprovisionedMuTag != null) {
             await this.addNewMuTag(this.unprovisionedMuTag, name).catch(e =>
-                this.addMuTagOutput.showError(new FailedToAddMuTag(e))
+                this.showError(new FailedToAddMuTag(e))
             );
         } else {
             this.muTagName = name;
@@ -141,10 +141,11 @@ export default class AddMuTagInteractor {
 
             this.provisionedMuTag.changeColor(color);
             await this.muTagRepoLocal.update(this.provisionedMuTag);
-            const accountUid = await this.getAccountUid();
+            const { accountUid, accountNumber } = await this.getAccountIds();
             await this.muTagRepoRemote.update(
                 this.provisionedMuTag,
-                accountUid
+                accountUid,
+                accountNumber
             );
         } catch (e) {
             this.addMuTagOutput.showWarning(new FailedToSaveSettings(e));
@@ -193,18 +194,31 @@ export default class AddMuTagInteractor {
         const beaconId = account.newBeaconId;
         const accountNumber = account.accountNumber;
         const uid = this.muTagRepoRemote.createNewUid(account.uid);
+        const dateNow = new Date();
         this.provisionedMuTag = new ProvisionedMuTag({
-            _uid: uid,
-            _beaconID: beaconId,
+            _advertisingInterval: 1,
+            _batteryLevel: unprovisionedMuTag.batteryLevel,
+            _beaconId: beaconId,
+            _color: MuTagColor.MuOrange,
+            _dateAdded: dateNow,
+            _didExitRegion: true,
+            _firmwareVersion: "1.6.1",
+            _isSafe: false,
+            _lastSeen: dateNow,
+            _modelNumber: "REV8",
             _muTagNumber: account.newMuTagNumber,
             _name: name,
-            _batteryLevel: unprovisionedMuTag.batteryLevel,
-            _isSafe: false,
-            _lastSeen: new Date(),
-            _color: MuTagColor.MuOrange
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: uid
         });
 
-        await this.muTagRepoRemote.add(this.provisionedMuTag, account.uid);
+        await this.muTagRepoRemote.add(
+            this.provisionedMuTag,
+            account.uid,
+            accountNumber
+        );
 
         // Mu tag must be added to local persistence before being added to
         // account. It's probably best to refactor so that Mu tags don't need to
@@ -277,19 +291,30 @@ export default class AddMuTagInteractor {
         this.addMuTagOutput.showMuTagFinalSetupScreen();
     }
 
+    private showError(error: UserError): void {
+        this.resetAddNewMuTagState();
+        this.addMuTagOutput.showError(error);
+    }
+
     private resetAddNewMuTagState(): void {
         this.unprovisionedMuTag = undefined;
         this.provisionedMuTag = undefined;
         this.muTagName = undefined;
-        this.accountUid = undefined;
     }
 
-    private async getAccountUid(): Promise<string> {
-        if (this.accountUid == null) {
+    private async getAccountIds(): Promise<{
+        accountUid: string;
+        accountNumber: AccountNumber;
+    }> {
+        if (this.accountUid == null || this.accountNumber == null) {
             const account = await this.accountRepoLocal.get();
             this.accountUid = account.uid;
+            this.accountNumber = account.accountNumber;
         }
 
-        return this.accountUid;
+        return {
+            accountUid: this.accountUid,
+            accountNumber: this.accountNumber
+        };
     }
 }

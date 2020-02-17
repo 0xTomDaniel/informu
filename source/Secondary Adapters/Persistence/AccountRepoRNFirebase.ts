@@ -42,19 +42,19 @@ export class AccountRepoRNFirebase
         const databaseData: { [key: string]: any } = {
             account_id: accountData._accountNumber,
             email: accountData._emailAddress,
-            next_beacon_id: accountData._nextBeaconID,
+            next_beacon_id: accountData._nextBeaconId,
             next_mu_tag_number: accountData._nextMuTagNumber
         };
 
-        if (accountData._recycledBeaconIDs != null) {
-            databaseData.recycled_beacon_ids = accountData._recycledBeaconIDs.map(
-                (beaconID): object => ({ [beaconID]: true })
+        if (accountData._recycledBeaconIds != null) {
+            databaseData.recycled_beacon_ids = accountData._recycledBeaconIds.map(
+                (beaconId): object => ({ [beaconId]: true })
             );
         }
 
         if (accountData._muTags != null) {
             databaseData.mu_tags = accountData._muTags.map(
-                (beaconID): object => ({ [beaconID]: true })
+                (beaconId): object => ({ [beaconId]: true })
             );
         }
         /*eslint-enable */
@@ -76,16 +76,16 @@ export class AccountRepoRNFirebase
         const databaseData: { [key: string]: any } = {
             account_id: accountData._accountNumber,
             email: accountData._emailAddress,
-            next_beacon_id: accountData._nextBeaconID,
+            next_beacon_id: accountData._nextBeaconId,
             next_mu_tag_number: accountData._nextMuTagNumber
         };
 
-        if (accountData._recycledBeaconIDs != null) {
+        if (accountData._recycledBeaconIds != null) {
             const initialValue: { [key: string]: any } = {};
-            databaseData.recycled_beacon_ids = accountData._recycledBeaconIDs.reduce(
-                (allBeaconIDs, beaconID): object => {
-                    allBeaconIDs[beaconID] = true;
-                    return allBeaconIDs;
+            databaseData.recycled_beacon_ids = accountData._recycledBeaconIds.reduce(
+                (allBeaconIds, beaconId): object => {
+                    allBeaconIds[beaconId] = true;
+                    return allBeaconIds;
                 },
                 initialValue
             );
@@ -94,8 +94,8 @@ export class AccountRepoRNFirebase
         if (accountData._muTags != null) {
             const initialValue: { [key: string]: any } = {};
             databaseData.mu_tags = accountData._muTags.reduce(
-                (allMuTags, beaconID): object => {
-                    allMuTags[beaconID] = true;
+                (allMuTags, beaconId): object => {
+                    allMuTags[beaconId] = true;
                     return allMuTags;
                 },
                 initialValue
@@ -141,12 +141,12 @@ export class AccountRepoRNFirebase
             _uid: uid,
             _accountNumber: snapshotData.account_id,
             _emailAddress: snapshotData.email,
-            _nextBeaconID: snapshotData.next_beacon_id,
+            _nextBeaconId: snapshotData.next_beacon_id,
             _nextMuTagNumber: snapshotData.next_mu_tag_number
         };
 
         if ("recycled_beacon_ids" in snapshotData) {
-            data._recycledBeaconIDs = Object.keys(
+            data._recycledBeaconIds = Object.keys(
                 snapshotData.recycled_beacon_ids
             );
         }
