@@ -96,9 +96,12 @@ describe("user logs out of their account", (): void => {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
+        _name: "Camden Booker",
         _nextBeaconId: BeaconId.create("A"),
+        _nextSafeZoneNumber: 3,
         _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 15,
+        _onboarding: false,
         _muTags: new Set(accountMuTags)
     };
     const account = new Account(validAccountData);
@@ -113,6 +116,7 @@ describe("user logs out of their account", (): void => {
         _firmwareVersion: "1.6.1",
         _isSafe: true,
         _lastSeen: dateNow,
+        _macAddress: "63BC5DEF89AB",
         _modelNumber: "REV8",
         _muTagNumber: 0,
         _name: "keys",
@@ -131,6 +135,7 @@ describe("user logs out of their account", (): void => {
         _firmwareVersion: "1.6.1",
         _isSafe: true,
         _lastSeen: dateNow,
+        _macAddress: "63BC50EF89AB",
         _modelNumber: "REV8",
         _muTagNumber: 1,
         _name: "laptop",

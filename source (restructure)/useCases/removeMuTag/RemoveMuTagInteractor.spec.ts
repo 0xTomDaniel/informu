@@ -86,9 +86,12 @@ describe("Mu tag user removes Mu tag", (): void => {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
+        _name: "Josh McDaniel",
         _nextBeaconId: BeaconId.create("A"),
+        _nextSafeZoneNumber: 3,
         _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 10,
+        _onboarding: false,
         _muTags: new Set(["randomUUID#1"])
     };
     const account = new Account(validAccountData);
@@ -111,6 +114,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         _firmwareVersion: "1.6.1",
         _isSafe: muTagIsSafe,
         _lastSeen: muTagLastSeen,
+        _macAddress: "AABBCCDDFF67",
         _modelNumber: "REV8",
         _muTagNumber: 1,
         _name: newMuTagAttachedTo,

@@ -1,4 +1,7 @@
-import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
+import ProvisionedMuTag, {
+    BeaconId,
+    MuTagData
+} from "../Domain/ProvisionedMuTag";
 import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import { MuTagColor } from "../Domain/MuTag";
 import {
@@ -71,14 +74,17 @@ const accountData: AccountData = {
     _uid: "UUID01",
     _accountNumber: accountNumber,
     _emailAddress: "user@email.com",
+    _name: "Josh Jackson",
     _nextBeaconId: BeaconId.create("2"),
+    _nextSafeZoneNumber: 0,
     _recycledBeaconIds: new Set(),
     _nextMuTagNumber: 2,
+    _onboarding: false,
     _muTags: new Set()
 };
 const account = new Account(accountData);
 const muTagBeaconId = BeaconId.create("0");
-const muTagData = {
+const muTagData: MuTagData = {
     _advertisingInterval: 1,
     _batteryLevel: new Percent(77),
     _beaconId: muTagBeaconId,
@@ -88,6 +94,7 @@ const muTagData = {
     _firmwareVersion: "1.6.1",
     _isSafe: false,
     _lastSeen: new Date("2019-11-03T17:09:31.007Z"),
+    _macAddress: "4628BCFE76AC",
     _modelNumber: "REV8",
     _muTagNumber: 0,
     _name: "Wallet",
@@ -114,6 +121,7 @@ const addedMuTagData = {
     _firmwareVersion: "1.6.1",
     _isSafe: false,
     _lastSeen: new Date("2019-11-02T17:09:31.007Z"),
+    _macAddress: "4628BC3E76AC",
     _modelNumber: "REV8",
     _muTagNumber: addedMuTagNumber,
     _name: "Bag",

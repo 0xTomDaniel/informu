@@ -444,9 +444,11 @@ export default class MuTagDevices
             muTagPeripheralId,
             MuTagBLEGATT.DeviceInformation.BatteryLevel
         );
+        const macAddress = muTagPeripheralId.replace(":", "");
         return {
             id: (muTagPeripheralId as string) as MuTagDeviceId,
-            batteryLevel: new Percent(batteryLevelHex.valueOf())
+            batteryLevel: new Percent(batteryLevelHex.valueOf()),
+            macAddress: macAddress
         };
     }
 

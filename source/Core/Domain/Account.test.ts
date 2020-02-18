@@ -1,30 +1,36 @@
-import Account, { AccountData, AccountNumber, AccountJSON } from "./Account";
+import Account, { AccountData, AccountNumber, AccountJson } from "./Account";
 import { BeaconId } from "./ProvisionedMuTag";
 
 const accountData: AccountData = {
-    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
     _emailAddress: "support+test@informu.io",
+    _muTags: new Set(["UUID00"]),
+    _name: "Bill Stevens",
     _nextBeaconId: BeaconId.create("A"),
-    _recycledBeaconIds: new Set([BeaconId.create("8"), BeaconId.create("9")]),
     _nextMuTagNumber: 10,
-    _muTags: new Set(["UUID00"])
+    _nextSafeZoneNumber: 4,
+    _onboarding: false,
+    _recycledBeaconIds: new Set([BeaconId.create("8"), BeaconId.create("9")]),
+    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632"
 };
 const referenceAccount = new Account(accountData);
-const accountJSON: AccountJSON = {
-    _uid: accountData._uid,
+const accountJson: AccountJson = {
     _accountNumber: accountData._accountNumber.toString(),
     _emailAddress: accountData._emailAddress,
+    _muTags: [...accountData._muTags],
+    _name: accountData._name,
     _nextBeaconId: accountData._nextBeaconId.toString(),
+    _nextMuTagNumber: accountData._nextMuTagNumber,
+    _nextSafeZoneNumber: accountData._nextSafeZoneNumber,
+    _onboarding: accountData._onboarding,
     _recycledBeaconIds: [
         ...accountData._recycledBeaconIds
     ].map((beaconId): string => beaconId.toString()),
-    _nextMuTagNumber: accountData._nextMuTagNumber,
-    _muTags: [...accountData._muTags]
+    _uid: accountData._uid
 };
 
 test("successfully creates Account from MuTagJSON", (): void => {
-    const account = Account.deserialize(accountJSON);
+    const account = Account.deserialize(accountJson);
     expect(account).toEqual(referenceAccount);
 });
 
@@ -46,27 +52,33 @@ test("successfully serializes and deserializes Account", (): void => {
 });
 
 const accountDataEmptyCollections: AccountData = {
-    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
     _emailAddress: "support+test@informu.io",
+    _muTags: new Set(),
+    _name: "Bill Stevens",
     _nextBeaconId: BeaconId.create("A"),
-    _recycledBeaconIds: new Set(),
     _nextMuTagNumber: 10,
-    _muTags: new Set()
+    _nextSafeZoneNumber: 4,
+    _onboarding: false,
+    _recycledBeaconIds: new Set(),
+    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632"
 };
 const referenceAccountEmptyCollections = new Account(
     accountDataEmptyCollections
 );
-const accountJSONEmptyCollections: AccountJSON = {
-    _uid: accountData._uid,
+const accountJsonEmptyCollections: AccountJson = {
     _accountNumber: accountData._accountNumber.toString(),
     _emailAddress: accountData._emailAddress,
+    _name: accountData._name,
     _nextBeaconId: accountData._nextBeaconId.toString(),
-    _nextMuTagNumber: accountData._nextMuTagNumber
+    _nextMuTagNumber: accountData._nextMuTagNumber,
+    _nextSafeZoneNumber: accountData._nextSafeZoneNumber,
+    _onboarding: accountData._onboarding,
+    _uid: accountData._uid
 };
 
 test("successfully creates Account from MuTagJSON (empty collections)", (): void => {
-    const account = Account.deserialize(accountJSONEmptyCollections);
+    const account = Account.deserialize(accountJsonEmptyCollections);
     expect(account).toEqual(referenceAccountEmptyCollections);
 });
 

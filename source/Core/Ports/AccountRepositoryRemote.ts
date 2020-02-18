@@ -1,4 +1,5 @@
 import Account from "../Domain/Account";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export interface AccountRepositoryRemote {
     getByUid(uid: string): Promise<Account>;
@@ -7,52 +8,53 @@ export interface AccountRepositoryRemote {
     removeByUid(uid: string): Promise<void>;
 }
 
-export class DoesNotExist extends Error {
+export class DoesNotExist extends UserError {
+    name = "DoesNotExist";
+    userErrorDescription =
+        "Account entity does not exist in remote persistence.";
     constructor() {
-        super("Account entity does not exist in remote persistence.");
-        this.name = "DoesNotExist";
+        super();
+        this.name;
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
-export class FailedToGet extends Error {
+export class FailedToGet extends UserError {
+    name = "FailedToGet";
+    userErrorDescription =
+        "Failed to get account entity from remote persistence.";
     constructor() {
-        super("Failed to get account entity from remote persistence.");
+        super();
         this.name = "FailedToGet";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
-export class PersistedDataMalformed extends Error {
-    constructor(json: string) {
-        super(`Received malformed data from remote persistence:\n${json}`);
-        this.name = "PersistedDataMalformed";
-        Object.setPrototypeOf(this, new.target.prototype);
+export class PersistedDataMalformed extends UserError {
+    name = "PersistedDataMalformed";
+    userErrorDescription: string;
+    constructor(json: string, originatingError?: Error | undefined) {
+        super(originatingError);
+        this.userErrorDescription = `Received malformed data from remote persistence:\n${json}`;
     }
 }
 
-export class FailedToAdd extends Error {
-    constructor() {
-        super("Failed to add account entity to remote persistence.");
-        this.name = "FailedToAdd";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class FailedToAdd extends UserError {
+    name = "FailedToAdd";
+    userErrorDescription =
+        "Failed to add account entity to remote persistence.";
 }
 
-export class FailedToUpdate extends Error {
-    constructor() {
-        super("Failed to update account entity to remote persistence.");
-        this.name = "FailedToUpdate";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class FailedToUpdate extends UserError {
+    name = "FailedToUpdate";
+    userErrorDescription =
+        "Failed to update account entity to remote persistence.";
 }
 
-export class FailedToRemove extends Error {
-    constructor() {
-        super("Failed to remove account entity from remote persistence.");
-        this.name = "FailedToRemove";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class FailedToRemove extends UserError {
+    name = "FailedToRemove";
+    userErrorDescription =
+        "Failed to remove account entity from remote persistence.";
 }
 
 export type AccountRepositoryRemoteException =

@@ -62,8 +62,11 @@ describe("user opens saved login session", (): void => {
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
         _nextBeaconId: BeaconId.create("3"),
+        _nextSafeZoneNumber: 5,
         _recycledBeaconIds: new Set(recycledBeaconIds),
+        _name: "Kelly Cardona",
         _nextMuTagNumber: 5,
+        _onboarding: false,
         _muTags: new Set(accountMuTags)
     };
     const account = new Account(validAccountData);

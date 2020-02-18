@@ -205,6 +205,7 @@ export default class AddMuTagInteractor {
             _firmwareVersion: "1.6.1",
             _isSafe: false,
             _lastSeen: dateNow,
+            _macAddress: unprovisionedMuTag.macAddress,
             _modelNumber: "REV8",
             _muTagNumber: account.newMuTagNumber,
             _name: name,

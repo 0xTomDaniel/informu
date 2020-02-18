@@ -133,6 +133,7 @@ describe("user logs into their account", (): void => {
             _firmwareVersion: "1.6.1",
             _isSafe: true,
             _lastSeen: dateNow,
+            _macAddress: "63BCEF52ACD3",
             _modelNumber: "REV8",
             _muTagNumber: 0,
             _name: "Keys",
@@ -151,6 +152,7 @@ describe("user logs into their account", (): void => {
             _firmwareVersion: "1.6.1",
             _isSafe: true,
             _lastSeen: dateNow,
+            _macAddress: "63BCEF522CD3",
             _modelNumber: "REV8",
             _muTagNumber: 1,
             _name: "Laptop",
@@ -166,9 +168,12 @@ describe("user logs into their account", (): void => {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
+        _name: "Brenda Gorscia",
         _nextBeaconId: BeaconId.create("A"),
+        _nextSafeZoneNumber: 4,
         _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 15,
+        _onboarding: false,
         _muTags: new Set(accountMuTags)
     };
     const account = new Account(validAccountData);
@@ -182,7 +187,8 @@ describe("user logs into their account", (): void => {
         //
         const userData: UserData = {
             uid: validAccountData._uid,
-            emailAddress: validAccountData._emailAddress
+            emailAddress: validAccountData._emailAddress,
+            name: validAccountData._name
         };
         (authenticationMock.authenticateWithEmail as jest.Mock).mockResolvedValueOnce(
             userData
@@ -259,7 +265,8 @@ describe("user logs into their account", (): void => {
         //
         const userData: UserData = {
             uid: validAccountData._uid,
-            emailAddress: validAccountData._emailAddress
+            emailAddress: validAccountData._emailAddress,
+            name: validAccountData._name
         };
         (authenticationMock.authenticateWithFacebook as jest.Mock).mockResolvedValueOnce(
             userData
@@ -330,7 +337,8 @@ describe("user logs into their account", (): void => {
         //
         const userData: UserData = {
             uid: validAccountData._uid,
-            emailAddress: validAccountData._emailAddress
+            emailAddress: validAccountData._emailAddress,
+            name: validAccountData._name
         };
         (authenticationMock.authenticateWithGoogle as jest.Mock).mockResolvedValueOnce(
             userData
@@ -564,7 +572,8 @@ describe("user logs into their account", (): void => {
         // Given that credentials are valid for authentication
         const userData: UserData = {
             uid: "YVbsaRtrg5Ssn6BuROngSrdUHUB2",
-            emailAddress: "newUser@gmail.com"
+            emailAddress: "newUser@gmail.com",
+            name: "Bell Johnson"
         };
         (authenticationMock.authenticateWithGoogle as jest.Mock).mockResolvedValueOnce(
             userData
@@ -601,7 +610,11 @@ describe("user logs into their account", (): void => {
             ).toHaveBeenCalledTimes(1);
             expect(
                 accountRegistrationServiceMock.registerFederated
-            ).toHaveBeenCalledWith(userData.uid, userData.emailAddress);
+            ).toHaveBeenCalledWith(
+                userData.uid,
+                userData.emailAddress,
+                userData.name
+            );
         });
 
         // Then
@@ -625,7 +638,8 @@ describe("user logs into their account", (): void => {
         // Given that credentials are valid for authentication
         const userData: UserData = {
             uid: "Z8b0C6BB7pMwTFwlyMShdnOPQ7V2",
-            emailAddress: "newUser2@gmail.com"
+            emailAddress: "newUser2@gmail.com",
+            name: "Jason Cook"
         };
         (authenticationMock.authenticateWithFacebook as jest.Mock).mockResolvedValueOnce(
             userData
@@ -662,7 +676,11 @@ describe("user logs into their account", (): void => {
             ).toHaveBeenCalledTimes(1);
             expect(
                 accountRegistrationServiceMock.registerFederated
-            ).toHaveBeenCalledWith(userData.uid, userData.emailAddress);
+            ).toHaveBeenCalledWith(
+                userData.uid,
+                userData.emailAddress,
+                userData.name
+            );
         });
 
         // Then

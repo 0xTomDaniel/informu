@@ -49,17 +49,24 @@ function assertIsAccountIDs(val: any): asserts val is AccountIDs {
 }
 
 export default class NewAccountFactoryImpl implements NewAccountFactory {
-    async create(uid: string, emailAddress: string): Promise<Account> {
+    async create(
+        uid: string,
+        emailAddress: string,
+        name: string
+    ): Promise<Account> {
         try {
             const newAccountNumber = await this.getNewAccountNumber();
             return new Account({
-                _uid: uid,
                 _accountNumber: newAccountNumber,
                 _emailAddress: emailAddress,
+                _muTags: new Set(),
+                _name: name,
                 _nextBeaconId: BeaconId.create("0"),
-                _recycledBeaconIds: new Set(),
                 _nextMuTagNumber: 0,
-                _muTags: new Set()
+                _nextSafeZoneNumber: 0,
+                _onboarding: true,
+                _recycledBeaconIds: new Set(),
+                _uid: uid
             });
         } catch (e) {
             console.warn(e);

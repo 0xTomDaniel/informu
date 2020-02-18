@@ -39,12 +39,16 @@ describe("user registers new account", (): void => {
 
     const newUID = "AZeloSR9jCOUxOWnf5RYN14r2632";
     const newEmail = "support+test2@informu.io";
+    const name = "Kayla Grossman";
     const newAccountData: AccountData = {
         _uid: newUID,
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: newEmail,
+        _name: "Joseph Campbell",
         _nextBeaconId: BeaconId.create("0"),
+        _nextSafeZoneNumber: 0,
         _recycledBeaconIds: new Set(),
+        _onboarding: true,
         _nextMuTagNumber: 15,
         _muTags: new Set()
     };
@@ -65,7 +69,8 @@ describe("user registers new account", (): void => {
             async (): Promise<void> => {
                 await accountRegistrationService.registerFederated(
                     newUID,
-                    newEmail
+                    newEmail,
+                    name
                 );
             }
         );
@@ -80,7 +85,8 @@ describe("user registers new account", (): void => {
             expect(newAccountFactoryMock.create).toHaveBeenCalledTimes(1);
             expect(newAccountFactoryMock.create).toHaveBeenCalledWith(
                 newUID,
-                newEmail
+                newEmail,
+                name
             );
         });
 

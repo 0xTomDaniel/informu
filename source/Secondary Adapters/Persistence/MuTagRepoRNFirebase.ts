@@ -12,7 +12,8 @@ import {
 } from "../../Core/Ports/MuTagRepositoryRemote";
 import ProvisionedMuTag, {
     MuTagJson,
-    assertIsMuTagJson
+    assertIsMuTagJson,
+    BeaconId
 } from "../../Core/Domain/ProvisionedMuTag";
 import { v4 as uuidV4 } from "uuid";
 import MuTagRepositoryRemotePortAddMuTag from "../../../source (restructure)/useCases/addMuTag/MuTagRepositoryRemotePort";
@@ -21,30 +22,30 @@ import MuTagDevices from "../../../source (restructure)/shared/muTagDevices/MuTa
 import { AccountNumber } from "../../Core/Domain/Account";
 
 interface DatabaseMuTag {
-    advertising_interval: number;
-    attached_to: string;
-    battery_percentage: number;
-    beacon_id: string;
-    color: number;
-    date_added: string;
-    did_exit_region: boolean;
-    firmware_version: string;
-    in_safe_zone: number;
-    is_checked_in: boolean;
-    is_disabled: boolean;
-    is_expensive: boolean;
-    is_irreplaceable: boolean;
-    is_missing: boolean;
-    is_picking_up: boolean;
-    last_seen: string;
-    mac_address: string;
-    major: string;
-    minor: string;
-    model_number: string;
-    mu_tag_number: number;
-    recent_latitude: number;
-    recent_longitude: number;
-    tx_power: number;
+    readonly advertising_interval: number;
+    readonly attached_to: string;
+    readonly battery_percentage: number;
+    readonly beacon_id: string;
+    readonly color: number;
+    readonly date_added: string;
+    readonly did_exit_region: boolean;
+    readonly firmware_version: string;
+    readonly in_safe_zone: number;
+    readonly is_checked_in: boolean;
+    readonly is_disabled: boolean;
+    readonly is_expensive: boolean;
+    readonly is_irreplaceable: boolean;
+    readonly is_missing: boolean;
+    readonly is_picking_up: boolean;
+    readonly last_seen: string;
+    readonly mac_address: string;
+    readonly major: string;
+    readonly minor: string;
+    readonly model_number: string;
+    readonly mu_tag_number: number;
+    readonly recent_latitude: number;
+    readonly recent_longitude: number;
+    readonly tx_power: number;
 }
 
 export class MuTagRepoRNFirebase
@@ -90,7 +91,7 @@ export class MuTagRepoRNFirebase
         accountNumber: AccountNumber
     ): Promise<void> {
         const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(
-            muTag,
+            muTag.json,
             accountNumber
         );
 
@@ -110,7 +111,7 @@ export class MuTagRepoRNFirebase
         accountNumber: AccountNumber
     ): Promise<void> {
         const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(
-            muTag,
+            muTag.json,
             accountNumber
         );
 
@@ -154,10 +155,9 @@ export class MuTagRepoRNFirebase
     }
 
     private static toDatabaseMuTag(
-        muTag: ProvisionedMuTag,
+        muTagJson: MuTagJson,
         accountNumber: AccountNumber
     ): DatabaseMuTag {
-        const muTagJson = muTag.json;
         /*eslint-disable @typescript-eslint/camelcase*/
         const databaseMuTag: DatabaseMuTag = {
             advertising_interval: muTagJson._advertisingInterval,
@@ -176,11 +176,11 @@ export class MuTagRepoRNFirebase
             is_missing: false,
             is_picking_up: false,
             last_seen: muTagJson._lastSeen,
-            mac_address: "",
+            mac_address: muTagJson._macAddress,
             major: MuTagDevices.getMajor(accountNumber).toString(),
             minor: MuTagDevices.getMinor(
                 accountNumber,
-                muTag.beaconId
+                BeaconId.fromString(muTagJson._beaconId)
             ).toString(),
             model_number: muTagJson._modelNumber,
             mu_tag_number: muTagJson._muTagNumber,
@@ -215,6 +215,7 @@ export class MuTagRepoRNFirebase
             _firmwareVersion: snapshotData.firmware_version,
             _isSafe: false,
             _lastSeen: snapshotData.last_seen,
+            _macAddress: snapshotData.mac_address,
             _modelNumber: snapshotData.model_number,
             _muTagNumber: snapshotData.mu_tag_number,
             _name: snapshotData.attached_to,

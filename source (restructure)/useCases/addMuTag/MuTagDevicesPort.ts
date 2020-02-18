@@ -8,6 +8,7 @@ export type MuTagDeviceId = string & { readonly _: unique symbol };
 export interface UnprovisionedMuTag {
     id: MuTagDeviceId;
     batteryLevel: Percent;
+    macAddress: string;
 }
 
 export enum TxPowerSetting {

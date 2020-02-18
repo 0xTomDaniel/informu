@@ -179,7 +179,8 @@ export class LoginService {
             if (e instanceof AccountDoesNotExistOnRemote) {
                 await this.accountRegistrationService.registerFederated(
                     userData.uid,
-                    userData.emailAddress
+                    userData.emailAddress,
+                    userData.name
                 );
             } else {
                 throw e;

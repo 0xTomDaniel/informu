@@ -30,6 +30,7 @@ const existingMuTag07 = new ProvisionedMuTag({
     _firmwareVersion: "1.6.1",
     _isSafe: true,
     _lastSeen: dateNow,
+    _macAddress: "8230CBE0DE89",
     _modelNumber: "REV8",
     _muTagNumber: 7,
     _name: "wallet",
@@ -48,6 +49,7 @@ const existingMuTag08 = new ProvisionedMuTag({
     _firmwareVersion: "1.6.1",
     _isSafe: true,
     _lastSeen: dateNow,
+    _macAddress: "8230CBE0D2389",
     _modelNumber: "REV8",
     _muTagNumber: 8,
     _name: "bag",
@@ -82,6 +84,7 @@ const muTag01 = new ProvisionedMuTag({
     _firmwareVersion: "1.6.1",
     _isSafe: true,
     _lastSeen: dateNow,
+    _macAddress: "822CBE0DE89",
     _modelNumber: "REV8",
     _muTagNumber: 12,
     _name: "keys",
@@ -102,6 +105,7 @@ const muTag02 = new ProvisionedMuTag({
     _firmwareVersion: "1.6.1",
     _isSafe: true,
     _lastSeen: dateNow,
+    _macAddress: "8230CBEFBE89",
     _modelNumber: "REV8",
     _muTagNumber: 13,
     _name: "laptop",
@@ -122,6 +126,7 @@ const muTag03 = new ProvisionedMuTag({
     _firmwareVersion: "1.6.1",
     _isSafe: true,
     _lastSeen: dateNow,
+    _macAddress: "8000CBE0DE89",
     _modelNumber: "REV8",
     _muTagNumber: 14,
     _name: "bag",
@@ -181,12 +186,15 @@ test("successfully populate Mu tag cache from logged in account", async (): Prom
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
+        _name: "Billy Cruise",
         _nextBeaconId: BeaconId.create("B"),
+        _nextSafeZoneNumber: 3,
         _recycledBeaconIds: new Set([
             BeaconId.create("2"),
             BeaconId.create("D")
         ]),
         _nextMuTagNumber: 4,
+        _onboarding: false,
         _muTags: new Set(["randomUUID07", "randomUUID08"])
     });
     const accountJSON = account.serialize();

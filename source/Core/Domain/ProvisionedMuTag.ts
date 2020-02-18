@@ -3,6 +3,9 @@ import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import Hexadecimal from "../../../source (restructure)/shared/metaLanguage/Hexadecimal";
 import { BehaviorSubject, Observable, combineLatest } from "rxjs";
 import { map } from "rxjs/operators";
+import isType, {
+    RuntimeType
+} from "../../../source (restructure)/shared/metaLanguage/isType";
 
 class InvalidBeaconId extends RangeError {
     constructor(value: string) {
@@ -26,66 +29,69 @@ export class BeaconId extends Hexadecimal {
 }
 
 export interface MuTagData {
-    _advertisingInterval: number;
-    _batteryLevel: Percent;
-    _beaconId: BeaconId;
-    _color: MuTagColor;
-    _dateAdded: Date;
-    _didExitRegion: boolean;
-    _firmwareVersion: string;
-    _isSafe: boolean;
-    _lastSeen: Date;
-    _modelNumber: string;
-    _muTagNumber: number;
-    _name: string;
-    _recentLatitude: number;
-    _recentLongitude: number;
-    _txPower: number;
-    _uid: string;
+    readonly _advertisingInterval: number;
+    readonly _batteryLevel: Percent;
+    readonly _beaconId: BeaconId;
+    readonly _color: MuTagColor;
+    readonly _dateAdded: Date;
+    readonly _didExitRegion: boolean;
+    readonly _firmwareVersion: string;
+    readonly _isSafe: boolean;
+    readonly _lastSeen: Date;
+    readonly _macAddress: string;
+    readonly _modelNumber: string;
+    readonly _muTagNumber: number;
+    readonly _name: string;
+    readonly _recentLatitude: number;
+    readonly _recentLongitude: number;
+    readonly _txPower: number;
+    readonly _uid: string;
 }
 
 export interface MuTagJson {
-    _advertisingInterval: number;
-    _batteryLevel: number;
-    _beaconId: string;
-    _color: number;
-    _dateAdded: string;
-    _didExitRegion: boolean;
-    _firmwareVersion: string;
-    _isSafe: boolean;
-    _lastSeen: string;
-    _modelNumber: string;
-    _muTagNumber: number;
-    _name: string;
-    _recentLatitude: number;
-    _recentLongitude: number;
-    _txPower: number;
-    _uid: string;
+    readonly _advertisingInterval: number;
+    readonly _batteryLevel: number;
+    readonly _beaconId: string;
+    readonly _color: number;
+    readonly _dateAdded: string;
+    readonly _didExitRegion: boolean;
+    readonly _firmwareVersion: string;
+    readonly _isSafe: boolean;
+    readonly _lastSeen: string;
+    readonly _macAddress: string;
+    readonly _modelNumber: string;
+    readonly _muTagNumber: number;
+    readonly _name: string;
+    readonly _recentLatitude: number;
+    readonly _recentLongitude: number;
+    readonly _txPower: number;
+    readonly _uid: string;
 }
 
 export function assertIsMuTagJson(object: {
     [key: string]: any;
 }): asserts object is MuTagJson {
     const propertyRequirements = new Map([
-        ["_advertisingInterval", "number"],
-        ["_batteryLevel", "number"],
-        ["_beaconId", "string"],
-        ["_color", "number"],
-        ["_dateAdded", "string"],
-        ["_didExitRegion", "boolean"],
-        ["_firmwareVersion", "string"],
-        ["_isSafe", "boolean"],
-        ["_lastSeen", "string"],
-        ["_modelNumber", "string"],
-        ["_muTagNumber", "number"],
-        ["_name", "string"],
-        ["_recentLatitude", "number"],
-        ["_recentLongitude", "number"],
-        ["_txPower", "number"],
-        ["_uid", "string"]
+        ["_advertisingInterval", RuntimeType.Number],
+        ["_batteryLevel", RuntimeType.Number],
+        ["_beaconId", RuntimeType.String],
+        ["_color", RuntimeType.Number],
+        ["_dateAdded", RuntimeType.String],
+        ["_didExitRegion", RuntimeType.Boolean],
+        ["_firmwareVersion", RuntimeType.String],
+        ["_isSafe", RuntimeType.Boolean],
+        ["_lastSeen", RuntimeType.String],
+        ["_macAddress", RuntimeType.String],
+        ["_modelNumber", RuntimeType.String],
+        ["_muTagNumber", RuntimeType.Number],
+        ["_name", RuntimeType.String],
+        ["_recentLatitude", RuntimeType.Number],
+        ["_recentLongitude", RuntimeType.Number],
+        ["_txPower", RuntimeType.Number],
+        ["_uid", RuntimeType.String]
     ]);
     for (const [key, type] of propertyRequirements) {
-        if (!(key in object && typeof object[key] === type)) {
+        if (!(key in object && isType(object[key], type))) {
             throw Error("Object is not MuTagJson.");
         }
     }
@@ -121,6 +127,7 @@ export default class ProvisionedMuTag extends MuTag {
     private set _lastSeen(newValue: Date) {
         this._accessorValue.lastSeen.next(newValue);
     }
+    private readonly _macAddress: string;
     private _modelNumber: string;
     private readonly _muTagNumber: number;
     private _name: string;
@@ -147,6 +154,7 @@ export default class ProvisionedMuTag extends MuTag {
         this._dateAdded = muTagData._dateAdded;
         this._didExitRegion = muTagData._didExitRegion;
         this._firmwareVersion = muTagData._firmwareVersion;
+        this._macAddress = muTagData._macAddress;
         this._modelNumber = muTagData._modelNumber;
         this._muTagNumber = muTagData._muTagNumber;
         this._name = muTagData._name;

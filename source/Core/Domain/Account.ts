@@ -3,6 +3,9 @@ import { BeaconId } from "./ProvisionedMuTag";
 import { BehaviorSubject, Observable } from "rxjs";
 import { pairwise, map } from "rxjs/operators";
 import _ from "lodash";
+import isType, {
+    RuntimeType
+} from "../../../source (restructure)/shared/metaLanguage/isType";
 
 class InvalidAccountNumber extends RangeError {
     constructor(value: string) {
@@ -55,62 +58,61 @@ class NewBeaconIdNotFound extends Error {
 }
 
 export interface AccountData {
-    readonly _uid: string;
     readonly _accountNumber: AccountNumber;
     readonly _emailAddress: string;
-    readonly _nextBeaconId: BeaconId;
-    readonly _recycledBeaconIds: Set<BeaconId>;
-    readonly _nextMuTagNumber: number;
     readonly _muTags: Set<string>;
+    readonly _name: string;
+    readonly _nextBeaconId: BeaconId;
+    readonly _nextMuTagNumber: number;
+    readonly _nextSafeZoneNumber: number;
+    readonly _onboarding: boolean;
+    readonly _recycledBeaconIds: Set<BeaconId>;
+    readonly _uid: string;
 }
 
-export interface AccountJSON {
-    readonly _uid: string;
+export interface AccountJson {
     readonly _accountNumber: string;
     readonly _emailAddress: string;
-    readonly _nextBeaconId: string;
-    readonly _recycledBeaconIds?: string[];
-    readonly _nextMuTagNumber: number;
     readonly _muTags?: string[];
+    readonly _name: string;
+    readonly _nextBeaconId: string;
+    readonly _nextMuTagNumber: number;
+    readonly _nextSafeZoneNumber: number;
+    readonly _onboarding: boolean;
+    readonly _recycledBeaconIds?: string[];
+    readonly _uid: string;
 }
 
-const isStringArray = (value: any): value is string[] => {
-    return (
-        Array.isArray(value) &&
-        value.every((item): boolean => typeof item === "string")
-    );
-};
-
-export const isAccountJSON = (object: {
+export function assertIsAccountJson(object: {
     [key: string]: any;
-}): object is AccountJSON => {
-    const isUIDValid = "_uid" in object && typeof object._uid === "string";
-    const isAccountNumberValid =
-        "_accountNumber" in object && typeof object._accountNumber === "string";
-    const isEmailAddressValid =
-        "_emailAddress" in object && typeof object._emailAddress === "string";
-    const isNextBeaconIdValid =
-        "_nextBeaconId" in object && typeof object._nextBeaconId === "string";
-    const isRecycledBeaconIdsValid =
-        "_recycledBeaconIds" in object
-            ? isStringArray(object._recycledBeaconIds)
-            : true;
-    const isNextMuTagNumberValid =
-        "_nextMuTagNumber" in object &&
-        typeof object._nextMuTagNumber === "number";
-    const isMuTagsValid =
-        "_muTags" in object ? isStringArray(object._muTags) : true;
-
-    return (
-        isUIDValid &&
-        isAccountNumberValid &&
-        isEmailAddressValid &&
-        isNextBeaconIdValid &&
-        isRecycledBeaconIdsValid &&
-        isNextMuTagNumberValid &&
-        isMuTagsValid
-    );
-};
+}): asserts object is AccountJson {
+    const propertyRequirements = new Map([
+        ["_accountNumber", RuntimeType.String],
+        ["_emailAddress", RuntimeType.String],
+        ["_name", RuntimeType.String],
+        ["_nextBeaconId", RuntimeType.String],
+        ["_nextMuTagNumber", RuntimeType.Number],
+        ["_nextSafeZoneNumber", RuntimeType.Number],
+        ["_onboarding", RuntimeType.Boolean],
+        ["_uid", RuntimeType.String]
+    ]);
+    for (const [key, type] of propertyRequirements) {
+        if (!(key in object && isType(object[key], type))) {
+            throw Error("Object is not AccountJson.");
+        }
+    }
+    const optionalPropertyRequirements = new Map([
+        ["_muTags", RuntimeType.StringArray],
+        ["_recycledBeaconIds", RuntimeType.StringArray]
+    ]);
+    for (const [key, type] of optionalPropertyRequirements) {
+        if (key in object) {
+            if (!isType(object[key], type)) {
+                throw Error("Object is not AccountJson.");
+            }
+        }
+    }
+}
 
 interface AccessorValue {
     readonly muTags: BehaviorSubject<Set<string>>;
@@ -122,19 +124,24 @@ export interface MuTagsChange {
 }
 
 export default class Account {
-    private readonly _uid: string;
     private readonly _accountNumber: AccountNumber;
     private _emailAddress: string;
-    private _nextBeaconId: BeaconId;
-    private readonly _recycledBeaconIds: Set<BeaconId>;
-    private _nextMuTagNumber: number;
     private get _muTags(): Set<string> {
         return this._accessorValue.muTags.value;
     }
     private set _muTags(newValue: Set<string>) {
         this._accessorValue.muTags.next(newValue);
     }
+    private _name: string;
+    private _nextBeaconId: BeaconId;
+    private _nextMuTagNumber: number;
+    private _nextSafeZoneNumber: number;
+    private _onboarding: boolean;
+    private readonly _recycledBeaconIds: Set<BeaconId>;
+    private readonly _uid: string;
 
+    // This property is not part of the model. It only serves to make some
+    // properties observable.
     private readonly _accessorValue: AccessorValue;
 
     constructor(accountData: AccountData) {
@@ -144,6 +151,9 @@ export default class Account {
         this._nextBeaconId = accountData._nextBeaconId;
         this._recycledBeaconIds = accountData._recycledBeaconIds;
         this._nextMuTagNumber = accountData._nextMuTagNumber;
+        this._name = accountData._name;
+        this._nextSafeZoneNumber = accountData._nextSafeZoneNumber;
+        this._onboarding = accountData._onboarding;
         this._accessorValue = {
             muTags: new BehaviorSubject(accountData._muTags)
         };
@@ -193,7 +203,7 @@ export default class Account {
         );
     }
 
-    get json(): AccountJSON {
+    get json(): AccountJson {
         const json = this.serialize();
         return JSON.parse(json);
     }
@@ -227,7 +237,7 @@ export default class Account {
         return JSON.stringify(this, Account.replacer);
     }
 
-    static deserialize(json: string | AccountJSON): Account {
+    static deserialize(json: string | AccountJson): Account {
         const jsonString =
             typeof json === "string" ? json : JSON.stringify(json);
         return JSON.parse(jsonString, Account.reviver);
@@ -252,10 +262,14 @@ export default class Account {
                 return value.stringValue;
             case "_recycledBeaconIds": {
                 const beaconIds: BeaconId[] = Array.from(value);
-                return beaconIds.map((beaconId): string => beaconId.toString());
+                return beaconIds.length === 0
+                    ? undefined
+                    : beaconIds.map((beaconId): string => beaconId.toString());
             }
-            case "_muTags":
-                return Array.from(value);
+            case "_muTags": {
+                const muTags = Array.from(value);
+                return muTags.length === 0 ? undefined : muTags;
+            }
             case "_accessorValue":
                 // This property is not part of the model. It only serves to
                 // make some properties observable.
