@@ -46,6 +46,12 @@ export default class LoginPresenter implements LoginOutput {
         });
     }
 
+    showSignedOutMessage(message: string): void {
+        this.viewModel.updateState({
+            message: message
+        });
+    }
+
     private enableLogInButton(): void {
         this.viewModel.updateState({ logInButtonDisabled: false });
     }

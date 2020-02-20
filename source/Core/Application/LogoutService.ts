@@ -3,8 +3,8 @@ import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
-import DatabaseImplWatermelon from "../../Secondary Adapters/Persistence/DatabaseImplWatermelon";
 import BelongingDetectionService from "./BelongingDetectionService";
+import { Database } from "../../Secondary Adapters/Persistence/Database";
 
 export default class LogoutService {
     private readonly logoutOutput: LogoutOutput;
@@ -12,7 +12,7 @@ export default class LogoutService {
     private readonly accountRepoRemote: AccountRepositoryRemote;
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly muTagRepoRemote: MuTagRepositoryRemote;
-    private readonly database: DatabaseImplWatermelon;
+    private readonly database: Database;
     private readonly belongingDetectionService: BelongingDetectionService;
 
     private onResetAllDependenciesCallback?: () => void;
@@ -23,7 +23,7 @@ export default class LogoutService {
         accountRepoRemote: AccountRepositoryRemote,
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
-        database: DatabaseImplWatermelon,
+        database: Database,
         belongingDetectionService: BelongingDetectionService
     ) {
         this.logoutOutput = logoutOutput;
@@ -36,6 +36,7 @@ export default class LogoutService {
     }
 
     async logOut(): Promise<void> {
+        // TODO: Use SessionInteractor to delete account data
         this.logoutOutput.showBusyIndicator();
 
         const account = await this.accountRepoLocal.get();

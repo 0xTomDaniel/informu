@@ -221,7 +221,7 @@ describe("user logs into their account", (): void => {
 
         // Then
         //
-        it("should save account login locally", (): void => {
+        it("should authenticate with credentials", (): void => {
             expect(
                 authenticationMock.authenticateWithEmail
             ).toHaveBeenCalledWith(
@@ -231,18 +231,6 @@ describe("user logs into their account", (): void => {
             expect(
                 authenticationMock.authenticateWithEmail
             ).toHaveBeenCalledTimes(1);
-            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledWith(
-                userData.uid
-            );
-            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledTimes(1);
-            expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
-            expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
-            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledWith(
-                userData.uid
-            );
-            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledTimes(1);
-            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledWith(muTags);
-            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -299,22 +287,10 @@ describe("user logs into their account", (): void => {
 
         // Then
         //
-        it("should save account login locally", (): void => {
+        it("should authenticate with credentials", (): void => {
             expect(
                 authenticationMock.authenticateWithFacebook
             ).toHaveBeenCalledTimes(1);
-            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledWith(
-                userData.uid
-            );
-            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledTimes(1);
-            expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
-            expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
-            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledWith(
-                userData.uid
-            );
-            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledTimes(1);
-            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledWith(muTags);
-            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -371,22 +347,10 @@ describe("user logs into their account", (): void => {
 
         // Then
         //
-        it("should save account login locally", (): void => {
+        it("should authenticate with credentials", (): void => {
             expect(
                 authenticationMock.authenticateWithGoogle
             ).toHaveBeenCalledTimes(1);
-            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledWith(
-                userData.uid
-            );
-            expect(accountRepoRemoteMock.getByUid).toHaveBeenCalledTimes(1);
-            expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
-            expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
-            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledWith(
-                userData.uid
-            );
-            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledTimes(1);
-            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledWith(muTags);
-            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -519,7 +483,7 @@ describe("user logs into their account", (): void => {
         });
     });
 
-    describe("account does not exist for email authentication", (): void => {
+    describe("credentials do not exist for email authentication", (): void => {
         // Given that no account is logged in
 
         // Given credentials meet input validation requirements
@@ -561,138 +525,6 @@ describe("user logs into their account", (): void => {
                 new InvalidCredentials()
             );
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
-        });
-    });
-
-    describe("account does not exist for federated authentication (Google)", (): void => {
-        // Given that no account is logged in
-
-        // Given that user has launched federated authentication option
-
-        // Given that credentials are valid for authentication
-        const userData: UserData = {
-            uid: "YVbsaRtrg5Ssn6BuROngSrdUHUB2",
-            emailAddress: "newUser@gmail.com",
-            name: "Bell Johnson"
-        };
-        (authenticationMock.authenticateWithGoogle as jest.Mock).mockResolvedValueOnce(
-            userData
-        );
-
-        // Given that an account does not exist for the provided credentials
-        (accountRepoRemoteMock.getByUid as jest.Mock).mockRejectedValueOnce(
-            new DoesNotExist()
-        );
-
-        // When the user submits credentials
-        //
-        beforeAll(
-            async (): Promise<void> => {
-                await loginService.signInWithGoogle();
-            }
-        );
-
-        afterAll((): void => {
-            jest.clearAllMocks();
-        });
-
-        // Then
-        //
-        it("should show activity indicator", (): void => {
-            expect(loginOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should register new account", (): void => {
-            expect(
-                accountRegistrationServiceMock.registerFederated
-            ).toHaveBeenCalledTimes(1);
-            expect(
-                accountRegistrationServiceMock.registerFederated
-            ).toHaveBeenCalledWith(
-                userData.uid,
-                userData.emailAddress,
-                userData.name
-            );
-        });
-
-        // Then
-        //
-        it("should start login session", (): void => {
-            expect(sessionServiceMock.start).toHaveBeenCalledTimes(1);
-            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledTimes(
-                0
-            );
-            expect(
-                loginOutputMock.showFederatedLoginError
-            ).toHaveBeenCalledTimes(0);
-        });
-    });
-
-    describe("account does not exist for federated authentication (Facebook)", (): void => {
-        // Given that no account is logged in
-
-        // Given that user has launched federated authentication option
-
-        // Given that credentials are valid for authentication
-        const userData: UserData = {
-            uid: "Z8b0C6BB7pMwTFwlyMShdnOPQ7V2",
-            emailAddress: "newUser2@gmail.com",
-            name: "Jason Cook"
-        };
-        (authenticationMock.authenticateWithFacebook as jest.Mock).mockResolvedValueOnce(
-            userData
-        );
-
-        // Given that an account does not exist for the provided credentials
-        (accountRepoRemoteMock.getByUid as jest.Mock).mockRejectedValueOnce(
-            new DoesNotExist()
-        );
-
-        // When the user submits credentials
-        //
-        beforeAll(
-            async (): Promise<void> => {
-                await loginService.signInWithFacebook();
-            }
-        );
-
-        afterAll((): void => {
-            jest.clearAllMocks();
-        });
-
-        // Then
-        //
-        it("should show activity indicator", (): void => {
-            expect(loginOutputMock.showBusyIndicator).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should register new account", (): void => {
-            expect(
-                accountRegistrationServiceMock.registerFederated
-            ).toHaveBeenCalledTimes(1);
-            expect(
-                accountRegistrationServiceMock.registerFederated
-            ).toHaveBeenCalledWith(
-                userData.uid,
-                userData.emailAddress,
-                userData.name
-            );
-        });
-
-        // Then
-        //
-        it("should start login session", (): void => {
-            expect(sessionServiceMock.start).toHaveBeenCalledTimes(1);
-            expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledTimes(
-                0
-            );
-            expect(
-                loginOutputMock.showFederatedLoginError
-            ).toHaveBeenCalledTimes(0);
         });
     });
 

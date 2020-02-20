@@ -6,4 +6,5 @@ export default interface LoginOutput {
     showHomeScreen(): void;
     showEmailLoginError(error: Error): void;
     showFederatedLoginError(error: UserError): void;
+    showSignedOutMessage(message: string): void;
 }

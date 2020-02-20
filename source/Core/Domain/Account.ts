@@ -67,6 +67,7 @@ export interface AccountData {
     readonly _nextSafeZoneNumber: number;
     readonly _onboarding: boolean;
     readonly _recycledBeaconIds: Set<BeaconId>;
+    readonly _sessionId?: string;
     readonly _uid: string;
 }
 
@@ -80,6 +81,7 @@ export interface AccountJson {
     readonly _nextSafeZoneNumber: number;
     readonly _onboarding: boolean;
     readonly _recycledBeaconIds?: string[];
+    readonly _sessionId?: string;
     readonly _uid: string;
 }
 
@@ -103,7 +105,8 @@ export function assertIsAccountJson(object: {
     }
     const optionalPropertyRequirements = new Map([
         ["_muTags", RuntimeType.StringArray],
-        ["_recycledBeaconIds", RuntimeType.StringArray]
+        ["_recycledBeaconIds", RuntimeType.StringArray],
+        ["_sessionId", RuntimeType.String]
     ]);
     for (const [key, type] of optionalPropertyRequirements) {
         if (key in object) {
@@ -138,6 +141,7 @@ export default class Account {
     private _nextSafeZoneNumber: number;
     private _onboarding: boolean;
     private readonly _recycledBeaconIds: Set<BeaconId>;
+    private _sessionId?: string;
     private readonly _uid: string;
 
     // This property is not part of the model. It only serves to make some
@@ -145,15 +149,16 @@ export default class Account {
     private readonly _accessorValue: AccessorValue;
 
     constructor(accountData: AccountData) {
-        this._uid = accountData._uid;
         this._accountNumber = accountData._accountNumber;
         this._emailAddress = accountData._emailAddress;
-        this._nextBeaconId = accountData._nextBeaconId;
-        this._recycledBeaconIds = accountData._recycledBeaconIds;
-        this._nextMuTagNumber = accountData._nextMuTagNumber;
         this._name = accountData._name;
+        this._nextBeaconId = accountData._nextBeaconId;
+        this._nextMuTagNumber = accountData._nextMuTagNumber;
         this._nextSafeZoneNumber = accountData._nextSafeZoneNumber;
         this._onboarding = accountData._onboarding;
+        this._recycledBeaconIds = accountData._recycledBeaconIds;
+        this._sessionId = accountData._sessionId;
+        this._uid = accountData._uid;
         this._accessorValue = {
             muTags: new BehaviorSubject(accountData._muTags)
         };
@@ -231,6 +236,18 @@ export default class Account {
         if (muTags.delete(muTagUID)) {
             this._muTags = muTags;
         }
+    }
+
+    setSession(sessionId: string): void {
+        this._sessionId = sessionId;
+    }
+
+    clearSession(): void {
+        this._sessionId = undefined;
+    }
+
+    isSignedIntoOtherDevice(sessionId: string): boolean {
+        return this._sessionId == null ? false : this._sessionId !== sessionId;
     }
 
     serialize(): string {

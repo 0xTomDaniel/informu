@@ -88,6 +88,38 @@ test("successfully serializes and deserializes Account (empty collections)", ():
     expect(account).toEqual(referenceAccountEmptyCollections);
 });
 
+describe("session management", (): void => {
+    const thisSessionId = "3179b6fe-1b95-4852-bff6-db3c125049dd";
+    const otherSessionId = "5179b6fe-1b95-4852-bff6-db3c125049df";
+
+    afterAll((): void => {
+        jest.clearAllMocks();
+    });
+
+    test("successfully adds session", (): void => {
+        referenceAccount.setSession(thisSessionId);
+        expect(referenceAccount.isSignedIntoOtherDevice(thisSessionId)).toBe(
+            false
+        );
+    });
+
+    test("successfully checks if in session on other device", (): void => {
+        expect(referenceAccount.isSignedIntoOtherDevice(otherSessionId)).toBe(
+            true
+        );
+    });
+
+    test("successfully removes session", (): void => {
+        referenceAccount.clearSession();
+        expect(referenceAccount.isSignedIntoOtherDevice(thisSessionId)).toBe(
+            false
+        );
+        expect(referenceAccount.isSignedIntoOtherDevice(otherSessionId)).toBe(
+            false
+        );
+    });
+});
+
 describe("adding and removing Mu tags", (): void => {
     const beaconIdOne = referenceAccount.newBeaconId;
     const muTagUIDOne = "UUID01";

@@ -24,6 +24,7 @@ import { Images } from "./Images";
 import Theme from "./Theme";
 import { Button } from "react-native-paper";
 import ErrorDialog from "./Base Components/ErrorDialog";
+import MessageDialog from "./Base Components/MessageDialog";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -127,6 +128,11 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
     const onDismissErrorDialog = (): void => {
         props.viewModel.updateState({
             federatedErrorMessage: ""
+        });
+    };
+    const onDismissMessageDialog = (): void => {
+        props.viewModel.updateState({
+            message: ""
         });
     };
 
@@ -237,6 +243,11 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                     detailMessage={state.detailedErrorDescription}
                     visible={state.federatedErrorMessage !== ""}
                     onDismiss={onDismissErrorDialog}
+                />
+                <MessageDialog
+                    message={state.message}
+                    visible={state.message !== ""}
+                    onDismiss={onDismissMessageDialog}
                 />
             </SafeAreaView>
         </TouchableWithoutFeedback>

@@ -12,10 +12,7 @@ import {
     FacebookSignInFailed,
     IncorrectSignInMethod
 } from "../Ports/Authentication";
-import {
-    AccountRepositoryRemote,
-    DoesNotExist as AccountDoesNotExistOnRemote
-} from "../Ports/AccountRepositoryRemote";
+import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import {
     DoesNotExist as AccountDoesNotExistOnLocal,
     FailedToGet,
@@ -28,7 +25,6 @@ import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import { Session } from "./SessionService";
 import { AccountRegistration } from "./AccountRegistrationService";
-import { UserData } from "../Ports/UserData";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export class ImproperEmailFormat extends Error {
@@ -102,8 +98,7 @@ export class LoginService {
                 emailAddress.rawValue(),
                 password.rawValue()
             );
-            await this.loadAccountFromRemote(userData.uid);
-            await this.sessionService.start();
+            await this.sessionService.start(userData);
         } catch (e) {
             if (
                 this.isLoginServiceException(e) ||
@@ -124,8 +119,7 @@ export class LoginService {
         this.sessionService.pauseLoadOnce();
         try {
             const userData = await this.authentication.authenticateWithFacebook();
-            await this.loadOrCreateAccount(userData);
-            await this.sessionService.start();
+            await this.sessionService.start(userData);
         } catch (e) {
             switch (e.name) {
                 case "FacebookSignInFailed":
@@ -150,8 +144,7 @@ export class LoginService {
         this.sessionService.pauseLoadOnce();
         try {
             const userData = await this.authentication.authenticateWithGoogle();
-            await this.loadOrCreateAccount(userData);
-            await this.sessionService.start();
+            await this.sessionService.start(userData);
         } catch (e) {
             switch (e.name) {
                 case "GooglePlayServicesNotAvailable":
@@ -170,29 +163,6 @@ export class LoginService {
         } finally {
             this.loginOutput.hideBusyIndicator();
         }
-    }
-
-    private async loadOrCreateAccount(userData: UserData): Promise<void> {
-        try {
-            await this.loadAccountFromRemote(userData.uid);
-        } catch (e) {
-            if (e instanceof AccountDoesNotExistOnRemote) {
-                await this.accountRegistrationService.registerFederated(
-                    userData.uid,
-                    userData.emailAddress,
-                    userData.name
-                );
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    private async loadAccountFromRemote(uid: string): Promise<void> {
-        const account = await this.accountRepoRemote.getByUid(uid);
-        await this.accountRepoLocal.add(account);
-        const muTags = await this.muTagRepoRemote.getAll(uid);
-        await this.muTagRepoLocal.addMultiple(muTags);
     }
 
     private isLoginServiceException(

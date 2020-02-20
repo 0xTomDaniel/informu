@@ -67,7 +67,7 @@ describe("user registers new account", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await accountRegistrationService.registerFederated(
+                await accountRegistrationService.register(
                     newUID,
                     newEmail,
                     name

@@ -12,22 +12,12 @@ export class DoesNotExist extends UserError {
     name = "DoesNotExist";
     userErrorDescription =
         "Account entity does not exist in remote persistence.";
-    constructor() {
-        super();
-        this.name;
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
 }
 
 export class FailedToGet extends UserError {
     name = "FailedToGet";
     userErrorDescription =
         "Failed to get account entity from remote persistence.";
-    constructor() {
-        super();
-        this.name = "FailedToGet";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
 }
 
 export class PersistedDataMalformed extends UserError {

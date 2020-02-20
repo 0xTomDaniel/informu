@@ -1,11 +1,12 @@
+import _ from "lodash";
+
 export enum Screen {
     Entry,
     App,
-    LoadSession,
+    LoadSession
 }
 
 export default class AppViewModel {
-
     private onNavigateCallback: ((screen: Screen) => void) | undefined;
 
     onNavigate(callback: ((screen: Screen) => void) | undefined): void {
