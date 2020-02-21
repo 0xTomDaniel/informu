@@ -58,7 +58,8 @@ const BluetoothMock = jest.fn<Bluetooth, any>(
         connect: jest.fn(),
         disconnect: jest.fn(),
         read: jest.fn(),
-        write: jest.fn()
+        write: jest.fn(),
+        enableBluetooth: jest.fn()
     })
 );
 const bluetoothMock = new BluetoothMock();
@@ -111,6 +112,7 @@ describe("Mu tag user adds Mu tag", (): void => {
     (bluetoothMock.connect as jest.Mock).mockResolvedValue(undefined);
     (bluetoothMock.disconnect as jest.Mock).mockResolvedValue(undefined);
     (bluetoothMock.write as jest.Mock).mockResolvedValue(undefined);
+    (bluetoothMock.enableBluetooth as jest.Mock).mockResolvedValue(undefined);
     const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
@@ -445,34 +447,36 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // When
         //
-        beforeAll((): void => {
-            homeViewModel.onNavigateToAddMuTag(
-                () => (didNavigateToAddMuTag = true)
-            );
-            addMuTagViewModel.onNavigateToNameMuTag(
-                () => (didNavigateToNameMuTag = true)
-            );
-            nameMuTagViewModel.onNavigateToMuTagAdding(
-                () => (didNavigateToMuTagConnecting = true)
-            );
-            nameMuTagViewModel.onNavigateToMuTagSettings(
-                () => (didShowMuTagFinalSetupScreen = true)
-            );
-            nameMuTagViewModel.onDidUpdate(change => {
-                if (
-                    "showActivityIndicator" in change &&
-                    change.showActivityIndicator
-                ) {
-                    didShowActivityIndicatorTimes += 1;
-                }
-            });
-            nameMuTagViewModel.onNavigateToHomeScreen(
-                () => (didNavigateToHomeScreen = true)
-            );
-            clock = lolex.install();
-            // user requests to add unprovisioned Mu tag
-            startAddingNewMuTagPromise = addMuTagInteractor.startAddingNewMuTag();
-        });
+        beforeAll(
+            async (): Promise<void> => {
+                homeViewModel.onNavigateToAddMuTag(
+                    () => (didNavigateToAddMuTag = true)
+                );
+                addMuTagViewModel.onNavigateToNameMuTag(
+                    () => (didNavigateToNameMuTag = true)
+                );
+                nameMuTagViewModel.onNavigateToMuTagAdding(
+                    () => (didNavigateToMuTagConnecting = true)
+                );
+                nameMuTagViewModel.onNavigateToMuTagSettings(
+                    () => (didShowMuTagFinalSetupScreen = true)
+                );
+                nameMuTagViewModel.onDidUpdate(change => {
+                    if (
+                        "showActivityIndicator" in change &&
+                        change.showActivityIndicator
+                    ) {
+                        didShowActivityIndicatorTimes += 1;
+                    }
+                });
+                nameMuTagViewModel.onNavigateToHomeScreen(
+                    () => (didNavigateToHomeScreen = true)
+                );
+                clock = lolex.install();
+                // user requests to add unprovisioned Mu tag
+                startAddingNewMuTagPromise = addMuTagInteractor.startAddingNewMuTag();
+            }
+        );
 
         afterAll((): void => {
             jest.clearAllMocks();

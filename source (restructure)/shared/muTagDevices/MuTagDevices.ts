@@ -93,9 +93,7 @@ export default class MuTagDevices
         proximityThreshold: Rssi,
         timeout: Millisecond
     ): Promise<void> {
-        if (!this.hasBluetoothStarted) {
-            throw Error("Bluetooth has not started.");
-        }
+        await this.isBluetoothReady();
         this.unprovisionedMuTagProximityThreshold = proximityThreshold;
         this.pauseUnprovisionedMuTag.next(false);
         await this.bluetooth.startScan([], timeout, ScanMode.lowLatency);
@@ -111,6 +109,7 @@ export default class MuTagDevices
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
     ): Promise<void> {
+        await this.isBluetoothReady();
         const muTagPeripheralId = (id as string) as MuTagPeripheralId;
         await this.connectAndAuthenticateToMuTag(muTagPeripheralId);
         try {
@@ -147,6 +146,7 @@ export default class MuTagDevices
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
     ): Promise<void> {
+        await this.isBluetoothReady();
         const muTagProvisionId = MuTagDevices.getMuTagProvisionIdFrom(
             accountNumber,
             beaconId
@@ -170,6 +170,7 @@ export default class MuTagDevices
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
     ): Promise<void> {
+        await this.isBluetoothReady();
         const muTagProvisionId = MuTagDevices.getMuTagProvisionIdFrom(
             accountNumber,
             beaconId
@@ -255,6 +256,13 @@ export default class MuTagDevices
             MuTagBLEGATT.DeviceInformation.BatteryLevel
         );
         return new Percent(batteryLevelHex.valueOf());
+    }
+
+    private async isBluetoothReady(): Promise<void> {
+        if (!this.hasBluetoothStarted) {
+            throw Error("Bluetooth has not started.");
+        }
+        await this.bluetooth.enableBluetooth();
     }
 
     private async startFindingProvisionedMuTags(

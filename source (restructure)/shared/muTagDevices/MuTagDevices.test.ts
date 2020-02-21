@@ -26,7 +26,8 @@ const BluetoothMock = jest.fn<Bluetooth, any>(
         connect: jest.fn(),
         disconnect: jest.fn(),
         read: jest.fn(),
-        write: jest.fn()
+        write: jest.fn(),
+        enableBluetooth: jest.fn()
     })
 );
 const bluetoothMock = new BluetoothMock();

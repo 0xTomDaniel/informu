@@ -55,4 +55,5 @@ export default interface Bluetooth {
         characteristic: Characteristic<T> & WritableCharacteristic<T>,
         value: T
     ): Promise<void>;
+    enableBluetooth(): Promise<void>;
 }

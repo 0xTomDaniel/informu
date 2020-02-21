@@ -221,6 +221,10 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
         }
     }
 
+    async enableBluetooth(): Promise<void> {
+        await BleManager.enableBluetooth();
+    }
+
     private convertToBytes(byteArray: number[]): Buffer | undefined {
         return byteArray.length === 0 ? undefined : Buffer.from(byteArray);
     }
