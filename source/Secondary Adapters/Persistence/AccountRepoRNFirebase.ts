@@ -163,11 +163,14 @@ export class AccountRepoRNFirebase
         }
 
         const data: { [key: string]: any } = {
-            _uid: uid,
             _accountNumber: snapshotData.account_id,
             _emailAddress: snapshotData.email,
+            _name: snapshotData.name,
             _nextBeaconId: snapshotData.next_beacon_id,
-            _nextMuTagNumber: snapshotData.next_mu_tag_number
+            _nextMuTagNumber: snapshotData.next_mu_tag_number,
+            _nextSafeZoneNumber: snapshotData.next_safe_zone_number,
+            _onboarding: snapshotData.onboarding,
+            _uid: uid
         };
 
         if ("recycled_beacon_ids" in snapshotData) {
