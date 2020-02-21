@@ -16,14 +16,25 @@ import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import AccountRegistrationService from "./AccountRegistrationService";
 import { NewAccountFactory } from "../Ports/NewAccountFactory";
+import LoginOutput from "../Ports/LoginOutput";
 
 describe("user opens saved login session", (): void => {
     const SessionOutputMock = jest.fn<SessionOutput, any>(
         (): SessionOutput => ({
             showHomeScreen: jest.fn(),
             showLoginScreen: jest.fn(),
-            showLoadSessionScreen: jest.fn(),
-            showSignedOutMessage: jest.fn()
+            showLoadSessionScreen: jest.fn()
+        })
+    );
+
+    const LoginOutputMock = jest.fn<LoginOutput, any>(
+        (): LoginOutput => ({
+            showBusyIndicator: jest.fn(),
+            hideBusyIndicator: jest.fn(),
+            showHomeScreen: jest.fn(),
+            showEmailLoginError: jest.fn(),
+            showFederatedLoginError: jest.fn(),
+            showMessage: jest.fn()
         })
     );
 
@@ -99,6 +110,7 @@ describe("user opens saved login session", (): void => {
     );
 
     const sessionOutputMock = new SessionOutputMock();
+    const loginOutputMock = new LoginOutputMock();
     const authenticationMock = new AuthenticationMock();
     const accountRepoLocalMock = new AccountRepositoryLocalMock();
     const accountRepoRemoteMock = new AccountRepositoryRemoteMock();
@@ -119,6 +131,7 @@ describe("user opens saved login session", (): void => {
     );
     const sessionService = new SessionService(
         sessionOutputMock,
+        loginOutputMock,
         authenticationMock,
         accountRepoLocalMock,
         accountRepoRemoteMock,
@@ -429,10 +442,8 @@ describe("user opens saved login session", (): void => {
         // Then
         //
         it("should show message that user has been signed into another device", (): void => {
-            expect(
-                sessionOutputMock.showSignedOutMessage
-            ).toHaveBeenCalledTimes(1);
-            expect(sessionOutputMock.showSignedOutMessage).toHaveBeenCalledWith(
+            expect(loginOutputMock.showMessage).toHaveBeenCalledTimes(1);
+            expect(loginOutputMock.showMessage).toHaveBeenCalledWith(
                 "You have been signed out because your account is signed in on another device."
             );
         });

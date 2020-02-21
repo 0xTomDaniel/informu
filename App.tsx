@@ -168,12 +168,6 @@ export class Dependencies {
             this.belongingDetectionService
         );
         this.logoutService.onResetAllDependencies((): void => this.resetAll());
-        this.sessionService = new SessionService(
-            sessionPresenter,
-            this.authentication,
-            this.accountRepoLocal,
-            this.belongingDetectionService
-        );
         this.loginViewModel = new LoginViewModel();
         this.loginPresenter = new LoginPresenter(this.loginViewModel);
         this.newAccountFactory = new NewAccountFactoryImpl();
@@ -181,6 +175,18 @@ export class Dependencies {
             this.newAccountFactory,
             this.accountRepoRemote,
             this.accountRepoLocal
+        );
+        this.sessionService = new SessionService(
+            sessionPresenter,
+            this.loginPresenter,
+            this.authentication,
+            this.accountRepoLocal,
+            this.accountRepoRemote,
+            this.muTagRepoLocal,
+            this.muTagRepoRemote,
+            this.belongingDetectionService,
+            this.database,
+            this.accountRegistrationService
         );
         this.loginService = new LoginService(
             this.loginPresenter,
@@ -267,19 +273,25 @@ export class Dependencies {
             this.belongingDetectionService
         );
         this.logoutService.onResetAllDependencies((): void => this.resetAll());
-        this.sessionService = new SessionService(
-            sessionPresenter,
-            this.authentication,
-            this.accountRepoLocal,
-            this.belongingDetectionService
-        );
-        this.loginViewModel = new LoginViewModel();
-        this.loginPresenter = new LoginPresenter(this.loginViewModel);
         this.newAccountFactory = new NewAccountFactoryImpl();
         this.accountRegistrationService = new AccountRegistrationService(
             this.newAccountFactory,
             this.accountRepoRemote,
             this.accountRepoLocal
+        );
+        this.loginViewModel = new LoginViewModel();
+        this.loginPresenter = new LoginPresenter(this.loginViewModel);
+        this.sessionService = new SessionService(
+            sessionPresenter,
+            this.loginPresenter,
+            this.authentication,
+            this.accountRepoLocal,
+            this.accountRepoRemote,
+            this.muTagRepoLocal,
+            this.muTagRepoRemote,
+            this.belongingDetectionService,
+            this.database,
+            this.accountRegistrationService
         );
         this.loginService = new LoginService(
             this.loginPresenter,

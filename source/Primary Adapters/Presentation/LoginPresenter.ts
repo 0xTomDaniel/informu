@@ -46,7 +46,7 @@ export default class LoginPresenter implements LoginOutput {
         });
     }
 
-    showSignedOutMessage(message: string): void {
+    showMessage(message: string): void {
         this.viewModel.updateState({
             message: message
         });

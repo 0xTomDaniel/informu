@@ -4,7 +4,7 @@ export default interface LoginOutput {
     showBusyIndicator(): void;
     hideBusyIndicator(): void;
     showHomeScreen(): void;
-    showEmailLoginError(error: Error): void;
+    showEmailLoginError(error: any): void;
     showFederatedLoginError(error: UserError): void;
-    showSignedOutMessage(message: string): void;
+    showMessage(message: string): void;
 }

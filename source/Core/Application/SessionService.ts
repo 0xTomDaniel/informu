@@ -14,6 +14,7 @@ import AccountRegistrationService from "./AccountRegistrationService";
 import { DoesNotExist as AccountDoesNotExistOnRemote } from "../Ports/AccountRepositoryRemote";
 import { Subject } from "rxjs";
 import Account from "../Domain/Account";
+import LoginOutput from "../Ports/LoginOutput";
 
 class SignedIntoOtherDevice extends UserWarning {
     name = "SignedIntoOtherDevice";
@@ -29,6 +30,7 @@ export interface Session {
 
 export default class SessionService implements Session {
     private readonly sessionOutput: SessionOutput;
+    private readonly loginOutput: LoginOutput;
     private readonly signedOutMessage =
         "You have been signed out because your account is signed in on another device.";
     private readonly authentication: Authentication;
@@ -45,6 +47,7 @@ export default class SessionService implements Session {
 
     constructor(
         sessionOutput: SessionOutput,
+        loginOutput: LoginOutput,
         authentication: Authentication,
         accountRepoLocal: AccountRepositoryLocal,
         accountRepoRemote: AccountRepositoryRemote,
@@ -55,6 +58,7 @@ export default class SessionService implements Session {
         accountRegistrationService: AccountRegistrationService
     ) {
         this.sessionOutput = sessionOutput;
+        this.loginOutput = loginOutput;
         this.authentication = authentication;
         this.accountRepoLocal = accountRepoLocal;
         this.accountRepoRemote = accountRepoRemote;
@@ -90,7 +94,7 @@ export default class SessionService implements Session {
             }
             if (remoteAccount.isSignedIntoOtherDevice(sessionId)) {
                 await this.end(false);
-                this.sessionOutput.showSignedOutMessage(this.signedOutMessage);
+                this.loginOutput.showMessage(this.signedOutMessage);
                 return;
             }
 

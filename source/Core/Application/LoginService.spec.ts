@@ -5,10 +5,7 @@ import {
     ImproperEmailFormat,
     ImproperPasswordComplexity
 } from "./LoginService";
-import {
-    AccountRepositoryRemote,
-    DoesNotExist
-} from "../Ports/AccountRepositoryRemote";
+import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import Account, { AccountNumber, AccountData } from "../Domain/Account";
 import {
     Authentication,
@@ -35,7 +32,8 @@ describe("user logs into their account", (): void => {
             hideBusyIndicator: jest.fn(),
             showHomeScreen: jest.fn(),
             showEmailLoginError: jest.fn(),
-            showFederatedLoginError: jest.fn()
+            showFederatedLoginError: jest.fn(),
+            showMessage: jest.fn()
         })
     );
 
