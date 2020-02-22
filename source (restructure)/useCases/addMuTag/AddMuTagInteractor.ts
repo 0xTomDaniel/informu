@@ -14,6 +14,7 @@ import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import UserError from "../../shared/metaLanguage/UserError";
 import UserWarning from "../../shared/metaLanguage/UserWarning";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
+import { take } from "rxjs/operators";
 
 class LowMuTagBattery extends UserError {
     name = "LowMuTagBattery";
@@ -160,21 +161,21 @@ export default class AddMuTagInteractor {
     ): Promise<UnprovisionedMuTag> {
         let didPromiseComplete = false;
         return new Promise((resolve, reject) => {
-            const subscription = this.muTagDevices.unprovisionedMuTag.subscribe(
-                unprovisionedMuTag => {
+            const subscription = this.muTagDevices.unprovisionedMuTag
+                .pipe(take(1))
+                .subscribe(unprovisionedMuTag => {
                     if (!didPromiseComplete) {
                         didPromiseComplete = true;
+                        this.muTagDevices.stopFindingUnprovisionedMuTags();
                         resolve(unprovisionedMuTag);
                     }
-                    this.muTagDevices.stopFindingUnprovisionedMuTags();
-                    subscription.unsubscribe();
-                }
-            );
+                });
             this.muTagDevices
                 .startFindingUnprovisionedMuTags(this.connectThreshold, timeout)
                 .then(() => {
                     if (!didPromiseComplete) {
                         didPromiseComplete = true;
+                        subscription.unsubscribe();
                         reject(
                             new Error(
                                 "Could not find any unprovisioned Mu tags."

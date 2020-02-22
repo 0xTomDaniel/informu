@@ -97,6 +97,7 @@ export default class MuTagDevices
         this.unprovisionedMuTagProximityThreshold = proximityThreshold;
         this.pauseUnprovisionedMuTag.next(false);
         await this.bluetooth.startScan([], timeout, ScanMode.lowLatency);
+        this.pauseUnprovisionedMuTag.next(true);
     }
 
     stopFindingUnprovisionedMuTags(): void {

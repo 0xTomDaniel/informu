@@ -25,11 +25,11 @@ import {
     tap,
     skipWhile,
     concatMap,
-    first,
     switchMap,
     map,
     catchError,
-    distinct
+    distinct,
+    take
 } from "rxjs/operators";
 
 interface PeripheralConnection {
@@ -55,7 +55,6 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
         this.bleManagerEmitter,
         "BleManagerDisconnectPeripheral"
     );
-    //private readonly peripheralWillConnect = new Subject<PeripheralId>();
     private readonly scanCache = new Set<PeripheralId>();
     private readonly scanState = new BehaviorSubject(ScanState.Stopped);
     private readonly bleManagerStopScan = fromEvent<undefined>(
@@ -151,7 +150,7 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
         }
         return new Promise((resolve, reject) => {
             this.bleManagerStopScan
-                .pipe(first())
+                .pipe(take(1))
                 .subscribe(undefined, undefined, () => {
                     this.scanCache.clear();
                     this.scanState.next(ScanState.Stopped);
