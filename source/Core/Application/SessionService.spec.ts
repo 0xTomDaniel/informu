@@ -191,14 +191,6 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should show session loading screen", (): void => {
-            expect(
-                sessionOutputMock.showLoadSessionScreen
-            ).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
         it("should show the home screen", (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
             expect(authenticationMock.isAuthenticatedAs).toHaveBeenCalledWith(
@@ -237,14 +229,6 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should show session loading screen", (): void => {
-            expect(
-                sessionOutputMock.showLoadSessionScreen
-            ).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
         it("should show the login screen", (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
             expect(sessionOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
@@ -276,14 +260,6 @@ describe("user opens saved login session", (): void => {
         afterAll((): void => {
             subscription.unsubscribe();
             jest.clearAllMocks();
-        });
-
-        // Then
-        //
-        it("should show session loading screen", (): void => {
-            expect(
-                sessionOutputMock.showLoadSessionScreen
-            ).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -404,14 +380,6 @@ describe("user opens saved login session", (): void => {
         afterAll((): void => {
             subscription.unsubscribe();
             jest.clearAllMocks();
-        });
-
-        // Then
-        //
-        it("should show session loading screen", (): void => {
-            expect(
-                sessionOutputMock.showLoadSessionScreen
-            ).toHaveBeenCalledTimes(1);
         });
 
         // Then

@@ -75,7 +75,7 @@ export default class SessionService implements Session {
             return;
         }
 
-        this.sessionOutput.showLoadSessionScreen();
+        //this.sessionOutput.showLoadSessionScreen();
 
         try {
             const account = await this.accountRepoLocal.get();
