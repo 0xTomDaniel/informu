@@ -158,16 +158,6 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
-        this.logoutService = new LogoutService(
-            this.logoutPresenter,
-            this.accountRepoLocal,
-            this.accountRepoRemote,
-            this.muTagRepoLocal,
-            this.muTagRepoRemote,
-            this.database,
-            this.belongingDetectionService
-        );
-        this.logoutService.onResetAllDependencies((): void => this.resetAll());
         this.loginViewModel = new LoginViewModel();
         this.loginPresenter = new LoginPresenter(this.loginViewModel);
         this.newAccountFactory = new NewAccountFactoryImpl();
@@ -187,6 +177,15 @@ export class Dependencies {
             this.belongingDetectionService,
             this.database,
             this.accountRegistrationService
+        );
+        this.sessionService.resetAllDependencies.subscribe(
+            undefined,
+            undefined,
+            () => this.resetAll()
+        );
+        this.logoutService = new LogoutService(
+            this.logoutPresenter,
+            this.sessionService
         );
         this.loginService = new LoginService(
             this.loginPresenter,
@@ -262,24 +261,14 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
-        this.logoutService.onResetAllDependencies(undefined);
-        this.logoutService = new LogoutService(
-            this.logoutPresenter,
-            this.accountRepoLocal,
-            this.accountRepoRemote,
-            this.muTagRepoLocal,
-            this.muTagRepoRemote,
-            this.database,
-            this.belongingDetectionService
-        );
-        this.logoutService.onResetAllDependencies((): void => this.resetAll());
         this.newAccountFactory = new NewAccountFactoryImpl();
         this.accountRegistrationService = new AccountRegistrationService(
             this.newAccountFactory,
             this.accountRepoRemote,
             this.accountRepoLocal
         );
-        this.loginViewModel = new LoginViewModel();
+        // Should not reset loginViewModel because forced sign out message must
+        // persist and be displayed after all dependencies have been reset.
         this.loginPresenter = new LoginPresenter(this.loginViewModel);
         this.sessionService = new SessionService(
             sessionPresenter,
@@ -292,6 +281,15 @@ export class Dependencies {
             this.belongingDetectionService,
             this.database,
             this.accountRegistrationService
+        );
+        this.sessionService.resetAllDependencies.subscribe(
+            undefined,
+            undefined,
+            () => this.resetAll()
+        );
+        this.logoutService = new LogoutService(
+            this.logoutPresenter,
+            this.sessionService
         );
         this.loginService = new LoginService(
             this.loginPresenter,

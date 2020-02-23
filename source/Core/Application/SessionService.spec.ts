@@ -245,6 +245,8 @@ describe("user opens saved login session", (): void => {
 
         let didResetAllDependencies = false;
         const subscription = sessionService.resetAllDependencies.subscribe(
+            undefined,
+            undefined,
             () => (didResetAllDependencies = true)
         );
 
@@ -440,6 +442,8 @@ describe("user opens saved login session", (): void => {
 
         let didResetAllDependencies = false;
         const subscription = sessionService.resetAllDependencies.subscribe(
+            undefined,
+            undefined,
             () => (didResetAllDependencies = true)
         );
 

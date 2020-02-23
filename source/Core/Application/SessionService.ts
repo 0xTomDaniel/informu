@@ -27,6 +27,7 @@ export interface Session {
     start(userData: UserData): Promise<void>;
     continueStart(): void;
     abortStart(): void;
+    end(): Promise<void>;
     pauseLoadOnce(): void;
 }
 
@@ -158,13 +159,10 @@ export default class SessionService implements Session {
         this.continueNewSession = undefined;
     }
 
-    private async shouldContinueNewSession(): Promise<boolean> {
-        return new Promise(resolve => (this.continueNewSession = resolve));
-    }
-
-    private async end(saveToRemote = true): Promise<void> {
+    async end(saveToRemote = true): Promise<void> {
         if (saveToRemote) {
             const account = await this.accountRepoLocal.get();
+            account.clearSession();
             await this.accountRepoRemote.update(account);
             const muTags = await this.muTagRepoLocal.getAll();
             await this.muTagRepoRemote.updateMultiple(
@@ -175,8 +173,12 @@ export default class SessionService implements Session {
         }
         await this.belongingDetectionService.stop();
         await this.localDatabase.destroy();
-        this.resetAllDependencies.next();
+        this.resetAllDependencies.complete();
         this.sessionOutput.showLoginScreen();
+    }
+
+    private async shouldContinueNewSession(): Promise<boolean> {
+        return new Promise(resolve => (this.continueNewSession = resolve));
     }
 
     pauseLoadOnce(): void {

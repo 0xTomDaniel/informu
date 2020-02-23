@@ -21,7 +21,7 @@ interface DatabaseAccount {
     readonly account_id: string;
     readonly badge_count: number;
     readonly email: string;
-    readonly logged_in?: string;
+    readonly logged_in?: string | null;
     readonly mu_tags?: { [key: string]: boolean };
     readonly name: string;
     readonly next_beacon_id: string;
@@ -96,6 +96,8 @@ export class AccountRepoRNFirebase
     private static toDatabaseAccount(
         accountJson: AccountJson
     ): DatabaseAccount {
+        const sessionId =
+            accountJson._sessionId != null ? accountJson._sessionId : null;
         const muTags =
             accountJson._muTags != null
                 ? accountJson._muTags.reduce((allMuTags, muTag) => {
@@ -118,7 +120,7 @@ export class AccountRepoRNFirebase
             account_id: accountJson._accountNumber,
             badge_count: 0,
             email: accountJson._emailAddress,
-            //logged_in?: string,
+            logged_in: sessionId,
             mu_tags: muTags,
             name: accountJson._name,
             next_beacon_id: accountJson._nextBeaconId,
@@ -127,24 +129,6 @@ export class AccountRepoRNFirebase
             onboarding: accountJson._onboarding,
             recycled_beacon_ids: recycledBeaconIds
         };
-        /*if (accountJson._recycledBeaconIds != null) {
-            databaseAccount.recycled_beacon_ids = accountJson._recycledBeaconIds.reduce(
-                (allBeaconIds, beaconId) => {
-                    allBeaconIds[beaconId] = true;
-                    return allBeaconIds;
-                },
-                {} as { [key: string]: boolean }
-            );
-        }
-        if (accountJson._muTags != null) {
-            databaseAccount.mu_tags = accountJson._muTags.reduce(
-                (allMuTags, muTag) => {
-                    allMuTags[muTag] = true;
-                    return allMuTags;
-                },
-                {} as { [key: string]: boolean }
-            );
-        }*/
         /*eslint-enable */
         return databaseAccount;
     }
@@ -173,14 +157,18 @@ export class AccountRepoRNFirebase
             _uid: uid
         };
 
-        if ("recycled_beacon_ids" in snapshotData) {
-            data._recycledBeaconIds = Object.keys(
-                snapshotData.recycled_beacon_ids
-            );
+        if ("logged_in" in snapshotData) {
+            data._sessionId = snapshotData.logged_in;
         }
 
         if ("mu_tags" in snapshotData) {
             data._muTags = Object.keys(snapshotData.mu_tags);
+        }
+
+        if ("recycled_beacon_ids" in snapshotData) {
+            data._recycledBeaconIds = Object.keys(
+                snapshotData.recycled_beacon_ids
+            );
         }
 
         try {

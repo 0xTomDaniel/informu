@@ -125,6 +125,14 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
 
         props.loginService.signInWithEmail(emailAddress, password);
     };*/
+    const continueSignIn = (): void => {
+        props.viewModel.updateState({ signedIntoOtherDeviceMessage: "" });
+        props.loginService.continueSignIn();
+    };
+    const abortSignIn = (): void => {
+        props.viewModel.updateState({ signedIntoOtherDeviceMessage: "" });
+        props.loginService.abortSignIn();
+    };
     const onDismissErrorDialog = (): void => {
         props.viewModel.updateState({
             federatedErrorMessage: ""
@@ -252,7 +260,7 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                 <Portal>
                     <Dialog
                         visible={state.signedIntoOtherDeviceMessage !== ""}
-                        onDismiss={() => props.loginService.abortSignIn()}
+                        onDismiss={() => abortSignIn()}
                     >
                         <Dialog.Content>
                             <Paragraph>
@@ -260,16 +268,12 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                             </Paragraph>
                         </Dialog.Content>
                         <Dialog.Actions>
-                            <Button
-                                onPress={() => props.loginService.abortSignIn()}
-                            >
+                            <Button onPress={() => abortSignIn()}>
                                 Cancel
                             </Button>
                             <Button
                                 mode="contained"
-                                onPress={() =>
-                                    props.loginService.continueSignIn()
-                                }
+                                onPress={() => continueSignIn()}
                             >
                                 Sign In
                             </Button>

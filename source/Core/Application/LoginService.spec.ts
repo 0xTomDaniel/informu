@@ -91,6 +91,9 @@ describe("user logs into their account", (): void => {
         (): Session => ({
             load: jest.fn(),
             start: jest.fn(),
+            continueStart: jest.fn(),
+            abortStart: jest.fn(),
+            end: jest.fn(),
             pauseLoadOnce: jest.fn()
         })
     );
