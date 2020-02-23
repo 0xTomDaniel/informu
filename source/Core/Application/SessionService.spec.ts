@@ -7,7 +7,7 @@ import {
 import { DoesNotExist as AccountDoesNotExistOnRemote } from "../Ports/AccountRepositoryRemote";
 import { SessionOutput } from "../Ports/SessionOutput";
 import SessionService from "./SessionService";
-import { BeaconId } from "../Domain/ProvisionedMuTag";
+import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
 import { BelongingDetection } from "./BelongingDetectionService";
 import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import { UserData } from "../Ports/UserData";
@@ -33,6 +33,7 @@ describe("user opens saved login session", (): void => {
             hideBusyIndicator: jest.fn(),
             showHomeScreen: jest.fn(),
             showEmailLoginError: jest.fn(),
+            showSignedIntoOtherDevice: jest.fn(),
             showFederatedLoginError: jest.fn(),
             showMessage: jest.fn()
         })
@@ -159,15 +160,16 @@ describe("user opens saved login session", (): void => {
         _sessionId: currentAppSessionId
     };
     const account = new Account(validAccountData);
-    const accountIsSignedIntoOtherDeviceSpy = jest.spyOn(
-        account,
-        "isSignedIntoOtherDevice"
-    );
+    const accountHasActiveSessionSpy = jest.spyOn(account, "hasActiveSession");
     const accountSetSessionSpy = jest.spyOn(account, "setSession");
 
     (accountRepoLocalMock.get as jest.Mock).mockResolvedValue(account);
     (authenticationMock.isAuthenticatedAs as jest.Mock).mockReturnValue(true);
     (accountRepoRemoteMock.getByUid as jest.Mock).mockResolvedValue(account);
+    (muTagRepoRemoteMock.getAll as jest.Mock).mockResolvedValue(
+        new Set<ProvisionedMuTag>()
+    );
+    (muTagRepoLocalMock.addMultiple as jest.Mock).mockResolvedValue(undefined);
     (localDatabaseMock.get as jest.Mock).mockResolvedValue(currentAppSessionId);
 
     describe("user is logged in with saved session", (): void => {
@@ -298,7 +300,7 @@ describe("user opens saved login session", (): void => {
         });
     });
 
-    describe("user logs in", (): void => {
+    describe("user signs in", (): void => {
         // Given that app is opened
 
         // When the user logs in
@@ -322,7 +324,7 @@ describe("user opens saved login session", (): void => {
         // Then
         //
         it("should verify no currently active session", (): void => {
-            expect(accountIsSignedIntoOtherDeviceSpy).toHaveBeenCalledTimes(1);
+            expect(accountHasActiveSessionSpy).toHaveBeenCalledTimes(1);
         });
         // Then
         //
@@ -356,7 +358,80 @@ describe("user opens saved login session", (): void => {
         });
     });
 
-    describe("user is signed in on other device", (): void => {
+    describe("user signs in while other device already in session", (): void => {
+        // Given that app is signed out
+
+        let startSessionPromise: Promise<void>;
+
+        beforeAll(
+            async (): Promise<void> => {
+                // Given that user is signed in on another device
+                //
+                account.clearSession();
+                const otherSessionId = "9655a727-1af9-44f2-9c17-61669ab11861";
+                account.setSession(otherSessionId);
+                jest.clearAllMocks();
+
+                // When the user logs in
+                //
+                const userData: UserData = {
+                    uid: validAccountData._uid,
+                    emailAddress: validAccountData._emailAddress,
+                    name: validAccountData._name
+                };
+                startSessionPromise = sessionService.start(userData);
+            }
+        );
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it("should show a message that another device is signed in", (): void => {
+            expect(
+                loginOutputMock.showSignedIntoOtherDevice
+            ).toHaveBeenCalledTimes(1);
+        });
+
+        // When the user chooses to continue signing in
+        //
+        // Then
+        //
+        it("should save new session ID to account", async (): Promise<void> => {
+            sessionService.continueStart();
+            await startSessionPromise;
+            expect(accountSetSessionSpy).toHaveBeenCalledTimes(1);
+            expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
+        });
+
+        // Then
+        //
+        it("should save all account data from remote to local persistence", (): void => {
+            expect(accountRepoLocalMock.add).toHaveBeenCalledWith(account);
+            expect(accountRepoLocalMock.add).toHaveBeenCalledTimes(1);
+            expect(muTagRepoRemoteMock.getAll).toHaveBeenCalledTimes(1);
+            expect(muTagRepoLocalMock.addMultiple).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should show the home screen", (): void => {
+            expect(sessionOutputMock.showHomeScreen).toHaveBeenCalledTimes(1);
+            expect(sessionOutputMock.showLoginScreen).toHaveBeenCalledTimes(0);
+        });
+
+        // Then
+        //
+        it("should start safety status updates", (): void => {
+            expect(belongingDetectionServiceMock.start).toHaveBeenCalledTimes(
+                1
+            );
+        });
+    });
+
+    describe("user is signed in on other device while signed in", (): void => {
         // Given that an account is saved to local persistence
 
         // Given that authentication session has not expired

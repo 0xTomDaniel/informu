@@ -96,27 +96,23 @@ describe("session management", (): void => {
         jest.clearAllMocks();
     });
 
-    test("successfully adds session", (): void => {
-        referenceAccount.setSession(thisSessionId);
-        expect(referenceAccount.isSignedIntoOtherDevice(thisSessionId)).toBe(
-            false
-        );
+    test("successfully shows that there is not an active session", (): void => {
+        expect(referenceAccount.hasActiveSession()).toBe(false);
     });
 
-    test("successfully checks if in session on other device", (): void => {
-        expect(referenceAccount.isSignedIntoOtherDevice(otherSessionId)).toBe(
-            true
-        );
+    test("successfully adds session", (): void => {
+        referenceAccount.setSession(thisSessionId);
+        expect(referenceAccount.isCurrentSession(thisSessionId)).toBe(true);
+    });
+
+    test("successfully shows that there is an active session", (): void => {
+        expect(referenceAccount.hasActiveSession()).toBe(true);
     });
 
     test("successfully removes session", (): void => {
         referenceAccount.clearSession();
-        expect(referenceAccount.isSignedIntoOtherDevice(thisSessionId)).toBe(
-            false
-        );
-        expect(referenceAccount.isSignedIntoOtherDevice(otherSessionId)).toBe(
-            false
-        );
+        expect(referenceAccount.isCurrentSession(thisSessionId)).toBe(false);
+        expect(referenceAccount.isCurrentSession(otherSessionId)).toBe(false);
     });
 });
 

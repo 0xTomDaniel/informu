@@ -16,7 +16,7 @@ import { Subject } from "rxjs";
 import Account from "../Domain/Account";
 import LoginOutput from "../Ports/LoginOutput";
 
-class SignedIntoOtherDevice extends UserWarning {
+export class SignedIntoOtherDevice extends UserWarning {
     name = "SignedIntoOtherDevice";
     userWarningDescription =
         "It looks like you are already signed into another device. Would you like to sign out of the other device and continue signing in here?";
@@ -25,6 +25,8 @@ class SignedIntoOtherDevice extends UserWarning {
 export interface Session {
     load(): Promise<void>;
     start(userData: UserData): Promise<void>;
+    continueStart(): void;
+    abortStart(): void;
     pauseLoadOnce(): void;
 }
 
@@ -43,6 +45,8 @@ export default class SessionService implements Session {
     private readonly accountRegistrationService: AccountRegistrationService;
     private shouldPauseLoadOnce = false;
     private appSessionId?: string;
+    private continueNewSession?: (value: boolean) => void;
+
     readonly resetAllDependencies = new Subject<void>();
 
     constructor(
@@ -74,9 +78,6 @@ export default class SessionService implements Session {
             this.shouldPauseLoadOnce = false;
             return;
         }
-
-        //this.sessionOutput.showLoadSessionScreen();
-
         try {
             const account = await this.accountRepoLocal.get();
             const isAuthenticated = this.authentication.isAuthenticatedAs(
@@ -92,12 +93,11 @@ export default class SessionService implements Session {
             if (sessionId == null) {
                 return this.end();
             }
-            if (remoteAccount.isSignedIntoOtherDevice(sessionId)) {
+            if (!remoteAccount.isCurrentSession(sessionId)) {
                 await this.end(false);
                 this.loginOutput.showMessage(this.signedOutMessage);
                 return;
             }
-
             this.sessionOutput.showHomeScreen();
             this.belongingDetectionService.start();
         } catch (e) {
@@ -130,8 +130,14 @@ export default class SessionService implements Session {
             sessionId = await this.createAppSessionId();
             await this.setAppSessionId(sessionId);
         }
-        if (account.isSignedIntoOtherDevice(sessionId)) {
-            throw new SignedIntoOtherDevice();
+        if (account.hasActiveSession()) {
+            this.loginOutput.showSignedIntoOtherDevice(
+                new SignedIntoOtherDevice()
+            );
+            const shouldContinue = await this.shouldContinueNewSession();
+            if (!shouldContinue) {
+                return;
+            }
         }
         account.setSession(sessionId);
         await this.accountRepoRemote.update(account);
@@ -140,6 +146,20 @@ export default class SessionService implements Session {
         await this.muTagRepoLocal.addMultiple(muTags);
         this.sessionOutput.showHomeScreen();
         this.belongingDetectionService.start();
+    }
+
+    continueStart(): void {
+        this.continueNewSession?.(true);
+        this.continueNewSession = undefined;
+    }
+
+    abortStart(): void {
+        this.continueNewSession?.(false);
+        this.continueNewSession = undefined;
+    }
+
+    private async shouldContinueNewSession(): Promise<boolean> {
+        return new Promise(resolve => (this.continueNewSession = resolve));
     }
 
     private async end(saveToRemote = true): Promise<void> {

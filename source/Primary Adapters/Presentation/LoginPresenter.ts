@@ -2,6 +2,7 @@ import LoginOutput from "../../Core/Ports/LoginOutput";
 import { LoginViewModel } from "./LoginViewModel";
 import { ImproperPasswordComplexity } from "../../Core/Application/LoginService";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
+import { SignedIntoOtherDevice } from "../../Core/Application/SessionService";
 
 export default class LoginPresenter implements LoginOutput {
     private readonly viewModel: LoginViewModel;
@@ -36,6 +37,12 @@ export default class LoginPresenter implements LoginOutput {
                 emailErrorMessage: error.message
             });
         }
+    }
+
+    showSignedIntoOtherDevice(warning: SignedIntoOtherDevice): void {
+        this.viewModel.updateState({
+            signedIntoOtherDeviceMessage: warning.userWarningDescription
+        });
     }
 
     showFederatedLoginError(error: UserError): void {

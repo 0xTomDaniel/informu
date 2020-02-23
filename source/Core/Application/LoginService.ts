@@ -165,6 +165,14 @@ export class LoginService {
         }
     }
 
+    continueSignIn(): void {
+        this.sessionService.continueStart();
+    }
+
+    abortSignIn(): void {
+        this.sessionService.abortStart();
+    }
+
     private isLoginServiceException(
         value: any
     ): value is LoginServiceException {

@@ -32,6 +32,7 @@ describe("user logs into their account", (): void => {
             hideBusyIndicator: jest.fn(),
             showHomeScreen: jest.fn(),
             showEmailLoginError: jest.fn(),
+            showSignedIntoOtherDevice: jest.fn(),
             showFederatedLoginError: jest.fn(),
             showMessage: jest.fn()
         })

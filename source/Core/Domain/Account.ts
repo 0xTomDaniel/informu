@@ -246,8 +246,12 @@ export default class Account {
         this._sessionId = undefined;
     }
 
-    isSignedIntoOtherDevice(sessionId: string): boolean {
-        return this._sessionId == null ? false : this._sessionId !== sessionId;
+    isCurrentSession(sessionId: string): boolean {
+        return this._sessionId === sessionId;
+    }
+
+    hasActiveSession(): boolean {
+        return this._sessionId != null;
     }
 
     serialize(): string {

@@ -22,7 +22,7 @@ import {
 import DeviceInfo from "react-native-device-info";
 import { Images } from "./Images";
 import Theme from "./Theme";
-import { Button } from "react-native-paper";
+import { Button, Portal, Dialog, Paragraph } from "react-native-paper";
 import ErrorDialog from "./Base Components/ErrorDialog";
 import MessageDialog from "./Base Components/MessageDialog";
 
@@ -118,13 +118,13 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
         setItemWithActivity(ActivityItem.Google);
         props.loginService.signInWithGoogle().catch(e => console.warn(e));
     };
-    const signInWithEmail = (): void => {
+    /*const signInWithEmail = (): void => {
         setItemWithActivity(ActivityItem.Email);
         const emailAddress = new EmailAddress(state.emailInput);
         const password = new Password(state.passwordInput);
 
         props.loginService.signInWithEmail(emailAddress, password);
-    };
+    };*/
     const onDismissErrorDialog = (): void => {
         props.viewModel.updateState({
             federatedErrorMessage: ""
@@ -249,6 +249,33 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                     visible={state.message !== ""}
                     onDismiss={onDismissMessageDialog}
                 />
+                <Portal>
+                    <Dialog
+                        visible={state.signedIntoOtherDeviceMessage !== ""}
+                        onDismiss={() => props.loginService.abortSignIn()}
+                    >
+                        <Dialog.Content>
+                            <Paragraph>
+                                {state.signedIntoOtherDeviceMessage}
+                            </Paragraph>
+                        </Dialog.Content>
+                        <Dialog.Actions>
+                            <Button
+                                onPress={() => props.loginService.abortSignIn()}
+                            >
+                                Cancel
+                            </Button>
+                            <Button
+                                mode="contained"
+                                onPress={() =>
+                                    props.loginService.continueSignIn()
+                                }
+                            >
+                                Sign In
+                            </Button>
+                        </Dialog.Actions>
+                    </Dialog>
+                </Portal>
             </SafeAreaView>
         </TouchableWithoutFeedback>
     );
