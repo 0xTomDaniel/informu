@@ -135,7 +135,8 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
     };
     const onDismissErrorDialog = (): void => {
         props.viewModel.updateState({
-            federatedErrorMessage: ""
+            federatedUserErrorMessage: "",
+            detailedErrorDescription: ""
         });
     };
     const onDismissMessageDialog = (): void => {
@@ -247,9 +248,9 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                     </View>
                 </View>
                 <ErrorDialog
-                    message={state.federatedErrorMessage}
+                    message={state.federatedUserErrorMessage}
                     detailMessage={state.detailedErrorDescription}
-                    visible={state.federatedErrorMessage !== ""}
+                    visible={state.federatedUserErrorMessage !== ""}
                     onDismiss={onDismissErrorDialog}
                 />
                 <MessageDialog

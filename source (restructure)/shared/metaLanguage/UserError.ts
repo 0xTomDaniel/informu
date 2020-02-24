@@ -1,9 +1,9 @@
 export default abstract class UserError {
-    originatingError?: Error;
+    originatingError?: any;
     abstract name: string;
     abstract userErrorDescription: string;
 
-    constructor(originatingError?: Error) {
+    constructor(originatingError?: any) {
         this.originatingError = originatingError;
     }
 }

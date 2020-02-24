@@ -46,10 +46,13 @@ export default class LoginPresenter implements LoginOutput {
     }
 
     showFederatedLoginError(error: UserError): void {
-        this.clearErrorMessages();
         this.hideBusyIndicator();
         this.viewModel.updateState({
-            federatedErrorMessage: error.userErrorDescription
+            federatedUserErrorMessage: error.userErrorDescription,
+            detailedErrorDescription:
+                error.originatingError?.message ??
+                error.originatingError?.userErrorDescription ??
+                ""
         });
     }
 

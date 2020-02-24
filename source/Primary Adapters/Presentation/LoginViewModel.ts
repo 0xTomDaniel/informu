@@ -5,7 +5,7 @@ export interface LoginState {
     readonly passwordInput: string;
     readonly emailErrorMessage: string;
     readonly passwordErrorMessage: string;
-    readonly federatedErrorMessage: string;
+    readonly federatedUserErrorMessage: string;
     readonly signedIntoOtherDeviceMessage: string;
     readonly detailedErrorDescription: string;
     readonly isBusy: boolean;
@@ -18,7 +18,7 @@ export interface LoginStateDelta {
     readonly passwordInput?: string;
     readonly emailErrorMessage?: string;
     readonly passwordErrorMessage?: string;
-    readonly federatedErrorMessage?: string;
+    readonly federatedUserErrorMessage?: string;
     readonly signedIntoOtherDeviceMessage?: string;
     readonly detailedErrorDescription?: string;
     readonly isBusy?: boolean;
@@ -32,7 +32,7 @@ export class LoginViewModel {
         passwordInput: "",
         emailErrorMessage: "",
         passwordErrorMessage: "",
-        federatedErrorMessage: "",
+        federatedUserErrorMessage: "",
         signedIntoOtherDeviceMessage: "",
         detailedErrorDescription: "",
         isBusy: false,
