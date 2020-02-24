@@ -49,26 +49,26 @@ export default class BelongingDetectionService implements BelongingDetection {
         const observer = (change: MuTagsChange): void => {
             if (change.insertion != null) {
                 this.muTagRepoLocal
-                    .getByUID(change.insertion)
+                    .getByUid(change.insertion)
                     .then(
                         (muTag): Promise<void> => {
                             return this.startMonitoringMuTags(new Set([muTag]));
                         }
                     )
                     .catch((e): void => {
-                        console.warn(`muTagRepoLocal.getByUID() - error: ${e}`);
+                        console.warn(`muTagRepoLocal.getByUid() - error: ${e}`);
                     });
             }
             if (change.deletion != null) {
                 this.muTagRepoLocal
-                    .getByUID(change.deletion)
+                    .getByUid(change.deletion)
                     .then(
                         (muTag): Promise<void> => {
                             return this.stopMonitoringMuTags(new Set([muTag]));
                         }
                     )
                     .catch((e): void => {
-                        console.warn(`muTagRepoLocal.getByUID() - error: ${e}`);
+                        console.warn(`muTagRepoLocal.getByUid() - error: ${e}`);
                     });
             }
         };
@@ -95,7 +95,7 @@ export default class BelongingDetectionService implements BelongingDetection {
         this.muTagMonitor.onMuTagDetection.subscribe((detectedMuTags): void => {
             detectedMuTags.forEach((muTagSignal): void => {
                 this.updateDetectedMuTag(muTagSignal).catch((e): void => {
-                    console.log(`updateDetectedMuTag() - error: ${e}`);
+                    console.warn(`updateDetectedMuTag() - error: ${e}`);
                 });
             });
         });
@@ -116,15 +116,15 @@ export default class BelongingDetectionService implements BelongingDetection {
             return;
         }
 
-        const muTag = await this.muTagRepoLocal.getByBeaconID(
-            muTagSignal.beaconID
+        const muTag = await this.muTagRepoLocal.getByBeaconId(
+            muTagSignal.beaconId
         );
         muTag.userDidDetect(muTagSignal.timestamp);
         this.muTagRepoLocal.update(muTag);
     }
 
     private async updateExitedMuTag(uid: string): Promise<void> {
-        const muTag = await this.muTagRepoLocal.getByUID(uid);
+        const muTag = await this.muTagRepoLocal.getByUid(uid);
         muTag.userDidExitRegion();
         this.muTagRepoLocal.update(muTag);
     }
@@ -140,7 +140,7 @@ export default class BelongingDetectionService implements BelongingDetection {
                     return {
                         uid: muTag.uid,
                         accountNumber: accountNumber,
-                        beaconID: muTag.beaconID
+                        beaconId: muTag.beaconId
                     };
                 }
             )

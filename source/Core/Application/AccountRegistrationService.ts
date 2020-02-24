@@ -3,7 +3,7 @@ import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import { NewAccountFactory } from "../Ports/NewAccountFactory";
 
 export interface AccountRegistration {
-    registerFederated(uid: string, emailAddress: string): Promise<void>;
+    register(uid: string, emailAddress: string, name: string): Promise<void>;
 }
 
 export default class AccountRegistrationService implements AccountRegistration {
@@ -21,8 +21,16 @@ export default class AccountRegistrationService implements AccountRegistration {
         this.accountRepoLocal = accountRepoLocal;
     }
 
-    async registerFederated(uid: string, emailAddress: string): Promise<void> {
-        const account = await this.newAccountFactory.create(uid, emailAddress);
+    async register(
+        uid: string,
+        emailAddress: string,
+        name: string
+    ): Promise<void> {
+        const account = await this.newAccountFactory.create(
+            uid,
+            emailAddress,
+            name
+        );
         await this.accountRepoRemote.add(account);
         await this.accountRepoLocal.add(account);
     }

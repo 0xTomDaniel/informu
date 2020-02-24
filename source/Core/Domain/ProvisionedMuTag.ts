@@ -1,62 +1,101 @@
-import MuTag, { MuTagColor } from './MuTag';
-import Percent from './Percent';
-import Hexadecimal from './Hexadecimal';
-import { BehaviorSubject, Observable, combineLatest } from 'rxjs';
-import { map } from 'rxjs/operators';
+import MuTag, { MuTagColor } from "./MuTag";
+import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
+import Hexadecimal from "../../../source (restructure)/shared/metaLanguage/Hexadecimal";
+import { BehaviorSubject, Observable, combineLatest } from "rxjs";
+import { map } from "rxjs/operators";
+import isType, {
+    RuntimeType
+} from "../../../source (restructure)/shared/metaLanguage/isType";
 
-class InvalidBeaconID extends RangeError {
-
+class InvalidBeaconId extends RangeError {
     constructor(value: string) {
-        super(`${value} is an invalid beacon ID. Expected a 1-character hexadecimal value.`);
-        this.name = 'InvalidBeaconID';
+        super(
+            `${value} is an invalid beacon ID. Expected a 1-character hexadecimal value.`
+        );
+        this.name = "InvalidBeaconId";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
-export class BeaconID extends Hexadecimal {
-
-    static create(hex: string): BeaconID {
+export class BeaconId extends Hexadecimal {
+    static create(hex: string): BeaconId {
         if (!(hex.length === 1)) {
-            throw new InvalidBeaconID(hex);
+            throw new InvalidBeaconId(hex);
         }
 
-        const numberValue = BeaconID.numberFromString(hex);
-        return new BeaconID(hex, numberValue);
+        const numberValue = BeaconId.numberFromString(hex);
+        return new BeaconId(hex, numberValue);
     }
 }
 
 export interface MuTagData {
-    _uid: string;
-    _beaconID: BeaconID;
-    _muTagNumber: number;
-    _name: string;
-    _batteryLevel: Percent;
-    _isSafe: boolean;
-    _lastSeen: Date;
-    _color: MuTagColor;
+    readonly _advertisingInterval: number;
+    readonly _batteryLevel: Percent;
+    readonly _beaconId: BeaconId;
+    readonly _color: MuTagColor;
+    readonly _dateAdded: Date;
+    readonly _didExitRegion: boolean;
+    readonly _firmwareVersion: string;
+    readonly _isSafe: boolean;
+    readonly _lastSeen: Date;
+    readonly _macAddress: string;
+    readonly _modelNumber: string;
+    readonly _muTagNumber: number;
+    readonly _name: string;
+    readonly _recentLatitude: number;
+    readonly _recentLongitude: number;
+    readonly _txPower: number;
+    readonly _uid: string;
 }
 
-export interface MuTagJSON {
-    _uid: string;
-    _beaconID: string;
-    _muTagNumber: number;
-    _name: string;
-    _batteryLevel: number;
-    _color: number;
-    _isSafe: boolean;
-    _lastSeen: string;
+export interface MuTagJson {
+    readonly _advertisingInterval: number;
+    readonly _batteryLevel: number;
+    readonly _beaconId: string;
+    readonly _color: number;
+    readonly _dateAdded: string;
+    readonly _didExitRegion: boolean;
+    readonly _firmwareVersion: string;
+    readonly _isSafe: boolean;
+    readonly _lastSeen: string;
+    readonly _macAddress: string;
+    readonly _modelNumber: string;
+    readonly _muTagNumber: number;
+    readonly _name: string;
+    readonly _recentLatitude: number;
+    readonly _recentLongitude: number;
+    readonly _txPower: number;
+    readonly _uid: string;
 }
 
-export const isMuTagJSON = (object: { [key: string]: any }): object is MuTagJSON => {
-    return '_uid' in object && typeof object._uid === 'string'
-        && '_beaconID' in object && typeof object._beaconID === 'string'
-        && '_muTagNumber' in object && typeof object._muTagNumber === 'number'
-        && '_name' in object && typeof object._name === 'string'
-        && '_batteryLevel' in object && typeof object._batteryLevel === 'number'
-        && '_color' in object && typeof object._color === 'number'
-        && '_isSafe' in object && typeof object._isSafe === 'boolean'
-        && '_lastSeen' in object && typeof object._lastSeen === 'string';
-};
+export function assertIsMuTagJson(object: {
+    [key: string]: any;
+}): asserts object is MuTagJson {
+    const propertyRequirements = new Map([
+        ["_advertisingInterval", RuntimeType.Number],
+        ["_batteryLevel", RuntimeType.Number],
+        ["_beaconId", RuntimeType.String],
+        ["_color", RuntimeType.Number],
+        ["_dateAdded", RuntimeType.String],
+        ["_didExitRegion", RuntimeType.Boolean],
+        ["_firmwareVersion", RuntimeType.String],
+        ["_isSafe", RuntimeType.Boolean],
+        ["_lastSeen", RuntimeType.String],
+        ["_macAddress", RuntimeType.String],
+        ["_modelNumber", RuntimeType.String],
+        ["_muTagNumber", RuntimeType.Number],
+        ["_name", RuntimeType.String],
+        ["_recentLatitude", RuntimeType.Number],
+        ["_recentLongitude", RuntimeType.Number],
+        ["_txPower", RuntimeType.Number],
+        ["_uid", RuntimeType.String]
+    ]);
+    for (const [key, type] of propertyRequirements) {
+        if (!(key in object && isType(object[key], type))) {
+            throw Error("Object is not MuTagJson.");
+        }
+    }
+}
 
 interface SafetyStatus {
     readonly isSafe: boolean;
@@ -69,13 +108,13 @@ interface AccessorValue {
 }
 
 export default class ProvisionedMuTag extends MuTag {
-
-    protected readonly _uid: string;
-    private readonly _beaconID: BeaconID;
-    private readonly _muTagNumber: number;
-    private _name: string;
+    private _advertisingInterval: number;
     protected _batteryLevel: Percent;
+    private readonly _beaconId: BeaconId;
     private _color: MuTagColor;
+    private readonly _dateAdded: Date;
+    private _didExitRegion: boolean;
+    private _firmwareVersion: string;
     private get _isSafe(): boolean {
         return this._accessorValue.isSafe.value;
     }
@@ -88,7 +127,17 @@ export default class ProvisionedMuTag extends MuTag {
     private set _lastSeen(newValue: Date) {
         this._accessorValue.lastSeen.next(newValue);
     }
+    private readonly _macAddress: string;
+    private _modelNumber: string;
+    private readonly _muTagNumber: number;
+    private _name: string;
+    private _recentLatitude: number;
+    private _recentLongitude: number;
+    private _txPower: number;
+    protected readonly _uid: string;
 
+    // This property is not part of the model. It only serves to make some
+    // properties observable.
     private readonly _accessorValue: AccessorValue;
 
     /* I am using an object interface for this constructor so that I can easily
@@ -98,20 +147,29 @@ export default class ProvisionedMuTag extends MuTag {
      */
     constructor(muTagData: MuTagData) {
         super();
-        this._uid = muTagData._uid;
-        this._beaconID = muTagData._beaconID;
+        this._advertisingInterval = muTagData._advertisingInterval;
+        this._batteryLevel = muTagData._batteryLevel;
+        this._beaconId = muTagData._beaconId;
+        this._color = muTagData._color;
+        this._dateAdded = muTagData._dateAdded;
+        this._didExitRegion = muTagData._didExitRegion;
+        this._firmwareVersion = muTagData._firmwareVersion;
+        this._macAddress = muTagData._macAddress;
+        this._modelNumber = muTagData._modelNumber;
         this._muTagNumber = muTagData._muTagNumber;
         this._name = muTagData._name;
-        this._batteryLevel = muTagData._batteryLevel;
-        this._color = muTagData._color;
+        this._recentLatitude = muTagData._recentLatitude;
+        this._recentLongitude = muTagData._recentLongitude;
+        this._txPower = muTagData._txPower;
+        this._uid = muTagData._uid;
         this._accessorValue = {
             isSafe: new BehaviorSubject(muTagData._isSafe),
-            lastSeen: new BehaviorSubject(muTagData._lastSeen),
+            lastSeen: new BehaviorSubject(muTagData._lastSeen)
         };
     }
 
-    get beaconID(): BeaconID {
-        return this._beaconID;
+    get beaconId(): BeaconId {
+        return this._beaconId;
     }
 
     get name(): string {
@@ -127,12 +185,20 @@ export default class ProvisionedMuTag extends MuTag {
     }
 
     get safetyStatus(): Observable<SafetyStatus> {
-        return combineLatest(this._accessorValue.isSafe, this._accessorValue.lastSeen).pipe(
-            map(([isSafe, lastSeen]): SafetyStatus => ({ isSafe: isSafe, lastSeen: lastSeen}))
+        return combineLatest(
+            this._accessorValue.isSafe,
+            this._accessorValue.lastSeen
+        ).pipe(
+            map(
+                ([isSafe, lastSeen]): SafetyStatus => ({
+                    isSafe: isSafe,
+                    lastSeen: lastSeen
+                })
+            )
         );
     }
 
-    get json(): MuTagJSON {
+    get json(): MuTagJson {
         const json = this.serialize();
         return JSON.parse(json);
     }
@@ -142,10 +208,12 @@ export default class ProvisionedMuTag extends MuTag {
     }
 
     userDidExitRegion(): void {
+        this._didExitRegion = true;
         this._isSafe = false;
     }
 
     userDidDetect(timestamp: Date): void {
+        this._didExitRegion = false;
         this._isSafe = true;
         this._lastSeen = timestamp;
     }
@@ -154,29 +222,33 @@ export default class ProvisionedMuTag extends MuTag {
         return JSON.stringify(this, ProvisionedMuTag.replacer);
     }
 
-    static deserialize(json: string | MuTagJSON): ProvisionedMuTag {
-        let jsonString = typeof json === 'string' ? json : JSON.stringify(json);
+    static deserialize(json: string | MuTagJson): ProvisionedMuTag {
+        const jsonString =
+            typeof json === "string" ? json : JSON.stringify(json);
         return JSON.parse(jsonString, ProvisionedMuTag.reviver);
     }
 
     static replacer(key: string, value: any): any {
         switch (key) {
-            case '':
+            case "":
                 /* Class getters are not actual object properties. Must manually
                  * populate any class getter properties and copy the class object
                  * properties into a new object.
                  */
-                return Object.assign({
-                    _isSafe: value._isSafe,
-                    _lastSeen: value._lastSeen,
-                }, value);
-            case '_beaconID':
-                return value.toString();
-            case '_batteryLevel':
+                return Object.assign(
+                    {
+                        _isSafe: value._isSafe,
+                        _lastSeen: value._lastSeen
+                    },
+                    value
+                );
+            case "_batteryLevel":
                 return value.valueOf();
+            case "_beaconId":
+                return value.toString();
             /*case 'lastSeen':
                 return value.toISOString();*/
-            case '_accessorValue':
+            case "_accessorValue":
                 // This property is not part of the model. It only serves to
                 // make some properties observable.
                 return;
@@ -187,13 +259,14 @@ export default class ProvisionedMuTag extends MuTag {
 
     static reviver(key: string, value: any): any {
         switch (key) {
-            case '':
+            case "":
                 return new ProvisionedMuTag(value);
-            case '_beaconID':
-                return BeaconID.create(value);
-            case '_batteryLevel':
+            case "_batteryLevel":
                 return new Percent(value);
-            case '_lastSeen':
+            case "_beaconId":
+                return BeaconId.create(value);
+            case "_dateAdded":
+            case "_lastSeen":
                 return new Date(value);
             default:
                 return value;

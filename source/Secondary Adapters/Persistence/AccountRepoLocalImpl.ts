@@ -8,8 +8,14 @@ import {
 } from "../../Core/Ports/AccountRepositoryLocal";
 import Account from "../../Core/Domain/Account";
 import { Database } from "./Database";
+import AccountRepositoryLocalPortAddMuTag from "../../../source (restructure)/useCases/addMuTag/AccountRepositoryLocalPort";
+import AccountRepositoryLocalPortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/AccountRepositoryLocalPort";
 
-export default class AccountRepoLocalImpl implements AccountRepositoryLocal {
+export default class AccountRepoLocalImpl
+    implements
+        AccountRepositoryLocal,
+        AccountRepositoryLocalPortAddMuTag,
+        AccountRepositoryLocalPortRemoveMuTag {
     private readonly database: Database;
     private account?: Account;
 

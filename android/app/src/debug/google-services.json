@@ -54,7 +54,7 @@
       "client_info": {
         "mobilesdk_app_id": "1:767308727016:android:f3b66943b734a7d9",
         "android_client_info": {
-          "package_name": "com.mutagreactnative"
+          "package_name": "ai.informu.mutag"
         }
       },
       "oauth_client": [
@@ -62,7 +62,7 @@
           "client_id": "767308727016-p3o3idseoekar55mhgq750meruhp6dd2.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
-            "package_name": "com.mutagreactnative",
+            "package_name": "ai.informu.mutag",
             "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
           }
         },

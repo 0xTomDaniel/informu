@@ -1,10 +1,8 @@
-import { RemoveMuTagOutput } from '../../Core/Ports/RemoveMuTagOutput';
-import { HomeViewModel } from './HomeViewModel';
-import { MuTagNotFound, UnprovisionMuTagFailed } from '../../Core/Ports/MuTagDevices';
-import { LowMuTagBattery } from '../../Core/Application/AddMuTagService';
+import { RemoveMuTagOutputPort } from "../../../source (restructure)/useCases/removeMuTag/RemoveMuTagOutputPort";
+import { HomeViewModel } from "./HomeViewModel";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
-export default class RemoveMuTagPresenter implements RemoveMuTagOutput {
-
+export default class RemoveMuTagPresenter implements RemoveMuTagOutputPort {
     private readonly viewModel: HomeViewModel;
 
     constructor(viewModel: HomeViewModel) {
@@ -19,26 +17,10 @@ export default class RemoveMuTagPresenter implements RemoveMuTagOutput {
         this.viewModel.updateState({ showActivityIndicator: false });
     }
 
-    showMuTagNotFoundError(error: MuTagNotFound): void {
-        this.showError(error.message);
-    }
-
-    showUnprovisionMuTagFailedError(error: UnprovisionMuTagFailed): void {
-        this.showError(error.message);
-    }
-
-    showLowBatteryError(error: LowMuTagBattery): void {
-        this.showError(error.message);
-    }
-
-    showUnknownError(error: Error): void {
-        this.showError(error.message);
-    }
-
-    private showError(message: string): void {
+    showError(error: UserError): void {
         this.viewModel.updateState({
-            errorDescription: message,
-            isErrorVisible: true,
+            errorDescription: error.userErrorDescription,
+            isErrorVisible: true
         });
     }
 }

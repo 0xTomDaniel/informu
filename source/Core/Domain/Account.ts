@@ -1,8 +1,11 @@
-import Hexadecimal from "./Hexadecimal";
-import { BeaconID } from "./ProvisionedMuTag";
+import Hexadecimal from "../../../source (restructure)/shared/metaLanguage/Hexadecimal";
+import { BeaconId } from "./ProvisionedMuTag";
 import { BehaviorSubject, Observable } from "rxjs";
 import { pairwise, map } from "rxjs/operators";
 import _ from "lodash";
+import isType, {
+    RuntimeType
+} from "../../../source (restructure)/shared/metaLanguage/isType";
 
 class InvalidAccountNumber extends RangeError {
     constructor(value: string) {
@@ -46,71 +49,73 @@ export class AccountNumber extends Hexadecimal {
     }
 }
 
-class NewBeaconIDNotFound extends Error {
+class NewBeaconIdNotFound extends Error {
     constructor(value: string) {
         super(`New beacon ID ${value} not found.`);
-        this.name = "NewBeaconIDNotFound";
+        this.name = "NewBeaconIdNotFound";
         Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
 export interface AccountData {
-    readonly _uid: string;
     readonly _accountNumber: AccountNumber;
     readonly _emailAddress: string;
-    readonly _nextBeaconID: BeaconID;
-    readonly _recycledBeaconIDs: Set<BeaconID>;
-    readonly _nextMuTagNumber: number;
     readonly _muTags: Set<string>;
+    readonly _name: string;
+    readonly _nextBeaconId: BeaconId;
+    readonly _nextMuTagNumber: number;
+    readonly _nextSafeZoneNumber: number;
+    readonly _onboarding: boolean;
+    readonly _recycledBeaconIds: Set<BeaconId>;
+    readonly _sessionId?: string;
+    readonly _uid: string;
 }
 
-export interface AccountJSON {
-    readonly _uid: string;
+export interface AccountJson {
     readonly _accountNumber: string;
     readonly _emailAddress: string;
-    readonly _nextBeaconID: string;
-    readonly _recycledBeaconIDs?: string[];
-    readonly _nextMuTagNumber: number;
     readonly _muTags?: string[];
+    readonly _name: string;
+    readonly _nextBeaconId: string;
+    readonly _nextMuTagNumber: number;
+    readonly _nextSafeZoneNumber: number;
+    readonly _onboarding: boolean;
+    readonly _recycledBeaconIds?: string[];
+    readonly _sessionId?: string;
+    readonly _uid: string;
 }
 
-const isStringArray = (value: any): value is string[] => {
-    return (
-        Array.isArray(value) &&
-        value.every((item): boolean => typeof item === "string")
-    );
-};
-
-export const isAccountJSON = (object: {
+export function assertIsAccountJson(object: {
     [key: string]: any;
-}): object is AccountJSON => {
-    const isUIDValid = "_uid" in object && typeof object._uid === "string";
-    const isAccountNumberValid =
-        "_accountNumber" in object && typeof object._accountNumber === "string";
-    const isEmailAddressValid =
-        "_emailAddress" in object && typeof object._emailAddress === "string";
-    const isNextBeaconIDValid =
-        "_nextBeaconID" in object && typeof object._nextBeaconID === "string";
-    const isRecycledBeaconIDsValid =
-        "_recycledBeaconIDs" in object
-            ? isStringArray(object._recycledBeaconIDs)
-            : true;
-    const isNextMuTagNumberValid =
-        "_nextMuTagNumber" in object &&
-        typeof object._nextMuTagNumber === "number";
-    const isMuTagsValid =
-        "_muTags" in object ? isStringArray(object._muTags) : true;
-
-    return (
-        isUIDValid &&
-        isAccountNumberValid &&
-        isEmailAddressValid &&
-        isNextBeaconIDValid &&
-        isRecycledBeaconIDsValid &&
-        isNextMuTagNumberValid &&
-        isMuTagsValid
-    );
-};
+}): asserts object is AccountJson {
+    const propertyRequirements = new Map([
+        ["_accountNumber", RuntimeType.String],
+        ["_emailAddress", RuntimeType.String],
+        ["_name", RuntimeType.String],
+        ["_nextBeaconId", RuntimeType.String],
+        ["_nextMuTagNumber", RuntimeType.Number],
+        ["_nextSafeZoneNumber", RuntimeType.Number],
+        ["_onboarding", RuntimeType.Boolean],
+        ["_uid", RuntimeType.String]
+    ]);
+    for (const [key, type] of propertyRequirements) {
+        if (!(key in object && isType(object[key], type))) {
+            throw Error("Object is not AccountJson.");
+        }
+    }
+    const optionalPropertyRequirements = new Map([
+        ["_muTags", RuntimeType.StringArray],
+        ["_recycledBeaconIds", RuntimeType.StringArray],
+        ["_sessionId", RuntimeType.String]
+    ]);
+    for (const [key, type] of optionalPropertyRequirements) {
+        if (key in object) {
+            if (!isType(object[key], type)) {
+                throw Error("Object is not AccountJson.");
+            }
+        }
+    }
+}
 
 interface AccessorValue {
     readonly muTags: BehaviorSubject<Set<string>>;
@@ -122,28 +127,38 @@ export interface MuTagsChange {
 }
 
 export default class Account {
-    private readonly _uid: string;
     private readonly _accountNumber: AccountNumber;
     private _emailAddress: string;
-    private _nextBeaconID: BeaconID;
-    private readonly _recycledBeaconIDs: Set<BeaconID>;
-    private _nextMuTagNumber: number;
     private get _muTags(): Set<string> {
         return this._accessorValue.muTags.value;
     }
     private set _muTags(newValue: Set<string>) {
         this._accessorValue.muTags.next(newValue);
     }
+    private _name: string;
+    private _nextBeaconId: BeaconId;
+    private _nextMuTagNumber: number;
+    private _nextSafeZoneNumber: number;
+    private _onboarding: boolean;
+    private readonly _recycledBeaconIds: Set<BeaconId>;
+    private _sessionId?: string;
+    private readonly _uid: string;
 
+    // This property is not part of the model. It only serves to make some
+    // properties observable.
     private readonly _accessorValue: AccessorValue;
 
     constructor(accountData: AccountData) {
-        this._uid = accountData._uid;
         this._accountNumber = accountData._accountNumber;
         this._emailAddress = accountData._emailAddress;
-        this._nextBeaconID = accountData._nextBeaconID;
-        this._recycledBeaconIDs = accountData._recycledBeaconIDs;
+        this._name = accountData._name;
+        this._nextBeaconId = accountData._nextBeaconId;
         this._nextMuTagNumber = accountData._nextMuTagNumber;
+        this._nextSafeZoneNumber = accountData._nextSafeZoneNumber;
+        this._onboarding = accountData._onboarding;
+        this._recycledBeaconIds = accountData._recycledBeaconIds;
+        this._sessionId = accountData._sessionId;
+        this._uid = accountData._uid;
         this._accessorValue = {
             muTags: new BehaviorSubject(accountData._muTags)
         };
@@ -157,12 +172,12 @@ export default class Account {
         return this._accountNumber;
     }
 
-    get newBeaconID(): BeaconID {
-        if (this._recycledBeaconIDs.size !== 0) {
-            return this._recycledBeaconIDs.values().next().value;
+    get newBeaconId(): BeaconId {
+        if (this._recycledBeaconIds.size !== 0) {
+            return this._recycledBeaconIds.values().next().value;
         }
 
-        return this._nextBeaconID;
+        return this._nextBeaconId;
     }
 
     get newMuTagNumber(): number {
@@ -193,18 +208,18 @@ export default class Account {
         );
     }
 
-    get json(): AccountJSON {
+    get json(): AccountJson {
         const json = this.serialize();
         return JSON.parse(json);
     }
 
-    addNewMuTag(muTagUID: string, beaconID: BeaconID): void {
-        if (this._recycledBeaconIDs.has(beaconID)) {
-            this._recycledBeaconIDs.delete(beaconID);
-        } else if (this._nextBeaconID === beaconID) {
-            this.incrementNextBeaconID();
+    addNewMuTag(muTagUID: string, beaconId: BeaconId): void {
+        if (this._recycledBeaconIds.has(beaconId)) {
+            this._recycledBeaconIds.delete(beaconId);
+        } else if (this._nextBeaconId === beaconId) {
+            this.incrementNextBeaconId();
         } else {
-            throw new NewBeaconIDNotFound(beaconID.toString());
+            throw new NewBeaconIdNotFound(beaconId.toString());
         }
 
         this._nextMuTagNumber += 1;
@@ -213,8 +228,8 @@ export default class Account {
         this._muTags = new Set(this._muTags).add(muTagUID);
     }
 
-    removeMuTag(muTagUID: string, beaconID: BeaconID): void {
-        this._recycledBeaconIDs.add(beaconID);
+    removeMuTag(muTagUID: string, beaconId: BeaconId): void {
+        this._recycledBeaconIds.add(beaconId);
         // Must copy _muTags set or behavior subject's previous value will be
         // mutated
         const muTags = new Set(this._muTags);
@@ -223,11 +238,27 @@ export default class Account {
         }
     }
 
+    setSession(sessionId: string): void {
+        this._sessionId = sessionId;
+    }
+
+    clearSession(): void {
+        this._sessionId = undefined;
+    }
+
+    isCurrentSession(sessionId: string): boolean {
+        return this._sessionId === sessionId;
+    }
+
+    hasActiveSession(): boolean {
+        return this._sessionId != null;
+    }
+
     serialize(): string {
         return JSON.stringify(this, Account.replacer);
     }
 
-    static deserialize(json: string | AccountJSON): Account {
+    static deserialize(json: string | AccountJson): Account {
         const jsonString =
             typeof json === "string" ? json : JSON.stringify(json);
         return JSON.parse(jsonString, Account.reviver);
@@ -248,14 +279,18 @@ export default class Account {
                 );
             case "_accountNumber":
                 return value.stringValue;
-            case "_nextBeaconID":
+            case "_nextBeaconId":
                 return value.stringValue;
-            case "_recycledBeaconIDs": {
-                const beaconIDs: BeaconID[] = Array.from(value);
-                return beaconIDs.map((beaconID): string => beaconID.toString());
+            case "_recycledBeaconIds": {
+                const beaconIds: BeaconId[] = Array.from(value);
+                return beaconIds.length === 0
+                    ? undefined
+                    : beaconIds.map((beaconId): string => beaconId.toString());
             }
-            case "_muTags":
-                return Array.from(value);
+            case "_muTags": {
+                const muTags = Array.from(value);
+                return muTags.length === 0 ? undefined : muTags;
+            }
             case "_accessorValue":
                 // This property is not part of the model. It only serves to
                 // make some properties observable.
@@ -268,8 +303,8 @@ export default class Account {
     static reviver(key: string, value: any): any {
         switch (key) {
             case "":
-                if (value._recycledBeaconIDs == null) {
-                    value._recycledBeaconIDs = new Set<BeaconID>();
+                if (value._recycledBeaconIds == null) {
+                    value._recycledBeaconIds = new Set<BeaconId>();
                 }
 
                 if (value._muTags == null) {
@@ -279,12 +314,12 @@ export default class Account {
                 return new Account(value);
             case "_accountNumber":
                 return AccountNumber.fromString(value);
-            case "_nextBeaconID":
-                return BeaconID.create(value);
-            case "_recycledBeaconIDs":
-                return new Set<BeaconID>(
+            case "_nextBeaconId":
+                return BeaconId.create(value);
+            case "_recycledBeaconIds":
+                return new Set<BeaconId>(
                     value.map(
-                        (hex: string): BeaconID => BeaconID.fromString(hex)
+                        (hex: string): BeaconId => BeaconId.fromString(hex)
                     )
                 );
             case "_muTags":
@@ -294,11 +329,11 @@ export default class Account {
         }
     }
 
-    private incrementNextBeaconID(): void {
-        const previousBeaconID = this._nextBeaconID.valueOf();
-        const nextBeaconIDNumber = previousBeaconID + 1;
-        const nextBeaconIDHex = nextBeaconIDNumber.toString(16).toUpperCase();
-        const nextBeaconID = BeaconID.create(nextBeaconIDHex);
-        this._nextBeaconID = nextBeaconID;
+    private incrementNextBeaconId(): void {
+        const previousBeaconId = this._nextBeaconId.valueOf();
+        const nextBeaconIdNumber = previousBeaconId + 1;
+        const nextBeaconIdHex = nextBeaconIdNumber.toString(16).toUpperCase();
+        const nextBeaconId = BeaconId.create(nextBeaconIdHex);
+        this._nextBeaconId = nextBeaconId;
     }
 }

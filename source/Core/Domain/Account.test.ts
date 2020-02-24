@@ -1,30 +1,36 @@
-import Account, { AccountData, AccountNumber, AccountJSON } from "./Account";
-import { BeaconID } from "./ProvisionedMuTag";
+import Account, { AccountData, AccountNumber, AccountJson } from "./Account";
+import { BeaconId } from "./ProvisionedMuTag";
 
 const accountData: AccountData = {
-    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
     _emailAddress: "support+test@informu.io",
-    _nextBeaconID: BeaconID.create("A"),
-    _recycledBeaconIDs: new Set([BeaconID.create("8"), BeaconID.create("9")]),
+    _muTags: new Set(["UUID00"]),
+    _name: "Bill Stevens",
+    _nextBeaconId: BeaconId.create("A"),
     _nextMuTagNumber: 10,
-    _muTags: new Set(["UUID00"])
+    _nextSafeZoneNumber: 4,
+    _onboarding: false,
+    _recycledBeaconIds: new Set([BeaconId.create("8"), BeaconId.create("9")]),
+    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632"
 };
 const referenceAccount = new Account(accountData);
-const accountJSON: AccountJSON = {
-    _uid: accountData._uid,
+const accountJson: AccountJson = {
     _accountNumber: accountData._accountNumber.toString(),
     _emailAddress: accountData._emailAddress,
-    _nextBeaconID: accountData._nextBeaconID.toString(),
-    _recycledBeaconIDs: [
-        ...accountData._recycledBeaconIDs
-    ].map((beaconID): string => beaconID.toString()),
+    _muTags: [...accountData._muTags],
+    _name: accountData._name,
+    _nextBeaconId: accountData._nextBeaconId.toString(),
     _nextMuTagNumber: accountData._nextMuTagNumber,
-    _muTags: [...accountData._muTags]
+    _nextSafeZoneNumber: accountData._nextSafeZoneNumber,
+    _onboarding: accountData._onboarding,
+    _recycledBeaconIds: [
+        ...accountData._recycledBeaconIds
+    ].map((beaconId): string => beaconId.toString()),
+    _uid: accountData._uid
 };
 
 test("successfully creates Account from MuTagJSON", (): void => {
-    const account = Account.deserialize(accountJSON);
+    const account = Account.deserialize(accountJson);
     expect(account).toEqual(referenceAccount);
 });
 
@@ -46,27 +52,33 @@ test("successfully serializes and deserializes Account", (): void => {
 });
 
 const accountDataEmptyCollections: AccountData = {
-    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
     _emailAddress: "support+test@informu.io",
-    _nextBeaconID: BeaconID.create("A"),
-    _recycledBeaconIDs: new Set(),
+    _muTags: new Set(),
+    _name: "Bill Stevens",
+    _nextBeaconId: BeaconId.create("A"),
     _nextMuTagNumber: 10,
-    _muTags: new Set()
+    _nextSafeZoneNumber: 4,
+    _onboarding: false,
+    _recycledBeaconIds: new Set(),
+    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632"
 };
 const referenceAccountEmptyCollections = new Account(
     accountDataEmptyCollections
 );
-const accountJSONEmptyCollections: AccountJSON = {
-    _uid: accountData._uid,
+const accountJsonEmptyCollections: AccountJson = {
     _accountNumber: accountData._accountNumber.toString(),
     _emailAddress: accountData._emailAddress,
-    _nextBeaconID: accountData._nextBeaconID.toString(),
-    _nextMuTagNumber: accountData._nextMuTagNumber
+    _name: accountData._name,
+    _nextBeaconId: accountData._nextBeaconId.toString(),
+    _nextMuTagNumber: accountData._nextMuTagNumber,
+    _nextSafeZoneNumber: accountData._nextSafeZoneNumber,
+    _onboarding: accountData._onboarding,
+    _uid: accountData._uid
 };
 
 test("successfully creates Account from MuTagJSON (empty collections)", (): void => {
-    const account = Account.deserialize(accountJSONEmptyCollections);
+    const account = Account.deserialize(accountJsonEmptyCollections);
     expect(account).toEqual(referenceAccountEmptyCollections);
 });
 
@@ -76,13 +88,41 @@ test("successfully serializes and deserializes Account (empty collections)", ():
     expect(account).toEqual(referenceAccountEmptyCollections);
 });
 
+describe("session management", (): void => {
+    const thisSessionId = "3179b6fe-1b95-4852-bff6-db3c125049dd";
+    const otherSessionId = "5179b6fe-1b95-4852-bff6-db3c125049df";
+
+    afterAll((): void => {
+        jest.clearAllMocks();
+    });
+
+    test("successfully shows that there is not an active session", (): void => {
+        expect(referenceAccount.hasActiveSession()).toBe(false);
+    });
+
+    test("successfully adds session", (): void => {
+        referenceAccount.setSession(thisSessionId);
+        expect(referenceAccount.isCurrentSession(thisSessionId)).toBe(true);
+    });
+
+    test("successfully shows that there is an active session", (): void => {
+        expect(referenceAccount.hasActiveSession()).toBe(true);
+    });
+
+    test("successfully removes session", (): void => {
+        referenceAccount.clearSession();
+        expect(referenceAccount.isCurrentSession(thisSessionId)).toBe(false);
+        expect(referenceAccount.isCurrentSession(otherSessionId)).toBe(false);
+    });
+});
+
 describe("adding and removing Mu tags", (): void => {
-    const beaconIDOne = referenceAccount.newBeaconID;
+    const beaconIdOne = referenceAccount.newBeaconId;
     const muTagUIDOne = "UUID01";
     const muTagUIDTwo = "UUID02";
 
     /*beforeAll(async (): Promise<void> => {
-        account.removeMuTag(addedMuTagData._uid, addedMuTagData._beaconID);
+        account.removeMuTag(addedMuTagData._uid, addedMuTagData._beaconId);
         await new Promise(setImmediate);
     });
 
@@ -98,14 +138,14 @@ describe("adding and removing Mu tags", (): void => {
                 expect(muTagsChange.deletion).toEqual(undefined);
             }
         );
-        referenceAccount.addNewMuTag(muTagUIDOne, beaconIDOne);
+        referenceAccount.addNewMuTag(muTagUIDOne, beaconIdOne);
         expect(referenceAccount.newMuTagNumber).toEqual(11);
 
         subscription.unsubscribe();
     });
 
     test("successfully adds another Mu tag to account", (): void => {
-        const beaconIDTwo = referenceAccount.newBeaconID;
+        const beaconIdTwo = referenceAccount.newBeaconId;
 
         expect.assertions(3);
         const subscription = referenceAccount.muTagsChange.subscribe(
@@ -114,7 +154,7 @@ describe("adding and removing Mu tags", (): void => {
                 expect(muTagsChange.deletion).toEqual(undefined);
             }
         );
-        referenceAccount.addNewMuTag(muTagUIDTwo, beaconIDTwo);
+        referenceAccount.addNewMuTag(muTagUIDTwo, beaconIdTwo);
         expect(referenceAccount.newMuTagNumber).toEqual(12);
 
         subscription.unsubscribe();
@@ -128,8 +168,8 @@ describe("adding and removing Mu tags", (): void => {
                 expect(muTagsChange.insertion).toEqual(undefined);
             }
         );
-        referenceAccount.removeMuTag(muTagUIDOne, beaconIDOne);
-        expect(referenceAccount.newBeaconID.toString()).toEqual("8");
+        referenceAccount.removeMuTag(muTagUIDOne, beaconIdOne);
+        expect(referenceAccount.newBeaconId.toString()).toEqual("8");
 
         subscription.unsubscribe();
     });

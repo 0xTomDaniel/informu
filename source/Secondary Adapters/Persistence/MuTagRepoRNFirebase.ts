@@ -11,29 +11,57 @@ import {
     FailedToRemove
 } from "../../Core/Ports/MuTagRepositoryRemote";
 import ProvisionedMuTag, {
-    MuTagJSON,
-    isMuTagJSON
+    MuTagJson,
+    assertIsMuTagJson,
+    BeaconId
 } from "../../Core/Domain/ProvisionedMuTag";
+import { v4 as uuidV4 } from "uuid";
+import MuTagRepositoryRemotePortAddMuTag from "../../../source (restructure)/useCases/addMuTag/MuTagRepositoryRemotePort";
+import MuTagRepositoryRemotePortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/MuTagRepositoryRemotePort";
+import MuTagDevices from "../../../source (restructure)/shared/muTagDevices/MuTagDevices";
+import { AccountNumber } from "../../Core/Domain/Account";
 
 interface DatabaseMuTag {
-    beacon_id: string;
-    mu_tag_number: number;
-    attached_to: string;
-    battery_percentage: number;
-    last_seen: string;
-    color: number;
+    readonly advertising_interval: number;
+    readonly attached_to: string;
+    readonly battery_percentage: number;
+    readonly beacon_id: string;
+    readonly color: number;
+    readonly date_added: string;
+    readonly did_exit_region: boolean;
+    readonly firmware_version: string;
+    readonly in_safe_zone: number;
+    readonly is_checked_in: boolean;
+    readonly is_disabled: boolean;
+    readonly is_expensive: boolean;
+    readonly is_irreplaceable: boolean;
+    readonly is_missing: boolean;
+    readonly is_picking_up: boolean;
+    readonly last_seen: string;
+    readonly mac_address: string;
+    readonly major: string;
+    readonly minor: string;
+    readonly model_number: string;
+    readonly mu_tag_number: number;
+    readonly recent_latitude: number;
+    readonly recent_longitude: number;
+    readonly tx_power: number;
 }
 
-export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
-    async getAll(accountUID: string): Promise<Set<ProvisionedMuTag>> {
+export class MuTagRepoRNFirebase
+    implements
+        MuTagRepositoryRemote,
+        MuTagRepositoryRemotePortAddMuTag,
+        MuTagRepositoryRemotePortRemoveMuTag {
+    async getAll(accountUid: string): Promise<Set<ProvisionedMuTag>> {
         let snapshot: FirebaseDatabaseTypes.DataSnapshot;
 
         try {
             snapshot = await database()
-                .ref(`mu_tags/${accountUID}`)
+                .ref(`mu_tags/${accountUid}`)
                 .once("value");
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToGet();
         }
 
@@ -45,10 +73,17 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
                 if (muTagUID == null) {
                     return false;
                 }
-                const muTagData = MuTagRepoRNFirebase.toMuTagJSON(
-                    muTagUID,
-                    childSnapshot
-                );
+                let muTagData: MuTagJson;
+                try {
+                    muTagData = MuTagRepoRNFirebase.toMuTagJson(
+                        muTagUID,
+                        childSnapshot
+                    );
+                } catch (e) {
+                    console.warn(e);
+                    return false;
+                }
+
                 muTags.add(ProvisionedMuTag.deserialize(muTagData));
                 return false;
             }
@@ -57,71 +92,117 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         return muTags;
     }
 
-    async add(muTag: ProvisionedMuTag, accountUID: string): Promise<void> {
-        const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(muTag);
+    async add(
+        muTag: ProvisionedMuTag,
+        accountUid: string,
+        accountNumber: AccountNumber
+    ): Promise<void> {
+        const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(
+            muTag.json,
+            accountNumber
+        );
 
         try {
             await database()
-                .ref(`mu_tags/${accountUID}/${muTag.uid}`)
+                .ref(`mu_tags/${accountUid}/${muTag.uid}`)
                 .set(databaseMuTag);
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToAdd();
         }
     }
 
-    async update(muTag: ProvisionedMuTag, accountUID: string): Promise<void> {
-        const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(muTag);
+    async update(
+        muTag: ProvisionedMuTag,
+        accountUid: string,
+        accountNumber: AccountNumber
+    ): Promise<void> {
+        const databaseMuTag = MuTagRepoRNFirebase.toDatabaseMuTag(
+            muTag.json,
+            accountNumber
+        );
 
         try {
             await database()
-                .ref(`mu_tags/${accountUID}/${muTag.uid}`)
+                .ref(`mu_tags/${accountUid}/${muTag.uid}`)
                 .update(databaseMuTag);
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToUpdate();
         }
     }
 
     async updateMultiple(
         muTags: Set<ProvisionedMuTag>,
-        accountUID: string
+        accountUid: string,
+        accountNumber: AccountNumber
     ): Promise<void> {
         for (const muTag of muTags) {
-            await this.update(muTag, accountUID);
+            await this.update(muTag, accountUid, accountNumber);
         }
     }
 
-    async removeByUID(uid: string, accountUID: string): Promise<void> {
+    async removeByUid(uid: string, accountUid: string): Promise<void> {
         try {
             await database()
-                .ref(`mu_tags/${accountUID}/${uid}`)
+                .ref(`mu_tags/${accountUid}/${uid}`)
                 .remove();
         } catch (e) {
-            console.log(e);
+            console.warn(e);
             throw new FailedToRemove();
         }
     }
 
-    private static toDatabaseMuTag(muTag: ProvisionedMuTag): DatabaseMuTag {
-        const muTagJSON = muTag.json;
+    createNewUid(accountUid: string): string {
+        return (
+            database()
+                .ref(`mu_tags/${accountUid}`)
+                .push().key || uuidV4()
+        );
+    }
+
+    private static toDatabaseMuTag(
+        muTagJson: MuTagJson,
+        accountNumber: AccountNumber
+    ): DatabaseMuTag {
         /*eslint-disable @typescript-eslint/camelcase*/
         const databaseMuTag: DatabaseMuTag = {
-            beacon_id: muTagJSON._beaconID,
-            mu_tag_number: muTagJSON._muTagNumber,
-            attached_to: muTagJSON._name,
-            battery_percentage: muTagJSON._batteryLevel,
-            last_seen: muTagJSON._lastSeen,
-            color: muTagJSON._color
+            advertising_interval: muTagJson._advertisingInterval,
+            attached_to: muTagJson._name,
+            battery_percentage: muTagJson._batteryLevel,
+            beacon_id: muTagJson._beaconId,
+            color: muTagJson._color,
+            date_added: muTagJson._dateAdded,
+            did_exit_region: muTagJson._didExitRegion,
+            firmware_version: muTagJson._firmwareVersion,
+            in_safe_zone: -1,
+            is_checked_in: false,
+            is_disabled: false,
+            is_expensive: false,
+            is_irreplaceable: false,
+            is_missing: false,
+            is_picking_up: false,
+            last_seen: muTagJson._lastSeen,
+            mac_address: muTagJson._macAddress,
+            major: MuTagDevices.getMajor(accountNumber).toString(),
+            minor: MuTagDevices.getMinor(
+                accountNumber,
+                BeaconId.fromString(muTagJson._beaconId)
+            ).toString(),
+            model_number: muTagJson._modelNumber,
+            mu_tag_number: muTagJson._muTagNumber,
+            recent_latitude: muTagJson._recentLatitude,
+            recent_longitude: muTagJson._recentLongitude,
+            tx_power: muTagJson._txPower
         };
         /*eslint-enable */
         return databaseMuTag;
     }
 
-    private static toMuTagJSON(
+    private static toMuTagJson(
         uid: string,
         snapshot: FirebaseDatabaseTypes.DataSnapshot
-    ): MuTagJSON {
+    ): MuTagJson {
         if (!snapshot.exists()) {
             throw new DoesNotExist();
         }
@@ -132,17 +213,31 @@ export class MuTagRepoRNFirebase implements MuTagRepositoryRemote {
         }
 
         const json: { [key: string]: any } = {
-            _uid: uid,
-            _beaconID: snapshotData.beacon_id,
+            _advertisingInterval: snapshotData.advertising_interval,
+            _batteryLevel: snapshotData.battery_percentage,
+            _beaconId: snapshotData.beacon_id,
+            _color: snapshotData.color,
+            _dateAdded: snapshotData.date_added,
+            _didExitRegion: snapshotData.did_exit_region,
+            _firmwareVersion: snapshotData.firmware_version,
+            _isSafe: false,
+            _lastSeen: snapshotData.last_seen,
+            _macAddress: snapshotData.mac_address,
+            _modelNumber: snapshotData.model_number,
             _muTagNumber: snapshotData.mu_tag_number,
             _name: snapshotData.attached_to,
-            _batteryLevel: snapshotData.battery_percentage,
-            _color: snapshotData.color,
-            _isSafe: false,
-            _lastSeen: snapshotData.last_seen
+            _recentLatitude: snapshotData.recent_latitude,
+            _recentLongitude: snapshotData.recent_longitude,
+            _txPower: snapshotData.tx_power,
+            _uid: uid
         };
 
-        if (!isMuTagJSON(json)) {
+        try {
+            assertIsMuTagJson(json);
+        } catch (e) {
+            console.warn(e);
+            //DEBUG
+            console.warn(JSON.stringify(json));
             throw new PersistedDataMalformed(JSON.stringify(json));
         }
 

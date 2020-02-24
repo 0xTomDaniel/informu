@@ -15,6 +15,11 @@ fastlane_version "2.138.0"
 
 default_platform :android
 
+# Potenially useful Actions
+# - https://docs.fastlane.tools/actions/ensure_no_debug_code/
+# - https://docs.fastlane.tools/actions/ensure_env_vars/
+# - https://docs.fastlane.tools/actions/ensure_bundle_exec/
+
 platform :android do
   fastlane_require 'dotenv'
 
@@ -40,10 +45,41 @@ platform :android do
     end
 
     # Must run Metro Bundler manually to populate environment variables
-    envDevelopment = IO.read('.env.development').gsub(/\n/,' ').gsub('"','\"')
-    sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envDevelopment} && clear && react-native start --reset-cache\"\'"
+    envDevelopmentMetro = IO.read('.env.development').gsub(/\n/,' ').gsub('"','\"')
+    shouldResetCache = prompt(text: "Reset cache?", boolean: true)
+    shouldShowLogs = prompt(text: "Show logs?", boolean: true)
+    resetCacheOption = shouldResetCache ? " --reset-cache" : ""
+    sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envDevelopmentMetro} && clear && react-native start#{resetCacheOption}\"\'"
+    sh "cd .. && react-native run-android --appIdSuffix debug"
+    if shouldShowLogs
+      sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && clear && react-native log-android\"\'"
+    end
+  end
 
-    sh "cd .. && react-native run-android"
+  desc "Run the production build via adb"
+  lane :production do
+    Dotenv.load('.env.production')
+
+    envProduction = IO.read('.env.production').gsub(/\n/,' ')
+    envProduction << " UPLOAD_STORE_FILE=../../fastlane/secrets/upload-keystore.jks"
+    envProduction << " UPLOAD_KEY_ALIAS=upload"
+    keystoreAndKeyPassword = UI.password "Upload keystore and key password: "
+    envProduction << " UPLOAD_STORE_PASSWORD=#{keystoreAndKeyPassword}"
+    envProduction << " UPLOAD_KEY_PASSWORD=#{keystoreAndKeyPassword}"
+    envProduction = envProduction.gsub('"','\"')
+
+    # Must run Metro Bundler manually to populate environment variables
+    
+    #sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envProductionMetro} && clear && react-native start --reset-cache\"\'"
+
+    shouldShowLogs = prompt(text: "Show logs?", boolean: true)
+
+    projectDir = 'android'
+    gradle(task: 'clean', project_dir: projectDir)
+    sh "cd .. && export #{envProduction} && react-native run-android --variant=release -- --reset-cache"
+    if shouldShowLogs
+      sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && clear && react-native log-android\"\'"
+    end
   end
 
   desc "Deploy a new version to Google Play Store"

@@ -1,8 +1,7 @@
-import { SessionOutput } from '../../Core/Ports/SessionOutput';
-import AppViewModel, { Screen } from './AppViewModel';
+import { SessionOutput } from "../../Core/Ports/SessionOutput";
+import AppViewModel, { Screen } from "./AppViewModel";
 
 export default class AppPresenter implements SessionOutput {
-
     private readonly loadSessionViewModel: AppViewModel;
 
     constructor(loadSessionViewModel: AppViewModel) {

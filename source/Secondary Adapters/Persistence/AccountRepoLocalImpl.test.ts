@@ -1,7 +1,7 @@
 import AccountRepoLocalImpl from "./AccountRepoLocalImpl";
 import Account, { AccountNumber } from "../../Core/Domain/Account";
 import { DoesNotExist } from "../../Core/Ports/AccountRepositoryLocal";
-import { BeaconID } from "../../Core/Domain/ProvisionedMuTag";
+import { BeaconId } from "../../Core/Domain/ProvisionedMuTag";
 import DatabaseImplWatermelon from "./DatabaseImplWatermelon";
 import { Database } from "@nozbe/watermelondb";
 
@@ -20,9 +20,12 @@ const account = new Account({
     _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
     _emailAddress: "support+test@informu.io",
-    _nextBeaconID: BeaconID.create("B"),
-    _recycledBeaconIDs: new Set([BeaconID.create("2"), BeaconID.create("D")]),
+    _name: "Zach Mei",
+    _nextBeaconId: BeaconId.create("B"),
+    _nextSafeZoneNumber: 8,
+    _recycledBeaconIds: new Set([BeaconId.create("2"), BeaconId.create("D")]),
     _nextMuTagNumber: 4,
+    _onboarding: false,
     _muTags: new Set(["randomUUID"])
 });
 

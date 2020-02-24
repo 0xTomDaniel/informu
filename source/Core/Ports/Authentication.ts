@@ -1,4 +1,5 @@
 import { UserData } from "./UserData";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export interface Authentication {
     authenticateWithEmail(
@@ -10,84 +11,55 @@ export interface Authentication {
     isAuthenticatedAs(uid: string): boolean;
 }
 
-export class InvalidCredentials extends Error {
-    constructor() {
-        super("Wrong email address or password. Please try again.");
-        this.name = "InvalidCredentials";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class InvalidCredentials extends UserError {
+    name = "InvalidCredentials";
+    userErrorDescription = "Wrong email address or password. Please try again.";
 }
 
-export class UserDisabled extends Error {
-    constructor() {
-        super(
-            "This user is currently disabled. Please contact support@informu.io."
-        );
-        this.name = "UserDisabled";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class UserDisabled extends UserError {
+    name = "UserDisabled";
+    userErrorDescription =
+        "This user is currently disabled. Please contact support@informu.io.";
 }
 
-export class IncorrectSignInMethod extends Error {
-    constructor() {
-        super(
-            "An account already exists with the same email address but different sign-in credentials. Sign in using a provider already associated with this email address."
-        );
-        this.name = "IncorrectSignInMethod";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class IncorrectSignInMethod extends UserError {
+    name = "IncorrectSignInMethod";
+    userErrorDescription =
+        "An account already exists with the same email address but different sign-in credentials. Sign in using a provider already associated with this email address.";
 }
 
-export class TooManyAttempts extends Error {
-    constructor() {
-        super("Too many unsuccessful login attempts. Please try again later.");
-        this.name = "TooManyAttempts";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class TooManyAttempts extends UserError {
+    name = "TooManyAttempts";
+    userErrorDescription =
+        "Too many unsuccessful login attempts. Please try again later.";
 }
 
-export class SignInCanceled extends Error {
-    constructor() {
-        super("The sign in has been canceled.");
-        this.name = "SignInCanceled";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class SignInCanceled extends UserError {
+    name = "SignInCanceled";
+    userErrorDescription = "The sign in has been canceled.";
 }
 
-export class GooglePlayServicesNotAvailable extends Error {
-    constructor() {
-        super("Google Play services must be installed to log in with Google.");
-        this.name = "GooglePlayServicesNotAvailable";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class GooglePlayServicesNotAvailable extends UserError {
+    name = "GooglePlayServicesNotAvailable";
+    userErrorDescription =
+        "Google Play services must be installed to log in with Google.";
 }
 
-export class GoogleSignInFailed extends Error {
-    constructor() {
-        super(
-            "Failed to sign in with Google. Please contact support@informu.io."
-        );
-        this.name = "GoogleSignInFailed";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class GoogleSignInFailed extends UserError {
+    name = "GoogleSignInFailed";
+    userErrorDescription =
+        "Failed to sign in with Google. Please contact support@informu.io.";
 }
 
-export class FacebookSignInFailed extends Error {
-    constructor() {
-        super(
-            "Failed to sign in with Facebook. Please contact support@informu.io."
-        );
-        this.name = "FacebookSignInFailed";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class FacebookSignInFailed extends UserError {
+    name = "FacebookSignInFailed";
+    userErrorDescription =
+        "Failed to sign in with Facebook. Please contact support@informu.io.";
 }
 
-export class EmailNotFound extends Error {
-    constructor() {
-        super("Failed to sign in. Email address not found.");
-        this.name = "EmailNotFound";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
+export class EmailNotFound extends UserError {
+    name = "EmailNotFound";
+    userErrorDescription = "Failed to sign in. Email address not found.";
 }
 
 /*export enum FederatedAuthType {

@@ -22,8 +22,9 @@ import {
 import DeviceInfo from "react-native-device-info";
 import { Images } from "./Images";
 import Theme from "./Theme";
-import { Button, TextInput } from "react-native-paper";
+import { Button, Portal, Dialog, Paragraph } from "react-native-paper";
 import ErrorDialog from "./Base Components/ErrorDialog";
+import MessageDialog from "./Base Components/MessageDialog";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
         resizeMode: "contain",
         width: undefined,
         height: undefined,
-        marginHorizontal: 16
+        marginHorizontal: 32
     },
     content: {
         flex: 0.77,
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
         fontWeight: "bold"
     },
     buttonContentStyle: {
-        backgroundColor: "#FFFFFF",
+        //backgroundColor: "#FFFFFF",
         justifyContent: "space-evenly"
     },
     buttonStyle: {
@@ -117,16 +118,29 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
         setItemWithActivity(ActivityItem.Google);
         props.loginService.signInWithGoogle().catch(e => console.warn(e));
     };
-    const signInWithEmail = (): void => {
+    /*const signInWithEmail = (): void => {
         setItemWithActivity(ActivityItem.Email);
         const emailAddress = new EmailAddress(state.emailInput);
         const password = new Password(state.passwordInput);
 
         props.loginService.signInWithEmail(emailAddress, password);
+    };*/
+    const continueSignIn = (): void => {
+        props.viewModel.updateState({ signedIntoOtherDeviceMessage: "" });
+        props.loginService.continueSignIn();
+    };
+    const abortSignIn = (): void => {
+        props.viewModel.updateState({ signedIntoOtherDeviceMessage: "" });
+        props.loginService.abortSignIn();
     };
     const onDismissErrorDialog = (): void => {
         props.viewModel.updateState({
             federatedErrorMessage: ""
+        });
+    };
+    const onDismissMessageDialog = (): void => {
+        props.viewModel.updateState({
+            message: ""
         });
     };
 
@@ -150,7 +164,7 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                     <View>
                         <Button
                             icon="facebook"
-                            mode="outlined"
+                            mode="contained"
                             color="#3B5998"
                             uppercase={false}
                             loading={
@@ -166,7 +180,7 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                         </Button>
                         <Button
                             icon="google"
-                            mode="outlined"
+                            mode="contained"
                             color="#DB4437"
                             uppercase={false}
                             loading={
@@ -234,9 +248,38 @@ const LoginViewController: FunctionComponent<LoginVCProps> = (
                 </View>
                 <ErrorDialog
                     message={state.federatedErrorMessage}
+                    detailMessage={state.detailedErrorDescription}
                     visible={state.federatedErrorMessage !== ""}
                     onDismiss={onDismissErrorDialog}
                 />
+                <MessageDialog
+                    message={state.message}
+                    visible={state.message !== ""}
+                    onDismiss={onDismissMessageDialog}
+                />
+                <Portal>
+                    <Dialog
+                        visible={state.signedIntoOtherDeviceMessage !== ""}
+                        onDismiss={() => abortSignIn()}
+                    >
+                        <Dialog.Content>
+                            <Paragraph>
+                                {state.signedIntoOtherDeviceMessage}
+                            </Paragraph>
+                        </Dialog.Content>
+                        <Dialog.Actions>
+                            <Button onPress={() => abortSignIn()}>
+                                Cancel
+                            </Button>
+                            <Button
+                                mode="contained"
+                                onPress={() => continueSignIn()}
+                            >
+                                Sign In
+                            </Button>
+                        </Dialog.Actions>
+                    </Dialog>
+                </Portal>
             </SafeAreaView>
         </TouchableWithoutFeedback>
     );

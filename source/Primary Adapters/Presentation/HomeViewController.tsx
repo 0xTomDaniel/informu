@@ -7,7 +7,10 @@ import {
     Card,
     Avatar,
     IconButton,
-    Menu
+    Menu,
+    Dialog,
+    Paragraph,
+    Button
 } from "react-native-paper";
 import {
     StyleSheet,
@@ -28,13 +31,13 @@ import React, {
 import DeviceInfo from "react-native-device-info";
 import LinearGradient from "react-native-linear-gradient";
 import { HomeViewModel, BelongingViewData } from "./HomeViewModel";
-import AddMuTagService from "../../Core/Application/AddMuTagService";
+import AddMuTagInteractor from "../../../source (restructure)/useCases/addMuTag/AddMuTagInteractor";
 import LogoutService from "../../Core/Application/LogoutService";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { Images } from "./Images";
 import { Scale } from "./ResponsiveScaler";
 import BelongingDashboardService from "../../Core/Application/BelongingDashboardService";
-import RemoveMuTagService from "../../Core/Application/RemoveMuTagService";
+import RemoveMuTagInteractor from "../../../source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
 import ErrorDialog from "./Base Components/ErrorDialog";
 
 const styles = StyleSheet.create({
@@ -94,6 +97,7 @@ const styles = StyleSheet.create({
     },
     belongingsContainer: {
         flexGrow: 1,
+        paddingTop: 4,
         paddingBottom: 16
     },
     belongingsEmpty: {
@@ -102,7 +106,7 @@ const styles = StyleSheet.create({
     },
     card: {
         paddingVertical: 8,
-        marginHorizontal: Scale(12),
+        marginHorizontal: Scale(8),
         marginTop: Scale(12),
         backgroundColor: Theme.Color.AlmostWhite,
         borderWidth: 1,
@@ -153,7 +157,7 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
 
 interface BelongingCardProps {
     viewData: BelongingViewData;
-    removeMuTagService: RemoveMuTagService;
+    removeMuTagService: RemoveMuTagInteractor;
 }
 
 const BelongingCard: FunctionComponent<BelongingCardProps> = (
@@ -184,7 +188,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         {" " + props.viewData.lastSeen}
                     </Text>
                 }
-                left={(leftProps: any): Element => (
+                left={(leftProps: any): ReactElement => (
                     <Avatar.Icon
                         {...leftProps}
                         icon="radar"
@@ -192,7 +196,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         style={styles.iconView}
                     />
                 )}
-                right={(rightProps: any): Element => (
+                right={(rightProps: any): ReactElement => (
                     <Menu
                         visible={isMenuVisible}
                         onDismiss={hideMenu}
@@ -222,14 +226,15 @@ interface HomeVCProps extends NavigationScreenProps {
     homeViewModel: HomeViewModel;
     belongingDashboardService: BelongingDashboardService;
     logoutService: LogoutService;
-    addMuTagService: AddMuTagService;
-    removeMuTagService: RemoveMuTagService;
+    addMuTagService: AddMuTagInteractor;
+    removeMuTagService: RemoveMuTagInteractor;
 }
 
 const HomeViewController: FunctionComponent<HomeVCProps> = (
     props
 ): ReactElement => {
     const [state, setState] = useState(props.homeViewModel.state);
+    const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
     const onDismissErrorDialog = (): void => {
         props.homeViewModel.updateState({
@@ -314,9 +319,7 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
                 />
                 <Appbar.Action
                     icon="logout"
-                    onPress={(): void => {
-                        props.logoutService.logOut();
-                    }}
+                    onPress={(): void => setShowSignOutDialog(true)}
                 />
             </Appbar.Header>
             <FlatList
@@ -333,6 +336,29 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
                 keyExtractor={(item): string => item.uid}
             />
             <Portal>
+                <Dialog
+                    visible={showSignOutDialog}
+                    onDismiss={() => setShowSignOutDialog(false)}
+                >
+                    <Dialog.Content>
+                        <Paragraph>
+                            Are you sure you want to sign out?
+                        </Paragraph>
+                    </Dialog.Content>
+                    <Dialog.Actions>
+                        <Button onPress={() => setShowSignOutDialog(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            mode="contained"
+                            onPress={() => props.logoutService.logOut()}
+                        >
+                            Sign Out
+                        </Button>
+                    </Dialog.Actions>
+                </Dialog>
+            </Portal>
+            <Portal>
                 <Modal
                     dismissable={false}
                     visible={state.showActivityIndicator}
@@ -346,6 +372,7 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
             </Portal>
             <ErrorDialog
                 message={state.errorDescription}
+                detailMessage={state.detailedErrorDescription}
                 visible={state.isErrorVisible}
                 onDismiss={onDismissErrorDialog}
             />

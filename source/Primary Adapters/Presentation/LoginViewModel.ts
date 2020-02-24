@@ -1,23 +1,29 @@
 import _ from "lodash";
 
 export interface LoginState {
-    emailInput: string;
-    passwordInput: string;
-    emailErrorMessage: string;
-    passwordErrorMessage: string;
-    federatedErrorMessage: string;
-    isBusy: boolean;
-    logInButtonDisabled: boolean;
+    readonly emailInput: string;
+    readonly passwordInput: string;
+    readonly emailErrorMessage: string;
+    readonly passwordErrorMessage: string;
+    readonly federatedErrorMessage: string;
+    readonly signedIntoOtherDeviceMessage: string;
+    readonly detailedErrorDescription: string;
+    readonly isBusy: boolean;
+    readonly logInButtonDisabled: boolean;
+    readonly message: string;
 }
 
 export interface LoginStateDelta {
-    emailInput?: string;
-    passwordInput?: string;
-    emailErrorMessage?: string;
-    passwordErrorMessage?: string;
-    federatedErrorMessage?: string;
-    isBusy?: boolean;
-    logInButtonDisabled?: boolean;
+    readonly emailInput?: string;
+    readonly passwordInput?: string;
+    readonly emailErrorMessage?: string;
+    readonly passwordErrorMessage?: string;
+    readonly federatedErrorMessage?: string;
+    readonly signedIntoOtherDeviceMessage?: string;
+    readonly detailedErrorDescription?: string;
+    readonly isBusy?: boolean;
+    readonly logInButtonDisabled?: boolean;
+    readonly message?: string;
 }
 
 export class LoginViewModel {
@@ -27,8 +33,11 @@ export class LoginViewModel {
         emailErrorMessage: "",
         passwordErrorMessage: "",
         federatedErrorMessage: "",
+        signedIntoOtherDeviceMessage: "",
+        detailedErrorDescription: "",
         isBusy: false,
-        logInButtonDisabled: false
+        logInButtonDisabled: false,
+        message: ""
     };
 
     get state(): LoginState {
@@ -40,19 +49,7 @@ export class LoginViewModel {
 
     updateState(delta: LoginStateDelta): void {
         const oldState = _.cloneDeep(this._state);
-        _.mergeWith(this._state, delta, (destValue, deltaValue):
-            | any[]
-            | undefined => {
-            if (_.isArray(destValue)) {
-                const merged = _.values(
-                    _.merge(
-                        _.keyBy(destValue, "uid"),
-                        _.keyBy(deltaValue, "uid")
-                    )
-                );
-                return _.intersectionBy(merged, deltaValue, "uid");
-            }
-        });
+        _.mergeWith(this._state, delta);
         if (!_.isEqual(this._state, oldState)) {
             this.triggerDidUpdate();
         }
