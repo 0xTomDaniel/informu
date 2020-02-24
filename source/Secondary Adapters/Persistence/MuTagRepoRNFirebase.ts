@@ -73,10 +73,17 @@ export class MuTagRepoRNFirebase
                 if (muTagUID == null) {
                     return false;
                 }
-                const muTagData = MuTagRepoRNFirebase.toMuTagJson(
-                    muTagUID,
-                    childSnapshot
-                );
+                let muTagData: MuTagJson;
+                try {
+                    muTagData = MuTagRepoRNFirebase.toMuTagJson(
+                        muTagUID,
+                        childSnapshot
+                    );
+                } catch (e) {
+                    console.warn(e);
+                    return false;
+                }
+
                 muTags.add(ProvisionedMuTag.deserialize(muTagData));
                 return false;
             }
@@ -229,6 +236,8 @@ export class MuTagRepoRNFirebase
             assertIsMuTagJson(json);
         } catch (e) {
             console.warn(e);
+            //DEBUG
+            console.warn(JSON.stringify(json));
             throw new PersistedDataMalformed(JSON.stringify(json));
         }
 
