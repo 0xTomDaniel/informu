@@ -92,21 +92,25 @@ export default class BelongingDetectionService implements BelongingDetection {
     }
 
     private updateMuTagsWhenDetected(): void {
-        this.muTagMonitor.onMuTagDetection.subscribe((detectedMuTags): void => {
-            detectedMuTags.forEach((muTagSignal): void => {
-                this.updateDetectedMuTag(muTagSignal).catch((e): void => {
-                    console.warn(`updateDetectedMuTag() - error: ${e}`);
+        this.muTagDetectionSubscription = this.muTagMonitor.onMuTagDetection.subscribe(
+            (detectedMuTags): void => {
+                detectedMuTags.forEach((muTagSignal): void => {
+                    this.updateDetectedMuTag(muTagSignal).catch((e): void => {
+                        console.warn(`updateDetectedMuTag() - error: ${e}`);
+                    });
                 });
-            });
-        });
+            }
+        );
     }
 
     private updateMuTagsWhenRegionExited(): void {
-        this.muTagMonitor.onMuTagRegionExit.subscribe((exitedMuTag): void => {
-            this.updateExitedMuTag(exitedMuTag.uid).catch((e): void => {
-                console.warn(`updateExitedMuTag() - error: ${e}`);
-            });
-        });
+        this.muTagRegionExitSubscription = this.muTagMonitor.onMuTagRegionExit.subscribe(
+            (exitedMuTag): void => {
+                this.updateExitedMuTag(exitedMuTag.uid).catch((e): void => {
+                    console.warn(`updateExitedMuTag() - error: ${e}`);
+                });
+            }
+        );
     }
 
     private async updateDetectedMuTag(muTagSignal: MuTagSignal): Promise<void> {

@@ -51,7 +51,6 @@ const discoveredPeripheralObservable = new Observable<Peripheral>(
 const BluetoothMock = jest.fn<Bluetooth, any>(
     (): Bluetooth => ({
         discoveredPeripheral: discoveredPeripheralObservable,
-        start: jest.fn(),
         startScan: jest.fn(),
         stopScan: jest.fn(),
         retrieveServices: jest.fn(),
@@ -63,7 +62,6 @@ const BluetoothMock = jest.fn<Bluetooth, any>(
     })
 );
 const bluetoothMock = new BluetoothMock();
-(bluetoothMock.start as jest.Mock).mockResolvedValue(undefined);
 const muTagDevices = new MuTagDevices(bluetoothMock);
 const MuTagRepoLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
     (): MuTagRepositoryLocalPort => ({

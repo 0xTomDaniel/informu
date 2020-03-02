@@ -181,8 +181,8 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
         await BleManager.disconnect(peripheralId);
     }
 
-    async retrieveServices(peripheralId: PeripheralId): Promise<object> {
-        return BleManager.retrieveServices(peripheralId);
+    async retrieveServices(peripheralId: PeripheralId): Promise<void> {
+        await BleManager.retrieveServices(peripheralId);
     }
 
     async read<T>(
@@ -343,7 +343,9 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
                 )
                 .subscribe(undefined, undefined, () => resolve());
             BleManager.connect(peripheralId)
-                .then(() => this.peripheralConnected.next(peripheralId))
+                .then(() => {
+                    this.peripheralConnected.next(peripheralId);
+                })
                 .catch(e => {
                     subscription.unsubscribe();
                     reject(e);

@@ -41,7 +41,7 @@ export default interface MuTagDevicesPort {
     connectToProvisionedMuTag(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
-    ): Promise<void>;
+    ): Observable<void>;
     disconnectFromProvisionedMuTag(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal

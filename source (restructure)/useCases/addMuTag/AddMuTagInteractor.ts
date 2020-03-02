@@ -14,7 +14,7 @@ import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import UserError from "../../shared/metaLanguage/UserError";
 import UserWarning from "../../shared/metaLanguage/UserWarning";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
-import { take } from "rxjs/operators";
+import { take, switchMap } from "rxjs/operators";
 
 class LowMuTagBattery extends UserError {
     name = "LowMuTagBattery";
@@ -270,22 +270,25 @@ export default class AddMuTagInteractor {
             throw e;
         }
         try {
-            await this.muTagDevices.connectToProvisionedMuTag(
-                accountNumber,
-                beaconId
-            );
             await this.muTagDevices
-                .changeTxPower(
-                    TxPowerSetting["+6 dBm"],
-                    accountNumber,
-                    beaconId
-                )
-                .finally(() =>
-                    this.muTagDevices.disconnectFromProvisionedMuTag(
-                        accountNumber,
-                        beaconId
+                .connectToProvisionedMuTag(accountNumber, beaconId)
+                .pipe(
+                    switchMap(() =>
+                        this.muTagDevices
+                            .changeTxPower(
+                                TxPowerSetting["+6 dBm"],
+                                accountNumber,
+                                beaconId
+                            )
+                            .finally(() =>
+                                this.muTagDevices.disconnectFromProvisionedMuTag(
+                                    accountNumber,
+                                    beaconId
+                                )
+                            )
                     )
-                );
+                )
+                .toPromise();
         } catch (e) {
             console.warn(e);
         }

@@ -8,6 +8,7 @@ import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
+import { switchMap, take } from "rxjs/operators";
 
 export class LowMuTagBattery extends UserError {
     name = "LowMuTagBattery";
@@ -73,42 +74,62 @@ export default class RemoveMuTagInteractor {
         try {
             account = await this.accountRepoLocal.get();
             muTag = await this.muTagRepoLocal.getByUid(uid);
-            await this.muTagDevices.connectToProvisionedMuTag(
-                account.accountNumber,
-                muTag.beaconId
-            );
+            await this.muTagDevices
+                .connectToProvisionedMuTag(
+                    account.accountNumber,
+                    muTag.beaconId
+                )
+                .pipe(
+                    switchMap(() =>
+                        this.muTagDevices.readBatteryLevel(
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            account!.accountNumber,
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            muTag!.beaconId
+                        )
+                    ),
+                    switchMap(batteryLevel => {
+                        if (batteryLevel < this.removeMuTagBatteryThreshold) {
+                            throw new LowMuTagBattery(
+                                this.removeMuTagBatteryThreshold.valueOf()
+                            );
+                        } else {
+                            return this.muTagDevices.unprovisionMuTag(
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                account!.accountNumber,
+                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                muTag!.beaconId
+                            );
+                        }
+                    }),
+                    // The connection will error out after being unprovisioned
+                    // so we should go ahead and complete observable.
+                    take(1)
+                )
+                .toPromise();
         } catch (e) {
             console.warn(e);
-            this.removeMuTagOutput.hideBusyIndicator();
-            this.removeMuTagOutput.showError(new FailedToConnectToMuTag(e));
-            return;
-        }
-        try {
-            const batteryLevel = await this.muTagDevices.readBatteryLevel(
-                account.accountNumber,
-                muTag.beaconId
-            );
-            if (batteryLevel < this.removeMuTagBatteryThreshold) {
-                const lowBatteryError = new LowMuTagBattery(
-                    this.removeMuTagBatteryThreshold.valueOf()
-                );
-                this.removeMuTagOutput.hideBusyIndicator();
-                this.removeMuTagOutput.showError(lowBatteryError);
-                return;
+            let error: UserError;
+            if (e instanceof LowMuTagBattery) {
+                error = e;
+            } else {
+                error = new FailedToConnectToMuTag(e);
             }
-            await this.muTagDevices.unprovisionMuTag(
-                account.accountNumber,
-                muTag.beaconId
-            );
-        } catch (e) {
             this.removeMuTagOutput.hideBusyIndicator();
-            this.removeMuTagOutput.showError(new MuTagCommunicationFailure(e));
+            this.removeMuTagOutput.showError(error);
             return;
         }
+        await this.removeMuTagFromPersistence(account, muTag);
+    }
+
+    private async removeMuTagFromPersistence(
+        account: Account,
+        muTag: ProvisionedMuTag
+    ): Promise<void> {
         try {
-            account.removeMuTag(uid, muTag.beaconId);
+            account.removeMuTag(muTag.uid, muTag.beaconId);
             await this.accountRepoLocal.update(account);
-            await this.muTagRepoLocal.removeByUid(uid);
+            await this.muTagRepoLocal.removeByUid(muTag.uid);
         } catch (e) {
             this.removeMuTagOutput.hideBusyIndicator();
             this.removeMuTagOutput.showError(
@@ -118,7 +139,7 @@ export default class RemoveMuTagInteractor {
         }
         try {
             await this.accountRepoRemote.update(account);
-            await this.muTagRepoRemote.removeByUid(uid, account.uid);
+            await this.muTagRepoRemote.removeByUid(muTag.uid, account.uid);
         } catch (e) {
             console.warn(e);
         } finally {

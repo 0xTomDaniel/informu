@@ -1,5 +1,6 @@
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import Percent from "../../shared/metaLanguage/Percent";
+import { Observable } from "rxjs";
 
 export default interface MuTagDevicesPort {
     unprovisionMuTag(
@@ -9,7 +10,7 @@ export default interface MuTagDevicesPort {
     connectToProvisionedMuTag(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
-    ): Promise<void>;
+    ): Observable<void>;
     disconnectFromProvisionedMuTag(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal

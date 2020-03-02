@@ -236,8 +236,6 @@ export class MuTagRepoRNFirebase
             assertIsMuTagJson(json);
         } catch (e) {
             console.warn(e);
-            //DEBUG
-            console.warn(JSON.stringify(json));
             throw new PersistedDataMalformed(JSON.stringify(json));
         }
 

@@ -49,10 +49,11 @@ import { LoginService } from "./source/Core/Application/LoginService";
 import AccountRegistrationService from "./source/Core/Application/AccountRegistrationService";
 import NewAccountFactoryImpl from "./source/Core/Domain/NewAccountFactoryImpl";
 import MuTagDevices from "./source (restructure)/shared/muTagDevices/MuTagDevices";
-import BluetoothImplRnBleManager from "./source (restructure)/shared/muTagDevices/BluetoothImplRnBleManager";
+//import BluetoothImplRnBleManager from "./source (restructure)/shared/muTagDevices/BluetoothImplRnBleManager";
 import MuTagDevicesPortAddMuTag from "./source (restructure)/useCases/addMuTag/MuTagDevicesPort";
 import MuTagDevicesPortRemoveMuTag from "./source (restructure)/useCases/removeMuTag/MuTagDevicesPort";
 import Bluetooth from "./source (restructure)/shared/muTagDevices/Bluetooth";
+import BluetoothImplRnBlePlx from "./source (restructure)/shared/muTagDevices/BluetoothImplRnBlePlx";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -118,7 +119,7 @@ export class Dependencies {
             this.nameMuTagViewModel,
             this.muTagAddingViewModel
         );
-        this.bluetooth = new BluetoothImplRnBleManager();
+        this.bluetooth = new BluetoothImplRnBlePlx();
         this.muTagDevices = new MuTagDevices(this.bluetooth);
         this.addMuTagInteractor = new AddMuTagInteractor(
             this.connectThreshold,
@@ -255,6 +256,7 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.muTagMonitor = new MuTagMonitorRNBM();
+        this.belongingDetectionService.stop();
         this.belongingDetectionService = new BelongingDetectionService(
             this.muTagMonitor,
             this.muTagRepoLocal,

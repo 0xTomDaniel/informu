@@ -56,7 +56,6 @@ export default class MuTagRepoLocalImpl
 
     async getByBeaconId(beaconId: BeaconId): Promise<ProvisionedMuTag> {
         await this.onCachePopulated();
-
         const uid = this.muTagBeaconIdToUIDCache.get(beaconId.toString());
         if (uid != null && this.muTagCache.has(uid)) {
             return this.muTagCache.get(uid) as ProvisionedMuTag;
@@ -181,10 +180,10 @@ export default class MuTagRepoLocalImpl
         const account = await this.accountRepoLocal.get();
         const muTags = new Set<ProvisionedMuTag>();
 
-        for (const muTagUID of account.muTags) {
-            const rawMuTag = await this.database.get(`muTags/${muTagUID}`);
+        for (const muTagUid of account.muTags) {
+            const rawMuTag = await this.database.get(`muTags/${muTagUid}`);
             if (rawMuTag == null) {
-                throw new MuTagDoesNotExist(muTagUID);
+                throw new MuTagDoesNotExist(muTagUid);
             }
             muTags.add(ProvisionedMuTag.deserialize(rawMuTag));
         }

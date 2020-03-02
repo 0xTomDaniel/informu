@@ -3,7 +3,8 @@
 buildscript {
     ext {
         buildToolsVersion = "28.0.3"
-        // minimum SDK version required by react-native-ble-manager is 19
+        // Minimum SDK version required by react-native-ble-manager is 19.
+        // Minimum SDK version required by react-native-ble-plx is 18.
         minSdkVersion = 19
         compileSdkVersion = 28
         targetSdkVersion = 28
