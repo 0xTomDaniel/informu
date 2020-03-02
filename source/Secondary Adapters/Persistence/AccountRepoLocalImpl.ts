@@ -10,6 +10,8 @@ import Account from "../../Core/Domain/Account";
 import { Database } from "./Database";
 import AccountRepositoryLocalPortAddMuTag from "../../../source (restructure)/useCases/addMuTag/AccountRepositoryLocalPort";
 import AccountRepositoryLocalPortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/AccountRepositoryLocalPort";
+import { defer } from "rxjs";
+import { share, map } from "rxjs/operators";
 
 export default class AccountRepoLocalImpl
     implements
@@ -17,32 +19,35 @@ export default class AccountRepoLocalImpl
         AccountRepositoryLocalPortAddMuTag,
         AccountRepositoryLocalPortRemoveMuTag {
     private readonly database: Database;
-    private account?: Account;
+    private cachedAccount?: Account;
+    private persistedAccount = defer(() => this.database.get("account")).pipe(
+        map(rawAccount => {
+            if (typeof rawAccount === "string") {
+                return Account.deserialize(rawAccount);
+            }
+        }),
+        share()
+    );
 
     constructor(database: Database) {
         this.database = database;
     }
 
     async get(): Promise<Account> {
-        if (this.account != null) {
-            return this.account;
+        if (this.cachedAccount != null) {
+            return this.cachedAccount;
         }
-
-        let rawAccount: string | undefined;
-
+        let account: Account | undefined;
         try {
-            rawAccount = await this.database.get("account");
+            account = await this.persistedAccount.toPromise();
         } catch (e) {
             console.log(e);
             throw new FailedToGet();
         }
-
-        if (typeof rawAccount !== "string") {
+        if (account == null) {
             throw new DoesNotExist();
         }
-
-        const account = Account.deserialize(rawAccount);
-        this.account = account;
+        this.cachedAccount = account;
         return account;
     }
 
@@ -71,7 +76,7 @@ export default class AccountRepoLocalImpl
     async remove(): Promise<void> {
         try {
             await this.database.remove("account");
-            this.account = undefined;
+            this.cachedAccount = undefined;
         } catch (e) {
             console.log(e);
             throw new FailedToRemove();
