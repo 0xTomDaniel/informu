@@ -21,14 +21,14 @@ interface DatabaseAccount {
     readonly account_id: string;
     readonly badge_count: number;
     readonly email: string;
-    readonly logged_in?: string | null;
-    readonly mu_tags?: { [key: string]: boolean };
+    readonly logged_in: string | null;
+    readonly mu_tags: { [key: string]: boolean } | null;
     readonly name: string;
     readonly next_beacon_id: string;
     readonly next_mu_tag_number: number;
     readonly next_safe_zone_number: number;
     readonly onboarding: boolean;
-    readonly recycled_beacon_ids?: { [key: string]: boolean };
+    readonly recycled_beacon_ids: { [key: string]: boolean } | null;
 }
 
 export class AccountRepoRNFirebase
@@ -104,7 +104,7 @@ export class AccountRepoRNFirebase
                       allMuTags[muTag] = true;
                       return allMuTags;
                   }, {} as { [key: string]: boolean })
-                : undefined;
+                : null;
         const recycledBeaconIds =
             accountJson._recycledBeaconIds != null
                 ? accountJson._recycledBeaconIds.reduce(
@@ -114,7 +114,7 @@ export class AccountRepoRNFirebase
                       },
                       {} as { [key: string]: boolean }
                   )
-                : undefined;
+                : null;
         /*eslint-disable @typescript-eslint/camelcase*/
         const databaseAccount: DatabaseAccount = {
             account_id: accountJson._accountNumber,
@@ -166,9 +166,27 @@ export class AccountRepoRNFirebase
         }
 
         if ("recycled_beacon_ids" in snapshotData) {
-            data._recycledBeaconIds = Object.keys(
-                snapshotData.recycled_beacon_ids
+            /*
+             *  There is a problem casting 'snapshot.value as? [String : Bool]'
+             *  when all of the keys are numbers. If at least one of the keys
+             *  contain a string character then it works fine, however keys
+             *  should always cast as a string no matter what. The workaround
+             *  is to get the key value directly from the child DataSnapshot.
+             *  These are always strings.
+             */
+            const recycledBeaconIdsSnapshot = snapshot.child(
+                "recycled_beacon_ids"
             );
+            const recycledBeaconIds: string[] = [];
+            recycledBeaconIdsSnapshot.forEach(
+                (beaconId: FirebaseDatabaseTypes.DataSnapshot) => {
+                    if (!beaconId.exists() || beaconId.key == null) {
+                        return;
+                    }
+                    recycledBeaconIds.push(beaconId.key);
+                }
+            );
+            data._recycledBeaconIds = recycledBeaconIds;
         }
 
         try {
