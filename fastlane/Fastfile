@@ -104,9 +104,10 @@ platform :android do
       },
       project_dir: projectDir
     )
-    #upload_to_play_store(
-    #  track: 'internal'
-    #)
+    upload_to_play_store(
+      track: 'beta',
+      json_key: 'fastlane/secrets/google-play-store-private-key.json'
+    )
   end
 
   desc "Runs all the tests"
