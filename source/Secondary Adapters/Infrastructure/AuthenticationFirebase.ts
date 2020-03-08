@@ -34,7 +34,8 @@ export class AuthenticationFirebase implements Authentication {
             );
             const userData = {
                 uid: userCredential.user.uid,
-                emailAddress: emailAddress
+                emailAddress: emailAddress,
+                name: userCredential.user.displayName ?? ""
             };
             return userData;
         } catch (e) {
@@ -67,7 +68,8 @@ export class AuthenticationFirebase implements Authentication {
             }
             return {
                 uid: userCredential.user.uid,
-                emailAddress: userCredential.user.email
+                emailAddress: userCredential.user.email,
+                name: userCredential.user.displayName ?? ""
             };
         } catch (e) {
             throw this.convertError(e);
@@ -101,7 +103,8 @@ export class AuthenticationFirebase implements Authentication {
             }
             return {
                 uid: userCredential.user.uid,
-                emailAddress: userCredential.user.email
+                emailAddress: userCredential.user.email,
+                name: userCredential.user.displayName ?? ""
             };
         } catch (e) {
             throw this.convertError(e);

@@ -1,4 +1,4 @@
 {
-    "java.configuration.updateBuildConfiguration": "interactive",
+    "java.configuration.updateBuildConfiguration": "automatic",
     "typescript.tsdk": "node_modules/typescript/lib"
 }

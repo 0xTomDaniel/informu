@@ -52,7 +52,7 @@ export default class BelongingDashboardService {
         account.muTagsChange.subscribe((change): void => {
             if (change.insertion != null) {
                 this.muTagRepoLocal
-                    .getByUID(change.insertion)
+                    .getByUid(change.insertion)
                     .then((muTag): void => {
                         const dashboardBelonging = {
                             uid: muTag.uid,
@@ -64,7 +64,7 @@ export default class BelongingDashboardService {
                         this.updateDashboardOnSafetyStatusChange(muTag);
                     })
                     .catch((e): void => {
-                        console.warn(`muTagRepoLocal.getByUID() - error: ${e}`);
+                        console.warn(`muTagRepoLocal.getByUid() - error: ${e}`);
                     });
             }
 

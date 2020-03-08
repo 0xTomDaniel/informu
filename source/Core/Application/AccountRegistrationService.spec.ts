@@ -3,15 +3,15 @@ import Account, { AccountNumber, AccountData } from "../Domain/Account";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import AccountRegistrationService from "./AccountRegistrationService";
 import { NewAccountFactory } from "../Ports/NewAccountFactory";
-import { BeaconID } from "../Domain/ProvisionedMuTag";
+import { BeaconId } from "../Domain/ProvisionedMuTag";
 
 describe("user registers new account", (): void => {
     const AccountRepositoryRemoteMock = jest.fn<AccountRepositoryRemote, any>(
         (): AccountRepositoryRemote => ({
-            getByUID: jest.fn(),
+            getByUid: jest.fn(),
             add: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
     const accountRepoRemoteMock = new AccountRepositoryRemoteMock();
@@ -39,12 +39,16 @@ describe("user registers new account", (): void => {
 
     const newUID = "AZeloSR9jCOUxOWnf5RYN14r2632";
     const newEmail = "support+test2@informu.io";
+    const name = "Kayla Grossman";
     const newAccountData: AccountData = {
         _uid: newUID,
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: newEmail,
-        _nextBeaconID: BeaconID.create("0"),
-        _recycledBeaconIDs: new Set(),
+        _name: "Joseph Campbell",
+        _nextBeaconId: BeaconId.create("0"),
+        _nextSafeZoneNumber: 0,
+        _recycledBeaconIds: new Set(),
+        _onboarding: true,
         _nextMuTagNumber: 15,
         _muTags: new Set()
     };
@@ -63,9 +67,10 @@ describe("user registers new account", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await accountRegistrationService.registerFederated(
+                await accountRegistrationService.register(
                     newUID,
-                    newEmail
+                    newEmail,
+                    name
                 );
             }
         );
@@ -80,7 +85,8 @@ describe("user registers new account", (): void => {
             expect(newAccountFactoryMock.create).toHaveBeenCalledTimes(1);
             expect(newAccountFactoryMock.create).toHaveBeenCalledWith(
                 newUID,
-                newEmail
+                newEmail,
+                name
             );
         });
 

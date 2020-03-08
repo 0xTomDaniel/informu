@@ -1,5 +1,8 @@
-import ProvisionedMuTag, { BeaconID } from "../Domain/ProvisionedMuTag";
-import Percent from "../Domain/Percent";
+import ProvisionedMuTag, {
+    BeaconId,
+    MuTagData
+} from "../Domain/ProvisionedMuTag";
+import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import { MuTagColor } from "../Domain/MuTag";
 import {
     MuTagSignal,
@@ -36,13 +39,13 @@ const MuTagMonitorMock = jest.fn<MuTagMonitor, any>(
 
 const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocal, any>(
     (): MuTagRepositoryLocal => ({
-        getByUID: jest.fn(),
-        getByBeaconID: jest.fn(),
+        getByUid: jest.fn(),
+        getByBeaconId: jest.fn(),
         getAll: jest.fn(),
         add: jest.fn(),
         addMultiple: jest.fn(),
         update: jest.fn(),
-        removeByUID: jest.fn()
+        removeByUid: jest.fn()
     })
 );
 
@@ -71,40 +74,61 @@ const accountData: AccountData = {
     _uid: "UUID01",
     _accountNumber: accountNumber,
     _emailAddress: "user@email.com",
-    _nextBeaconID: BeaconID.create("2"),
-    _recycledBeaconIDs: new Set(),
+    _name: "Josh Jackson",
+    _nextBeaconId: BeaconId.create("2"),
+    _nextSafeZoneNumber: 0,
+    _recycledBeaconIds: new Set(),
     _nextMuTagNumber: 2,
+    _onboarding: false,
     _muTags: new Set()
 };
 const account = new Account(accountData);
-const muTagBeaconID = BeaconID.create("0");
-const muTagData = {
-    _uid: "UUID01",
-    _beaconID: muTagBeaconID,
-    _muTagNumber: 0,
-    _name: "Wallet",
+const muTagBeaconId = BeaconId.create("0");
+const muTagData: MuTagData = {
+    _advertisingInterval: 1,
     _batteryLevel: new Percent(77),
+    _beaconId: muTagBeaconId,
+    _color: MuTagColor.Charcoal,
+    _dateAdded: new Date("2019-11-03T17:09:31.007Z"),
+    _didExitRegion: true,
+    _firmwareVersion: "1.6.1",
     _isSafe: false,
     _lastSeen: new Date("2019-11-03T17:09:31.007Z"),
-    _color: MuTagColor.Charcoal
+    _macAddress: "4628BCFE76AC",
+    _modelNumber: "REV8",
+    _muTagNumber: 0,
+    _name: "Wallet",
+    _recentLatitude: 0,
+    _recentLongitude: 0,
+    _txPower: 1,
+    _uid: "UUID01"
 };
 const muTag = new ProvisionedMuTag(muTagData);
 const muTagBeacon: MuTagBeacon = {
     uid: muTagData._uid,
     accountNumber: accountNumber,
-    beaconID: muTagBeaconID
+    beaconId: muTagBeaconId
 };
-const addedBeaconID = account.newBeaconID;
+const addedBeaconId = account.newBeaconId;
 const addedMuTagNumber = account.newMuTagNumber;
 const addedMuTagData = {
-    _uid: "UUID02",
-    _beaconID: addedBeaconID,
-    _muTagNumber: addedMuTagNumber,
-    _name: "Bag",
+    _advertisingInterval: 1,
     _batteryLevel: new Percent(68),
+    _beaconId: addedBeaconId,
+    _color: MuTagColor.Charcoal,
+    _dateAdded: new Date("2019-11-02T17:09:31.007Z"),
+    _didExitRegion: true,
+    _firmwareVersion: "1.6.1",
     _isSafe: false,
     _lastSeen: new Date("2019-11-02T17:09:31.007Z"),
-    _color: MuTagColor.Charcoal
+    _macAddress: "4628BC3E76AC",
+    _modelNumber: "REV8",
+    _muTagNumber: addedMuTagNumber,
+    _name: "Bag",
+    _recentLatitude: 0,
+    _recentLongitude: 0,
+    _txPower: 1,
+    _uid: "UUID02"
 };
 const addedMuTag = new ProvisionedMuTag(addedMuTagData);
 const lastSeenTimestamp = new Date();
@@ -117,7 +141,7 @@ describe("last seen status of belongings continuously updates", (): void => {
         (muTagRepoLocalMock.getAll as jest.Mock).mockResolvedValueOnce(
             new Set([muTag])
         );
-        (muTagRepoLocalMock.getByBeaconID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByBeaconId as jest.Mock).mockResolvedValueOnce(
             muTag
         );
 
@@ -126,12 +150,12 @@ describe("last seen status of belongings continuously updates", (): void => {
         const detectedMuTags: Set<MuTagSignal> = new Set([
             {
                 accountNumber: accountNumber,
-                beaconID: muTagBeaconID,
+                beaconId: muTagBeaconId,
                 timestamp: lastSeenTimestamp
             },
             {
                 accountNumber: nonAccountNumber,
-                beaconID: muTagBeaconID,
+                beaconId: muTagBeaconId,
                 timestamp: lastSeenTimestamp
             }
         ]);
@@ -179,7 +203,7 @@ describe("last seen status of belongings continuously updates", (): void => {
     describe("app device has exited belonging beacon region outside of assigned Safe Zone", (): void => {
         // Given that the account connected to the current belonging is logged in
         //
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(muTag);
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(muTag);
 
         // Given app device has exited belonging beacon region outside of Safe Zone
         //
@@ -220,10 +244,10 @@ describe("last seen status of belongings continuously updates", (): void => {
     describe("belonging is added to account", (): void => {
         // Given that an account is logged in
 
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
             addedMuTag
         );
-        (muTagRepoLocalMock.getByBeaconID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByBeaconId as jest.Mock).mockResolvedValueOnce(
             addedMuTag
         );
 
@@ -231,7 +255,7 @@ describe("last seen status of belongings continuously updates", (): void => {
         const detectedMuTags: Set<MuTagSignal> = new Set([
             {
                 accountNumber: accountNumber,
-                beaconID: addedMuTagData._beaconID,
+                beaconId: addedMuTagData._beaconId,
                 timestamp: detectedTimestamp
             }
         ]);
@@ -242,7 +266,7 @@ describe("last seen status of belongings continuously updates", (): void => {
             async (): Promise<void> => {
                 account.addNewMuTag(
                     addedMuTagData._uid,
-                    addedMuTagData._beaconID
+                    addedMuTagData._beaconId
                 );
                 await new Promise(setImmediate);
                 onMuTagDetectionSubscriber.next(detectedMuTags);
@@ -264,13 +288,13 @@ describe("last seen status of belongings continuously updates", (): void => {
     describe("belonging is removed from account", (): void => {
         // Given that an account is logged in
 
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
             addedMuTag
         );
         const addedMuTagBeacon: MuTagBeacon = {
             uid: addedMuTagData._uid,
             accountNumber: accountNumber,
-            beaconID: addedBeaconID
+            beaconId: addedBeaconId
         };
 
         // When a belonging is removed from account
@@ -279,7 +303,7 @@ describe("last seen status of belongings continuously updates", (): void => {
             async (): Promise<void> => {
                 account.removeMuTag(
                     addedMuTagData._uid,
-                    addedMuTagData._beaconID
+                    addedMuTagData._beaconId
                 );
                 await new Promise(setImmediate);
             }

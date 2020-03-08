@@ -29,6 +29,7 @@ project.xcworkspace
 bin/
 gen/
 out/
+*.hprof
 
 # Android/IntelliJ
 #

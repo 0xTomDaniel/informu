@@ -1,4 +1,4 @@
-import { LoginOutput } from "../Ports/LoginOutput";
+import LoginOutput from "../Ports/LoginOutput";
 import {
     Authentication,
     InvalidCredentials,
@@ -12,10 +12,7 @@ import {
     FacebookSignInFailed,
     IncorrectSignInMethod
 } from "../Ports/Authentication";
-import {
-    AccountRepositoryRemote,
-    DoesNotExist as AccountDoesNotExistOnRemote
-} from "../Ports/AccountRepositoryRemote";
+import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import {
     DoesNotExist as AccountDoesNotExistOnLocal,
     FailedToGet,
@@ -28,7 +25,7 @@ import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import { Session } from "./SessionService";
 import { AccountRegistration } from "./AccountRegistrationService";
-import { UserData } from "../Ports/UserData";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export class ImproperEmailFormat extends Error {
     constructor() {
@@ -44,6 +41,11 @@ export class ImproperPasswordComplexity extends Error {
         this.name = "ImproperPasswordComplexity";
         Object.setPrototypeOf(this, new.target.prototype);
     }
+}
+
+class GenericSignInError extends UserError {
+    name = "GenericSignInError";
+    userErrorDescription = "Failed to sign in.";
 }
 
 export type LoginServiceException =
@@ -96,8 +98,7 @@ export class LoginService {
                 emailAddress.rawValue(),
                 password.rawValue()
             );
-            await this.loadAccountFromRemote(userData.uid);
-            await this.sessionService.start();
+            await this.sessionService.start(userData);
         } catch (e) {
             if (
                 this.isLoginServiceException(e) ||
@@ -118,19 +119,20 @@ export class LoginService {
         this.sessionService.pauseLoadOnce();
         try {
             const userData = await this.authentication.authenticateWithFacebook();
-            await this.loadOrCreateAccount(userData);
-            await this.sessionService.start();
+            await this.sessionService.start(userData);
         } catch (e) {
-            if (
-                e instanceof FacebookSignInFailed ||
-                e instanceof EmailNotFound ||
-                e instanceof IncorrectSignInMethod
-            ) {
-                this.loginOutput.showFederatedLoginError(e);
-            } else if (e instanceof SignInCanceled) {
-                return;
-            } else {
-                throw e;
+            switch (e.name) {
+                case "FacebookSignInFailed":
+                case "EmailNotFound":
+                case "IncorrectSignInMethod":
+                    this.loginOutput.showFederatedLoginError(e);
+                    break;
+                case "SignInCanceled":
+                    return;
+                default:
+                    this.loginOutput.showFederatedLoginError(
+                        new GenericSignInError(e)
+                    );
             }
         } finally {
             this.loginOutput.hideBusyIndicator();
@@ -142,46 +144,33 @@ export class LoginService {
         this.sessionService.pauseLoadOnce();
         try {
             const userData = await this.authentication.authenticateWithGoogle();
-            await this.loadOrCreateAccount(userData);
-            await this.sessionService.start();
+            await this.sessionService.start(userData);
         } catch (e) {
-            if (
-                e instanceof GooglePlayServicesNotAvailable ||
-                e instanceof GoogleSignInFailed ||
-                e instanceof EmailNotFound ||
-                e instanceof IncorrectSignInMethod
-            ) {
-                this.loginOutput.showFederatedLoginError(e);
-            } else if (e instanceof SignInCanceled) {
-                return;
-            } else {
-                throw e;
+            switch (e.name) {
+                case "GooglePlayServicesNotAvailable":
+                case "GoogleSignInFailed":
+                case "EmailNotFound":
+                case "IncorrectSignInMethod":
+                    this.loginOutput.showFederatedLoginError(e);
+                    break;
+                case "SignInCanceled":
+                    return;
+                default:
+                    this.loginOutput.showFederatedLoginError(
+                        new GenericSignInError(e)
+                    );
             }
         } finally {
             this.loginOutput.hideBusyIndicator();
         }
     }
 
-    private async loadOrCreateAccount(userData: UserData): Promise<void> {
-        try {
-            await this.loadAccountFromRemote(userData.uid);
-        } catch (e) {
-            if (e instanceof AccountDoesNotExistOnRemote) {
-                await this.accountRegistrationService.registerFederated(
-                    userData.uid,
-                    userData.emailAddress
-                );
-            } else {
-                throw e;
-            }
-        }
+    continueSignIn(): void {
+        this.sessionService.continueStart();
     }
 
-    private async loadAccountFromRemote(uid: string): Promise<void> {
-        const account = await this.accountRepoRemote.getByUID(uid);
-        await this.accountRepoLocal.add(account);
-        const muTags = await this.muTagRepoRemote.getAll(uid);
-        await this.muTagRepoLocal.addMultiple(muTags);
+    abortSignIn(): void {
+        this.sessionService.abortStart();
     }
 
     private isLoginServiceException(

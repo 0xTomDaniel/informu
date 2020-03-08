@@ -1,8 +1,8 @@
 import ProvisionedMuTag, {
-    BeaconID,
+    BeaconId,
     MuTagData
 } from "../Domain/ProvisionedMuTag";
-import Percent from "../Domain/Percent";
+import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import {
     BelongingDashboardOutput,
     DashboardBelonging
@@ -25,13 +25,13 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
     );
     const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocal, any>(
         (): MuTagRepositoryLocal => ({
-            getByUID: jest.fn(),
-            getByBeaconID: jest.fn(),
+            getByUid: jest.fn(),
+            getByBeaconId: jest.fn(),
             getAll: jest.fn(),
             add: jest.fn(),
             addMultiple: jest.fn(),
             update: jest.fn(),
-            removeByUID: jest.fn()
+            removeByUid: jest.fn()
         })
     );
     const AccountRepoLocalMock = jest.fn<AccountRepositoryLocal, any>(
@@ -52,50 +52,81 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         accountRepoLocalMock
     );
 
+    const dateNow = new Date();
     const belongingsData: MuTagData[] = [
         {
-            _uid: "randomUUID01",
-            _beaconID: BeaconID.create("0"),
+            _advertisingInterval: 1,
+            _batteryLevel: new Percent(50),
+            _beaconId: BeaconId.create("0"),
+            _color: MuTagColor.MuOrange,
+            _dateAdded: dateNow,
+            _didExitRegion: false,
+            _firmwareVersion: "1.6.1",
+            _isSafe: true,
+            _lastSeen: dateNow,
+            _macAddress: "BBCCDDEF8734",
+            _modelNumber: "REV8",
             _muTagNumber: 0,
             _name: "Keys",
-            _batteryLevel: new Percent(50),
-            _isSafe: true,
-            _lastSeen: new Date(),
-            _color: MuTagColor.MuOrange
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: "randomUUID01"
         },
         {
-            _uid: "randomUUID02",
-            _beaconID: BeaconID.create("1"),
-            _muTagNumber: 1,
-            _name: "Laptop",
+            _advertisingInterval: 1,
             _batteryLevel: new Percent(50),
+            _beaconId: BeaconId.create("1"),
+            _color: MuTagColor.MuOrange,
+            _dateAdded: new Date("1995-12-17T03:24:00"),
+            _didExitRegion: true,
+            _firmwareVersion: "1.6.1",
             _isSafe: false,
             _lastSeen: new Date("1995-12-17T03:24:00"),
-            _color: MuTagColor.MuOrange
+            _macAddress: "BBCCDD238734",
+            _modelNumber: "REV8",
+            _muTagNumber: 1,
+            _name: "Laptop",
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: "randomUUID02"
         },
         {
-            _uid: "randomUUID03",
-            _beaconID: BeaconID.create("2"),
+            _advertisingInterval: 1,
+            _batteryLevel: new Percent(80),
+            _beaconId: BeaconId.create("2"),
+            _color: MuTagColor.MuOrange,
+            _dateAdded: dateNow,
+            _didExitRegion: true,
+            _firmwareVersion: "1.6.1",
+            _isSafe: false,
+            _lastSeen: dateNow,
+            _macAddress: "A1CCDDEF8734",
+            _modelNumber: "REV8",
             _muTagNumber: 3,
             _name: "Wallet",
-            _batteryLevel: new Percent(80),
-            _isSafe: false,
-            _lastSeen: new Date(),
-            _color: MuTagColor.MuOrange
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: "randomUUID03"
         }
     ];
     const muTags = new Set([
         new ProvisionedMuTag(belongingsData[0]),
         new ProvisionedMuTag(belongingsData[1])
     ]);
-    const recycledBeaconIDs = [BeaconID.create("2"), BeaconID.create("5")];
+    const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
     const accountMuTags = [belongingsData[0]._uid, belongingsData[1]._uid];
     const validAccountData: AccountData = {
         _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
         _accountNumber: AccountNumber.fromString("0000000"),
         _emailAddress: "support+test@informu.io",
-        _nextBeaconID: BeaconID.create("A"),
-        _recycledBeaconIDs: new Set(recycledBeaconIDs),
+        _name: "Joe Brown",
+        _nextBeaconId: BeaconId.create("A"),
+        _nextSafeZoneNumber: 1,
+        _onboarding: false,
+        _recycledBeaconIds: new Set(recycledBeaconIds),
         _nextMuTagNumber: 10,
         _muTags: new Set(accountMuTags)
     };
@@ -104,12 +135,15 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         _uid: validAccountData._uid,
         _accountNumber: validAccountData._accountNumber,
         _emailAddress: validAccountData._emailAddress,
-        _nextBeaconID: validAccountData._nextBeaconID,
-        _recycledBeaconIDs: validAccountData._recycledBeaconIDs,
+        _name: validAccountData._name,
+        _nextBeaconId: validAccountData._nextBeaconId,
+        _nextSafeZoneNumber: validAccountData._nextSafeZoneNumber,
+        _onboarding: validAccountData._onboarding,
+        _recycledBeaconIds: validAccountData._recycledBeaconIds,
         _nextMuTagNumber: validAccountData._nextMuTagNumber,
         _muTags: new Set()
     });
-    const addedBeaconID = accountNoMuTags.newBeaconID;
+    const addedBeaconId = accountNoMuTags.newBeaconId;
     const newBelongingDashboardData: DashboardBelonging = {
         uid: belongingsData[2]._uid,
         name: belongingsData[2]._name,
@@ -197,14 +231,14 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
     describe("belonging is added to account", (): void => {
         // Given that a new belonging needs to be added to account
         //
-        (muTagRepoLocalMock.getByUID as jest.Mock).mockResolvedValueOnce(
+        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
             newMuTag
         );
 
         // When the belonging is added to account
         //
         beforeAll((): void => {
-            accountNoMuTags.addNewMuTag(belongingsData[2]._uid, addedBeaconID);
+            accountNoMuTags.addNewMuTag(belongingsData[2]._uid, addedBeaconId);
         });
 
         // Then
@@ -255,7 +289,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         // When the belonging is removed from account
         //
         beforeAll((): void => {
-            accountNoMuTags.removeMuTag(belongingUID, addedBeaconID);
+            accountNoMuTags.removeMuTag(belongingUID, addedBeaconId);
         });
 
         // Then
