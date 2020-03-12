@@ -3,42 +3,37 @@ import { RemoveMuTagOutputPort } from "./RemoveMuTagOutputPort";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Account from "../../../source/Core/Domain/Account";
 import MuTagDevicesPort from "./MuTagDevicesPort";
-import UserError from "../../shared/metaLanguage/UserError";
+import UserError, { UserErrorType } from "../../shared/metaLanguage/UserError";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import { switchMap, take } from "rxjs/operators";
 
-export class LowMuTagBattery extends UserError {
-    name = "LowMuTagBattery";
-    userErrorDescription: string;
-    constructor(
-        lowBatteryThreshold: number,
-        originatingError?: Error | undefined
-    ) {
-        super(originatingError);
-        this.userErrorDescription = `Unable to remove Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.`;
-    }
-}
+export const LowMuTagBattery = (
+    lowBatteryThreshold: number
+): UserErrorType => ({
+    name: "LowMuTagBattery",
+    userFriendlyMessage: `Unable to remove Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.`
+});
 
-export class FailedToConnectToMuTag extends UserError {
-    name = "FailedToConnectToMuTag";
-    userErrorDescription =
-        "Could not connect to Mu tag. Please ensure that Mu tag is charged and move it closer to the app.";
-}
+export const FailedToConnectToMuTag: UserErrorType = {
+    name: "FailedToConnectToMuTag",
+    userFriendlyMessage:
+        "Could not connect to Mu tag. Please ensure that Mu tag is charged and move it closer to the app."
+};
 
-export class MuTagCommunicationFailure extends UserError {
-    name = "MuTagCommunicationFailure";
-    userErrorDescription =
-        "There was a problem communicating with the Mu tag. Please move Mu tag closer to the app.";
-}
+export const MuTagCommunicationFailure: UserErrorType = {
+    name: "MuTagCommunicationFailure",
+    userFriendlyMessage:
+        "There was a problem communicating with the Mu tag. Please move Mu tag closer to the app."
+};
 
-export class FailedToRemoveMuTagFromAccount extends UserError {
-    name = "FailedToRemoveMuTagFromAccount";
-    userErrorDescription =
-        "The Mu tag device successfully reset and disconnected from your account, but there was a problem removing the Mu tag from the app. Please notify support@informu.io.";
-}
+export const FailedToRemoveMuTagFromAccount: UserErrorType = {
+    name: "FailedToRemoveMuTagFromAccount",
+    userFriendlyMessage:
+        "The Mu tag device successfully reset and disconnected from your account, but there was a problem removing the Mu tag from the app. Please notify support@informu.io."
+};
 
 export default class RemoveMuTagInteractor {
     private readonly removeMuTagBatteryThreshold: Percent;
@@ -90,8 +85,10 @@ export default class RemoveMuTagInteractor {
                     ),
                     switchMap(batteryLevel => {
                         if (batteryLevel < this.removeMuTagBatteryThreshold) {
-                            throw new LowMuTagBattery(
-                                this.removeMuTagBatteryThreshold.valueOf()
+                            throw UserError.create(
+                                LowMuTagBattery(
+                                    this.removeMuTagBatteryThreshold.valueOf()
+                                )
                             );
                         } else {
                             return this.muTagDevices.unprovisionMuTag(
@@ -110,10 +107,10 @@ export default class RemoveMuTagInteractor {
         } catch (e) {
             console.warn(e);
             let error: UserError;
-            if (e instanceof LowMuTagBattery) {
+            if (e.name === "LowMuTagBattery") {
                 error = e;
             } else {
-                error = new FailedToConnectToMuTag(e);
+                error = UserError.create(FailedToConnectToMuTag, e);
             }
             this.removeMuTagOutput.hideBusyIndicator();
             this.removeMuTagOutput.showError(error);
@@ -133,7 +130,7 @@ export default class RemoveMuTagInteractor {
         } catch (e) {
             this.removeMuTagOutput.hideBusyIndicator();
             this.removeMuTagOutput.showError(
-                new FailedToRemoveMuTagFromAccount(e)
+                UserError.create(FailedToRemoveMuTagFromAccount, e)
             );
             return;
         }

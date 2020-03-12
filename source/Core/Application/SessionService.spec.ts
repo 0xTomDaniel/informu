@@ -17,6 +17,22 @@ import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import AccountRegistrationService from "./AccountRegistrationService";
 import { NewAccountFactory } from "../Ports/NewAccountFactory";
 import LoginOutput from "../Ports/LoginOutput";
+import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
+import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
+import UserWarning from "../../../source (restructure)/shared/metaLanguage/UserWarning";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+const logger = new Logger(eventTrackerMock);
+UserWarning.logger = logger;
+UserError.logger = logger;
 
 describe("user opens saved login session", (): void => {
     const SessionOutputMock = jest.fn<SessionOutput, any>(
@@ -219,7 +235,7 @@ describe("user opens saved login session", (): void => {
         beforeAll(
             async (): Promise<void> => {
                 (accountRepoLocalMock.get as jest.Mock).mockRejectedValueOnce(
-                    new DoesNotExist()
+                    UserError.create(DoesNotExist)
                 );
                 await sessionService.load();
             }
@@ -514,7 +530,7 @@ describe("user opens saved login session", (): void => {
         beforeAll(
             async (): Promise<void> => {
                 (accountRepoRemoteMock.getByUid as jest.Mock).mockRejectedValueOnce(
-                    new AccountDoesNotExistOnRemote()
+                    UserError.create(AccountDoesNotExistOnRemote)
                 );
                 account.clearSession();
                 await sessionService.start(userData);

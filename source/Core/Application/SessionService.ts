@@ -1,26 +1,33 @@
 import { SessionOutput } from "../Ports/SessionOutput";
 import { Authentication } from "../Ports/Authentication";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
-import { DoesNotExist } from "../Ports/AccountRepositoryLocal";
 import { BelongingDetection } from "./BelongingDetectionService";
 import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import { UserData } from "../Ports/UserData";
-import UserWarning from "../../../source (restructure)/shared/metaLanguage/UserWarning";
+import UserWarning, {
+    UserWarningType
+} from "../../../source (restructure)/shared/metaLanguage/UserWarning";
 import { Database } from "../../Secondary Adapters/Persistence/Database";
 import { v4 as uuidV4 } from "uuid";
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import AccountRegistrationService from "./AccountRegistrationService";
-import { DoesNotExist as AccountDoesNotExistOnRemote } from "../Ports/AccountRepositoryRemote";
 import { Subject } from "rxjs";
 import Account from "../Domain/Account";
 import LoginOutput from "../Ports/LoginOutput";
+import * as Sentry from "@sentry/react-native";
 
-export class SignedIntoOtherDevice extends UserWarning {
+/*export class SignedIntoOtherDevice extends UserWarning {
     name = "SignedIntoOtherDevice";
-    userWarningDescription =
+    userFriendlyMessage =
         "It looks like you are already signed into another device. Would you like to sign out of the other device and continue signing in here?";
-}
+}*/
+
+export const SignedIntoOtherDevice: UserWarningType = {
+    name: "SignedIntoOtherDevice",
+    userFriendlyMessage:
+        "It looks like you are already signed into another device. Would you like to sign out of the other device and continue signing in here?"
+};
 
 export interface Session {
     load(): Promise<void>;
@@ -102,7 +109,7 @@ export default class SessionService implements Session {
             this.sessionOutput.showHomeScreen();
             this.belongingDetectionService.start();
         } catch (e) {
-            if (e instanceof DoesNotExist) {
+            if (e.name === "DoesNotExist") {
                 this.sessionOutput.showLoginScreen();
             } else {
                 console.warn(e);
@@ -111,11 +118,18 @@ export default class SessionService implements Session {
     }
 
     async start(userData: UserData): Promise<void> {
+        Sentry.configureScope(scope => {
+            scope.setUser({
+                id: userData.uid,
+                username: userData.name,
+                email: userData.emailAddress
+            });
+        });
         let account: Account;
         try {
             account = await this.accountRepoRemote.getByUid(userData.uid);
         } catch (e) {
-            if (e instanceof AccountDoesNotExistOnRemote) {
+            if (e.name === "AccountDoesNotExistOnRemote") {
                 await this.accountRegistrationService.register(
                     userData.uid,
                     userData.emailAddress,
@@ -133,7 +147,7 @@ export default class SessionService implements Session {
         }
         if (account.hasActiveSession()) {
             this.loginOutput.showSignedIntoOtherDevice(
-                new SignedIntoOtherDevice()
+                UserWarning.create(SignedIntoOtherDevice)
             );
             const shouldContinue = await this.shouldContinueNewSession();
             if (!shouldContinue) {
@@ -173,6 +187,7 @@ export default class SessionService implements Session {
         }
         await this.belongingDetectionService.stop();
         await this.localDatabase.destroy();
+        Sentry.configureScope(scope => scope.setUser(null));
         this.resetAllDependencies.complete();
         this.sessionOutput.showLoginScreen();
     }

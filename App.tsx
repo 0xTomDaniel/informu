@@ -1,3 +1,11 @@
+import * as Sentry from "@sentry/react-native";
+import packageJson from "./package.json";
+const environment = __DEV__ ? "development" : "production";
+Sentry.init({
+    dsn: "https://db49541b961149e79b3d69dfc6b275d0@sentry.io/4182912",
+    release: "ai.informu.mutag@" + packageJson.version,
+    environment: environment
+});
 import React, { FunctionComponent, ReactElement, useEffect } from "react";
 import {
     createSwitchNavigator,
@@ -54,6 +62,10 @@ import MuTagDevicesPortAddMuTag from "./source (restructure)/useCases/addMuTag/M
 import MuTagDevicesPortRemoveMuTag from "./source (restructure)/useCases/removeMuTag/MuTagDevicesPort";
 import Bluetooth from "./source (restructure)/shared/muTagDevices/Bluetooth";
 import BluetoothImplRnBlePlx from "./source (restructure)/shared/muTagDevices/BluetoothImplRnBlePlx";
+import Logger from "./source (restructure)/shared/metaLanguage/Logger";
+import { EventTrackerImpl } from "./source (restructure)/shared/metaLanguage/EventTracker";
+import UserWarning from "./source (restructure)/shared/metaLanguage/UserWarning";
+import UserError from "./source (restructure)/shared/metaLanguage/UserError";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -97,6 +109,9 @@ export class Dependencies {
     appStateController: AppStateController;
 
     constructor(webClientID: string) {
+        const logger = new Logger(new EventTrackerImpl());
+        UserWarning.logger = logger;
+        UserError.logger = logger;
         this.webClientID = webClientID;
         this.authentication = new AuthenticationFirebase(webClientID);
         this.database = new DatabaseImplWatermelon();

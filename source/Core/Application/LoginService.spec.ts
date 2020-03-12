@@ -22,8 +22,24 @@ import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { Session } from "./SessionService";
 import { UserData } from "../Ports/UserData";
 import AccountRegistrationService from "./AccountRegistrationService";
+import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
+import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
+import UserWarning from "../../../source (restructure)/shared/metaLanguage/UserWarning";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 jest.mock("./AccountRegistrationService");
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+const logger = new Logger(eventTrackerMock);
+UserWarning.logger = logger;
+UserError.logger = logger;
 
 describe("user logs into their account", (): void => {
     const LoginOutputMock = jest.fn<LoginOutput, any>(
@@ -377,7 +393,7 @@ describe("user logs into their account", (): void => {
         //
         const invalidPassword = new Password("testPassword@");
         (authenticationMock.authenticateWithEmail as jest.Mock).mockRejectedValueOnce(
-            new InvalidCredentials()
+            UserError.create(InvalidCredentials)
         );
 
         // Given an account exists for the provided credentials
@@ -407,7 +423,7 @@ describe("user logs into their account", (): void => {
                 1
             );
             expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledWith(
-                new InvalidCredentials()
+                UserError.create(InvalidCredentials)
             );
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
         });
@@ -444,7 +460,7 @@ describe("user logs into their account", (): void => {
                 ).toHaveBeenCalledTimes(1);
                 expect(
                     loginOutputMock.showEmailLoginError
-                ).toHaveBeenCalledWith(new ImproperEmailFormat());
+                ).toHaveBeenCalledWith(UserError.create(ImproperEmailFormat));
                 expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
             });
         });
@@ -479,7 +495,9 @@ describe("user logs into their account", (): void => {
                 ).toHaveBeenCalledTimes(1);
                 expect(
                     loginOutputMock.showEmailLoginError
-                ).toHaveBeenCalledWith(new ImproperPasswordComplexity());
+                ).toHaveBeenCalledWith(
+                    UserError.create(ImproperPasswordComplexity)
+                );
                 expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
             });
         });
@@ -496,7 +514,7 @@ describe("user logs into their account", (): void => {
         // Given an account does not exists for the provided credentials
         //
         (authenticationMock.authenticateWithEmail as jest.Mock).mockRejectedValueOnce(
-            new InvalidCredentials()
+            UserError.create(InvalidCredentials)
         );
 
         // When the user submits credentials
@@ -524,7 +542,7 @@ describe("user logs into their account", (): void => {
                 1
             );
             expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledWith(
-                new InvalidCredentials()
+                UserError.create(InvalidCredentials)
             );
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
         });
@@ -537,10 +555,10 @@ describe("user logs into their account", (): void => {
 
         // Given that credentials are valid for authentication
         (authenticationMock.authenticateWithFacebook as jest.Mock).mockRejectedValueOnce(
-            new SignInCanceled()
+            UserError.create(SignInCanceled)
         );
         (authenticationMock.authenticateWithGoogle as jest.Mock).mockRejectedValueOnce(
-            new SignInCanceled()
+            UserError.create(SignInCanceled)
         );
 
         // When the user submits credentials

@@ -1,9 +1,43 @@
-export default abstract class UserError {
-    originatingError?: any;
-    abstract name: string;
-    abstract userErrorDescription: string;
+import Logger from "./Logger";
 
-    constructor(originatingError?: any) {
+export interface UserErrorType {
+    name: string;
+    userFriendlyMessage: string;
+}
+
+export default class UserError extends Error {
+    static logger?: Logger;
+    readonly name: string;
+    readonly originatingError?: any;
+    readonly userFriendlyMessage: string;
+
+    private constructor(
+        name: string,
+        userFriendlyMessage: string,
+        originatingError?: any
+    ) {
+        super(userFriendlyMessage);
+        this.name = name;
+        this.userFriendlyMessage = userFriendlyMessage;
         this.originatingError = originatingError;
+    }
+
+    static create(
+        type: UserErrorType,
+        originatingError?: any,
+        logEvent = true
+    ): UserError {
+        const userError = new this(
+            type.name,
+            type.userFriendlyMessage,
+            originatingError
+        );
+        if (logEvent) {
+            if (this.logger == null) {
+                throw Error("Logger instance is undefined.");
+            }
+            this.logger.error(userError, true);
+        }
+        return userError;
     }
 }

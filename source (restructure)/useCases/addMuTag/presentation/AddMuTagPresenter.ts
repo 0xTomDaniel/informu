@@ -83,7 +83,7 @@ export default class AddMuTagPresenter implements AddMuTagOutputPort {
             this.currentViewModel instanceof MuTagAddingViewModel
         ) {
             this.currentViewModel.userWarningDescription =
-                warning.userWarningDescription;
+                warning.userFriendlyMessage;
             this.currentViewModel.detailedWarningDescription =
                 warning.originatingError != null
                     ? JSON.stringify(warning.originatingError)
@@ -99,7 +99,7 @@ export default class AddMuTagPresenter implements AddMuTagOutputPort {
             this.currentViewModel instanceof MuTagAddingViewModel
         ) {
             this.currentViewModel.userErrorDescription =
-                error.userErrorDescription;
+                error.userFriendlyMessage;
             this.currentViewModel.detailedErrorDescription =
                 error.originatingError != null
                     ? String(error.originatingError)

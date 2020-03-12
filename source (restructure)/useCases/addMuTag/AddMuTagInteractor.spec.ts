@@ -29,6 +29,22 @@ import { MuTagBLEGATT } from "../../shared/muTagDevices/MuTagBLEGATT/MuTagBLEGAT
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import lolex from "lolex";
+import EventTracker from "../../shared/metaLanguage/EventTracker";
+import Logger from "../../shared/metaLanguage/Logger";
+import UserWarning from "../../shared/metaLanguage/UserWarning";
+import UserError from "../../shared/metaLanguage/UserError";
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+const logger = new Logger(eventTrackerMock);
+UserWarning.logger = logger;
+UserError.logger = logger;
 
 const addMuTagConnectThreshold = -72 as Rssi;
 const addMuTagBatteryThreshold = new Percent(15);
