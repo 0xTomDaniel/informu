@@ -16,6 +16,7 @@ import database, {
 } from "@react-native-firebase/database";
 import AccountRepositoryRemotePortAddMuTag from "../../../source (restructure)/useCases/addMuTag/AccountRepositoryRemotePort";
 import AccountRepositoryRemotePortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/AccountRepositoryRemotePort";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 interface DatabaseAccount {
     readonly account_id: string;
@@ -45,7 +46,7 @@ export class AccountRepoRNFirebase
                 .once("value");
         } catch (e) {
             console.warn(e);
-            throw new FailedToGet();
+            throw UserError.create(FailedToGet);
         }
 
         const accountData = AccountRepoRNFirebase.toAccountData(uid, snapshot);
@@ -63,7 +64,7 @@ export class AccountRepoRNFirebase
                 .set(databaseAccount);
         } catch (e) {
             console.warn(e);
-            throw new FailedToAdd();
+            throw UserError.create(FailedToAdd);
         }
     }
 
@@ -78,7 +79,7 @@ export class AccountRepoRNFirebase
                 .update(databaseAccount);
         } catch (e) {
             console.warn(e);
-            throw new FailedToUpdate();
+            throw UserError.create(FailedToUpdate);
         }
     }
 
@@ -89,7 +90,7 @@ export class AccountRepoRNFirebase
                 .remove();
         } catch (e) {
             console.warn(e);
-            throw new FailedToRemove();
+            throw UserError.create(FailedToRemove);
         }
     }
 
@@ -138,12 +139,12 @@ export class AccountRepoRNFirebase
         snapshot: FirebaseDatabaseTypes.DataSnapshot
     ): AccountJson {
         if (!snapshot.exists()) {
-            throw new DoesNotExist();
+            throw UserError.create(DoesNotExist);
         }
 
         const snapshotData = snapshot.val();
         if (typeof snapshotData !== "object") {
-            throw new PersistedDataMalformed(uid);
+            throw UserError.create(PersistedDataMalformed(uid));
         }
 
         const data: { [key: string]: any } = {
@@ -192,7 +193,10 @@ export class AccountRepoRNFirebase
         try {
             assertIsAccountJson(data);
         } catch (e) {
-            throw new PersistedDataMalformed(JSON.stringify(data), e);
+            throw UserError.create(
+                PersistedDataMalformed(JSON.stringify(data)),
+                e
+            );
         }
 
         return data;

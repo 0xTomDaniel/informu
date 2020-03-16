@@ -4,9 +4,24 @@ import { DoesNotExist } from "../../Core/Ports/AccountRepositoryLocal";
 import { BeaconId } from "../../Core/Domain/ProvisionedMuTag";
 import DatabaseImplWatermelon from "./DatabaseImplWatermelon";
 import { Database } from "@nozbe/watermelondb";
+import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
+import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 jest.mock("./DatabaseImplWatermelon");
 jest.mock("@nozbe/watermelondb");
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+Logger.createInstance(eventTrackerMock);
 
 const WatermelonDBMock = Database as jest.Mock<Database, any>;
 const DatabaseImplWatermelonMock = DatabaseImplWatermelon as jest.Mock<
@@ -76,6 +91,6 @@ test("failed to get account that does not exist", async (): Promise<void> => {
     //(database.get as jest.Mock).mockResolvedValueOnce(null);
     expect.assertions(1);
     await expect(accountRepoLocalImpl.get()).rejects.toEqual(
-        new DoesNotExist()
+        UserError.create(DoesNotExist)
     );
 });

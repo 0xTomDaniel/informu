@@ -17,6 +17,7 @@ import {
     statusCodes
 } from "@react-native-community/google-signin";
 import { LoginManager, AccessToken } from "react-native-fbsdk";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export class AuthenticationFirebase implements Authentication {
     constructor(webClientID: string) {
@@ -51,11 +52,11 @@ export class AuthenticationFirebase implements Authentication {
                 "email"
             ]);
             if (result.isCancelled) {
-                throw new SignInCanceled();
+                throw UserError.create(SignInCanceled);
             }
             const accessToken = await AccessToken.getCurrentAccessToken();
             if (accessToken == null) {
-                throw new FacebookSignInFailed();
+                throw UserError.create(FacebookSignInFailed);
             }
             const authCredential = firebase.auth.FacebookAuthProvider.credential(
                 accessToken.accessToken
@@ -64,7 +65,7 @@ export class AuthenticationFirebase implements Authentication {
                 authCredential
             );
             if (userCredential.user.email == null) {
-                throw new EmailNotFound();
+                throw UserError.create(EmailNotFound);
             }
             return {
                 uid: userCredential.user.uid,
@@ -90,7 +91,7 @@ export class AuthenticationFirebase implements Authentication {
 
             const user = await GoogleSignin.signIn();
             if (user.idToken == null) {
-                throw new GoogleSignInFailed();
+                throw UserError.create(GoogleSignInFailed);
             }
             const authCredential = firebase.auth.GoogleAuthProvider.credential(
                 user.idToken
@@ -99,7 +100,7 @@ export class AuthenticationFirebase implements Authentication {
                 authCredential
             );
             if (userCredential.user.email == null) {
-                throw new EmailNotFound();
+                throw UserError.create(EmailNotFound);
             }
             return {
                 uid: userCredential.user.uid,
@@ -122,22 +123,22 @@ export class AuthenticationFirebase implements Authentication {
             case "auth/invalid-email":
             case "auth/user-not-found":
             case "auth/wrong-password":
-                return new InvalidCredentials();
+                return UserError.create(InvalidCredentials);
             case "auth/user-disabled":
-                return new UserDisabled();
+                return UserError.create(UserDisabled);
             case "auth/account-exists-with-different-credential":
-                return new IncorrectSignInMethod();
+                return UserError.create(IncorrectSignInMethod);
             case "auth/unknown":
                 switch (error.message) {
                     case "We have blocked all requests from this device due to unusual activity. Try again later. [ Too many unsuccessful login attempts.  Please include reCaptcha verification or try again later ]":
-                        return new TooManyAttempts();
+                        return UserError.create(TooManyAttempts);
                     default:
                         return error;
                 }
             case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-                return new GooglePlayServicesNotAvailable();
+                return UserError.create(GooglePlayServicesNotAvailable);
             case statusCodes.SIGN_IN_CANCELLED:
-                return new SignInCanceled();
+                return UserError.create(SignInCanceled);
             default:
                 return error;
         }

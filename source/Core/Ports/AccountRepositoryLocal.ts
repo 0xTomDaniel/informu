@@ -1,4 +1,5 @@
 import Account from "../Domain/Account";
+import { UserErrorType } from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export interface AccountRepositoryLocal {
     get(): Promise<Account>;
@@ -7,48 +8,28 @@ export interface AccountRepositoryLocal {
     remove(): Promise<void>;
 }
 
-export class DoesNotExist extends Error {
-    constructor() {
-        super("Account entity does not exist in local persistence.");
-        this.name = "DoesNotExist";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+export const DoesNotExist: UserErrorType = {
+    name: "DoesNotExist",
+    userFriendlyMessage: "Account entity does not exist in local persistence."
+};
 
-export class FailedToGet extends Error {
-    constructor() {
-        super("Failed to get account entity from local persistence.");
-        this.name = "FailedToGet";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+export const FailedToGet: UserErrorType = {
+    name: "FailedToGet",
+    userFriendlyMessage: "Failed to get account entity from local persistence."
+};
 
-export class FailedToAdd extends Error {
-    constructor() {
-        super("Failed to add account entity to local persistence.");
-        this.name = "FailedToAdd";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+export const FailedToAdd: UserErrorType = {
+    name: "FailedToAdd",
+    userFriendlyMessage: "Failed to add account entity to local persistence."
+};
 
-export class FailedToUpdate extends Error {
-    constructor() {
-        super("Failed to update account entity to local persistence.");
-        this.name = "FailedToUpdate";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+export const FailedToUpdate: UserErrorType = {
+    name: "FailedToUpdate",
+    userFriendlyMessage: "Failed to update account entity to local persistence."
+};
 
-export class FailedToRemove extends Error {
-    constructor() {
-        super("Failed to remove account entity from local persistence.");
-        this.name = "FailedToRemove";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export type AccountRepositoryLocalException =
-    | DoesNotExist
-    | FailedToGet
-    | FailedToAdd
-    | FailedToRemove;
+export const FailedToRemove: UserErrorType = {
+    name: "FailedToRemove",
+    userFriendlyMessage:
+        "Failed to remove account entity from local persistence."
+};

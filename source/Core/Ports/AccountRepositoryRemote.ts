@@ -1,5 +1,5 @@
 import Account from "../Domain/Account";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
+import { UserErrorType } from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export interface AccountRepositoryRemote {
     getByUid(uid: string): Promise<Account>;
@@ -8,48 +8,34 @@ export interface AccountRepositoryRemote {
     removeByUid(uid: string): Promise<void>;
 }
 
-export class DoesNotExist extends UserError {
-    name = "DoesNotExist";
-    userErrorDescription =
-        "Account entity does not exist in remote persistence.";
-}
+export const DoesNotExist: UserErrorType = {
+    name: "DoesNotExist",
+    userFriendlyMessage: "Account entity does not exist in remote persistence."
+};
 
-export class FailedToGet extends UserError {
-    name = "FailedToGet";
-    userErrorDescription =
-        "Failed to get account entity from remote persistence.";
-}
+export const FailedToGet: UserErrorType = {
+    name: "FailedToGet",
+    userFriendlyMessage: "Failed to get account entity from remote persistence."
+};
 
-export class PersistedDataMalformed extends UserError {
-    name = "PersistedDataMalformed";
-    userErrorDescription: string;
-    constructor(json: string, originatingError?: Error | undefined) {
-        super(originatingError);
-        this.userErrorDescription = `Received malformed data from remote persistence:\n${json}`;
-    }
-}
+export const PersistedDataMalformed = (json: string): UserErrorType => ({
+    name: "PersistedDataMalformed",
+    userFriendlyMessage: `Received malformed data from remote persistence:\n${json}`
+});
 
-export class FailedToAdd extends UserError {
-    name = "FailedToAdd";
-    userErrorDescription =
-        "Failed to add account entity to remote persistence.";
-}
+export const FailedToAdd: UserErrorType = {
+    name: "FailedToAdd",
+    userFriendlyMessage: "Failed to add account entity to remote persistence."
+};
 
-export class FailedToUpdate extends UserError {
-    name = "FailedToUpdate";
-    userErrorDescription =
-        "Failed to update account entity to remote persistence.";
-}
+export const FailedToUpdate: UserErrorType = {
+    name: "FailedToUpdate",
+    userFriendlyMessage:
+        "Failed to update account entity to remote persistence."
+};
 
-export class FailedToRemove extends UserError {
-    name = "FailedToRemove";
-    userErrorDescription =
-        "Failed to remove account entity from remote persistence.";
-}
-
-export type AccountRepositoryRemoteException =
-    | DoesNotExist
-    | FailedToGet
-    | PersistedDataMalformed
-    | FailedToAdd
-    | FailedToRemove;
+export const FailedToRemove: UserErrorType = {
+    name: "FailedToRemove",
+    userFriendlyMessage:
+        "Failed to remove account entity from remote persistence."
+};

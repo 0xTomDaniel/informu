@@ -1,0 +1,28 @@
+diff --git a/node_modules/metro/src/DeltaBundler/Serializers/getAssets.js b/node_modules/metro/src/DeltaBundler/Serializers/getAssets.js
+index a08868e..527cfb5 100644
+--- a/node_modules/metro/src/DeltaBundler/Serializers/getAssets.js
++++ b/node_modules/metro/src/DeltaBundler/Serializers/getAssets.js
+@@ -63,7 +63,8 @@ function _getAssets() {
+       if (
+         isJsModule(module) &&
+         processModuleFilter(module) &&
+-        getJsOutput(module).type === "js/module/asset"
++        getJsOutput(module).type === "js/module/asset" &&
++        path.relative(options.projectRoot, module.path) !== 'package.json'
+       ) {
+         promises.push(
+           getAssetData(
+diff --git a/node_modules/metro/src/DeltaBundler/Serializers/getAssets.js.flow b/node_modules/metro/src/DeltaBundler/Serializers/getAssets.js.flow
+index 682bd86..362b5bf 100644
+--- a/node_modules/metro/src/DeltaBundler/Serializers/getAssets.js.flow
++++ b/node_modules/metro/src/DeltaBundler/Serializers/getAssets.js.flow
+@@ -37,7 +37,8 @@ async function getAssets(
+     if (
+       isJsModule(module) &&
+       processModuleFilter(module) &&
+-      getJsOutput(module).type === 'js/module/asset'
++      getJsOutput(module).type === 'js/module/asset' &&
++      path.relative(options.projectRoot, module.path) !== 'package.json'
+     ) {
+       promises.push(
+         getAssetData(

@@ -19,7 +19,7 @@ export default class RemoveMuTagPresenter implements RemoveMuTagOutputPort {
 
     showError(error: UserError): void {
         this.viewModel.updateState({
-            errorDescription: error.userErrorDescription,
+            errorDescription: error.userFriendlyMessage,
             isErrorVisible: true
         });
     }

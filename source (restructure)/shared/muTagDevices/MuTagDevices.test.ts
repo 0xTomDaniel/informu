@@ -30,10 +30,26 @@ const BluetoothMock = jest.fn<Bluetooth, any>(
     })
 );
 const bluetoothMock = new BluetoothMock();
+(bluetoothMock.enableBluetooth as jest.Mock).mockResolvedValue(undefined);
 (bluetoothMock.retrieveServices as jest.Mock).mockResolvedValue({});
 (bluetoothMock.stopScan as jest.Mock).mockResolvedValue(undefined);
-(bluetoothMock.connect as jest.Mock).mockResolvedValue(undefined);
-(bluetoothMock.disconnect as jest.Mock).mockResolvedValue(undefined);
+const connections = new Map<PeripheralId, Subscriber<void>>();
+(bluetoothMock.connect as jest.Mock).mockImplementation(
+    (peripheralId: PeripheralId) =>
+        new Observable<void>(subscriber => {
+            connections.set(peripheralId, subscriber);
+            subscriber.next();
+        })
+);
+(bluetoothMock.disconnect as jest.Mock).mockImplementation(
+    (peripheralId: PeripheralId) =>
+        new Promise(resolve => {
+            const subscriber = connections.get(peripheralId);
+            subscriber?.complete();
+            connections.delete(peripheralId);
+            resolve();
+        })
+);
 (bluetoothMock.write as jest.Mock).mockResolvedValue(undefined);
 const muTagDevices = new MuTagDevices(bluetoothMock);
 
@@ -60,10 +76,6 @@ const discoveredPeripheral01: Peripheral = {
     }
 };
 let unprovisionedMuTag01: UnprovisionedMuTag;
-
-test("successfully starts bluetooth", async (): Promise<void> => {
-    expect(bluetoothMock.enableBluetooth).toHaveBeenCalled();
-});
 
 test("successfully finds two unprovisioned Mu tags", async (): Promise<
     void
