@@ -1,9 +1,26 @@
 import EventTracker from "./EventTracker";
 
 export default class Logger {
+    private static _instance: Logger;
+    static get instance(): Logger {
+        if (Logger._instance == null) {
+            throw Error(
+                "Logger instance does not exist. Please create it first."
+            );
+        }
+        return Logger._instance;
+    }
     private readonly eventTracker: EventTracker;
-    constructor(eventTracker: EventTracker) {
+
+    private constructor(eventTracker: EventTracker) {
         this.eventTracker = eventTracker;
+    }
+
+    static createInstance(eventTracker: EventTracker): void {
+        if (Logger._instance != null) {
+            throw Error("Logger instance already exists.");
+        }
+        Logger._instance = new Logger(eventTracker);
     }
 
     log(message: any, report = false, toConsole = true): void {

@@ -15,7 +15,7 @@ import AccountRegistrationService from "./AccountRegistrationService";
 import { Subject } from "rxjs";
 import Account from "../Domain/Account";
 import LoginOutput from "../Ports/LoginOutput";
-import * as Sentry from "@sentry/react-native";
+import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 
 /*export class SignedIntoOtherDevice extends UserWarning {
     name = "SignedIntoOtherDevice";
@@ -39,6 +39,7 @@ export interface Session {
 }
 
 export default class SessionService implements Session {
+    private readonly eventTracker: EventTracker;
     private readonly sessionOutput: SessionOutput;
     private readonly loginOutput: LoginOutput;
     private readonly signedOutMessage =
@@ -58,6 +59,7 @@ export default class SessionService implements Session {
     readonly resetAllDependencies = new Subject<void>();
 
     constructor(
+        eventTracker: EventTracker,
         sessionOutput: SessionOutput,
         loginOutput: LoginOutput,
         authentication: Authentication,
@@ -69,6 +71,7 @@ export default class SessionService implements Session {
         localDatabase: Database,
         accountRegistrationService: AccountRegistrationService
     ) {
+        this.eventTracker = eventTracker;
         this.sessionOutput = sessionOutput;
         this.loginOutput = loginOutput;
         this.authentication = authentication;
@@ -118,18 +121,16 @@ export default class SessionService implements Session {
     }
 
     async start(userData: UserData): Promise<void> {
-        Sentry.configureScope(scope => {
-            scope.setUser({
-                id: userData.uid,
-                username: userData.name,
-                email: userData.emailAddress
-            });
+        this.eventTracker.setUser({
+            id: userData.uid,
+            username: userData.name,
+            email: userData.emailAddress
         });
         let account: Account;
         try {
             account = await this.accountRepoRemote.getByUid(userData.uid);
         } catch (e) {
-            if (e.name === "AccountDoesNotExistOnRemote") {
+            if (e.name === "DoesNotExist") {
                 await this.accountRegistrationService.register(
                     userData.uid,
                     userData.emailAddress,
@@ -187,7 +188,7 @@ export default class SessionService implements Session {
         }
         await this.belongingDetectionService.stop();
         await this.localDatabase.destroy();
-        Sentry.configureScope(scope => scope.setUser(null));
+        this.eventTracker.removeUser();
         this.resetAllDependencies.complete();
         this.sessionOutput.showLoginScreen();
     }

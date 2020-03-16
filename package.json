@@ -1,6 +1,6 @@
 {
   "name": "ai.informu.mutag",
-  "version": "v0.1.0-rc.2",
+  "version": "v0.2.0-rc.1",
   "private": true,
   "scripts": {
     "start": "react-native start",

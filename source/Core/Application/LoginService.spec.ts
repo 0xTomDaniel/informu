@@ -24,7 +24,6 @@ import { UserData } from "../Ports/UserData";
 import AccountRegistrationService from "./AccountRegistrationService";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
-import UserWarning from "../../../source (restructure)/shared/metaLanguage/UserWarning";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 jest.mock("./AccountRegistrationService");
@@ -33,13 +32,13 @@ const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
         log: jest.fn(),
         warn: jest.fn(),
-        error: jest.fn()
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
     })
 );
 const eventTrackerMock = new EventTrackerMock();
-const logger = new Logger(eventTrackerMock);
-UserWarning.logger = logger;
-UserError.logger = logger;
+Logger.createInstance(eventTrackerMock);
 
 describe("user logs into their account", (): void => {
     const LoginOutputMock = jest.fn<LoginOutput, any>(

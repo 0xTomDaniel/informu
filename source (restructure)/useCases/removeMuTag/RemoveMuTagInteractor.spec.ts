@@ -13,37 +13,89 @@ import Account, {
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import RemoveMuTagInteractor, {
     LowMuTagBattery,
-    FailedToConnectToMuTag,
-    MuTagCommunicationFailure
+    FailedToConnectToMuTag
 } from "./RemoveMuTagInteractor";
 import { RemoveMuTagOutputPort } from "./RemoveMuTagOutputPort";
-import MuTagDevicesPort from "./MuTagDevicesPort";
+//import MuTagDevicesPort from "./MuTagDevicesPort";
 import UserError from "../../shared/metaLanguage/UserError";
-import UserWarning from "../../shared/metaLanguage/UserWarning";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
+import Bluetooth, {
+    Peripheral,
+    PeripheralId,
+    ManufacturerData
+} from "../../shared/muTagDevices/Bluetooth";
+import MuTagDevices from "../../shared/muTagDevices/MuTagDevices";
+import { Subscriber, Observable } from "rxjs";
+import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
+import { Rssi } from "../../shared/metaLanguage/Types";
+import { v4 as uuidV4 } from "uuid";
+import { MuTagBLEGATT } from "../../shared/muTagDevices/MuTagBLEGATT/MuTagBLEGATT";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
         log: jest.fn(),
         warn: jest.fn(),
-        error: jest.fn()
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
     })
 );
 const eventTrackerMock = new EventTrackerMock();
-const logger = new Logger(eventTrackerMock);
-UserWarning.logger = logger;
-UserError.logger = logger;
+Logger.createInstance(eventTrackerMock);
+
+let discoveredPeripheralSubscriber: Subscriber<Peripheral>;
+const discoveredPeripheralObservable = new Observable<Peripheral>(
+    subscriber => {
+        discoveredPeripheralSubscriber = subscriber;
+    }
+);
+const BluetoothMock = jest.fn<Bluetooth, any>(
+    (): Bluetooth => ({
+        discoveredPeripheral: discoveredPeripheralObservable,
+        startScan: jest.fn(),
+        stopScan: jest.fn(),
+        retrieveServices: jest.fn(),
+        connect: jest.fn(),
+        disconnect: jest.fn(),
+        read: jest.fn(),
+        write: jest.fn(),
+        enableBluetooth: jest.fn()
+    })
+);
+const bluetoothMock = new BluetoothMock();
+const muTagDevices = new MuTagDevices(bluetoothMock);
 
 describe("Mu tag user removes Mu tag", (): void => {
-    const MuTagDevicesMock = jest.fn<MuTagDevicesPort, any>(
+    (bluetoothMock.retrieveServices as jest.Mock).mockResolvedValue({});
+    (bluetoothMock.stopScan as jest.Mock).mockResolvedValue(undefined);
+    const connections = new Map<PeripheralId, Subscriber<void>>();
+    (bluetoothMock.connect as jest.Mock).mockImplementation(
+        (peripheralId: PeripheralId) =>
+            new Observable<void>(subscriber => {
+                connections.set(peripheralId, subscriber);
+                subscriber.next();
+            })
+    );
+    (bluetoothMock.disconnect as jest.Mock).mockImplementation(
+        (peripheralId: PeripheralId) =>
+            new Promise(resolve => {
+                const subscriber = connections.get(peripheralId);
+                subscriber?.complete();
+                connections.delete(peripheralId);
+                resolve();
+            })
+    );
+    (bluetoothMock.write as jest.Mock).mockResolvedValue(undefined);
+    (bluetoothMock.enableBluetooth as jest.Mock).mockResolvedValue(undefined);
+    /*const MuTagDevicesMock = jest.fn<MuTagDevicesPort, any>(
         (): MuTagDevicesPort => ({
             unprovisionMuTag: jest.fn(),
             connectToProvisionedMuTag: jest.fn(),
             disconnectFromProvisionedMuTag: jest.fn(),
             readBatteryLevel: jest.fn()
         })
-    );
+    );*/
 
     const MuTagRepoLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
         (): MuTagRepositoryLocalPort => ({
@@ -79,7 +131,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         })
     );
 
-    const muTagDevicesMock = new MuTagDevicesMock();
+    //const muTagDevicesMock = new MuTagDevicesMock();
     const muTagRepoLocalMock = new MuTagRepoLocalMock();
     const muTagRepoRemoteMock = new MuTagRepoRemoteMock();
     const accountRepoLocalMock = new AccountRepoLocalMock();
@@ -87,9 +139,9 @@ describe("Mu tag user removes Mu tag", (): void => {
     const removeMuTagOutputMock = new RemoveMuTagOutputMock();
 
     const removeMuTagBatteryThreshold = new Percent(15);
-    const removeMuTagService = new RemoveMuTagInteractor(
+    const removeMuTagInteractor = new RemoveMuTagInteractor(
         removeMuTagBatteryThreshold,
-        muTagDevicesMock,
+        muTagDevices,
         accountRepoLocalMock,
         accountRepoRemoteMock,
         muTagRepoLocalMock,
@@ -113,9 +165,9 @@ describe("Mu tag user removes Mu tag", (): void => {
     const account = new Account(validAccountData);
     const removeMuTagSpy = jest.spyOn(account, "removeMuTag");
 
-    const muTagUID = "randomUUID#1";
+    const muTagUid = "randomUUID#1";
     const beaconId = BeaconId.create("1");
-    const muTagBatteryLevel = new Percent(17);
+    const muTagBatteryLevel = new Percent(16);
     const newMuTagAttachedTo = "keys";
     const muTagColorSetting = MuTagColor.Scarlet;
     const muTagIsSafe = true;
@@ -137,8 +189,32 @@ describe("Mu tag user removes Mu tag", (): void => {
         _recentLatitude: 0,
         _recentLongitude: 0,
         _txPower: 1,
-        _uid: muTagUID
+        _uid: muTagUid
     });
+    const manufacturerDataJson =
+        "[2,1,6,26,255,76,0,2,21,222,126,199,237,16,85,176,85,192,222,222,254,167,237,250,126,255,255,255,255,182,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
+    const manufacturerDataBytes = new Uint8Array(
+        JSON.parse(manufacturerDataJson)
+    );
+    const manufacturerDataBase64 =
+        "AgEGGv9MAAIV3n7H7RBVsFXA3t7+p+36fv////+2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+    const manufacturerData: ManufacturerData = {
+        bytes: manufacturerDataBytes,
+        data: manufacturerDataBase64,
+        cdvType: "ArrayBuffer"
+    };
+    const discoveredPeripheral: Peripheral = {
+        id: uuidV4() as PeripheralId,
+        name: "informu beacon",
+        rssi: -55 as Rssi,
+        advertising: {
+            isConnectable: true,
+            serviceUuids: [],
+            manufacturerData: manufacturerData,
+            serviceData: {},
+            txPowerLevel: 6
+        }
+    };
 
     describe("Mu tag removes successfully", (): void => {
         // Given that the account connected to the current Mu tag is logged in
@@ -148,28 +224,34 @@ describe("Mu tag user removes Mu tag", (): void => {
 
         // Given Mu tag is connectable
         //
-        (muTagDevicesMock.connectToProvisionedMuTag as jest.Mock).mockResolvedValueOnce(
-            undefined
+        (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(() => {
+            discoveredPeripheralSubscriber.next(discoveredPeripheral);
+        });
+
+        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+            Hexadecimal.fromNumber(1)
+        );
+        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+            Hexadecimal.fromString("0000")
+        );
+        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+            Hexadecimal.fromString("0001")
         );
 
         // Given the Mu tag battery is above threshold
         //
-        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockResolvedValueOnce(
-            new Percent(16)
+        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+            muTagBatteryLevel
         );
 
         // Given Mu tag hardware unprovisions successfully
-        //
-        (muTagDevicesMock.unprovisionMuTag as jest.Mock).mockResolvedValueOnce(
-            undefined
-        );
 
         // When
         //
         beforeAll(
             async (): Promise<void> => {
                 // user removes Mu tag
-                await removeMuTagService.remove(muTagUID);
+                await removeMuTagInteractor.remove(muTagUid);
             }
         );
 
@@ -188,21 +270,32 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Then
         //
         it("should connect to the Mu tag", (): void => {
-            expect(
-                muTagDevicesMock.connectToProvisionedMuTag
-            ).toHaveBeenCalledTimes(1);
+            expect(bluetoothMock.connect).toHaveBeenCalledWith(
+                discoveredPeripheral.id
+            );
+            expect(bluetoothMock.connect).toHaveBeenCalledTimes(2);
         });
 
         // Then
         //
         it("should check the Mu tag battery level", (): void => {
-            expect(muTagDevicesMock.readBatteryLevel).toHaveBeenCalledTimes(1);
+            expect(bluetoothMock.read).toHaveBeenNthCalledWith(
+                4,
+                discoveredPeripheral.id,
+                MuTagBLEGATT.DeviceInformation.BatteryLevel
+            );
+            expect(bluetoothMock.read).toHaveBeenCalledTimes(4);
         });
 
         // Then
         //
         it("should unprovision the Mu tag hardware", (): void => {
-            expect(muTagDevicesMock.unprovisionMuTag).toHaveBeenCalledTimes(1);
+            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
+                3,
+                discoveredPeripheral.id,
+                MuTagBLEGATT.MuTagConfiguration.Provision,
+                MuTagBLEGATT.MuTagConfiguration.Provision.unprovisionCode
+            );
         });
 
         // Then
@@ -215,7 +308,7 @@ describe("Mu tag user removes Mu tag", (): void => {
             expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
             expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
             expect(muTagRepoLocalMock.removeByUid).toHaveBeenCalledWith(
-                muTagUID
+                muTagUid
             );
             expect(muTagRepoLocalMock.removeByUid).toHaveBeenCalledTimes(1);
         });
@@ -227,7 +320,7 @@ describe("Mu tag user removes Mu tag", (): void => {
             expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
 
             expect(muTagRepoRemoteMock.removeByUid).toHaveBeenCalledWith(
-                muTagUID,
+                muTagUid,
                 validAccountData._uid
             );
             expect(muTagRepoRemoteMock.removeByUid).toHaveBeenCalledTimes(1);
@@ -250,17 +343,43 @@ describe("Mu tag user removes Mu tag", (): void => {
 
         // Given Mu tag is unconnectable
         //
-        const originatingError = Error();
-        (muTagDevicesMock.connectToProvisionedMuTag as jest.Mock).mockRejectedValueOnce(
-            originatingError
-        );
+        const originatingError = Error("Failed to connect to device");
 
         // When
         //
         beforeAll(
             async (): Promise<void> => {
+                (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
+                    () => {
+                        discoveredPeripheralSubscriber.next(
+                            discoveredPeripheral
+                        );
+                    }
+                );
+                (bluetoothMock.connect as jest.Mock).mockImplementationOnce(
+                    (peripheralId: PeripheralId) =>
+                        new Observable<void>(subscriber => {
+                            connections.set(peripheralId, subscriber);
+                            subscriber.next();
+                        })
+                );
+                (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+                    Hexadecimal.fromNumber(1)
+                );
+                (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+                    Hexadecimal.fromString("0000")
+                );
+                (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+                    Hexadecimal.fromString("0001")
+                );
+                (bluetoothMock.connect as jest.Mock).mockImplementationOnce(
+                    () =>
+                        new Observable<void>(subscriber => {
+                            subscriber.error(originatingError);
+                        })
+                );
                 // user removes Mu tag
-                await removeMuTagService.remove(muTagUID);
+                await removeMuTagInteractor.remove(muTagUid);
             }
         );
 
@@ -279,9 +398,10 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Then
         //
         it("should connect to the Mu tag", (): void => {
-            expect(
-                muTagDevicesMock.connectToProvisionedMuTag
-            ).toHaveBeenCalledTimes(1);
+            expect(bluetoothMock.connect).toHaveBeenCalledWith(
+                discoveredPeripheral.id
+            );
+            expect(bluetoothMock.connect).toHaveBeenCalledTimes(2);
         });
 
         // Then
@@ -303,93 +423,7 @@ describe("Mu tag user removes Mu tag", (): void => {
     });
 
     describe("Mu tag hardware fails to unprovision", (): void => {
-        // Given that the account connected to the current Mu tag is logged in
-        //
-        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
-        (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(muTag);
-
-        // Given Mu tag is connectable
-        //
-        (muTagDevicesMock.connectToProvisionedMuTag as jest.Mock).mockResolvedValueOnce(
-            undefined
-        );
-
-        // Given the Mu tag battery is above threshold
-        //
-        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockResolvedValueOnce(
-            new Percent(16)
-        );
-
-        // Given Mu tag hardware fails to unprovision
-        //
-        const originatingError = Error();
-        (muTagDevicesMock.unprovisionMuTag as jest.Mock).mockRejectedValueOnce(
-            originatingError
-        );
-
-        // When
-        //
-        beforeAll(
-            async (): Promise<void> => {
-                // user removes Mu tag
-                await removeMuTagService.remove(muTagUID);
-            }
-        );
-
-        afterAll((): void => {
-            jest.clearAllMocks();
-        });
-
-        // Then
-        //
-        it("should show busy indicator", (): void => {
-            expect(
-                removeMuTagOutputMock.showBusyIndicator
-            ).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should connect to the Mu tag", (): void => {
-            expect(
-                muTagDevicesMock.connectToProvisionedMuTag
-            ).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should check the Mu tag battery level", (): void => {
-            expect(muTagDevicesMock.readBatteryLevel).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should unprovision the Mu tag hardware", (): void => {
-            expect(muTagDevicesMock.unprovisionMuTag).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should disconnect from the Mu tag", (): void => {
-            // This happens automatically because Mu tag restarts upon unprovision
-        });
-
-        // Then
-        //
-        it("should hide busy indicator", (): void => {
-            expect(
-                removeMuTagOutputMock.hideBusyIndicator
-            ).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should show message that Mu tag failed to remove, to move closer to mobile device, and try again", (): void => {
-            expect(removeMuTagOutputMock.showError).toHaveBeenCalledTimes(1);
-            expect(removeMuTagOutputMock.showError).toHaveBeenCalledWith(
-                UserError.create(MuTagCommunicationFailure, originatingError)
-            );
-        });
+        // There is currently no way to know if unprovision failed
     });
 
     describe("Mu tag battery is below threshold", (): void => {
@@ -400,13 +434,23 @@ describe("Mu tag user removes Mu tag", (): void => {
 
         // Given Mu tag is connectable
         //
-        (muTagDevicesMock.connectToProvisionedMuTag as jest.Mock).mockResolvedValueOnce(
-            undefined
+        (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(() => {
+            discoveredPeripheralSubscriber.next(discoveredPeripheral);
+        });
+
+        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+            Hexadecimal.fromNumber(1)
+        );
+        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+            Hexadecimal.fromString("0000")
+        );
+        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
+            Hexadecimal.fromString("0001")
         );
 
-        // Given the Mu tag battery is below threshold
+        // Given the Mu tag battery is above threshold
         //
-        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockResolvedValueOnce(
+        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
             new Percent(14)
         );
 
@@ -415,7 +459,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         beforeAll(
             async (): Promise<void> => {
                 // user removes Mu tag
-                await removeMuTagService.remove(muTagUID);
+                await removeMuTagInteractor.remove(muTagUid);
             }
         );
 
@@ -434,15 +478,21 @@ describe("Mu tag user removes Mu tag", (): void => {
         // Then
         //
         it("should connect to the Mu tag", (): void => {
-            expect(
-                muTagDevicesMock.connectToProvisionedMuTag
-            ).toHaveBeenCalledTimes(1);
+            expect(bluetoothMock.connect).toHaveBeenCalledWith(
+                discoveredPeripheral.id
+            );
+            expect(bluetoothMock.connect).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
         it("should check the Mu tag battery level", (): void => {
-            expect(muTagDevicesMock.readBatteryLevel).toHaveBeenCalledTimes(1);
+            expect(bluetoothMock.read).toHaveBeenNthCalledWith(
+                1,
+                discoveredPeripheral.id,
+                MuTagBLEGATT.DeviceInformation.BatteryLevel
+            );
+            expect(bluetoothMock.read).toHaveBeenCalledTimes(1);
         });
 
         // Then

@@ -6,7 +6,9 @@ export interface UserWarningType {
 }
 
 export default class UserWarning extends Error {
-    static logger?: Logger;
+    private static get logger(): Logger {
+        return Logger.instance;
+    }
     readonly name: string;
     readonly originatingError?: any;
     readonly userFriendlyMessage: string;

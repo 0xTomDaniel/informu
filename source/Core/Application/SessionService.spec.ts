@@ -19,20 +19,19 @@ import { NewAccountFactory } from "../Ports/NewAccountFactory";
 import LoginOutput from "../Ports/LoginOutput";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
-import UserWarning from "../../../source (restructure)/shared/metaLanguage/UserWarning";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
         log: jest.fn(),
         warn: jest.fn(),
-        error: jest.fn()
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
     })
 );
 const eventTrackerMock = new EventTrackerMock();
-const logger = new Logger(eventTrackerMock);
-UserWarning.logger = logger;
-UserError.logger = logger;
+Logger.createInstance(eventTrackerMock);
 
 describe("user opens saved login session", (): void => {
     const SessionOutputMock = jest.fn<SessionOutput, any>(
@@ -147,6 +146,7 @@ describe("user opens saved login session", (): void => {
         "register"
     );
     const sessionService = new SessionService(
+        eventTrackerMock,
         sessionOutputMock,
         loginOutputMock,
         authenticationMock,

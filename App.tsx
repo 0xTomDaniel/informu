@@ -63,9 +63,9 @@ import MuTagDevicesPortRemoveMuTag from "./source (restructure)/useCases/removeM
 import Bluetooth from "./source (restructure)/shared/muTagDevices/Bluetooth";
 import BluetoothImplRnBlePlx from "./source (restructure)/shared/muTagDevices/BluetoothImplRnBlePlx";
 import Logger from "./source (restructure)/shared/metaLanguage/Logger";
-import { EventTrackerImpl } from "./source (restructure)/shared/metaLanguage/EventTracker";
-import UserWarning from "./source (restructure)/shared/metaLanguage/UserWarning";
-import UserError from "./source (restructure)/shared/metaLanguage/UserError";
+import EventTracker, {
+    EventTrackerImpl
+} from "./source (restructure)/shared/metaLanguage/EventTracker";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -74,6 +74,7 @@ const appViewModel = new AppViewModel();
 const sessionPresenter = new AppPresenter(appViewModel);
 
 export class Dependencies {
+    eventTracker: EventTracker;
     webClientID: string;
     authentication: AuthenticationFirebase;
     database: DatabaseImplWatermelon;
@@ -109,9 +110,8 @@ export class Dependencies {
     appStateController: AppStateController;
 
     constructor(webClientID: string) {
-        const logger = new Logger(new EventTrackerImpl());
-        UserWarning.logger = logger;
-        UserError.logger = logger;
+        this.eventTracker = new EventTrackerImpl();
+        Logger.createInstance(this.eventTracker);
         this.webClientID = webClientID;
         this.authentication = new AuthenticationFirebase(webClientID);
         this.database = new DatabaseImplWatermelon();
@@ -183,6 +183,7 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.sessionService = new SessionService(
+            this.eventTracker,
             sessionPresenter,
             this.loginPresenter,
             this.authentication,
@@ -288,6 +289,7 @@ export class Dependencies {
         // persist and be displayed after all dependencies have been reset.
         this.loginPresenter = new LoginPresenter(this.loginViewModel);
         this.sessionService = new SessionService(
+            this.eventTracker,
             sessionPresenter,
             this.loginPresenter,
             this.authentication,

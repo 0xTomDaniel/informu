@@ -6,7 +6,6 @@ import DatabaseImplWatermelon from "./DatabaseImplWatermelon";
 import { Database } from "@nozbe/watermelondb";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
-import UserWarning from "../../../source (restructure)/shared/metaLanguage/UserWarning";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 jest.mock("./DatabaseImplWatermelon");
@@ -16,13 +15,13 @@ const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
         log: jest.fn(),
         warn: jest.fn(),
-        error: jest.fn()
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
     })
 );
 const eventTrackerMock = new EventTrackerMock();
-const logger = new Logger(eventTrackerMock);
-UserWarning.logger = logger;
-UserError.logger = logger;
+Logger.createInstance(eventTrackerMock);
 
 const WatermelonDBMock = Database as jest.Mock<Database, any>;
 const DatabaseImplWatermelonMock = DatabaseImplWatermelon as jest.Mock<
