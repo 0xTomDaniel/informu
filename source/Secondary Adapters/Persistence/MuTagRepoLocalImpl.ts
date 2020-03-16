@@ -6,10 +6,7 @@ import {
     DoesNotExist as MuTagDoesNotExist
 } from "../../Core/Ports/MuTagRepositoryLocal";
 import ProvisionedMuTag, { BeaconId } from "../../Core/Domain/ProvisionedMuTag";
-import {
-    AccountRepositoryLocal,
-    DoesNotExist as AccountDoesNotExist
-} from "../../Core/Ports/AccountRepositoryLocal";
+import { AccountRepositoryLocal } from "../../Core/Ports/AccountRepositoryLocal";
 import { Database } from "./Database";
 import MuTagRepositoryLocalPortAddMuTag from "../../../source (restructure)/useCases/addMuTag/MuTagRepositoryLocalPort";
 import MuTagRepositoryLocalPortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/MuTagRepositoryLocalPort";
@@ -158,7 +155,7 @@ export default class MuTagRepoLocalImpl
                 });
             })
             .catch((e): void => {
-                if (e instanceof AccountDoesNotExist) {
+                if (e.name === "AccountDoesNotExist") {
                     this.cacheStatus = CacheStatus.Populated;
                     this.executeOnCachePopulated.forEach((executor): void => {
                         executor.resolve();

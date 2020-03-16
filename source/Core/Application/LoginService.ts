@@ -1,56 +1,29 @@
 import LoginOutput from "../Ports/LoginOutput";
-import {
-    Authentication,
-    InvalidCredentials,
-    UserDisabled,
-    AuthenticationException,
-    TooManyAttempts,
-    GooglePlayServicesNotAvailable,
-    GoogleSignInFailed,
-    SignInCanceled,
-    EmailNotFound,
-    FacebookSignInFailed,
-    IncorrectSignInMethod
-} from "../Ports/Authentication";
+import { Authentication } from "../Ports/Authentication";
 import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
-import {
-    DoesNotExist as AccountDoesNotExistOnLocal,
-    FailedToGet,
-    FailedToAdd,
-    FailedToRemove,
-    AccountRepositoryLocalException,
-    AccountRepositoryLocal
-} from "../Ports/AccountRepositoryLocal";
+import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import { Session } from "./SessionService";
 import { AccountRegistration } from "./AccountRegistrationService";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
+import UserError, {
+    UserErrorType
+} from "../../../source (restructure)/shared/metaLanguage/UserError";
 
-export class ImproperEmailFormat extends Error {
-    constructor() {
-        super("This is not a proper email address.");
-        this.name = "ImproperEmailFormat";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+export const ImproperEmailFormat: UserErrorType = {
+    name: "ImproperEmailFormat",
+    userFriendlyMessage: "This is not a proper email address."
+};
 
-export class ImproperPasswordComplexity extends Error {
-    constructor() {
-        super("Password doesn't meet complexity requirements.");
-        this.name = "ImproperPasswordComplexity";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+export const ImproperPasswordComplexity: UserErrorType = {
+    name: "ImproperPasswordComplexity",
+    userFriendlyMessage: "Password doesn't meet complexity requirements."
+};
 
-class GenericSignInError extends UserError {
-    name = "GenericSignInError";
-    userErrorDescription = "Failed to sign in.";
-}
-
-export type LoginServiceException =
-    | ImproperEmailFormat
-    | ImproperPasswordComplexity;
+const GenericSignInError: UserErrorType = {
+    name: "GenericSignInError",
+    userFriendlyMessage: "Failed to sign in."
+};
 
 export class LoginService {
     private readonly loginOutput: LoginOutput;
@@ -88,10 +61,10 @@ export class LoginService {
     ): Promise<void> {
         try {
             if (!emailAddress.isValid()) {
-                throw new ImproperEmailFormat();
+                throw UserError.create(ImproperEmailFormat);
             }
             if (!password.isValid()) {
-                throw new ImproperPasswordComplexity();
+                throw UserError.create(ImproperPasswordComplexity);
             }
             this.loginOutput.showBusyIndicator();
             const userData = await this.authentication.authenticateWithEmail(
@@ -131,7 +104,7 @@ export class LoginService {
                     return;
                 default:
                     this.loginOutput.showFederatedLoginError(
-                        new GenericSignInError(e)
+                        UserError.create(GenericSignInError, e)
                     );
             }
         } finally {
@@ -157,7 +130,7 @@ export class LoginService {
                     return;
                 default:
                     this.loginOutput.showFederatedLoginError(
-                        new GenericSignInError(e)
+                        UserError.create(GenericSignInError, e)
                     );
             }
         } finally {
@@ -173,39 +146,33 @@ export class LoginService {
         this.sessionService.abortStart();
     }
 
-    private isLoginServiceException(
-        value: any
-    ): value is LoginServiceException {
+    private isLoginServiceException(value: UserError): boolean {
         return (
-            value instanceof ImproperEmailFormat ||
-            value instanceof ImproperPasswordComplexity
+            value.name === "ImproperEmailFormat" ||
+            value.name === "ImproperPasswordComplexity"
         );
     }
 
-    private isAuthenticationException(
-        value: any
-    ): value is AuthenticationException {
+    private isAuthenticationException(value: UserError): boolean {
         return (
-            value instanceof InvalidCredentials ||
-            value instanceof UserDisabled ||
-            value instanceof IncorrectSignInMethod ||
-            value instanceof TooManyAttempts ||
-            value instanceof SignInCanceled ||
-            value instanceof GooglePlayServicesNotAvailable ||
-            value instanceof GoogleSignInFailed ||
-            value instanceof FacebookSignInFailed ||
-            value instanceof EmailNotFound
+            value.name === "InvalidCredentials" ||
+            value.name === "UserDisabled" ||
+            value.name === "IncorrectSignInMethod" ||
+            value.name === "TooManyAttempts" ||
+            value.name === "SignInCanceled" ||
+            value.name === "GooglePlayServicesNotAvailable" ||
+            value.name === "GoogleSignInFailed" ||
+            value.name === "FacebookSignInFailed" ||
+            value.name === "EmailNotFound"
         );
     }
 
-    private isAccountRepositoryLocalException(
-        value: any
-    ): value is AccountRepositoryLocalException {
+    private isAccountRepositoryLocalException(value: UserError): boolean {
         return (
-            value instanceof AccountDoesNotExistOnLocal ||
-            value instanceof FailedToGet ||
-            value instanceof FailedToAdd ||
-            value instanceof FailedToRemove
+            value.name === "AccountDoesNotExistOnLocal" ||
+            value.name === "FailedToGet" ||
+            value.name === "FailedToAdd" ||
+            value.name === "FailedToRemove"
         );
     }
 }

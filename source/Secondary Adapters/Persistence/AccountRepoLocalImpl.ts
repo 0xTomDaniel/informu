@@ -12,6 +12,7 @@ import AccountRepositoryLocalPortAddMuTag from "../../../source (restructure)/us
 import AccountRepositoryLocalPortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/AccountRepositoryLocalPort";
 import { defer } from "rxjs";
 import { share, map } from "rxjs/operators";
+import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export default class AccountRepoLocalImpl
     implements
@@ -42,10 +43,10 @@ export default class AccountRepoLocalImpl
             account = await this.persistedAccount.toPromise();
         } catch (e) {
             console.log(e);
-            throw new FailedToGet();
+            throw UserError.create(FailedToGet);
         }
         if (account == null) {
-            throw new DoesNotExist();
+            throw UserError.create(DoesNotExist);
         }
         this.cachedAccount = account;
         return account;
@@ -58,7 +59,7 @@ export default class AccountRepoLocalImpl
             await this.database.set("account", rawAccount);
         } catch (e) {
             console.log(e);
-            throw new FailedToAdd();
+            throw UserError.create(FailedToAdd);
         }
     }
 
@@ -69,7 +70,7 @@ export default class AccountRepoLocalImpl
             await this.database.set("account", rawAccount);
         } catch (e) {
             console.log(e);
-            throw new FailedToUpdate();
+            throw UserError.create(FailedToUpdate);
         }
     }
 
@@ -79,7 +80,7 @@ export default class AccountRepoLocalImpl
             this.cachedAccount = undefined;
         } catch (e) {
             console.log(e);
-            throw new FailedToRemove();
+            throw UserError.create(FailedToRemove);
         }
     }
 }

@@ -1,8 +1,7 @@
 import LoginOutput from "../../Core/Ports/LoginOutput";
 import { LoginViewModel } from "./LoginViewModel";
-import { ImproperPasswordComplexity } from "../../Core/Application/LoginService";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
-import { SignedIntoOtherDevice } from "../../Core/Application/SessionService";
+import UserWarning from "../../../source (restructure)/shared/metaLanguage/UserWarning";
 
 export default class LoginPresenter implements LoginOutput {
     private readonly viewModel: LoginViewModel;
@@ -30,7 +29,7 @@ export default class LoginPresenter implements LoginOutput {
         this.enableLogInButton();
         this.hideBusyIndicator();
 
-        if (error instanceof ImproperPasswordComplexity) {
+        if (error.name === "ImproperPasswordComplexity") {
             this.viewModel.updateState({ passwordErrorMessage: error.message });
         } else {
             this.viewModel.updateState({
@@ -39,16 +38,16 @@ export default class LoginPresenter implements LoginOutput {
         }
     }
 
-    showSignedIntoOtherDevice(warning: SignedIntoOtherDevice): void {
+    showSignedIntoOtherDevice(warning: UserWarning): void {
         this.viewModel.updateState({
-            signedIntoOtherDeviceMessage: warning.userWarningDescription
+            signedIntoOtherDeviceMessage: warning.userFriendlyMessage
         });
     }
 
     showFederatedLoginError(error: UserError): void {
         this.hideBusyIndicator();
         this.viewModel.updateState({
-            federatedUserErrorMessage: error.userErrorDescription,
+            federatedUserErrorMessage: error.userFriendlyMessage,
             detailedErrorDescription:
                 error.originatingError?.message ??
                 error.originatingError?.userErrorDescription ??

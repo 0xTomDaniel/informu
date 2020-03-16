@@ -29,6 +29,20 @@ import { MuTagBLEGATT } from "../../shared/muTagDevices/MuTagBLEGATT/MuTagBLEGAT
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import lolex from "lolex";
+import EventTracker from "../../shared/metaLanguage/EventTracker";
+import Logger from "../../shared/metaLanguage/Logger";
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+Logger.createInstance(eventTrackerMock);
 
 const addMuTagConnectThreshold = -72 as Rssi;
 const addMuTagBatteryThreshold = new Percent(15);
@@ -107,8 +121,23 @@ const addMuTagInteractor = new AddMuTagInteractor(
 describe("Mu tag user adds Mu tag", (): void => {
     (bluetoothMock.retrieveServices as jest.Mock).mockResolvedValue({});
     (bluetoothMock.stopScan as jest.Mock).mockResolvedValue(undefined);
-    (bluetoothMock.connect as jest.Mock).mockResolvedValue(undefined);
-    (bluetoothMock.disconnect as jest.Mock).mockResolvedValue(undefined);
+    const connections = new Map<PeripheralId, Subscriber<void>>();
+    (bluetoothMock.connect as jest.Mock).mockImplementation(
+        (peripheralId: PeripheralId) =>
+            new Observable<void>(subscriber => {
+                connections.set(peripheralId, subscriber);
+                subscriber.next();
+            })
+    );
+    (bluetoothMock.disconnect as jest.Mock).mockImplementation(
+        (peripheralId: PeripheralId) =>
+            new Promise(resolve => {
+                const subscriber = connections.get(peripheralId);
+                subscriber?.complete();
+                connections.delete(peripheralId);
+                resolve();
+            })
+    );
     (bluetoothMock.write as jest.Mock).mockResolvedValue(undefined);
     (bluetoothMock.enableBluetooth as jest.Mock).mockResolvedValue(undefined);
     const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
