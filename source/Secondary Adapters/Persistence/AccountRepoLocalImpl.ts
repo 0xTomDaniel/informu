@@ -21,7 +21,9 @@ export default class AccountRepoLocalImpl
         AccountRepositoryLocalPortRemoveMuTag {
     private readonly database: Database;
     private cachedAccount?: Account;
-    private persistedAccount = defer(() => this.database.get("account")).pipe(
+    private persistedAccount = defer(() => {
+        return this.database.get("account");
+    }).pipe(
         map(rawAccount => {
             if (typeof rawAccount === "string") {
                 return Account.deserialize(rawAccount);
@@ -54,18 +56,17 @@ export default class AccountRepoLocalImpl
 
     async add(account: Account): Promise<void> {
         const rawAccount = account.serialize();
-
         try {
             await this.database.set("account", rawAccount);
         } catch (e) {
             console.log(e);
             throw UserError.create(FailedToAdd);
         }
+        this.cachedAccount = account;
     }
 
     async update(account: Account): Promise<void> {
         const rawAccount = account.serialize();
-
         try {
             await this.database.set("account", rawAccount);
         } catch (e) {

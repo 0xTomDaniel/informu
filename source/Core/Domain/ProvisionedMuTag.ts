@@ -1,8 +1,8 @@
 import MuTag, { MuTagColor } from "./MuTag";
 import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import Hexadecimal from "../../../source (restructure)/shared/metaLanguage/Hexadecimal";
-import { BehaviorSubject, Observable, combineLatest } from "rxjs";
-import { map } from "rxjs/operators";
+import { BehaviorSubject, Observable, combineLatest, Subject } from "rxjs";
+import { map, mapTo, skip } from "rxjs/operators";
 import isType, {
     RuntimeType
 } from "../../../source (restructure)/shared/metaLanguage/isType";
@@ -42,6 +42,7 @@ export interface MuTagData {
     readonly _modelNumber: string;
     readonly _muTagNumber: number;
     readonly _name: string;
+    readonly _recentAddress?: string;
     readonly _recentLatitude: number;
     readonly _recentLongitude: number;
     readonly _txPower: number;
@@ -62,6 +63,7 @@ export interface MuTagJson {
     readonly _modelNumber: string;
     readonly _muTagNumber: number;
     readonly _name: string;
+    readonly _recentAddress?: string;
     readonly _recentLatitude: number;
     readonly _recentLongitude: number;
     readonly _txPower: number;
@@ -103,6 +105,7 @@ interface SafetyStatus {
 }
 
 interface AccessorValue {
+    readonly didEnterRegion: Subject<void>;
     readonly isSafe: BehaviorSubject<boolean>;
     readonly lastSeen: BehaviorSubject<Date>;
 }
@@ -131,6 +134,7 @@ export default class ProvisionedMuTag extends MuTag {
     private _modelNumber: string;
     private readonly _muTagNumber: number;
     private _name: string;
+    private _recentAddress?: string;
     private _recentLatitude: number;
     private _recentLongitude: number;
     private _txPower: number;
@@ -140,37 +144,15 @@ export default class ProvisionedMuTag extends MuTag {
     // properties observable.
     private readonly _accessorValue: AccessorValue;
 
-    /* I am using an object interface for this constructor so that I can easily
-     * use the JSON.parse reviver object to instantiate this class. This makes
-     * it much easier to modify the private properties of this class because
-     * mapping properties for the constructor is not required.
-     */
-    constructor(muTagData: MuTagData) {
-        super();
-        this._advertisingInterval = muTagData._advertisingInterval;
-        this._batteryLevel = muTagData._batteryLevel;
-        this._beaconId = muTagData._beaconId;
-        this._color = muTagData._color;
-        this._dateAdded = muTagData._dateAdded;
-        this._didExitRegion = muTagData._didExitRegion;
-        this._firmwareVersion = muTagData._firmwareVersion;
-        this._macAddress = muTagData._macAddress;
-        this._modelNumber = muTagData._modelNumber;
-        this._muTagNumber = muTagData._muTagNumber;
-        this._name = muTagData._name;
-        this._recentLatitude = muTagData._recentLatitude;
-        this._recentLongitude = muTagData._recentLongitude;
-        this._txPower = muTagData._txPower;
-        this._uid = muTagData._uid;
-        this._accessorValue = {
-            isSafe: new BehaviorSubject(muTagData._isSafe),
-            lastSeen: new BehaviorSubject(muTagData._lastSeen)
-        };
+    get address(): string | undefined {
+        return this._recentAddress;
     }
 
     get beaconId(): BeaconId {
         return this._beaconId;
     }
+
+    readonly didEnterRegion: Observable<void>;
 
     get name(): string {
         return this._name;
@@ -203,19 +185,68 @@ export default class ProvisionedMuTag extends MuTag {
         return JSON.parse(json);
     }
 
+    /* I am using an object interface for this constructor so that I can easily
+     * use the JSON.parse reviver object to instantiate this class. This makes
+     * it much easier to modify the private properties of this class because
+     * mapping properties for the constructor is not required.
+     */
+    constructor(muTagData: MuTagData) {
+        super();
+        this._advertisingInterval = muTagData._advertisingInterval;
+        this._batteryLevel = muTagData._batteryLevel;
+        this._beaconId = muTagData._beaconId;
+        this._color = muTagData._color;
+        this._dateAdded = muTagData._dateAdded;
+        this._didExitRegion = muTagData._didExitRegion;
+        this._firmwareVersion = muTagData._firmwareVersion;
+        this._macAddress = muTagData._macAddress;
+        this._modelNumber = muTagData._modelNumber;
+        this._muTagNumber = muTagData._muTagNumber;
+        this._name = muTagData._name;
+        this._recentAddress = muTagData._recentAddress;
+        this._recentLatitude = muTagData._recentLatitude;
+        this._recentLongitude = muTagData._recentLongitude;
+        this._txPower = muTagData._txPower;
+        this._uid = muTagData._uid;
+        this._accessorValue = {
+            didEnterRegion: new Subject<void>(),
+            isSafe: new BehaviorSubject(muTagData._isSafe),
+            lastSeen: new BehaviorSubject(muTagData._lastSeen)
+        };
+        this.didEnterRegion = this._accessorValue.didEnterRegion.asObservable();
+    }
+
     changeColor(color: MuTagColor): void {
         this._color = color;
+    }
+
+    updateLocation(
+        latitude: number,
+        longitude: number,
+        address?: string
+    ): void {
+        debugger;
+        if (this._didExitRegion) {
+            return;
+        }
+        debugger;
+        this._recentLatitude = latitude;
+        this._recentLongitude = longitude;
+        this._recentAddress = address;
+    }
+
+    userDidDetect(timestamp: Date): void {
+        if (this._didExitRegion) {
+            this._didExitRegion = false;
+            this._accessorValue.didEnterRegion.next();
+        }
+        this._isSafe = true;
+        this._lastSeen = timestamp;
     }
 
     userDidExitRegion(): void {
         this._didExitRegion = true;
         this._isSafe = false;
-    }
-
-    userDidDetect(timestamp: Date): void {
-        this._didExitRegion = false;
-        this._isSafe = true;
-        this._lastSeen = timestamp;
     }
 
     serialize(): string {
@@ -248,6 +279,7 @@ export default class ProvisionedMuTag extends MuTag {
                 return value.toString();
             /*case 'lastSeen':
                 return value.toISOString();*/
+            case "didEnterRegion":
             case "_accessorValue":
                 // This property is not part of the model. It only serves to
                 // make some properties observable.

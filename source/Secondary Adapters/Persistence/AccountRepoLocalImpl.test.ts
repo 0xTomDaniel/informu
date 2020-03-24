@@ -31,7 +31,7 @@ const DatabaseImplWatermelonMock = DatabaseImplWatermelon as jest.Mock<
 const watermelonDBMock = new WatermelonDBMock();
 const database = new DatabaseImplWatermelonMock(watermelonDBMock);
 (database.get as jest.Mock).mockResolvedValue(null);
-const accountRepoLocalImpl = new AccountRepoLocalImpl(database);
+let accountRepoLocalImpl = new AccountRepoLocalImpl(database);
 const account = new Account({
     _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
@@ -54,8 +54,11 @@ test("successfully adds account", async (): Promise<void> => {
 test("successfully gets added account twice that are the same object instance", async (): Promise<
     void
 > => {
-    const accountJSON = account.serialize();
-    (database.get as jest.Mock).mockResolvedValueOnce(accountJSON);
+    // Reset instance so the cache is not longer populated
+    accountRepoLocalImpl = new AccountRepoLocalImpl(database);
+
+    const accountJson = account.serialize();
+    (database.get as jest.Mock).mockResolvedValueOnce(accountJson);
     expect.assertions(3);
     let firstAccount: Account;
     let secondAccount: Account;
