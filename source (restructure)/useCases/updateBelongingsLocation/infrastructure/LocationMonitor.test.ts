@@ -1,12 +1,19 @@
 import LocationMonitor, {
     GeoLocation,
     GeoLocationEvent,
-    Subscription as EventSubscription
+    Subscription as EventSubscription,
+    Geocoder
 } from "./LocationMonitor";
 import { v4 as uuidV4 } from "uuid";
 import { Location } from "../LocationMonitorPort";
 import { take } from "rxjs/operators";
 
+const GeocoderMock = jest.fn<Geocoder, any>(
+    (): Geocoder => ({
+        reverseGeocode: jest.fn()
+    })
+);
+const geocoderMock = new GeocoderMock();
 const GeoLocationMock = jest.fn<GeoLocation, any>(
     (): GeoLocation => ({
         configure: jest.fn(),
@@ -50,22 +57,30 @@ let locationEventSubscription: SubscriptionImpl;
         }
     }
 });
-const locationMonitor = new LocationMonitor(geoLocationMock);
+const locationMonitor = new LocationMonitor(geocoderMock, geoLocationMock);
 
 const firstLocationUpdate = {
-    //address: "7722 Everett St., Arvada, CO 80005",
     latitude: 39.836557861962184,
     longitude: -105.09686516468388,
     time: new Date().valueOf()
 };
+const firstLocationUpdateWithAddress = {
+    address: "7722 Everett St., Arvada, CO 80005",
+    latitude: firstLocationUpdate.latitude,
+    longitude: firstLocationUpdate.longitude,
+    time: firstLocationUpdate.time
+};
 
 it("receives location update", async (): Promise<void> => {
+    (geocoderMock.reverseGeocode as jest.Mock).mockResolvedValueOnce(
+        firstLocationUpdateWithAddress.address
+    );
     expect.assertions(1);
     return new Promise(resolve => {
         locationMonitor.location
             .pipe(take(1))
             .subscribe((location: Location) => {
-                expect(location).toEqual(firstLocationUpdate);
+                expect(location).toEqual(firstLocationUpdateWithAddress);
                 resolve();
             });
         locationEventSubscription.triggerEvent(firstLocationUpdate);
@@ -77,11 +92,19 @@ it("multiple subscribers receive last location and location update", async (): P
     void
 > => {
     const secondLocationUpdate = {
-        //address: "11894 Elm Drive, Thornton, CO 80233",
         latitude: 39.91177778344706,
         longitude: -104.92854109499716,
         time: new Date().valueOf()
     };
+    const secondLocationUpdateWithAddress = {
+        address: "11894 Elm Drive, Thornton, CO 80233",
+        latitude: secondLocationUpdate.latitude,
+        longitude: secondLocationUpdate.longitude,
+        time: secondLocationUpdate.time
+    };
+    (geocoderMock.reverseGeocode as jest.Mock).mockResolvedValueOnce(
+        secondLocationUpdateWithAddress.address
+    );
     expect.assertions(5);
     await new Promise(resolve => {
         let firstLocationCount = 0;
@@ -91,10 +114,14 @@ it("multiple subscribers receive last location and location update", async (): P
                 firstLocationCount++;
                 switch (firstLocationCount) {
                     case 1:
-                        expect(location).toEqual(firstLocationUpdate);
+                        expect(location).toEqual(
+                            firstLocationUpdateWithAddress
+                        );
                         break;
                     case 2:
-                        expect(location).toEqual(secondLocationUpdate);
+                        expect(location).toEqual(
+                            secondLocationUpdateWithAddress
+                        );
                 }
             });
         let secondLocationCount = 0;
@@ -104,20 +131,22 @@ it("multiple subscribers receive last location and location update", async (): P
                 secondLocationCount++;
                 switch (secondLocationCount) {
                     case 1:
-                        expect(location).toEqual(firstLocationUpdate);
+                        expect(location).toEqual(
+                            firstLocationUpdateWithAddress
+                        );
                         break;
                     case 2:
-                        expect(location).toEqual(secondLocationUpdate);
+                        expect(location).toEqual(
+                            secondLocationUpdateWithAddress
+                        );
+                        resolve();
                 }
             });
         locationEventSubscription.triggerEvent(secondLocationUpdate);
         locationEventSubscription.remove();
-        locationMonitor.location
-            .pipe(take(1))
-            .subscribe((location: Location) => {
-                expect(location).toEqual(secondLocationUpdate);
-                resolve();
-            });
+    });
+    locationMonitor.location.pipe(take(1)).subscribe((location: Location) => {
+        expect(location).toEqual(secondLocationUpdateWithAddress);
     });
 });
 

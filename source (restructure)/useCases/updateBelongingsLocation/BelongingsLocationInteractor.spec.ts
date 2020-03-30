@@ -17,9 +17,11 @@ import Account, {
 } from "../../../source/Core/Domain/Account";
 import LocationMonitor, {
     GeoLocation,
-    GeoLocationEvent
+    GeoLocationEvent,
+    Geocoder
 } from "./infrastructure/LocationMonitor";
 import { EventSubscription } from "@mauron85/react-native-background-geolocation";
+import { take } from "rxjs/operators";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -53,6 +55,12 @@ const belongingData: MuTagData = {
     _uid: belongingUid
 };
 const belonging = new ProvisionedMuTag(belongingData);
+const GeocoderMock = jest.fn<Geocoder, any>(
+    (): Geocoder => ({
+        reverseGeocode: jest.fn()
+    })
+);
+const geocoderMock = new GeocoderMock();
 const GeoLocationMock = jest.fn<GeoLocation, any>(
     (): GeoLocation => ({
         configure: jest.fn(),
@@ -96,7 +104,7 @@ let locationEventSubscription: SubscriptionImpl;
         }
     }
 });
-const locationMonitor = new LocationMonitor(geoLocationMock);
+const locationMonitor = new LocationMonitor(geocoderMock, geoLocationMock);
 const DatabaseMock = jest.fn<Database, any>(
     (): Database => ({
         get: jest.fn(),
@@ -130,16 +138,19 @@ const belongingsLocationInteractor = new BelongingsLocationInteractor(
     muTagRepoLocal
 );
 const firstLocationUpdate = {
-    address: "9350 Quitman St., Westminster, CO 80031",
     latitude: 39.8666811,
     longitude: -105.0415883,
     time: new Date().valueOf()
 };
+const firstLocationUpdateAddress = "9350 Quitman St., Westminster, CO 80031";
 
 describe("Location of belongings continuously updates", (): void => {
     describe("Scenario 1: Belonging is in range", (): void => {
         beforeAll(
             async (): Promise<void> => {
+                (geocoderMock.reverseGeocode as jest.Mock).mockResolvedValueOnce(
+                    firstLocationUpdateAddress
+                );
                 await accountRepoLocal.add(account);
                 await muTagRepoLocal.add(belonging);
 
@@ -151,7 +162,12 @@ describe("Location of belongings continuously updates", (): void => {
 
                 // When user location changes
                 //
-                locationEventSubscription.triggerEvent(firstLocationUpdate);
+                await new Promise(resolve => {
+                    locationMonitor.location
+                        .pipe(take(1))
+                        .subscribe(undefined, undefined, () => resolve());
+                    locationEventSubscription.triggerEvent(firstLocationUpdate);
+                });
             }
         );
 
@@ -164,17 +180,18 @@ describe("Location of belongings continuously updates", (): void => {
         it("should update belonging location to user's current location", async (): Promise<
             void
         > => {
-            expect(belonging.address).toBe(firstLocationUpdate.address);
+            expect(belonging.address).toBe(firstLocationUpdateAddress);
         });
     });
 
     describe("Scenario 2: Belonging is out of range", (): void => {
         const secondLocationUpdate = {
-            address: "11894 Elm Drive, Thornton, CO 80233",
             latitude: 39.91177778344706,
             longitude: -104.92854109499716,
             time: new Date().valueOf()
         };
+        /*const secondLocationUpdateAddress =
+            "11894 Elm Drive, Thornton, CO 80233";*/
 
         beforeAll(
             async (): Promise<void> => {
@@ -186,7 +203,14 @@ describe("Location of belongings continuously updates", (): void => {
 
                 // When user location changes
                 //
-                locationEventSubscription.triggerEvent(secondLocationUpdate);
+                await new Promise(resolve => {
+                    locationMonitor.location
+                        .pipe(take(2))
+                        .subscribe(undefined, undefined, () => resolve());
+                    locationEventSubscription.triggerEvent(
+                        secondLocationUpdate
+                    );
+                });
             }
         );
 
@@ -199,22 +223,27 @@ describe("Location of belongings continuously updates", (): void => {
         it("should not update belonging location to user's current location", async (): Promise<
             void
         > => {
-            expect(belonging.address).toBe(firstLocationUpdate.address);
+            expect(belonging.address).toBe(firstLocationUpdateAddress);
         });
     });
 
     const locationUpdateThree = {
-        address: "7722 Everett St., Arvada, CO 80005",
         latitude: 39.836557861962184,
         longitude: -105.09686516468388,
         time: new Date().valueOf()
     };
+    const locationUpdateThreeAddress = "7722 Everett St., Arvada, CO 80005";
 
     describe("Scenario 3: Belonging comes into range", (): void => {
         beforeAll(
             async (): Promise<void> => {
+                (geocoderMock.reverseGeocode as jest.Mock).mockResolvedValueOnce(
+                    locationUpdateThreeAddress
+                );
                 await new Promise<void>(resolve => {
-                    locationMonitor.location.subscribe(() => resolve());
+                    locationMonitor.location
+                        .pipe(take(2))
+                        .subscribe(undefined, undefined, () => resolve());
                     locationEventSubscription.triggerEvent(locationUpdateThree);
                 });
 
@@ -235,7 +264,7 @@ describe("Location of belongings continuously updates", (): void => {
         // Then
         //
         it("should update belonging location to user's current location", (): void => {
-            expect(belonging.address).toBe(locationUpdateThree.address);
+            expect(belonging.address).toBe(locationUpdateThreeAddress);
         });
     });
 
@@ -291,7 +320,7 @@ describe("Location of belongings continuously updates", (): void => {
         // Then
         //
         it("should update belonging location to user's current location", (): void => {
-            expect(newBelonging.address).toBe(locationUpdateThree.address);
+            expect(newBelonging.address).toBe(locationUpdateThreeAddress);
         });
 
         // When belonging goes out of range and comes back in range
@@ -303,14 +332,23 @@ describe("Location of belongings continuously updates", (): void => {
         > => {
             newBelonging.userDidExitRegion();
             const locationUpdateFour = {
-                address: "6229 Lamar St., Arvada, CO 80003",
                 latitude: 39.80963962521709,
                 longitude: -105.06733748256252,
                 time: new Date().valueOf()
             };
-            locationEventSubscription.triggerEvent(locationUpdateFour);
+            const locationUpdateFourAddress =
+                "6229 Lamar St., Arvada, CO 80003";
+            (geocoderMock.reverseGeocode as jest.Mock).mockResolvedValueOnce(
+                locationUpdateFourAddress
+            );
+            await new Promise<void>(resolve => {
+                locationMonitor.location
+                    .pipe(take(2))
+                    .subscribe(undefined, undefined, () => resolve());
+                locationEventSubscription.triggerEvent(locationUpdateFour);
+            });
             newBelonging.userDidDetect(new Date());
-            expect(newBelonging.address).toBe(locationUpdateFour.address);
+            expect(newBelonging.address).toBe(locationUpdateFourAddress);
         });
 
         // When user location changes
@@ -321,13 +359,17 @@ describe("Location of belongings continuously updates", (): void => {
             void
         > => {
             const locationUpdateFive = {
-                address: "6978 Ruth Way, Twin Lakes, CO 80221",
                 latitude: 39.82359684169495,
                 longitude: -105.01215995877548,
                 time: new Date().valueOf()
             };
+            const locationUpdateFiveAddress =
+                "6978 Ruth Way, Twin Lakes, CO 80221";
+            (geocoderMock.reverseGeocode as jest.Mock).mockResolvedValueOnce(
+                locationUpdateFiveAddress
+            );
             locationMonitor.location.subscribe(() =>
-                expect(newBelonging.address).toBe(locationUpdateFive.address)
+                expect(newBelonging.address).toBe(locationUpdateFiveAddress)
             );
             locationEventSubscription.triggerEvent(locationUpdateFive);
         });
