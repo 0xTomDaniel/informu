@@ -1,5 +1,5 @@
 {
-  "name": "ai.informu.mutag",
+  "name": "MuTagReactNative",
   "version": "v0.2.0-rc.1",
   "private": true,
   "scripts": {
@@ -9,6 +9,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
+    "@mauron85/react-native-background-geolocation": "^0.6.3",
     "@nozbe/watermelondb": "^0.15.0",
     "@react-native-community/google-signin": "^3.0.3",
     "@react-native-firebase/app": "^6.1.0",

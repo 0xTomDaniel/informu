@@ -16,6 +16,7 @@ import { Subject } from "rxjs";
 import Account from "../Domain/Account";
 import LoginOutput from "../Ports/LoginOutput";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
+import { BelongingsLocation } from "../../../source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
 
 /*export class SignedIntoOtherDevice extends UserWarning {
     name = "SignedIntoOtherDevice";
@@ -50,6 +51,7 @@ export default class SessionService implements Session {
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly muTagRepoRemote: MuTagRepositoryRemote;
     private readonly belongingDetectionService: BelongingDetection;
+    private readonly belongingsLocationInteractor: BelongingsLocation;
     private readonly localDatabase: Database;
     private readonly accountRegistrationService: AccountRegistrationService;
     private shouldPauseLoadOnce = false;
@@ -68,6 +70,7 @@ export default class SessionService implements Session {
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
         belongingDetectionService: BelongingDetection,
+        belongingsLocationInteractor: BelongingsLocation,
         localDatabase: Database,
         accountRegistrationService: AccountRegistrationService
     ) {
@@ -80,6 +83,7 @@ export default class SessionService implements Session {
         this.muTagRepoLocal = muTagRepoLocal;
         this.muTagRepoRemote = muTagRepoRemote;
         this.belongingDetectionService = belongingDetectionService;
+        this.belongingsLocationInteractor = belongingsLocationInteractor;
         this.localDatabase = localDatabase;
         this.accountRegistrationService = accountRegistrationService;
     }
@@ -110,7 +114,8 @@ export default class SessionService implements Session {
                 return;
             }
             this.sessionOutput.showHomeScreen();
-            this.belongingDetectionService.start();
+            await this.belongingDetectionService.start();
+            await this.belongingsLocationInteractor.start();
         } catch (e) {
             if (e.name === "DoesNotExist") {
                 this.sessionOutput.showLoginScreen();
@@ -161,7 +166,8 @@ export default class SessionService implements Session {
         const muTags = await this.muTagRepoRemote.getAll(account.uid);
         await this.muTagRepoLocal.addMultiple(muTags);
         this.sessionOutput.showHomeScreen();
-        this.belongingDetectionService.start();
+        await this.belongingDetectionService.start();
+        await this.belongingsLocationInteractor.start();
     }
 
     continueStart(): void {
@@ -187,6 +193,7 @@ export default class SessionService implements Session {
             );
         }
         await this.belongingDetectionService.stop();
+        this.belongingsLocationInteractor.stop();
         await this.localDatabase.destroy();
         this.eventTracker.removeUser();
         this.resetAllDependencies.complete();

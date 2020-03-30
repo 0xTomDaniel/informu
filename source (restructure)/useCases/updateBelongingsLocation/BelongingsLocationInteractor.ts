@@ -6,7 +6,13 @@ import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountReposi
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Logger from "../../shared/metaLanguage/Logger";
 
-export default class BelongingsLocationInteractor {
+export interface BelongingsLocation {
+    start(): Promise<void>;
+    stop(): void;
+}
+
+export default class BelongingsLocationInteractor
+    implements BelongingsLocation {
     private accountMuTagsChangeSubscription?: Subscription;
     private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly locationMonitor: LocationMonitorPort;

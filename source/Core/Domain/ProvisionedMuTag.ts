@@ -225,11 +225,9 @@ export default class ProvisionedMuTag extends MuTag {
         longitude: number,
         address?: string
     ): void {
-        debugger;
         if (this._didExitRegion) {
             return;
         }
-        debugger;
         this._recentLatitude = latitude;
         this._recentLongitude = longitude;
         this._recentAddress = address;
