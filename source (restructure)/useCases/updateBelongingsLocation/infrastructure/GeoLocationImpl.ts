@@ -7,7 +7,7 @@ import BackgroundGeolocation, {
     EventSubscription
 } from "@mauron85/react-native-background-geolocation";
 
-export class GeoLocationImpl implements GeoLocation {
+export default class GeoLocationImpl implements GeoLocation {
     /*private _lastLocation?: Location;
 
     get lastLocation(): Location | undefined {

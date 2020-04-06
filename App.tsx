@@ -66,6 +66,17 @@ import Logger from "./source (restructure)/shared/metaLanguage/Logger";
 import EventTracker, {
     EventTrackerImpl
 } from "./source (restructure)/shared/metaLanguage/EventTracker";
+import BelongingsLocationInteractor, {
+    BelongingsLocation
+} from "./source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
+import LocationMonitorPort from "./source (restructure)/useCases/updateBelongingsLocation/LocationMonitorPort";
+import LocationMonitor, {
+    Geocoder,
+    GeoLocation
+} from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/LocationMonitor";
+import GeocoderImpl from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/GeocoderImpl";
+import * as RNGeocoder from "react-native-geocoding";
+import GeoLocationImpl from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/GeoLocationImpl";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -101,6 +112,10 @@ export class Dependencies {
     belongingDashboardService: BelongingDashboardService;
     muTagMonitor: MuTagMonitorRNBM;
     belongingDetectionService: BelongingDetectionService;
+    geocoderImpl: Geocoder;
+    geoLocation: GeoLocation;
+    locationMonitor: LocationMonitorPort;
+    belongingsLocationInteractor: BelongingsLocation;
     sessionService: SessionService;
     loginViewModel: LoginViewModel;
     loginPresenter: LoginPresenter;
@@ -173,6 +188,18 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.accountRepoLocal
         );
+        RNGeocoder.init("");
+        this.geocoderImpl = new GeocoderImpl(RNGeocoder);
+        this.geoLocation = new GeoLocationImpl();
+        this.locationMonitor = new LocationMonitor(
+            this.geocoderImpl,
+            this.geoLocation
+        );
+        this.belongingsLocationInteractor = new BelongingsLocationInteractor(
+            this.accountRepoLocal,
+            this.locationMonitor,
+            this.muTagRepoLocal
+        );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
         this.loginViewModel = new LoginViewModel();
         this.loginPresenter = new LoginPresenter(this.loginViewModel);
@@ -192,6 +219,7 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.belongingDetectionService,
+            this.belongingsLocationInteractor,
             this.database,
             this.accountRegistrationService
         );
@@ -278,6 +306,17 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.accountRepoLocal
         );
+        this.geocoderImpl = new GeocoderImpl(RNGeocoder);
+        this.geoLocation = new GeoLocationImpl();
+        this.locationMonitor = new LocationMonitor(
+            this.geocoderImpl,
+            this.geoLocation
+        );
+        this.belongingsLocationInteractor = new BelongingsLocationInteractor(
+            this.accountRepoLocal,
+            this.locationMonitor,
+            this.muTagRepoLocal
+        );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
         this.newAccountFactory = new NewAccountFactoryImpl();
         this.accountRegistrationService = new AccountRegistrationService(
@@ -298,6 +337,7 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.belongingDetectionService,
+            this.belongingsLocationInteractor,
             this.database,
             this.accountRegistrationService
         );
