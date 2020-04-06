@@ -86,7 +86,7 @@ const sessionPresenter = new AppPresenter(appViewModel);
 
 export class Dependencies {
     eventTracker: EventTracker;
-    webClientID: string;
+    webClientId: string;
     authentication: AuthenticationFirebase;
     database: DatabaseImplWatermelon;
     accountRepoLocal: AccountRepoLocalImpl;
@@ -112,6 +112,7 @@ export class Dependencies {
     belongingDashboardService: BelongingDashboardService;
     muTagMonitor: MuTagMonitorRNBM;
     belongingDetectionService: BelongingDetectionService;
+    geocodingApiKey: string;
     geocoderImpl: Geocoder;
     geoLocation: GeoLocation;
     locationMonitor: LocationMonitorPort;
@@ -124,11 +125,11 @@ export class Dependencies {
     loginService: LoginService;
     appStateController: AppStateController;
 
-    constructor(webClientID: string) {
+    constructor(webClientId: string, geocodingApiKey: string) {
         this.eventTracker = new EventTrackerImpl();
         Logger.createInstance(this.eventTracker);
-        this.webClientID = webClientID;
-        this.authentication = new AuthenticationFirebase(webClientID);
+        this.webClientId = webClientId;
+        this.authentication = new AuthenticationFirebase(webClientId);
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
@@ -188,7 +189,8 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.accountRepoLocal
         );
-        RNGeocoder.init("");
+        this.geocodingApiKey = geocodingApiKey;
+        RNGeocoder.init(this.geocodingApiKey);
         this.geocoderImpl = new GeocoderImpl(RNGeocoder);
         this.geoLocation = new GeoLocationImpl();
         this.locationMonitor = new LocationMonitor(
@@ -246,7 +248,7 @@ export class Dependencies {
     }
 
     private resetAll(): void {
-        this.authentication = new AuthenticationFirebase(this.webClientID);
+        this.authentication = new AuthenticationFirebase(this.webClientId);
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
@@ -373,9 +375,11 @@ function assertNotNullOrUndefined(value: unknown): asserts value {
     }
 }
 
-const webClientID = process.env.GOOGLE_WEB_CLIENT_ID;
-assertNotNullOrUndefined(webClientID);
-const dependencies = new Dependencies(webClientID);
+const webClientId = process.env.GOOGLE_WEB_CLIENT_ID;
+assertNotNullOrUndefined(webClientId);
+const geocodingApiKey = process.env.GEOCODING_API_KEY;
+assertNotNullOrUndefined(geocodingApiKey);
+const dependencies = new Dependencies(webClientId, geocodingApiKey);
 
 const AppStack = createStackNavigator(
     {
