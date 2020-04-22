@@ -1,8 +1,15 @@
 import { Observable } from "rxjs";
 
+export interface Address {
+    formattedAddress: string;
+    route: string;
+    locality: string;
+    administrativeAreaLevel1: string;
+}
+
 export interface Location {
     accuracy?: number;
-    address?: string;
+    address?: Address;
     altitude?: number;
     bearing?: number;
     latitude: number;

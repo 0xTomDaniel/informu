@@ -1,25 +1,26 @@
 import LocationMonitorPort, {
-    Location as PortLocation
+    Location as PortLocation,
+    Address
 } from "../LocationMonitorPort";
 import { fromEventPattern, defer } from "rxjs";
 import { finalize, publishReplay, refCount, concatMap } from "rxjs/operators";
 import Logger from "../../../shared/metaLanguage/Logger";
 
-export enum GeoLocationEvent {
+export enum GeolocationEvent {
     Authorization = "authorization",
     Error = "error",
     Location = "location"
 }
 
-export enum GeoLocationAccuracy {
+export enum GeolocationAccuracy {
     High,
     Medium,
     Low,
     Passive
 }
 
-export interface GeoLocationOptions {
-    desiredAccuracy?: GeoLocationAccuracy;
+export interface GeolocationOptions {
+    desiredAccuracy?: GeolocationAccuracy;
     distanceFilter?: number;
     interval?: number;
     notificationText?: string;
@@ -27,7 +28,6 @@ export interface GeoLocationOptions {
     stopOnTerminate?: boolean;
     startOnBoot?: boolean;
     stationaryRadius?: number;
-    foo: string;
 }
 
 export enum AuthorizationStatus {
@@ -40,31 +40,34 @@ export interface Subscription {
     remove(): void;
 }
 
-export interface GeoLocation {
-    configure(options: GeoLocationOptions): Promise<void>;
+export interface Geolocation {
+    configure(options: GeolocationOptions): Promise<void>;
     on(
-        event: GeoLocationEvent.Authorization,
+        event: GeolocationEvent.Authorization,
         callback: (status: AuthorizationStatus) => void
     ): Subscription;
     on(
-        event: GeoLocationEvent.Error,
+        event: GeolocationEvent.Error,
         callback: (error: Error) => void
     ): Subscription;
     on(
-        event: GeoLocationEvent.Location,
+        event: GeolocationEvent.Location,
         callback: (location: PortLocation) => void
     ): Subscription;
-    start(): void;
+    start(): Promise<void>;
     stop(): void;
 }
 
 export interface Geocoder {
-    reverseGeocode(latitude: number, longitude: number): Promise<string>;
+    reverseGeocode(
+        latitude: number,
+        longitude: number
+    ): Promise<Address | undefined>;
 }
 
 export default class LocationMonitor implements LocationMonitorPort {
     private readonly geocoder: Geocoder;
-    private readonly geoLocation: GeoLocation;
+    private readonly geoLocation: Geolocation;
     private geoLocationStarted = false;
     readonly location = defer(() => {
         this.startGeoLocation();
@@ -78,11 +81,11 @@ export default class LocationMonitor implements LocationMonitorPort {
         refCount()
     );
     private readonly locationUpdate = fromEventPattern<PortLocation>(
-        handler => this.geoLocation.on(GeoLocationEvent.Location, handler),
+        handler => this.geoLocation.on(GeolocationEvent.Location, handler),
         (handler, subscription) => subscription.remove()
     );
 
-    constructor(geocoder: Geocoder, geoLocation: GeoLocation) {
+    constructor(geocoder: Geocoder, geoLocation: Geolocation) {
         this.geocoder = geocoder;
         this.geoLocation = geoLocation;
     }
@@ -106,6 +109,11 @@ export default class LocationMonitor implements LocationMonitorPort {
     private async locationWithAddress(
         location: PortLocation
     ): Promise<PortLocation> {
+        //DEBUG
+        console.warn(
+            `locationWithAddress(location: ${JSON.stringify(location)})`
+        );
+
         const locationWithAddress = Object.assign({}, location);
         try {
             locationWithAddress.address = await this.geocoder.reverseGeocode(

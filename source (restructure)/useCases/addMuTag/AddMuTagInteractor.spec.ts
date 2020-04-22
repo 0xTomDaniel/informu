@@ -2,7 +2,7 @@ import AddMuTagInteractor from "./AddMuTagInteractor";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import AddMuTagPresenter from "./presentation/AddMuTagPresenter";
-import { HomeViewModel } from "../../../source/Primary Adapters/Presentation/HomeViewModel";
+import { BelongingDashboardViewModel } from "../viewBelongingDashboard/presentation/BelongingDashboardViewModel";
 import { AddMuTagViewModel } from "./presentation/AddMuTagViewModel";
 import { NameMuTagViewModel } from "./presentation/NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./presentation/MuTagAddingViewModel";
@@ -46,7 +46,7 @@ Logger.createInstance(eventTrackerMock);
 
 const addMuTagConnectThreshold = -72 as Rssi;
 const addMuTagBatteryThreshold = new Percent(15);
-const homeViewModel = new HomeViewModel();
+const homeViewModel = new BelongingDashboardViewModel();
 const addMuTagViewModel = new AddMuTagViewModel();
 const nameMuTagViewModel = new NameMuTagViewModel();
 const muTagAddingViewModel = new MuTagAddingViewModel();

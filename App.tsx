@@ -21,7 +21,7 @@ import LoadSessionViewController from "./source/Primary Adapters/Presentation/Lo
 import Theme from "./source/Primary Adapters/Presentation/Theme";
 import { AuthenticationFirebase } from "./source/Secondary Adapters/Infrastructure/AuthenticationFirebase";
 import AccountRepoLocalImpl from "./source/Secondary Adapters/Persistence/AccountRepoLocalImpl";
-import HomeViewController from "./source/Primary Adapters/Presentation/HomeViewController";
+import BelongingDashboardViewController from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewController";
 import { AccountRepoRNFirebase } from "./source/Secondary Adapters/Persistence/AccountRepoRNFirebase";
 import AppViewModel, {
     Screen
@@ -33,7 +33,7 @@ import AddMuTagViewController from "./source (restructure)/useCases/addMuTag/pre
 import { Rssi } from "./source (restructure)/shared/metaLanguage/Types";
 import Percent from "./source (restructure)/shared/metaLanguage/Percent";
 import AddMuTagInteractor from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
-import { HomeViewModel } from "./source/Primary Adapters/Presentation/HomeViewModel";
+import { BelongingDashboardViewModel } from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel";
 import AddMuTagPresenter from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagPresenter";
 import { AddMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewModel";
 import MuTagRepoLocalImpl from "./source/Secondary Adapters/Persistence/MuTagRepoLocalImpl";
@@ -44,8 +44,8 @@ import { MuTagAddingViewModel } from "./source (restructure)/useCases/addMuTag/p
 import MuTagAddingViewController from "./source (restructure)/useCases/addMuTag/presentation/MuTagAddingViewController";
 import LogoutService from "./source/Core/Application/LogoutService";
 import LogoutPresenter from "./source/Primary Adapters/Presentation/LogoutPresenter";
-import BelongingDashboardService from "./source/Core/Application/BelongingDashboardService";
-import BelongingDashboardPresenter from "./source/Primary Adapters/Presentation/BelongingDashboardPresenter";
+import BelongingDashboardInteractor from "./source (restructure)/useCases/viewBelongingDashboard/BelongingDashboardInteractor";
+import BelongingDashboardPresenter from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardPresenter";
 import BelongingDetectionService from "./source/Core/Application/BelongingDetectionService";
 import MuTagMonitorRNBM from "./source/Secondary Adapters/Infrastructure/MuTagMonitorRNBM";
 import RemoveMuTagInteractor from "./source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
@@ -71,12 +71,12 @@ import BelongingsLocationInteractor, {
 } from "./source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
 import LocationMonitorPort from "./source (restructure)/useCases/updateBelongingsLocation/LocationMonitorPort";
 import LocationMonitor, {
-    Geocoder,
-    GeoLocation
+    Geocoder as LmGeocoder,
+    Geolocation
 } from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/LocationMonitor";
 import GeocoderImpl from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/GeocoderImpl";
-import * as RNGeocoder from "react-native-geocoding";
-import GeoLocationImpl from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/GeoLocationImpl";
+import Geocoder from "react-native-geocoding";
+import GeolocationImpl from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/GeolocationImpl";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -95,7 +95,7 @@ export class Dependencies {
     muTagRepoRemote: MuTagRepoRNFirebase;
     connectThreshold: Rssi;
     addMuTagBatteryThreshold: Percent;
-    homeViewModel: HomeViewModel;
+    homeViewModel: BelongingDashboardViewModel;
     addMuTagViewModel: AddMuTagViewModel;
     nameMuTagViewModel: NameMuTagViewModel;
     muTagAddingViewModel: MuTagAddingViewModel;
@@ -109,12 +109,12 @@ export class Dependencies {
     logoutPresenter: LogoutPresenter;
     logoutService: LogoutService;
     belongingDashboardPresenter: BelongingDashboardPresenter;
-    belongingDashboardService: BelongingDashboardService;
+    belongingDashboardInteractor: BelongingDashboardInteractor;
     muTagMonitor: MuTagMonitorRNBM;
     belongingDetectionService: BelongingDetectionService;
     geocodingApiKey: string;
-    geocoderImpl: Geocoder;
-    geoLocation: GeoLocation;
+    geocoderImpl: LmGeocoder;
+    geoLocation: Geolocation;
     locationMonitor: LocationMonitorPort;
     belongingsLocationInteractor: BelongingsLocation;
     sessionService: SessionService;
@@ -127,7 +127,11 @@ export class Dependencies {
 
     constructor(webClientId: string, geocodingApiKey: string) {
         this.eventTracker = new EventTrackerImpl();
-        Logger.createInstance(this.eventTracker);
+        try {
+            Logger.createInstance(this.eventTracker);
+        } catch (e) {
+            Logger.instance.warn(e);
+        }
         this.webClientId = webClientId;
         this.authentication = new AuthenticationFirebase(webClientId);
         this.database = new DatabaseImplWatermelon();
@@ -140,7 +144,7 @@ export class Dependencies {
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
         this.connectThreshold = -80 as Rssi;
         this.addMuTagBatteryThreshold = new Percent(20);
-        this.homeViewModel = new HomeViewModel();
+        this.homeViewModel = new BelongingDashboardViewModel();
         this.addMuTagViewModel = new AddMuTagViewModel();
         this.nameMuTagViewModel = new NameMuTagViewModel();
         this.muTagAddingViewModel = new MuTagAddingViewModel();
@@ -178,7 +182,7 @@ export class Dependencies {
         this.belongingDashboardPresenter = new BelongingDashboardPresenter(
             this.homeViewModel
         );
-        this.belongingDashboardService = new BelongingDashboardService(
+        this.belongingDashboardInteractor = new BelongingDashboardInteractor(
             this.belongingDashboardPresenter,
             this.muTagRepoLocal,
             this.accountRepoLocal
@@ -190,9 +194,9 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.geocodingApiKey = geocodingApiKey;
-        RNGeocoder.init(this.geocodingApiKey);
-        this.geocoderImpl = new GeocoderImpl(RNGeocoder);
-        this.geoLocation = new GeoLocationImpl();
+        Geocoder.init(this.geocodingApiKey);
+        this.geocoderImpl = new GeocoderImpl(Geocoder);
+        this.geoLocation = new GeolocationImpl();
         this.locationMonitor = new LocationMonitor(
             this.geocoderImpl,
             this.geoLocation
@@ -259,7 +263,7 @@ export class Dependencies {
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
         this.connectThreshold = -80 as Rssi;
         this.addMuTagBatteryThreshold = new Percent(20);
-        this.homeViewModel = new HomeViewModel();
+        this.homeViewModel = new BelongingDashboardViewModel();
         this.addMuTagViewModel = new AddMuTagViewModel();
         this.nameMuTagViewModel = new NameMuTagViewModel();
         this.muTagAddingViewModel = new MuTagAddingViewModel();
@@ -296,7 +300,7 @@ export class Dependencies {
         this.belongingDashboardPresenter = new BelongingDashboardPresenter(
             this.homeViewModel
         );
-        this.belongingDashboardService = new BelongingDashboardService(
+        this.belongingDashboardInteractor = new BelongingDashboardInteractor(
             this.belongingDashboardPresenter,
             this.muTagRepoLocal,
             this.accountRepoLocal
@@ -308,8 +312,8 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.accountRepoLocal
         );
-        this.geocoderImpl = new GeocoderImpl(RNGeocoder);
-        this.geoLocation = new GeoLocationImpl();
+        this.geocoderImpl = new GeocoderImpl(Geocoder);
+        this.geoLocation = new GeolocationImpl();
         this.locationMonitor = new LocationMonitor(
             this.geocoderImpl,
             this.geoLocation
@@ -385,10 +389,10 @@ const AppStack = createStackNavigator(
     {
         Home: {
             screen: (props: NavigationScreenProps): ReactElement => (
-                <HomeViewController
+                <BelongingDashboardViewController
                     homeViewModel={dependencies.homeViewModel}
-                    belongingDashboardService={
-                        dependencies.belongingDashboardService
+                    belongingDashboardInteractor={
+                        dependencies.belongingDashboardInteractor
                     }
                     logoutService={dependencies.logoutService}
                     addMuTagService={dependencies.addMuTagInteractor}

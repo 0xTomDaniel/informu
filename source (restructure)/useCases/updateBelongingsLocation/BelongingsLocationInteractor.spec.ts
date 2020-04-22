@@ -16,12 +16,13 @@ import Account, {
     AccountNumber
 } from "../../../source/Core/Domain/Account";
 import LocationMonitor, {
-    GeoLocation,
-    GeoLocationEvent,
+    Geolocation,
+    GeolocationEvent,
     Geocoder
 } from "./infrastructure/LocationMonitor";
 import { EventSubscription } from "@mauron85/react-native-background-geolocation";
 import { take } from "rxjs/operators";
+import { Address } from "./LocationMonitorPort";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -61,8 +62,8 @@ const GeocoderMock = jest.fn<Geocoder, any>(
     })
 );
 const geocoderMock = new GeocoderMock();
-const GeoLocationMock = jest.fn<GeoLocation, any>(
-    (): GeoLocation => ({
+const GeoLocationMock = jest.fn<Geolocation, any>(
+    (): Geolocation => ({
         configure: jest.fn(),
         on: jest.fn(),
         start: jest.fn(),
@@ -94,11 +95,11 @@ class SubscriptionImpl implements EventSubscription {
 let locationEventSubscription: SubscriptionImpl;
 (geoLocationMock.on as jest.Mock).mockImplementation((event, callback) => {
     switch (event) {
-        case GeoLocationEvent.Authorization:
+        case GeolocationEvent.Authorization:
             break;
-        case GeoLocationEvent.Error:
+        case GeolocationEvent.Error:
             break;
-        case GeoLocationEvent.Location: {
+        case GeolocationEvent.Location: {
             locationEventSubscription = new SubscriptionImpl(callback);
             return locationEventSubscription;
         }
@@ -142,7 +143,12 @@ const firstLocationUpdate = {
     longitude: -105.0415883,
     time: new Date().valueOf()
 };
-const firstLocationUpdateAddress = "9350 Quitman St., Westminster, CO 80031";
+const firstLocationUpdateAddress: Address = {
+    formattedAddress: "9350 Quitman St, Westminster, CO 80031, USA",
+    route: "Quitman St",
+    locality: "Westminster",
+    administrativeAreaLevel1: "CO"
+};
 
 describe("Location of belongings continuously updates", (): void => {
     describe("Scenario 1: Belonging is in range", (): void => {
@@ -180,7 +186,10 @@ describe("Location of belongings continuously updates", (): void => {
         it("should update belonging location to user's current location", async (): Promise<
             void
         > => {
-            expect(belonging.address).toBe(firstLocationUpdateAddress);
+            expect.assertions(1);
+            expect(belonging.address.pipe(take(1)).toPromise()).resolves.toBe(
+                firstLocationUpdateAddress
+            );
         });
     });
 
@@ -190,8 +199,8 @@ describe("Location of belongings continuously updates", (): void => {
             longitude: -104.92854109499716,
             time: new Date().valueOf()
         };
-        /*const secondLocationUpdateAddress =
-            "11894 Elm Drive, Thornton, CO 80233";*/
+        //const secondLocationUpdateAddress =
+        //"11894 Elm Drive, Thornton, CO 80233";
 
         beforeAll(
             async (): Promise<void> => {
@@ -223,7 +232,10 @@ describe("Location of belongings continuously updates", (): void => {
         it("should not update belonging location to user's current location", async (): Promise<
             void
         > => {
-            expect(belonging.address).toBe(firstLocationUpdateAddress);
+            expect.assertions(1);
+            expect(belonging.address.pipe(take(1)).toPromise()).resolves.toBe(
+                firstLocationUpdateAddress
+            );
         });
     });
 
@@ -232,7 +244,12 @@ describe("Location of belongings continuously updates", (): void => {
         longitude: -105.09686516468388,
         time: new Date().valueOf()
     };
-    const locationUpdateThreeAddress = "7722 Everett St., Arvada, CO 80005";
+    const locationUpdateThreeAddress: Address = {
+        formattedAddress: "7722 Everett St, Arvada, CO 80005, USA",
+        route: "Everett St",
+        locality: "Arvada",
+        administrativeAreaLevel1: "CO"
+    };
 
     describe("Scenario 3: Belonging comes into range", (): void => {
         beforeAll(
@@ -263,8 +280,13 @@ describe("Location of belongings continuously updates", (): void => {
 
         // Then
         //
-        it("should update belonging location to user's current location", (): void => {
-            expect(belonging.address).toBe(locationUpdateThreeAddress);
+        it("should update belonging location to user's current location", async (): Promise<
+            void
+        > => {
+            expect.assertions(1);
+            expect(belonging.address.pipe(take(1)).toPromise()).resolves.toBe(
+                locationUpdateThreeAddress
+            );
         });
     });
 
@@ -319,8 +341,13 @@ describe("Location of belongings continuously updates", (): void => {
 
         // Then
         //
-        it("should update belonging location to user's current location", (): void => {
-            expect(newBelonging.address).toBe(locationUpdateThreeAddress);
+        it("should update belonging location to user's current location", async (): Promise<
+            void
+        > => {
+            expect.assertions(1);
+            expect(
+                newBelonging.address.pipe(take(1)).toPromise()
+            ).resolves.toBe(locationUpdateThreeAddress);
         });
 
         // When belonging goes out of range and comes back in range
@@ -336,8 +363,12 @@ describe("Location of belongings continuously updates", (): void => {
                 longitude: -105.06733748256252,
                 time: new Date().valueOf()
             };
-            const locationUpdateFourAddress =
-                "6229 Lamar St., Arvada, CO 80003";
+            const locationUpdateFourAddress: Address = {
+                formattedAddress: "6229 Lamar St, Arvada, CO 80003, USA",
+                route: "Lamar St",
+                locality: "Arvada",
+                administrativeAreaLevel1: "CO"
+            };
             (geocoderMock.reverseGeocode as jest.Mock).mockResolvedValueOnce(
                 locationUpdateFourAddress
             );
@@ -348,7 +379,10 @@ describe("Location of belongings continuously updates", (): void => {
                 locationEventSubscription.triggerEvent(locationUpdateFour);
             });
             newBelonging.userDidDetect(new Date());
-            expect(newBelonging.address).toBe(locationUpdateFourAddress);
+            expect.assertions(1);
+            expect(
+                newBelonging.address.pipe(take(1)).toPromise()
+            ).resolves.toBe(locationUpdateFourAddress);
         });
 
         // When user location changes
@@ -363,15 +397,25 @@ describe("Location of belongings continuously updates", (): void => {
                 longitude: -105.01215995877548,
                 time: new Date().valueOf()
             };
-            const locationUpdateFiveAddress =
-                "6978 Ruth Way, Twin Lakes, CO 80221";
+            const locationUpdateFiveAddress: Address = {
+                formattedAddress: "6978 Ruth Way, Twin Lakes, CO 80221, USA",
+                route: "Ruth Way",
+                locality: "Twin Lakes",
+                administrativeAreaLevel1: "CO"
+            };
             (geocoderMock.reverseGeocode as jest.Mock).mockResolvedValueOnce(
                 locationUpdateFiveAddress
             );
-            locationMonitor.location.subscribe(() =>
-                expect(newBelonging.address).toBe(locationUpdateFiveAddress)
-            );
-            locationEventSubscription.triggerEvent(locationUpdateFive);
+            await new Promise<void>(resolve => {
+                locationMonitor.location
+                    .pipe(take(2))
+                    .subscribe(undefined, undefined, () => resolve());
+                locationEventSubscription.triggerEvent(locationUpdateFive);
+            });
+            expect.assertions(1);
+            expect(
+                newBelonging.address.pipe(take(1)).toPromise()
+            ).resolves.toBe(locationUpdateFiveAddress);
         });
     });
 });

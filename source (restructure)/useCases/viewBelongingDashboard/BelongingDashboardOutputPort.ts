@@ -3,6 +3,7 @@ export interface DashboardBelonging {
     readonly name: string;
     readonly isSafe: boolean;
     readonly lastSeen: Date;
+    readonly address?: string;
 }
 
 export interface DashboardBelongingUpdate {
@@ -10,10 +11,10 @@ export interface DashboardBelongingUpdate {
     readonly name?: string;
     readonly isSafe?: boolean;
     readonly lastSeen?: Date;
+    readonly address?: string;
 }
 
-export interface BelongingDashboardOutput {
-
+export interface BelongingDashboardOutputPort {
     showAll(belongings: DashboardBelonging[]): void;
     showNone(): void;
     add(belonging: DashboardBelonging): void;

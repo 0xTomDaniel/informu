@@ -21,6 +21,12 @@ const muTagData: MuTagData = {
     _modelNumber: "REV8",
     _muTagNumber: 0,
     _name: "keys",
+    _recentAddress: {
+        formattedAddress: "9360 Quitman St, Westminster, CO 80031, USA",
+        route: "Quitman St",
+        locality: "Westminster",
+        administrativeAreaLevel1: "CO"
+    },
     _recentLatitude: 0,
     _recentLongitude: 0,
     _txPower: 1,
@@ -41,6 +47,12 @@ const muTagJson: MuTagJson = {
     _modelNumber: muTagData._modelNumber,
     _muTagNumber: muTagData._muTagNumber,
     _name: muTagData._name,
+    _recentAddress: {
+        formattedAddress: "9360 Quitman St, Westminster, CO 80031, USA",
+        route: "Quitman St",
+        locality: "Westminster",
+        administrativeAreaLevel1: "CO"
+    },
     _recentLatitude: muTagData._recentLatitude,
     _recentLongitude: muTagData._recentLongitude,
     _txPower: muTagData._txPower,

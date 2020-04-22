@@ -1,6 +1,6 @@
 import LocationMonitor, {
-    GeoLocation,
-    GeoLocationEvent,
+    Geolocation,
+    GeolocationEvent,
     Subscription as EventSubscription,
     Geocoder
 } from "./LocationMonitor";
@@ -14,8 +14,8 @@ const GeocoderMock = jest.fn<Geocoder, any>(
     })
 );
 const geocoderMock = new GeocoderMock();
-const GeoLocationMock = jest.fn<GeoLocation, any>(
-    (): GeoLocation => ({
+const GeoLocationMock = jest.fn<Geolocation, any>(
+    (): Geolocation => ({
         configure: jest.fn(),
         on: jest.fn(),
         start: jest.fn(),
@@ -47,11 +47,11 @@ class SubscriptionImpl implements EventSubscription {
 let locationEventSubscription: SubscriptionImpl;
 (geoLocationMock.on as jest.Mock).mockImplementation((event, callback) => {
     switch (event) {
-        case GeoLocationEvent.Authorization:
+        case GeolocationEvent.Authorization:
             break;
-        case GeoLocationEvent.Error:
+        case GeolocationEvent.Error:
             break;
-        case GeoLocationEvent.Location: {
+        case GeolocationEvent.Location: {
             locationEventSubscription = new SubscriptionImpl(callback);
             return locationEventSubscription;
         }

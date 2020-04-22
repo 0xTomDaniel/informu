@@ -69,14 +69,14 @@ export class MuTagRepoRNFirebase
 
         snapshot.forEach(
             (childSnapshot: FirebaseDatabaseTypes.DataSnapshot): boolean => {
-                const muTagUID = childSnapshot.key;
-                if (muTagUID == null) {
+                const muTagUid = childSnapshot.key;
+                if (muTagUid == null) {
                     return false;
                 }
                 let muTagData: MuTagJson;
                 try {
                     muTagData = MuTagRepoRNFirebase.toMuTagJson(
-                        muTagUID,
+                        muTagUid,
                         childSnapshot
                     );
                 } catch (e) {
@@ -231,6 +231,10 @@ export class MuTagRepoRNFirebase
             _txPower: snapshotData.tx_power,
             _uid: uid
         };
+
+        if ("recent_address" in snapshotData) {
+            json._recentAddress = snapshotData.recent_address;
+        }
 
         try {
             assertIsMuTagJson(json);

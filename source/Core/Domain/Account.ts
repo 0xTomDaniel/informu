@@ -213,7 +213,7 @@ export default class Account {
         return JSON.parse(json);
     }
 
-    addNewMuTag(muTagUID: string, beaconId: BeaconId): void {
+    addNewMuTag(muTagUid: string, beaconId: BeaconId): void {
         if (this._recycledBeaconIds.has(beaconId)) {
             this._recycledBeaconIds.delete(beaconId);
         } else if (this._nextBeaconId === beaconId) {
@@ -225,7 +225,7 @@ export default class Account {
         this._nextMuTagNumber += 1;
         // Must copy _muTags set or behavior subject's previous value will be
         // mutated
-        this._muTags = new Set(this._muTags).add(muTagUID);
+        this._muTags = new Set(this._muTags).add(muTagUid);
     }
 
     removeMuTag(muTagUID: string, beaconId: BeaconId): void {

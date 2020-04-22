@@ -39,13 +39,15 @@ export default class BelongingsLocationInteractor
                 this.muTagRepoLocal
                     .getAll()
                     .then(muTags => {
-                        muTags.forEach(muTag =>
+                        muTags.forEach(muTag => {
                             muTag.updateLocation(
                                 location.latitude,
-                                location.longitude,
-                                location.address
-                            )
-                        );
+                                location.longitude
+                            );
+                            if (location.address != null) {
+                                muTag.updateAddress(location.address);
+                            }
+                        });
                     })
                     .catch(e => Logger.instance.error(e, true));
             }
@@ -98,11 +100,10 @@ export default class BelongingsLocationInteractor
 
     private updateMuTagLocation(muTag: ProvisionedMuTag): void {
         this.locationMonitor.location.pipe(take(1)).subscribe(location => {
-            muTag.updateLocation(
-                location.latitude,
-                location.longitude,
-                location.address
-            );
+            muTag.updateLocation(location.latitude, location.longitude);
+            if (location.address != null) {
+                muTag.updateAddress(location.address);
+            }
         });
     }
 }

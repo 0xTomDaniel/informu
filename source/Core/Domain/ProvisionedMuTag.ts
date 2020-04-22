@@ -2,7 +2,7 @@ import MuTag, { MuTagColor } from "./MuTag";
 import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import Hexadecimal from "../../../source (restructure)/shared/metaLanguage/Hexadecimal";
 import { BehaviorSubject, Observable, combineLatest, Subject } from "rxjs";
-import { map, mapTo, skip } from "rxjs/operators";
+import { map } from "rxjs/operators";
 import isType, {
     RuntimeType
 } from "../../../source (restructure)/shared/metaLanguage/isType";
@@ -28,6 +28,13 @@ export class BeaconId extends Hexadecimal {
     }
 }
 
+export interface Address {
+    formattedAddress: string;
+    route: string;
+    locality: string;
+    administrativeAreaLevel1: string;
+}
+
 export interface MuTagData {
     readonly _advertisingInterval: number;
     readonly _batteryLevel: Percent;
@@ -42,7 +49,7 @@ export interface MuTagData {
     readonly _modelNumber: string;
     readonly _muTagNumber: number;
     readonly _name: string;
-    readonly _recentAddress?: string;
+    readonly _recentAddress?: Address;
     readonly _recentLatitude: number;
     readonly _recentLongitude: number;
     readonly _txPower: number;
@@ -63,7 +70,7 @@ export interface MuTagJson {
     readonly _modelNumber: string;
     readonly _muTagNumber: number;
     readonly _name: string;
-    readonly _recentAddress?: string;
+    readonly _recentAddress?: Address;
     readonly _recentLatitude: number;
     readonly _recentLongitude: number;
     readonly _txPower: number;
@@ -97,6 +104,16 @@ export function assertIsMuTagJson(object: {
             throw Error("Object is not MuTagJson.");
         }
     }
+    const optionalPropertyRequirements = new Map([
+        ["_recentAddress", RuntimeType.String]
+    ]);
+    for (const [key, type] of optionalPropertyRequirements) {
+        if (key in object) {
+            if (!isType(object[key], type)) {
+                throw Error("Object is not AccountJson.");
+            }
+        }
+    }
 }
 
 interface SafetyStatus {
@@ -108,6 +125,7 @@ interface AccessorValue {
     readonly didEnterRegion: Subject<void>;
     readonly isSafe: BehaviorSubject<boolean>;
     readonly lastSeen: BehaviorSubject<Date>;
+    readonly recentAddress: BehaviorSubject<Address | undefined>;
 }
 
 export default class ProvisionedMuTag extends MuTag {
@@ -134,7 +152,12 @@ export default class ProvisionedMuTag extends MuTag {
     private _modelNumber: string;
     private readonly _muTagNumber: number;
     private _name: string;
-    private _recentAddress?: string;
+    private get _recentAddress(): Address | undefined {
+        return this._accessorValue.recentAddress.value;
+    }
+    private set _recentAddress(newValue: Address | undefined) {
+        this._accessorValue.recentAddress.next(newValue);
+    }
     private _recentLatitude: number;
     private _recentLongitude: number;
     private _txPower: number;
@@ -144,8 +167,8 @@ export default class ProvisionedMuTag extends MuTag {
     // properties observable.
     private readonly _accessorValue: AccessorValue;
 
-    get address(): string | undefined {
-        return this._recentAddress;
+    get address(): Observable<Address | undefined> {
+        return this._accessorValue.recentAddress.asObservable();
     }
 
     get beaconId(): BeaconId {
@@ -203,7 +226,6 @@ export default class ProvisionedMuTag extends MuTag {
         this._modelNumber = muTagData._modelNumber;
         this._muTagNumber = muTagData._muTagNumber;
         this._name = muTagData._name;
-        this._recentAddress = muTagData._recentAddress;
         this._recentLatitude = muTagData._recentLatitude;
         this._recentLongitude = muTagData._recentLongitude;
         this._txPower = muTagData._txPower;
@@ -211,7 +233,8 @@ export default class ProvisionedMuTag extends MuTag {
         this._accessorValue = {
             didEnterRegion: new Subject<void>(),
             isSafe: new BehaviorSubject(muTagData._isSafe),
-            lastSeen: new BehaviorSubject(muTagData._lastSeen)
+            lastSeen: new BehaviorSubject(muTagData._lastSeen),
+            recentAddress: new BehaviorSubject(muTagData._recentAddress)
         };
         this.didEnterRegion = this._accessorValue.didEnterRegion.asObservable();
     }
@@ -220,17 +243,19 @@ export default class ProvisionedMuTag extends MuTag {
         this._color = color;
     }
 
-    updateLocation(
-        latitude: number,
-        longitude: number,
-        address?: string
-    ): void {
+    updateAddress(address: Address): void {
+        if (this._didExitRegion) {
+            return;
+        }
+        this._recentAddress = address;
+    }
+
+    updateLocation(latitude: number, longitude: number): void {
         if (this._didExitRegion) {
             return;
         }
         this._recentLatitude = latitude;
         this._recentLongitude = longitude;
-        this._recentAddress = address;
     }
 
     userDidDetect(timestamp: Date): void {
@@ -267,7 +292,8 @@ export default class ProvisionedMuTag extends MuTag {
                 return Object.assign(
                     {
                         _isSafe: value._isSafe,
-                        _lastSeen: value._lastSeen
+                        _lastSeen: value._lastSeen,
+                        _recentAddress: value._recentAddress
                     },
                     value
                 );
