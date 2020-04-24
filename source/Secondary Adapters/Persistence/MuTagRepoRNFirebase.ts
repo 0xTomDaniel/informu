@@ -218,7 +218,7 @@ export class MuTagRepoRNFirebase
             _beaconId: snapshotData.beacon_id,
             _color: snapshotData.color,
             _dateAdded: snapshotData.date_added,
-            _didExitRegion: snapshotData.did_exit_region,
+            _didExitRegion: true,
             _firmwareVersion: snapshotData.firmware_version,
             _isSafe: false,
             _lastSeen: snapshotData.last_seen,

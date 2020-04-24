@@ -47,7 +47,7 @@ import LogoutPresenter from "./source/Primary Adapters/Presentation/LogoutPresen
 import BelongingDashboardInteractor from "./source (restructure)/useCases/viewBelongingDashboard/BelongingDashboardInteractor";
 import BelongingDashboardPresenter from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardPresenter";
 import BelongingDetectionService from "./source/Core/Application/BelongingDetectionService";
-import MuTagMonitorRNBM from "./source/Secondary Adapters/Infrastructure/MuTagMonitorRNBM";
+import MuTagMonitorRnbm from "./source/Secondary Adapters/Infrastructure/MuTagMonitorRnbm";
 import RemoveMuTagInteractor from "./source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
 import RemoveMuTagPresenter from "./source/Primary Adapters/Presentation/RemoveMuTagPresenter";
 import DatabaseImplWatermelon from "./source/Secondary Adapters/Persistence/DatabaseImplWatermelon";
@@ -110,7 +110,7 @@ export class Dependencies {
     logoutService: LogoutService;
     belongingDashboardPresenter: BelongingDashboardPresenter;
     belongingDashboardInteractor: BelongingDashboardInteractor;
-    muTagMonitor: MuTagMonitorRNBM;
+    muTagMonitor: MuTagMonitorRnbm;
     belongingDetectionService: BelongingDetectionService;
     geocodingApiKey: string;
     geocoderImpl: LmGeocoder;
@@ -187,7 +187,7 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.accountRepoLocal
         );
-        this.muTagMonitor = new MuTagMonitorRNBM();
+        this.muTagMonitor = new MuTagMonitorRnbm();
         this.belongingDetectionService = new BelongingDetectionService(
             this.muTagMonitor,
             this.muTagRepoLocal,
@@ -305,7 +305,7 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.accountRepoLocal
         );
-        this.muTagMonitor = new MuTagMonitorRNBM();
+        this.muTagMonitor = new MuTagMonitorRnbm();
         this.belongingDetectionService.stop();
         this.belongingDetectionService = new BelongingDetectionService(
             this.muTagMonitor,
