@@ -1,11 +1,11 @@
 import { RemoveMuTagOutputPort } from "../../../source (restructure)/useCases/removeMuTag/RemoveMuTagOutputPort";
-import { HomeViewModel } from "./HomeViewModel";
+import { BelongingDashboardViewModel } from "../../../source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export default class RemoveMuTagPresenter implements RemoveMuTagOutputPort {
-    private readonly viewModel: HomeViewModel;
+    private readonly viewModel: BelongingDashboardViewModel;
 
-    constructor(viewModel: HomeViewModel) {
+    constructor(viewModel: BelongingDashboardViewModel) {
         this.viewModel = viewModel;
     }
 

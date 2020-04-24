@@ -21,7 +21,7 @@ import LoadSessionViewController from "./source/Primary Adapters/Presentation/Lo
 import Theme from "./source/Primary Adapters/Presentation/Theme";
 import { AuthenticationFirebase } from "./source/Secondary Adapters/Infrastructure/AuthenticationFirebase";
 import AccountRepoLocalImpl from "./source/Secondary Adapters/Persistence/AccountRepoLocalImpl";
-import HomeViewController from "./source/Primary Adapters/Presentation/HomeViewController";
+import BelongingDashboardViewController from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewController";
 import { AccountRepoRNFirebase } from "./source/Secondary Adapters/Persistence/AccountRepoRNFirebase";
 import AppViewModel, {
     Screen
@@ -33,7 +33,7 @@ import AddMuTagViewController from "./source (restructure)/useCases/addMuTag/pre
 import { Rssi } from "./source (restructure)/shared/metaLanguage/Types";
 import Percent from "./source (restructure)/shared/metaLanguage/Percent";
 import AddMuTagInteractor from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
-import { HomeViewModel } from "./source/Primary Adapters/Presentation/HomeViewModel";
+import { BelongingDashboardViewModel } from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel";
 import AddMuTagPresenter from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagPresenter";
 import { AddMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewModel";
 import MuTagRepoLocalImpl from "./source/Secondary Adapters/Persistence/MuTagRepoLocalImpl";
@@ -44,10 +44,10 @@ import { MuTagAddingViewModel } from "./source (restructure)/useCases/addMuTag/p
 import MuTagAddingViewController from "./source (restructure)/useCases/addMuTag/presentation/MuTagAddingViewController";
 import LogoutService from "./source/Core/Application/LogoutService";
 import LogoutPresenter from "./source/Primary Adapters/Presentation/LogoutPresenter";
-import BelongingDashboardService from "./source/Core/Application/BelongingDashboardService";
-import BelongingDashboardPresenter from "./source/Primary Adapters/Presentation/BelongingDashboardPresenter";
+import BelongingDashboardInteractor from "./source (restructure)/useCases/viewBelongingDashboard/BelongingDashboardInteractor";
+import BelongingDashboardPresenter from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardPresenter";
 import BelongingDetectionService from "./source/Core/Application/BelongingDetectionService";
-import MuTagMonitorRNBM from "./source/Secondary Adapters/Infrastructure/MuTagMonitorRNBM";
+import MuTagMonitorRnbm from "./source/Secondary Adapters/Infrastructure/MuTagMonitorRnbm";
 import RemoveMuTagInteractor from "./source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
 import RemoveMuTagPresenter from "./source/Primary Adapters/Presentation/RemoveMuTagPresenter";
 import DatabaseImplWatermelon from "./source/Secondary Adapters/Persistence/DatabaseImplWatermelon";
@@ -66,6 +66,17 @@ import Logger from "./source (restructure)/shared/metaLanguage/Logger";
 import EventTracker, {
     EventTrackerImpl
 } from "./source (restructure)/shared/metaLanguage/EventTracker";
+import BelongingsLocationInteractor, {
+    BelongingsLocation
+} from "./source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
+import LocationMonitorPort from "./source (restructure)/useCases/updateBelongingsLocation/LocationMonitorPort";
+import LocationMonitor, {
+    Geocoder as LmGeocoder,
+    Geolocation
+} from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/LocationMonitor";
+import GeocoderImpl from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/GeocoderImpl";
+import Geocoder from "react-native-geocoding";
+import GeolocationImpl from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/GeolocationImpl";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -75,7 +86,7 @@ const sessionPresenter = new AppPresenter(appViewModel);
 
 export class Dependencies {
     eventTracker: EventTracker;
-    webClientID: string;
+    webClientId: string;
     authentication: AuthenticationFirebase;
     database: DatabaseImplWatermelon;
     accountRepoLocal: AccountRepoLocalImpl;
@@ -84,7 +95,7 @@ export class Dependencies {
     muTagRepoRemote: MuTagRepoRNFirebase;
     connectThreshold: Rssi;
     addMuTagBatteryThreshold: Percent;
-    homeViewModel: HomeViewModel;
+    homeViewModel: BelongingDashboardViewModel;
     addMuTagViewModel: AddMuTagViewModel;
     nameMuTagViewModel: NameMuTagViewModel;
     muTagAddingViewModel: MuTagAddingViewModel;
@@ -98,9 +109,14 @@ export class Dependencies {
     logoutPresenter: LogoutPresenter;
     logoutService: LogoutService;
     belongingDashboardPresenter: BelongingDashboardPresenter;
-    belongingDashboardService: BelongingDashboardService;
-    muTagMonitor: MuTagMonitorRNBM;
+    belongingDashboardInteractor: BelongingDashboardInteractor;
+    muTagMonitor: MuTagMonitorRnbm;
     belongingDetectionService: BelongingDetectionService;
+    geocodingApiKey: string;
+    geocoderImpl: LmGeocoder;
+    geoLocation: Geolocation;
+    locationMonitor: LocationMonitorPort;
+    belongingsLocationInteractor: BelongingsLocation;
     sessionService: SessionService;
     loginViewModel: LoginViewModel;
     loginPresenter: LoginPresenter;
@@ -109,11 +125,15 @@ export class Dependencies {
     loginService: LoginService;
     appStateController: AppStateController;
 
-    constructor(webClientID: string) {
+    constructor(webClientId: string, geocodingApiKey: string) {
         this.eventTracker = new EventTrackerImpl();
-        Logger.createInstance(this.eventTracker);
-        this.webClientID = webClientID;
-        this.authentication = new AuthenticationFirebase(webClientID);
+        try {
+            Logger.createInstance(this.eventTracker);
+        } catch (e) {
+            Logger.instance.warn(e);
+        }
+        this.webClientId = webClientId;
+        this.authentication = new AuthenticationFirebase(webClientId);
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
@@ -124,7 +144,7 @@ export class Dependencies {
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
         this.connectThreshold = -80 as Rssi;
         this.addMuTagBatteryThreshold = new Percent(20);
-        this.homeViewModel = new HomeViewModel();
+        this.homeViewModel = new BelongingDashboardViewModel();
         this.addMuTagViewModel = new AddMuTagViewModel();
         this.nameMuTagViewModel = new NameMuTagViewModel();
         this.muTagAddingViewModel = new MuTagAddingViewModel();
@@ -162,16 +182,29 @@ export class Dependencies {
         this.belongingDashboardPresenter = new BelongingDashboardPresenter(
             this.homeViewModel
         );
-        this.belongingDashboardService = new BelongingDashboardService(
+        this.belongingDashboardInteractor = new BelongingDashboardInteractor(
             this.belongingDashboardPresenter,
             this.muTagRepoLocal,
             this.accountRepoLocal
         );
-        this.muTagMonitor = new MuTagMonitorRNBM();
+        this.muTagMonitor = new MuTagMonitorRnbm();
         this.belongingDetectionService = new BelongingDetectionService(
             this.muTagMonitor,
             this.muTagRepoLocal,
             this.accountRepoLocal
+        );
+        this.geocodingApiKey = geocodingApiKey;
+        Geocoder.init(this.geocodingApiKey);
+        this.geocoderImpl = new GeocoderImpl(Geocoder);
+        this.geoLocation = new GeolocationImpl();
+        this.locationMonitor = new LocationMonitor(
+            this.geocoderImpl,
+            this.geoLocation
+        );
+        this.belongingsLocationInteractor = new BelongingsLocationInteractor(
+            this.accountRepoLocal,
+            this.locationMonitor,
+            this.muTagRepoLocal
         );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
         this.loginViewModel = new LoginViewModel();
@@ -192,6 +225,7 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.belongingDetectionService,
+            this.belongingsLocationInteractor,
             this.database,
             this.accountRegistrationService
         );
@@ -218,7 +252,7 @@ export class Dependencies {
     }
 
     private resetAll(): void {
-        this.authentication = new AuthenticationFirebase(this.webClientID);
+        this.authentication = new AuthenticationFirebase(this.webClientId);
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
@@ -229,7 +263,7 @@ export class Dependencies {
         this.muTagRepoRemote = new MuTagRepoRNFirebase();
         this.connectThreshold = -80 as Rssi;
         this.addMuTagBatteryThreshold = new Percent(20);
-        this.homeViewModel = new HomeViewModel();
+        this.homeViewModel = new BelongingDashboardViewModel();
         this.addMuTagViewModel = new AddMuTagViewModel();
         this.nameMuTagViewModel = new NameMuTagViewModel();
         this.muTagAddingViewModel = new MuTagAddingViewModel();
@@ -266,17 +300,28 @@ export class Dependencies {
         this.belongingDashboardPresenter = new BelongingDashboardPresenter(
             this.homeViewModel
         );
-        this.belongingDashboardService = new BelongingDashboardService(
+        this.belongingDashboardInteractor = new BelongingDashboardInteractor(
             this.belongingDashboardPresenter,
             this.muTagRepoLocal,
             this.accountRepoLocal
         );
-        this.muTagMonitor = new MuTagMonitorRNBM();
+        this.muTagMonitor = new MuTagMonitorRnbm();
         this.belongingDetectionService.stop();
         this.belongingDetectionService = new BelongingDetectionService(
             this.muTagMonitor,
             this.muTagRepoLocal,
             this.accountRepoLocal
+        );
+        this.geocoderImpl = new GeocoderImpl(Geocoder);
+        this.geoLocation = new GeolocationImpl();
+        this.locationMonitor = new LocationMonitor(
+            this.geocoderImpl,
+            this.geoLocation
+        );
+        this.belongingsLocationInteractor = new BelongingsLocationInteractor(
+            this.accountRepoLocal,
+            this.locationMonitor,
+            this.muTagRepoLocal
         );
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
         this.newAccountFactory = new NewAccountFactoryImpl();
@@ -298,6 +343,7 @@ export class Dependencies {
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.belongingDetectionService,
+            this.belongingsLocationInteractor,
             this.database,
             this.accountRegistrationService
         );
@@ -333,18 +379,20 @@ function assertNotNullOrUndefined(value: unknown): asserts value {
     }
 }
 
-const webClientID = process.env.GOOGLE_WEB_CLIENT_ID;
-assertNotNullOrUndefined(webClientID);
-const dependencies = new Dependencies(webClientID);
+const webClientId = process.env.GOOGLE_WEB_CLIENT_ID;
+assertNotNullOrUndefined(webClientId);
+const geocodingApiKey = process.env.GEOCODING_API_KEY;
+assertNotNullOrUndefined(geocodingApiKey);
+const dependencies = new Dependencies(webClientId, geocodingApiKey);
 
 const AppStack = createStackNavigator(
     {
         Home: {
             screen: (props: NavigationScreenProps): ReactElement => (
-                <HomeViewController
+                <BelongingDashboardViewController
                     homeViewModel={dependencies.homeViewModel}
-                    belongingDashboardService={
-                        dependencies.belongingDashboardService
+                    belongingDashboardInteractor={
+                        dependencies.belongingDashboardInteractor
                     }
                     logoutService={dependencies.logoutService}
                     addMuTagService={dependencies.addMuTagInteractor}

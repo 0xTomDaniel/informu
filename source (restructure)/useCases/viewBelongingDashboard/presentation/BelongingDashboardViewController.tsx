@@ -10,7 +10,10 @@ import {
     Menu,
     Dialog,
     Paragraph,
-    Button
+    Button,
+    Caption,
+    Subheading,
+    Title
 } from "react-native-paper";
 import {
     StyleSheet,
@@ -20,7 +23,7 @@ import {
     View,
     FlatList
 } from "react-native";
-import Theme from "./Theme";
+import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { SafeAreaView, NavigationScreenProps } from "react-navigation";
 import React, {
     ReactElement,
@@ -30,15 +33,18 @@ import React, {
 } from "react";
 import DeviceInfo from "react-native-device-info";
 import LinearGradient from "react-native-linear-gradient";
-import { HomeViewModel, BelongingViewData } from "./HomeViewModel";
-import AddMuTagInteractor from "../../../source (restructure)/useCases/addMuTag/AddMuTagInteractor";
-import LogoutService from "../../Core/Application/LogoutService";
+import {
+    BelongingDashboardViewModel,
+    BelongingViewData
+} from "./BelongingDashboardViewModel";
+import AddMuTagInteractor from "../../addMuTag/AddMuTagInteractor";
+import LogoutService from "../../../../source/Core/Application/LogoutService";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { Images } from "./Images";
-import { Scale } from "./ResponsiveScaler";
-import BelongingDashboardService from "../../Core/Application/BelongingDashboardService";
-import RemoveMuTagInteractor from "../../../source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
-import ErrorDialog from "./Base Components/ErrorDialog";
+import { Images } from "../../../../source/Primary Adapters/Presentation/Images";
+import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
+import BelongingDashboardInteractor from "../BelongingDashboardInteractor";
+import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
+import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -105,7 +111,7 @@ const styles = StyleSheet.create({
         justifyContent: "center"
     },
     card: {
-        paddingVertical: 8,
+        //paddingVertical: 8,
         marginHorizontal: Scale(8),
         marginTop: Scale(12),
         backgroundColor: Theme.Color.AlmostWhite,
@@ -128,6 +134,12 @@ const styles = StyleSheet.create({
         height: 80,
         borderRadius: 40,
         backgroundColor: Theme.Color.AlmostWhite
+    },
+    cardContent: {
+        marginLeft: 63,
+        marginTop: -8,
+        color: "gray",
+        fontSize: 12
     }
 });
 
@@ -185,7 +197,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                             size={10}
                             color={props.viewData.safeStatusColor}
                         />
-                        {" " + props.viewData.lastSeen}
+                        {` ${props.viewData.lastSeen}`}
                     </Text>
                 }
                 left={(leftProps: any): ReactElement => (
@@ -218,19 +230,29 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                 titleStyle={styles.cardTitleText}
                 subtitleStyle={styles.cardTitleText}
             />
+            <Card.Content>
+                <Text style={styles.cardContent}>
+                    <Icon
+                        name="map-marker"
+                        size={12}
+                        color={Theme.Color.PrimaryBlue}
+                    />
+                    {` ${props.viewData.address}`}
+                </Text>
+            </Card.Content>
         </Card>
     );
 };
 
 interface HomeVCProps extends NavigationScreenProps {
-    homeViewModel: HomeViewModel;
-    belongingDashboardService: BelongingDashboardService;
+    homeViewModel: BelongingDashboardViewModel;
+    belongingDashboardInteractor: BelongingDashboardInteractor;
     logoutService: LogoutService;
     addMuTagService: AddMuTagInteractor;
     removeMuTagService: RemoveMuTagInteractor;
 }
 
-const HomeViewController: FunctionComponent<HomeVCProps> = (
+const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
     props
 ): ReactElement => {
     const [state, setState] = useState(props.homeViewModel.state);
@@ -294,8 +316,8 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
     });
 
     useEffect((): void => {
-        props.belongingDashboardService.open().catch(e => console.warn(e));
-    }, [props.belongingDashboardService]);
+        props.belongingDashboardInteractor.open().catch(e => console.warn(e));
+    }, [props.belongingDashboardInteractor]);
 
     useEffect((): void => {
         requestPermissions().catch(e => console.warn(e));
@@ -380,4 +402,4 @@ const HomeViewController: FunctionComponent<HomeVCProps> = (
     );
 };
 
-export default HomeViewController;
+export default BelongingDashboardViewController;

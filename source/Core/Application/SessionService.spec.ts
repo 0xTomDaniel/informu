@@ -20,6 +20,7 @@ import LoginOutput from "../Ports/LoginOutput";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
+import { BelongingsLocation } from "../../../source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -133,8 +134,22 @@ describe("user opens saved login session", (): void => {
     const muTagRepoLocalMock = new MuTagRepositoryLocalMock();
     const muTagRepoRemoteMock = new MuTagRepositoryRemoteMock();
     const belongingDetectionServiceMock = new BelongingDetectionServiceMock();
+    (belongingDetectionServiceMock.start as jest.Mock).mockResolvedValue(
+        undefined
+    );
     const localDatabaseMock = new LocalDatabaseMock();
     const newAccountFactoryMock = new NewAccountFactoryMock();
+
+    const BelongingsLocationInteractorMock = jest.fn<BelongingsLocation, any>(
+        (): BelongingsLocation => ({
+            start: jest.fn(),
+            stop: jest.fn()
+        })
+    );
+    const belongingsLocationInteractorMock = new BelongingsLocationInteractorMock();
+    (belongingsLocationInteractorMock.start as jest.Mock).mockResolvedValue(
+        undefined
+    );
 
     const accountRegistrationService = new AccountRegistrationService(
         newAccountFactoryMock,
@@ -155,6 +170,7 @@ describe("user opens saved login session", (): void => {
         muTagRepoLocalMock,
         muTagRepoRemoteMock,
         belongingDetectionServiceMock,
+        belongingsLocationInteractorMock,
         localDatabaseMock,
         accountRegistrationService
     );
@@ -224,6 +240,14 @@ describe("user opens saved login session", (): void => {
             expect(belongingDetectionServiceMock.start).toHaveBeenCalledTimes(
                 1
             );
+        });
+
+        // Then
+        //
+        it("should start Mu tag location updates", (): void => {
+            expect(
+                belongingsLocationInteractorMock.start
+            ).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -296,6 +320,14 @@ describe("user opens saved login session", (): void => {
         //
         it("should stop safety status updates", (): void => {
             expect(belongingDetectionServiceMock.stop).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should stop Mu tag location updates", (): void => {
+            expect(belongingsLocationInteractorMock.stop).toHaveBeenCalledTimes(
+                1
+            );
         });
 
         // Then
@@ -374,6 +406,14 @@ describe("user opens saved login session", (): void => {
                 1
             );
         });
+
+        // Then
+        //
+        it("should start Mu tag location updates", (): void => {
+            expect(
+                belongingsLocationInteractorMock.start
+            ).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe("user signs in while other device already in session", (): void => {
@@ -447,6 +487,14 @@ describe("user opens saved login session", (): void => {
                 1
             );
         });
+
+        // Then
+        //
+        it("should start Mu tag location updates", (): void => {
+            expect(
+                belongingsLocationInteractorMock.start
+            ).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe("user is signed in on other device while signed in", (): void => {
@@ -481,6 +529,14 @@ describe("user opens saved login session", (): void => {
         //
         it("should stop safety status updates", (): void => {
             expect(belongingDetectionServiceMock.stop).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should stop Mu tag location updates", (): void => {
+            expect(belongingsLocationInteractorMock.stop).toHaveBeenCalledTimes(
+                1
+            );
         });
 
         // Then

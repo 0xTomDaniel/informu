@@ -4,12 +4,27 @@ import MuTagRepoLocalImpl from "./MuTagRepoLocalImpl";
 import { DoesNotExist as MuTagDoesNotExist } from "../../Core/Ports/MuTagRepositoryLocal";
 import { MuTagColor } from "../../Core/Domain/MuTag";
 import AccountRepoLocalImpl from "./AccountRepoLocalImpl";
-import Account, { AccountNumber } from "../../Core/Domain/Account";
+import Account, { AccountNumber, AccountData } from "../../Core/Domain/Account";
 import DatabaseImplWatermelon from "./DatabaseImplWatermelon";
 import { Database } from "@nozbe/watermelondb";
+import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
+import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
+import { v4 as uuidV4 } from "uuid";
 
 jest.mock("./DatabaseImplWatermelon");
 jest.mock("@nozbe/watermelondb");
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+Logger.createInstance(eventTrackerMock);
 
 const WatermelonDBMock = Database as jest.Mock<Database, any>;
 const DatabaseImplWatermelonMock = DatabaseImplWatermelon as jest.Mock<
@@ -17,8 +32,11 @@ const DatabaseImplWatermelonMock = DatabaseImplWatermelon as jest.Mock<
     any
 >;
 const watermelonDBMock = new WatermelonDBMock();
-const database = new DatabaseImplWatermelonMock(watermelonDBMock);
-const accountRepoLocalImpl = new AccountRepoLocalImpl(database);
+const databaseMock = new DatabaseImplWatermelonMock(watermelonDBMock);
+(databaseMock.set as jest.Mock).mockResolvedValueOnce(undefined);
+(databaseMock.remove as jest.Mock).mockResolvedValueOnce(undefined);
+(databaseMock.destroy as jest.Mock).mockResolvedValueOnce(undefined);
+const accountRepoLocalImpl = new AccountRepoLocalImpl(databaseMock);
 const dateNow = new Date();
 const existingMuTag07 = new ProvisionedMuTag({
     _advertisingInterval: 1,
@@ -37,7 +55,7 @@ const existingMuTag07 = new ProvisionedMuTag({
     _recentLatitude: 0,
     _recentLongitude: 0,
     _txPower: 1,
-    _uid: "randomUUID07"
+    _uid: uuidV4()
 });
 const existingMuTag08 = new ProvisionedMuTag({
     _advertisingInterval: 1,
@@ -49,31 +67,40 @@ const existingMuTag08 = new ProvisionedMuTag({
     _firmwareVersion: "1.6.1",
     _isSafe: true,
     _lastSeen: dateNow,
-    _macAddress: "8230CBE0D2389",
+    _macAddress: "8230CBE0D23C6",
     _modelNumber: "REV8",
     _muTagNumber: 8,
     _name: "bag",
     _recentLatitude: 0,
     _recentLongitude: 0,
     _txPower: 1,
-    _uid: "randomUUID08"
+    _uid: uuidV4()
 });
 
-// If the user is logged out then Account will not exist when the
-// MuTagLocalRepository instantiates and attempts to populate the Mu tag cache.
-//
-(database.get as jest.Mock).mockResolvedValueOnce(null);
+/*(database.get as jest.Mock).mockResolvedValueOnce(null);
 
 const existingMuTag07JSON = existingMuTag07.serialize();
 (database.get as jest.Mock).mockResolvedValueOnce(existingMuTag07JSON);
 const existingMuTag08JSON = existingMuTag08.serialize();
-(database.get as jest.Mock).mockResolvedValueOnce(existingMuTag08JSON);
-const muTagRepoLocalImpl = new MuTagRepoLocalImpl(
-    database,
+(database.get as jest.Mock).mockResolvedValueOnce(existingMuTag08JSON);*/
+let muTagRepoLocalImpl = new MuTagRepoLocalImpl(
+    databaseMock,
     accountRepoLocalImpl
 );
-const muTag01UID = "randomUUID01";
-const muTag01BeaconId = BeaconId.create("A");
+const accountData: AccountData = {
+    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
+    _accountNumber: AccountNumber.fromString("0000000"),
+    _emailAddress: "support+test@informu.io",
+    _name: "Billy Cruise",
+    _nextBeaconId: BeaconId.create("A"),
+    _nextSafeZoneNumber: 1,
+    _recycledBeaconIds: new Set(),
+    _nextMuTagNumber: 10,
+    _onboarding: false,
+    _muTags: new Set([existingMuTag07.uid, existingMuTag08.uid])
+};
+const account = new Account(accountData);
+const muTag01BeaconId = account.newBeaconId;
 const muTag01 = new ProvisionedMuTag({
     _advertisingInterval: 1,
     _batteryLevel: new Percent(30),
@@ -91,9 +118,9 @@ const muTag01 = new ProvisionedMuTag({
     _recentLatitude: 0,
     _recentLongitude: 0,
     _txPower: 1,
-    _uid: muTag01UID
+    _uid: uuidV4()
 });
-const muTag02UID = "randomUUID02";
+
 const muTag02BeaconId = BeaconId.create("B");
 const muTag02 = new ProvisionedMuTag({
     _advertisingInterval: 1,
@@ -112,9 +139,9 @@ const muTag02 = new ProvisionedMuTag({
     _recentLatitude: 0,
     _recentLongitude: 0,
     _txPower: 1,
-    _uid: muTag02UID
+    _uid: uuidV4()
 });
-const muTag03UID = "randomUUID03";
+
 const muTag03BeaconId = BeaconId.create("C");
 const muTag03 = new ProvisionedMuTag({
     _advertisingInterval: 1,
@@ -133,29 +160,60 @@ const muTag03 = new ProvisionedMuTag({
     _recentLatitude: 0,
     _recentLongitude: 0,
     _txPower: 1,
-    _uid: muTag03UID
+    _uid: uuidV4()
+});
+(databaseMock.get as jest.Mock).mockImplementation(
+    key =>
+        new Promise(resolve => {
+            switch (key) {
+                case `muTags/${existingMuTag07.uid}`:
+                    resolve(existingMuTag07.serialize());
+                    break;
+                case `muTags/${existingMuTag08.uid}`:
+                    resolve(existingMuTag08.serialize());
+                    break;
+                default:
+                    resolve();
+            }
+        })
+);
+
+test("successfully populate Mu tag cache from logged in account", async (): Promise<
+    void
+> => {
+    await accountRepoLocalImpl.add(account);
+    expect.assertions(1);
+    await expect(muTagRepoLocalImpl.getAll()).resolves.toEqual(
+        new Set<ProvisionedMuTag>([existingMuTag07, existingMuTag08])
+    );
 });
 
 test("successfully adds Mu tag", async (): Promise<void> => {
-    (database.set as jest.Mock).mockResolvedValueOnce(undefined);
+    // Create new instance so that cache is no longer populated
+    muTagRepoLocalImpl = new MuTagRepoLocalImpl(
+        databaseMock,
+        accountRepoLocalImpl
+    );
+    (databaseMock.set as jest.Mock).mockResolvedValueOnce(undefined);
     expect.assertions(1);
+    account.addNewMuTag(muTag01.uid, muTag01BeaconId);
     await expect(muTagRepoLocalImpl.add(muTag01)).resolves.toEqual(undefined);
 });
 
-test("successfully gets added Mu tag", async (): Promise<void> => {
-    const muTagJSON = muTag01.serialize();
-    (database.get as jest.Mock).mockResolvedValueOnce(muTagJSON);
+test("successfully gets added Mu tag instance that's not overwritten by new instance from database", async (): Promise<
+    void
+> => {
     expect.assertions(2);
-    await expect(muTagRepoLocalImpl.getByUid(muTag01UID)).resolves.toEqual(
+    await expect(muTagRepoLocalImpl.getByUid(muTag01.uid)).resolves.toBe(
         muTag01
     );
     await expect(
         muTagRepoLocalImpl.getByBeaconId(muTag01BeaconId)
-    ).resolves.toEqual(muTag01);
+    ).resolves.toBe(muTag01);
 });
 
 test("successfully adds two Mu tags", async (): Promise<void> => {
-    (database.set as jest.Mock).mockResolvedValueOnce(undefined);
+    (databaseMock.set as jest.Mock).mockResolvedValueOnce(undefined);
     expect.assertions(1);
     const muTagsToAdd = new Set([muTag02, muTag03]);
     await expect(muTagRepoLocalImpl.addMultiple(muTagsToAdd)).resolves.toEqual(
@@ -164,47 +222,17 @@ test("successfully adds two Mu tags", async (): Promise<void> => {
 });
 
 test("successfully removes Mu tag", async (): Promise<void> => {
-    (database.remove as jest.Mock).mockResolvedValueOnce(undefined);
+    (databaseMock.remove as jest.Mock).mockResolvedValueOnce(undefined);
     expect.assertions(1);
-    await expect(muTagRepoLocalImpl.removeByUid(muTag01UID)).resolves.toEqual(
+    await expect(muTagRepoLocalImpl.removeByUid(muTag01.uid)).resolves.toEqual(
         undefined
     );
 });
 
 test("failed to get Mu tag that does not exist", async (): Promise<void> => {
-    (database.get as jest.Mock).mockResolvedValueOnce(null);
+    (databaseMock.get as jest.Mock).mockResolvedValueOnce(null);
     expect.assertions(1);
-    await expect(muTagRepoLocalImpl.getByUid(muTag01UID)).rejects.toEqual(
-        new MuTagDoesNotExist(muTag01UID)
-    );
-});
-
-test("successfully populate Mu tag cache from logged in account", async (): Promise<
-    void
-> => {
-    const account = new Account({
-        _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
-        _accountNumber: AccountNumber.fromString("0000000"),
-        _emailAddress: "support+test@informu.io",
-        _name: "Billy Cruise",
-        _nextBeaconId: BeaconId.create("B"),
-        _nextSafeZoneNumber: 3,
-        _recycledBeaconIds: new Set([
-            BeaconId.create("2"),
-            BeaconId.create("D")
-        ]),
-        _nextMuTagNumber: 4,
-        _onboarding: false,
-        _muTags: new Set(["randomUUID07", "randomUUID08"])
-    });
-    const accountJSON = account.serialize();
-    const newMuTagRepoLocalImpl = new MuTagRepoLocalImpl(
-        database,
-        accountRepoLocalImpl
-    );
-    (database.get as jest.Mock).mockResolvedValueOnce(accountJSON);
-    expect.assertions(1);
-    await expect(newMuTagRepoLocalImpl.getAll()).resolves.toEqual(
-        new Set<ProvisionedMuTag>()
+    await expect(muTagRepoLocalImpl.getByUid(muTag01.uid)).rejects.toEqual(
+        new MuTagDoesNotExist(muTag01.uid)
     );
 });

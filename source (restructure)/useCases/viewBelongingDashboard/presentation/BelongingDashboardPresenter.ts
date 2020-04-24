@@ -1,30 +1,30 @@
 import {
-    BelongingDashboardOutput,
+    BelongingDashboardOutputPort,
     DashboardBelonging,
     DashboardBelongingUpdate
-} from "../../Core/Ports/BelongingDashboardOutput";
+} from "../BelongingDashboardOutputPort";
 import {
-    HomeViewModel,
+    BelongingDashboardViewModel,
     BelongingViewData,
     BelongingViewDataDelta
-} from "./HomeViewModel";
-import Theme from "./Theme";
+} from "./BelongingDashboardViewModel";
+import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import _ from "lodash";
 
 export default class BelongingDashboardPresenter
-    implements BelongingDashboardOutput {
+    implements BelongingDashboardOutputPort {
     private static readonly hoursInDay = 24;
     private static readonly minutesInHour = 60;
     private static readonly secondsInMinute = 60;
     private static readonly millisecondsInSecond = 1000;
 
-    private readonly viewModel: HomeViewModel;
+    private readonly viewModel: BelongingDashboardViewModel;
     private belongingsSafeStatusCache = new Map<string, boolean>();
     private belongingsLastSeenCache = new Map<string, Date>();
     private lastSeenDisplayUpdateTimerID?: NodeJS.Timeout;
     private lastSeenDisplayUpdateMSInterval = 15000;
 
-    constructor(viewModel: HomeViewModel) {
+    constructor(viewModel: BelongingDashboardViewModel) {
         this.viewModel = viewModel;
     }
 
@@ -125,8 +125,8 @@ export default class BelongingDashboardPresenter
         });
     }
 
-    remove(belongingUID: string): void {
-        this.belongingsLastSeenCache.delete(belongingUID);
+    remove(belongingUid: string): void {
+        this.belongingsLastSeenCache.delete(belongingUid);
 
         const existingBelongings = _.map(
             this.viewModel.state.belongings,
@@ -134,7 +134,7 @@ export default class BelongingDashboardPresenter
         );
         const belongings = _.differenceBy(
             existingBelongings,
-            [{ uid: belongingUID }],
+            [{ uid: belongingUid }],
             "uid"
         );
         const homeStateDelta: { [key: string]: any } = {
@@ -192,7 +192,12 @@ export default class BelongingDashboardPresenter
             uid: belonging.uid,
             name: belonging.name,
             safeStatusColor: this.safeStatusColor(belonging.isSafe),
-            lastSeen: this.lastSeenDisplay(belonging.lastSeen, belonging.isSafe)
+            lastSeen: this.lastSeenDisplay(
+                belonging.lastSeen,
+                belonging.isSafe
+            ),
+            address:
+                belonging.address != null ? belonging.address : "searching..."
         };
     }
 

@@ -1,21 +1,29 @@
 import ProvisionedMuTag, {
     BeaconId,
     MuTagData
-} from "../Domain/ProvisionedMuTag";
-import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
+} from "../../../source/Core/Domain/ProvisionedMuTag";
+import Percent from "../../shared/metaLanguage/Percent";
 import {
-    BelongingDashboardOutput,
-    DashboardBelonging
-} from "../Ports/BelongingDashboardOutput";
-import BelongingDashboardService from "./BelongingDashboardService";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
-import Account, { AccountNumber, AccountData } from "../Domain/Account";
-import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
-import { MuTagColor } from "../Domain/MuTag";
+    BelongingDashboardOutputPort,
+    DashboardBelonging,
+    DashboardBelongingUpdate
+} from "./BelongingDashboardOutputPort";
+import BelongingDashboardInteractor from "./BelongingDashboardInteractor";
+import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
+import Account, {
+    AccountNumber,
+    AccountData
+} from "../../../source/Core/Domain/Account";
+import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
+import { MuTagColor } from "../../../source/Core/Domain/MuTag";
+import { take } from "rxjs/operators";
 
 describe("Mu tag user views a dashboard of all their belongings", (): void => {
-    const BelongingDashboardOutputMock = jest.fn<BelongingDashboardOutput, any>(
-        (): BelongingDashboardOutput => ({
+    const BelongingDashboardOutputMock = jest.fn<
+        BelongingDashboardOutputPort,
+        any
+    >(
+        (): BelongingDashboardOutputPort => ({
             showAll: jest.fn(),
             showNone: jest.fn(),
             add: jest.fn(),
@@ -46,7 +54,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
     const belongingDashboardOutputMock = new BelongingDashboardOutputMock();
     const muTagRepoLocalMock = new MuTagRepositoryLocalMock();
     const accountRepoLocalMock = new AccountRepoLocalMock();
-    const belongingDashboardService = new BelongingDashboardService(
+    const belongingDashboardInteractor = new BelongingDashboardInteractor(
         belongingDashboardOutputMock,
         muTagRepoLocalMock,
         accountRepoLocalMock
@@ -68,6 +76,12 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
             _modelNumber: "REV8",
             _muTagNumber: 0,
             _name: "Keys",
+            _recentAddress: {
+                formattedAddress: "6229 Lamar St, Arvada, CO 80003, USA",
+                route: "Lamar St",
+                locality: "Arvada",
+                administrativeAreaLevel1: "CO"
+            },
             _recentLatitude: 0,
             _recentLongitude: 0,
             _txPower: 1,
@@ -87,6 +101,12 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
             _modelNumber: "REV8",
             _muTagNumber: 1,
             _name: "Laptop",
+            _recentAddress: {
+                formattedAddress: "7722 Everett St, Arvada, CO 80005, USA",
+                route: "Everett St",
+                locality: "Arvada",
+                administrativeAreaLevel1: "CO"
+            },
             _recentLatitude: 0,
             _recentLongitude: 0,
             _txPower: 1,
@@ -172,13 +192,23 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
                 lastSeen: belongingsData[1]._lastSeen
             }
         ];
+        const belongingsDashboardUpdate: DashboardBelongingUpdate[] = [
+            {
+                uid: belongingsData[0]._uid,
+                address: `${belongingsData[0]._recentAddress?.route}, ${belongingsData[0]._recentAddress?.locality}, ${belongingsData[0]._recentAddress?.administrativeAreaLevel1}`
+            },
+            {
+                uid: belongingsData[1]._uid,
+                address: `${belongingsData[1]._recentAddress?.route}, ${belongingsData[1]._recentAddress?.locality}, ${belongingsData[1]._recentAddress?.administrativeAreaLevel1}`
+            }
+        ];
         (muTagRepoLocalMock.getAll as jest.Mock).mockResolvedValueOnce(muTags);
 
         // When the dashboard is opened
         //
         beforeAll(
             async (): Promise<void> => {
-                await belongingDashboardService.open();
+                await belongingDashboardInteractor.open();
             }
         );
 
@@ -195,6 +225,16 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
             expect(belongingDashboardOutputMock.showAll).toHaveBeenCalledWith(
                 belongingsDashboardData
             );
+            expect(belongingDashboardOutputMock.update).toHaveBeenCalledTimes(
+                2
+            );
+            expect(belongingDashboardOutputMock.update).toHaveBeenNthCalledWith(
+                1,
+                belongingsDashboardUpdate[0]
+            );
+            expect(
+                belongingDashboardOutputMock.update
+            ).toHaveBeenLastCalledWith(belongingsDashboardUpdate[1]);
         });
     });
 
@@ -215,7 +255,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await belongingDashboardService.open();
+                await belongingDashboardInteractor.open();
             }
         );
 
@@ -237,9 +277,19 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
 
         // When the belonging is added to account
         //
-        beforeAll((): void => {
-            accountNoMuTags.addNewMuTag(belongingsData[2]._uid, addedBeaconId);
-        });
+        beforeAll(
+            async (): Promise<void> => {
+                await new Promise(resolve => {
+                    accountNoMuTags.muTagsChange
+                        .pipe(take(1))
+                        .subscribe(undefined, undefined, () => resolve());
+                    accountNoMuTags.addNewMuTag(
+                        belongingsData[2]._uid,
+                        addedBeaconId
+                    );
+                });
+            }
+        );
 
         // Then
         //
@@ -262,6 +312,13 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         //
         beforeAll((): void => {
             newMuTag.userDidDetect(now);
+            newMuTag.updateLocation(39.8666811, -105.0415883);
+            newMuTag.updateAddress({
+                formattedAddress: "9350 Quitman St, Westminster, CO 80031, USA",
+                route: "Quitman St",
+                locality: "Westminster",
+                administrativeAreaLevel1: "CO"
+            });
         });
 
         // Then
@@ -269,12 +326,19 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         it("should update belonging status in list of belongings", async (): Promise<
             void
         > => {
+            expect(belongingDashboardOutputMock.update).toHaveBeenNthCalledWith(
+                3,
+                {
+                    uid: belongingsData[2]._uid,
+                    isSafe: true,
+                    lastSeen: now
+                }
+            );
             expect(
                 belongingDashboardOutputMock.update
             ).toHaveBeenLastCalledWith({
                 uid: belongingsData[2]._uid,
-                isSafe: true,
-                lastSeen: now
+                address: "Quitman St, Westminster, CO"
             });
         });
     });

@@ -69,14 +69,14 @@ export class MuTagRepoRNFirebase
 
         snapshot.forEach(
             (childSnapshot: FirebaseDatabaseTypes.DataSnapshot): boolean => {
-                const muTagUID = childSnapshot.key;
-                if (muTagUID == null) {
+                const muTagUid = childSnapshot.key;
+                if (muTagUid == null) {
                     return false;
                 }
                 let muTagData: MuTagJson;
                 try {
                     muTagData = MuTagRepoRNFirebase.toMuTagJson(
-                        muTagUID,
+                        muTagUid,
                         childSnapshot
                     );
                 } catch (e) {
@@ -218,7 +218,7 @@ export class MuTagRepoRNFirebase
             _beaconId: snapshotData.beacon_id,
             _color: snapshotData.color,
             _dateAdded: snapshotData.date_added,
-            _didExitRegion: snapshotData.did_exit_region,
+            _didExitRegion: true,
             _firmwareVersion: snapshotData.firmware_version,
             _isSafe: false,
             _lastSeen: snapshotData.last_seen,
@@ -231,6 +231,10 @@ export class MuTagRepoRNFirebase
             _txPower: snapshotData.tx_power,
             _uid: uid
         };
+
+        if ("recent_address" in snapshotData) {
+            json._recentAddress = snapshotData.recent_address;
+        }
 
         try {
             assertIsMuTagJson(json);
