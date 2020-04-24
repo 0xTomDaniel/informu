@@ -1,5 +1,5 @@
 import AddMuTagOutputPort from "../AddMuTagOutputPort";
-import { HomeViewModel } from "../../../../source/Primary Adapters/Presentation/HomeViewModel";
+import { BelongingDashboardViewModel } from "../../viewBelongingDashboard/presentation/BelongingDashboardViewModel";
 import { AddMuTagViewModel } from "./AddMuTagViewModel";
 import { NameMuTagViewModel } from "./NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./MuTagAddingViewModel";
@@ -7,20 +7,20 @@ import UserError from "../../../shared/metaLanguage/UserError";
 import UserWarning from "../../../shared/metaLanguage/UserWarning";
 
 type CurrentViewModel =
-    | HomeViewModel
+    | BelongingDashboardViewModel
     | AddMuTagViewModel
     | NameMuTagViewModel
     | MuTagAddingViewModel;
 
 export default class AddMuTagPresenter implements AddMuTagOutputPort {
-    private readonly homeViewModel: HomeViewModel;
+    private readonly homeViewModel: BelongingDashboardViewModel;
     private readonly addMuTagViewModel: AddMuTagViewModel;
     private readonly nameMuTagViewModel: NameMuTagViewModel;
     private readonly muTagAddingViewModel: MuTagAddingViewModel;
     private currentViewModel: CurrentViewModel;
 
     constructor(
-        homeViewModel: HomeViewModel,
+        homeViewModel: BelongingDashboardViewModel,
         addMuTagViewModel: AddMuTagViewModel,
         nameMuTagViewModel: NameMuTagViewModel,
         muTagAddingViewModel: MuTagAddingViewModel

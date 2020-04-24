@@ -5,6 +5,7 @@ export interface BelongingViewData {
     readonly name: string;
     readonly safeStatusColor: string;
     readonly lastSeen: string;
+    readonly address: string;
 }
 
 export interface BelongingViewDataDelta {
@@ -12,9 +13,10 @@ export interface BelongingViewDataDelta {
     readonly name?: string;
     readonly safeStatusColor?: string;
     readonly lastSeen?: string;
+    readonly address?: string;
 }
 
-export interface HomeState {
+export interface BelongingDashboardState {
     readonly showEmptyBelongings: boolean;
     readonly showActivityIndicator: boolean;
     readonly errorDescription: string;
@@ -23,7 +25,7 @@ export interface HomeState {
     readonly belongings: BelongingViewData[];
 }
 
-export interface HomeStateDelta {
+export interface BelongingDashboardStateDelta {
     readonly showEmptyBelongings?: boolean;
     readonly showActivityIndicator?: boolean;
     readonly errorDescription?: string;
@@ -32,8 +34,8 @@ export interface HomeStateDelta {
     readonly belongings?: BelongingViewDataDelta[];
 }
 
-export class HomeViewModel {
-    private _state: HomeState = {
+export class BelongingDashboardViewModel {
+    private _state: BelongingDashboardState = {
         showEmptyBelongings: true,
         showActivityIndicator: false,
         errorDescription: "",
@@ -42,16 +44,21 @@ export class HomeViewModel {
         belongings: []
     };
 
-    get state(): HomeState {
+    get state(): BelongingDashboardState {
         return this._state;
     }
 
-    private onDidUpdateCallback?: (newState: HomeState) => void;
+    private onDidUpdateCallback?: (newState: BelongingDashboardState) => void;
     private onNavigateToAddMuTagCallback?: () => void;
     private onShowLogoutCompleteCallback?: () => void;
 
-    updateState(delta: HomeStateDelta): void {
+    updateState(delta: BelongingDashboardStateDelta): void {
         const oldState = _.cloneDeep(this._state);
+
+        //DEBUG
+        //console.log(`updateState() - delta: ${JSON.stringify(delta)}`);
+        //console.log(`updateState() - oldState: ${JSON.stringify(oldState)}`);
+
         _.mergeWith(this._state, delta, (destValue, deltaValue):
             | any[]
             | undefined => {
@@ -65,12 +72,18 @@ export class HomeViewModel {
                 return _.intersectionBy(merged, deltaValue, "uid");
             }
         });
+
         if (!_.isEqual(this._state, oldState)) {
+            //DEBUG
+            /*console.log(
+                `updateState() - this._state: ${JSON.stringify(this._state)}`
+            );*/
+
             this.triggerDidUpdate();
         }
     }
 
-    onDidUpdate(callback?: (newState: HomeState) => void): void {
+    onDidUpdate(callback?: (newState: BelongingDashboardState) => void): void {
         this.onDidUpdateCallback = callback;
     }
 

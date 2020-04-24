@@ -1,10 +1,13 @@
 import {
     DashboardBelonging,
     DashboardBelongingUpdate
-} from "../../Core/Ports/BelongingDashboardOutput";
-import { HomeViewModel, BelongingViewData } from "./HomeViewModel";
+} from "../BelongingDashboardOutputPort";
+import {
+    BelongingDashboardViewModel,
+    BelongingViewData
+} from "./BelongingDashboardViewModel";
 import BelongingDashboardPresenter from "./BelongingDashboardPresenter";
-import Theme from "./Theme";
+import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import lolex from "lolex";
 
 const clock = lolex.install();
@@ -13,7 +16,8 @@ const belongings: DashboardBelonging[] = [
         uid: "randomUUID01",
         name: "Keys",
         isSafe: true,
-        lastSeen: new Date()
+        lastSeen: new Date(),
+        address: "Lamar St, Arvada, CO"
     },
     {
         uid: "randomUUID02",
@@ -27,16 +31,18 @@ const belongingsViewData: BelongingViewData[] = [
         uid: "randomUUID01",
         name: "Keys",
         safeStatusColor: Theme.Color.Green,
-        lastSeen: "Just now"
+        lastSeen: "Just now",
+        address: "Lamar St, Arvada, CO"
     },
     {
         uid: "randomUUID02",
         name: "Laptop",
         safeStatusColor: Theme.Color.Error,
-        lastSeen: "10/5/2011"
+        lastSeen: "10/5/2011",
+        address: "searching..."
     }
 ];
-const viewModel = new HomeViewModel();
+const viewModel = new BelongingDashboardViewModel();
 const belongingDashboardPresenter = new BelongingDashboardPresenter(viewModel);
 
 test("show all current belongings", (): void => {
@@ -63,13 +69,15 @@ test("show added belonging", (): void => {
         uid: "randomUUID03",
         name: "Wallet",
         isSafe: true,
-        lastSeen: new Date()
+        lastSeen: new Date(),
+        address: "Everett St, Arvada, CO"
     };
     const newBelongingViewData: BelongingViewData = {
         uid: "randomUUID03",
         name: "Wallet",
         safeStatusColor: Theme.Color.Green,
-        lastSeen: "Just now"
+        lastSeen: "Just now",
+        address: "Everett St, Arvada, CO"
     };
 
     expect.assertions(2);
@@ -86,13 +94,15 @@ test("show belonging update", (): void => {
     const belongingUpdate: DashboardBelongingUpdate = {
         uid: "randomUUID02",
         isSafe: true,
-        lastSeen: now
+        lastSeen: now,
+        address: "Quitman St, Westminster, CO"
     };
     const belongingUpdateViewData: BelongingViewData = {
         uid: "randomUUID02",
         name: "Laptop",
         safeStatusColor: Theme.Color.Green,
-        lastSeen: "Just now"
+        lastSeen: "Just now",
+        address: "Quitman St, Westminster, CO"
     };
 
     expect.assertions(2);
@@ -171,12 +181,14 @@ test("continuously update last seen message", (): void => {
 test("remove belonging", (): void => {
     const updatedBelongingsViewData: BelongingViewData[] = [
         {
+            address: "Lamar St, Arvada, CO",
             uid: "randomUUID01",
             name: "Keys",
             safeStatusColor: Theme.Color.Green,
             lastSeen: "12/31/1969"
         },
         {
+            address: "Everett St, Arvada, CO",
             uid: "randomUUID03",
             name: "Wallet",
             safeStatusColor: Theme.Color.Error,
@@ -184,7 +196,6 @@ test("remove belonging", (): void => {
         }
     ];
 
-    //
     viewModel.onDidUpdate((newState): void => {
         expect(newState.belongings).toEqual(updatedBelongingsViewData);
         expect(newState.showEmptyBelongings).toEqual(false);

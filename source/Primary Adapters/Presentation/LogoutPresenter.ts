@@ -1,11 +1,10 @@
-import { LogoutOutput } from '../../Core/Ports/LogoutOutput';
-import { HomeViewModel } from './HomeViewModel';
+import { LogoutOutput } from "../../Core/Ports/LogoutOutput";
+import { BelongingDashboardViewModel } from "../../../source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel";
 
-export default class LogoutPresenter implements LogoutOutput{
+export default class LogoutPresenter implements LogoutOutput {
+    private readonly viewModel: BelongingDashboardViewModel;
 
-    private readonly viewModel: HomeViewModel;
-
-    constructor(viewModel: HomeViewModel) {
+    constructor(viewModel: BelongingDashboardViewModel) {
         this.viewModel = viewModel;
     }
 
