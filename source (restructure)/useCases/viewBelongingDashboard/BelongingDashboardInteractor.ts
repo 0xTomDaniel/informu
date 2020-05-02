@@ -53,7 +53,6 @@ export default class BelongingDashboardInteractor {
     ): Promise<void> {
         const account = await this.accountRepoLocal.get();
         account.muTagsChange.subscribe((change): void => {
-            debugger;
             if (change.insertion != null) {
                 this.muTagRepoLocal
                     .getByUid(change.insertion)

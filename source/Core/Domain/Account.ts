@@ -228,12 +228,12 @@ export default class Account {
         this._muTags = new Set(this._muTags).add(muTagUid);
     }
 
-    removeMuTag(muTagUID: string, beaconId: BeaconId): void {
+    removeMuTag(muTagUid: string, beaconId: BeaconId): void {
         this._recycledBeaconIds.add(beaconId);
         // Must copy _muTags set or behavior subject's previous value will be
         // mutated
         const muTags = new Set(this._muTags);
-        if (muTags.delete(muTagUID)) {
+        if (muTags.delete(muTagUid)) {
             this._muTags = muTags;
         }
     }
