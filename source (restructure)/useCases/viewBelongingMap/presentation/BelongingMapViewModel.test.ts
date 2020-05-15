@@ -12,8 +12,7 @@ const belongingMapInteractorShowOnMapSubject = new Subject<
 const belongingMapInteractorShowOnMap = belongingMapInteractorShowOnMapSubject.asObservable();
 const BelongingMapInteractorMock = jest.fn<BelongingMapInteractor, any>(
     (): BelongingMapInteractor => ({
-        showOnMap: belongingMapInteractorShowOnMap,
-        open: jest.fn()
+        showOnMap: belongingMapInteractorShowOnMap
     })
 );
 const belongingMapInteractorMock = BelongingMapInteractorMock();
@@ -27,38 +26,51 @@ test("show all belongings", async (): Promise<void> => {
     await new Promise(resolve => {
         subscription = belongingMapViewModel.showBelongingMarkers.subscribe(
             update => {
-                expect(update).toEqual([
-                    {
-                        latitude: 39.836557861962184,
-                        longitude: -105.09686516468388,
-                        name: "Keys"
-                    },
-                    {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Wallet"
-                    }
-                ]);
+                expect(update).toEqual({
+                    type: "FeatureCollection",
+                    features: [
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.09686516468388,
+                                    39.836557861962184
+                                ]
+                            },
+                            properties: {
+                                name: "Keys"
+                            }
+                        },
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.06733748256252,
+                                    39.80963962521709
+                                ]
+                            },
+                            properties: {
+                                name: "Wallet"
+                            }
+                        }
+                    ]
+                });
                 resolve();
             }
         );
         belongingMapInteractorShowOnMapSubject.next({
-            added: [
+            initial: [
                 {
-                    index: 0,
-                    element: {
-                        latitude: 39.836557861962184,
-                        longitude: -105.09686516468388,
-                        name: "Keys"
-                    }
+                    latitude: 39.836557861962184,
+                    longitude: -105.09686516468388,
+                    name: "Keys"
                 },
                 {
-                    index: 1,
-                    element: {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Wallet"
-                    }
+                    latitude: 39.80963962521709,
+                    longitude: -105.06733748256252,
+                    name: "Wallet"
                 }
             ]
         });
@@ -72,18 +84,37 @@ test("show belonging change", async (): Promise<void> => {
     await new Promise(resolve => {
         subscription = belongingMapViewModel.showBelongingMarkers.subscribe(
             update => {
-                expect(update).toEqual([
-                    {
-                        latitude: 39.836557861962184,
-                        longitude: -105.09686516468381,
-                        name: "Keys"
-                    },
-                    {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Bag"
-                    }
-                ]);
+                expect(update).toEqual({
+                    type: "FeatureCollection",
+                    features: [
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.09686516468381,
+                                    39.836557861962184
+                                ]
+                            },
+                            properties: {
+                                name: "Keys"
+                            }
+                        },
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.06733748256252,
+                                    39.80963962521709
+                                ]
+                            },
+                            properties: {
+                                name: "Bag"
+                            }
+                        }
+                    ]
+                });
                 resolve();
             }
         );
@@ -113,28 +144,63 @@ test("show added belongings", async (): Promise<void> => {
     await new Promise(resolve => {
         subscription = belongingMapViewModel.showBelongingMarkers.subscribe(
             update => {
-                expect(update).toEqual([
-                    {
-                        latitude: 39.836557861962184,
-                        longitude: -105.09686516468381,
-                        name: "Keys"
-                    },
-                    {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Laptop"
-                    },
-                    {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Bag"
-                    },
-                    {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Wallet"
-                    }
-                ]);
+                expect(update).toEqual({
+                    type: "FeatureCollection",
+                    features: [
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.09686516468381,
+                                    39.836557861962184
+                                ]
+                            },
+                            properties: {
+                                name: "Keys"
+                            }
+                        },
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.06733748256252,
+                                    39.80963962521709
+                                ]
+                            },
+                            properties: {
+                                name: "Laptop"
+                            }
+                        },
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.06733748256252,
+                                    39.80963962521709
+                                ]
+                            },
+                            properties: {
+                                name: "Bag"
+                            }
+                        },
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.06733748256252,
+                                    39.80963962521709
+                                ]
+                            },
+                            properties: {
+                                name: "Wallet"
+                            }
+                        }
+                    ]
+                });
                 resolve();
             }
         );
@@ -168,18 +234,37 @@ test("remove belonging", async (): Promise<void> => {
     await new Promise(resolve => {
         subscription = belongingMapViewModel.showBelongingMarkers.subscribe(
             update => {
-                expect(update).toEqual([
-                    {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Laptop"
-                    },
-                    {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Wallet"
-                    }
-                ]);
+                expect(update).toEqual({
+                    type: "FeatureCollection",
+                    features: [
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.06733748256252,
+                                    39.80963962521709
+                                ]
+                            },
+                            properties: {
+                                name: "Laptop"
+                            }
+                        },
+                        {
+                            type: "Feature",
+                            geometry: {
+                                type: "Point",
+                                coordinates: [
+                                    -105.06733748256252,
+                                    39.80963962521709
+                                ]
+                            },
+                            properties: {
+                                name: "Wallet"
+                            }
+                        }
+                    ]
+                });
                 resolve();
             }
         );

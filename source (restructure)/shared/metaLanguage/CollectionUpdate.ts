@@ -13,6 +13,7 @@ interface CollectionChange<D> {
 }
 
 export default interface CollectionUpdate<T, D> {
+    initial?: T[];
     added?: CollectionAddition<T>[];
     removed?: CollectionRemoval[];
     changed?: CollectionChange<D>[];

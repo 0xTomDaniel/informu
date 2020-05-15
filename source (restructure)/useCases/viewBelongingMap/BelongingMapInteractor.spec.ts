@@ -11,8 +11,6 @@ import {
     BelongingLocationDelta
 } from "./BelongingMapInteractor";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
-
-import { take } from "rxjs/operators";
 import Logger from "../../shared/metaLanguage/Logger";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Account, {
@@ -108,19 +106,20 @@ const belongings = new Set([
     new ProvisionedMuTag(belongingsData[0]),
     new ProvisionedMuTag(belongingsData[1])
 ]);
+(muTagRepoLocalMock.getAll as jest.Mock).mockResolvedValue(belongings);
 const validAccountData: AccountData = {
     _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
     _accountNumber: AccountNumber.fromString("0000000"),
     _emailAddress: "support+test@informu.io",
     _name: "Joe Brown",
-    _nextBeaconId: BeaconId.create("0"),
+    _nextBeaconId: BeaconId.create("2"),
     _nextSafeZoneNumber: 0,
     _onboarding: false,
     _recycledBeaconIds: new Set(),
-    _nextMuTagNumber: 0,
-    _muTags: new Set()
+    _nextMuTagNumber: 2,
+    _muTags: new Set(belongingsData.map(belonging => belonging._uid))
 };
-const accountNoMuTags = new Account({
+const account = new Account({
     _uid: validAccountData._uid,
     _accountNumber: validAccountData._accountNumber,
     _emailAddress: validAccountData._emailAddress,
@@ -132,7 +131,7 @@ const accountNoMuTags = new Account({
     _nextMuTagNumber: validAccountData._nextMuTagNumber,
     _muTags: validAccountData._muTags
 });
-(accountRepoLocalMock.get as jest.Mock).mockResolvedValue(accountNoMuTags);
+(accountRepoLocalMock.get as jest.Mock).mockResolvedValue(account);
 
 describe("View belongings location on map", (): void => {
     describe("Scenario 1: Belongings have recent location", (): void => {
@@ -145,16 +144,16 @@ describe("View belongings location on map", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                (muTagRepoLocalMock.getAll as jest.Mock).mockResolvedValueOnce(
-                    belongings
-                );
-                subscription = belongingMapInteractor.showOnMap.subscribe(
-                    update =>
-                        (showBelongingLocations = update.added?.map(
-                            location => location.element
-                        ))
-                );
-                await belongingMapInteractor.open();
+                await new Promise(resolve => {
+                    subscription = belongingMapInteractor.showOnMap.subscribe(
+                        update => {
+                            showBelongingLocations = update.initial;
+                            resolve();
+                        },
+                        e => Logger.instance.error(e),
+                        () => Logger.instance.log("showOnMap completed.")
+                    );
+                });
             }
         );
 
@@ -166,45 +165,60 @@ describe("View belongings location on map", (): void => {
         // Then
         //
         it("should show all belonging's location on the map", (): void => {
-            expect(showBelongingLocations?.[0]).toEqual({
-                name: belongingsData[0]._name,
-                latitude: belongingsData[0]._recentLatitude,
-                longitude: belongingsData[0]._recentLongitude
-            });
-            expect(showBelongingLocations?.[1]).toEqual({
-                name: belongingsData[1]._name,
-                latitude: belongingsData[1]._recentLatitude,
-                longitude: belongingsData[1]._recentLongitude
-            });
+            expect(showBelongingLocations).toEqual([
+                {
+                    name: belongingsData[0]._name,
+                    latitude: belongingsData[0]._recentLatitude,
+                    longitude: belongingsData[0]._recentLongitude
+                },
+                {
+                    name: belongingsData[1]._name,
+                    latitude: belongingsData[1]._recentLatitude,
+                    longitude: belongingsData[1]._recentLongitude
+                }
+            ]);
         });
     });
 
+    const locationChange = {
+        latitude: 39.836557861962184,
+        longitude: -105.09686516468388
+    };
+
     describe("Scenario 2: Belonging's recent location changes", (): void => {
+        let belongingLocationInitial: BelongingLocation[] | undefined;
         let belongingLocationChange: BelongingLocationDelta[] | undefined;
-        const locationChange = {
-            latitude: 39.836557861962184,
-            longitude: -105.09686516468388
-        };
         let subscription: Subscription;
 
         // When the belonging's recent location changes
         //
         beforeAll(
             async (): Promise<void> => {
-                subscription = belongingMapInteractor.showOnMap.subscribe(
-                    update =>
-                        (belongingLocationChange = update.changed?.map(
-                            location => location.elementChange
-                        ))
-                );
-                // https://github.com/microsoft/TypeScript/issues/33353
-                const result = belongings.values().next();
-                if (!result.done) {
-                    result.value.updateLocation(
-                        locationChange.latitude,
-                        locationChange.longitude
+                await new Promise(resolve => {
+                    subscription = belongingMapInteractor.showOnMap.subscribe(
+                        update => {
+                            if (update.initial != null) {
+                                belongingLocationInitial = update.initial;
+                                // https://github.com/microsoft/TypeScript/issues/33353
+                                const result = belongings.values().next();
+                                if (!result.done) {
+                                    result.value.updateLocation(
+                                        locationChange.latitude,
+                                        locationChange.longitude
+                                    );
+                                }
+                            }
+                            if (update.changed != null) {
+                                belongingLocationChange = update.changed.map(
+                                    location => location.elementChange
+                                );
+                                resolve();
+                            }
+                        },
+                        e => Logger.instance.error(e),
+                        () => Logger.instance.log("showOnMap completed.")
                     );
-                }
+                });
             }
         );
 
@@ -216,6 +230,18 @@ describe("View belongings location on map", (): void => {
         // Then
         //
         it("should show belonging's new location on the map", (): void => {
+            expect(belongingLocationInitial).toEqual([
+                {
+                    name: belongingsData[0]._name,
+                    latitude: belongingsData[0]._recentLatitude,
+                    longitude: belongingsData[0]._recentLongitude
+                },
+                {
+                    name: belongingsData[1]._name,
+                    latitude: belongingsData[1]._recentLatitude,
+                    longitude: belongingsData[1]._recentLongitude
+                }
+            ]);
             expect(belongingLocationChange?.[0]).toEqual({
                 latitude: locationChange.latitude,
                 longitude: locationChange.longitude
@@ -226,7 +252,7 @@ describe("View belongings location on map", (): void => {
     const newBelongingData = {
         _advertisingInterval: 1,
         _batteryLevel: new Percent(80),
-        _beaconId: accountNoMuTags.newBeaconId,
+        _beaconId: account.newBeaconId,
         _color: MuTagColor.MuOrange,
         _dateAdded: dateNow,
         _didExitRegion: true,
@@ -245,6 +271,7 @@ describe("View belongings location on map", (): void => {
     const newBelonging = new ProvisionedMuTag(newBelongingData);
 
     describe("Scenario 3: Belonging is added", (): void => {
+        let belongingLocationInitial: BelongingLocation[] | undefined;
         let newBelongingLocation: BelongingLocation[] | undefined;
         let subscription: Subscription;
 
@@ -255,21 +282,28 @@ describe("View belongings location on map", (): void => {
                 (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
                     newBelonging
                 );
-                subscription = belongingMapInteractor.showOnMap.subscribe(
-                    update =>
-                        (newBelongingLocation = update.added?.map(
-                            location => location.element
-                        ))
-                );
                 await new Promise(resolve => {
-                    accountNoMuTags.muTagsChange
-                        .pipe(take(1))
-                        .subscribe(undefined, undefined, () => resolve());
-                    accountNoMuTags.addNewMuTag(
-                        newBelongingData._uid,
-                        newBelongingData._beaconId
+                    subscription = belongingMapInteractor.showOnMap.subscribe(
+                        update => {
+                            if (update.initial != null) {
+                                belongingLocationInitial = update.initial;
+                                account.addNewMuTag(
+                                    newBelongingData._uid,
+                                    newBelongingData._beaconId
+                                );
+                            }
+                            if (update.added != null) {
+                                newBelongingLocation = update.added?.map(
+                                    location => location.element
+                                );
+                                resolve();
+                            }
+                        },
+                        e => Logger.instance.error(e),
+                        () => Logger.instance.log("showOnMap completed.")
                     );
                 });
+                belongings.add(newBelonging);
             }
         );
 
@@ -281,6 +315,18 @@ describe("View belongings location on map", (): void => {
         // Then
         //
         it("should show belonging's location on the map", (): void => {
+            expect(belongingLocationInitial).toEqual([
+                {
+                    name: belongingsData[0]._name,
+                    latitude: locationChange.latitude,
+                    longitude: locationChange.longitude
+                },
+                {
+                    name: belongingsData[1]._name,
+                    latitude: belongingsData[1]._recentLatitude,
+                    longitude: belongingsData[1]._recentLongitude
+                }
+            ]);
             expect(newBelongingLocation).toEqual([
                 {
                     name: newBelongingData._name,
@@ -292,6 +338,7 @@ describe("View belongings location on map", (): void => {
     });
 
     describe("Scenario 4: Belonging is removed", (): void => {
+        let belongingLocationInitial: BelongingLocation[] | undefined;
         let removedBelonging: number[] | undefined;
         let subscription: Subscription;
 
@@ -299,21 +346,28 @@ describe("View belongings location on map", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                subscription = belongingMapInteractor.showOnMap.subscribe(
-                    update =>
-                        (removedBelonging = update.removed?.map(
-                            location => location.index
-                        ))
-                );
                 await new Promise(resolve => {
-                    accountNoMuTags.muTagsChange
-                        .pipe(take(1))
-                        .subscribe(undefined, undefined, () => resolve());
-                    accountNoMuTags.removeMuTag(
-                        newBelongingData._uid,
-                        newBelongingData._beaconId
+                    subscription = belongingMapInteractor.showOnMap.subscribe(
+                        update => {
+                            if (update.initial != null) {
+                                belongingLocationInitial = update.initial;
+                                account.removeMuTag(
+                                    newBelongingData._uid,
+                                    newBelongingData._beaconId
+                                );
+                            }
+                            if (update.removed != null) {
+                                removedBelonging = update.removed?.map(
+                                    location => location.index
+                                );
+                                resolve();
+                            }
+                        },
+                        e => Logger.instance.error(e),
+                        () => Logger.instance.log("showOnMap completed.")
                     );
                 });
+                belongings.delete(newBelonging);
             }
         );
 
@@ -325,6 +379,23 @@ describe("View belongings location on map", (): void => {
         // Then
         //
         it("should remove belonging from map", (): void => {
+            expect(belongingLocationInitial).toEqual([
+                {
+                    name: belongingsData[0]._name,
+                    latitude: locationChange.latitude,
+                    longitude: locationChange.longitude
+                },
+                {
+                    name: belongingsData[1]._name,
+                    latitude: belongingsData[1]._recentLatitude,
+                    longitude: belongingsData[1]._recentLongitude
+                },
+                {
+                    name: newBelongingData._name,
+                    latitude: newBelongingData._recentLatitude,
+                    longitude: newBelongingData._recentLongitude
+                }
+            ]);
             expect(removedBelonging).toEqual([2]);
         });
     });

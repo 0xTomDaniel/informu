@@ -1,30 +1,38 @@
 import { Observable } from "rxjs";
-import BelongingMapInteractor from "../BelongingMapInteractor";
+import BelongingMapInteractor, {
+    BelongingLocation
+} from "../BelongingMapInteractor";
 import { map } from "rxjs/operators";
+import { Feature, Point, FeatureCollection } from "geojson";
 
-interface BelongingMarker {
-    latitude: number;
-    longitude: number;
+export interface BelongingFeatureProperties {
     name: string;
 }
 
 export default class BelongingMapViewModel {
     private readonly belongingMapInteractor: BelongingMapInteractor;
-    private readonly belongingMarkers: BelongingMarker[] = [];
-    readonly showBelongingMarkers: Observable<BelongingMarker[]>;
+    private features: Feature<Point, BelongingFeatureProperties>[] = [];
+    readonly showBelongingMarkers: Observable<
+        FeatureCollection<Point, BelongingFeatureProperties>
+    >;
 
     constructor(belongingMapInteractor: BelongingMapInteractor) {
         this.belongingMapInteractor = belongingMapInteractor;
         this.showBelongingMarkers = this.belongingMapInteractor.showOnMap.pipe(
             map(update => {
+                if (update.initial != null) {
+                    this.features = update.initial.map(belongingLocation =>
+                        this.convertToFeature(belongingLocation)
+                    );
+                }
                 update.removed?.forEach(removal =>
-                    this.belongingMarkers.splice(removal.index, 1)
+                    this.features.splice(removal.index, 1)
                 );
                 update.added?.forEach(addition =>
-                    this.belongingMarkers.splice(
+                    this.features.splice(
                         addition.index,
                         0,
-                        addition.element
+                        this.convertToFeature(addition.element)
                     )
                 );
                 update.changed?.forEach(change =>
@@ -32,17 +40,17 @@ export default class BelongingMapViewModel {
                         ([key, value]) => {
                             switch (key) {
                                 case "latitude":
-                                    this.belongingMarkers[change.index][
-                                        key
-                                    ] = value;
+                                    this.features[
+                                        change.index
+                                    ].geometry.coordinates[1] = value;
                                     break;
                                 case "longitude":
-                                    this.belongingMarkers[change.index][
-                                        key
-                                    ] = value;
+                                    this.features[
+                                        change.index
+                                    ].geometry.coordinates[0] = value;
                                     break;
                                 case "name":
-                                    this.belongingMarkers[change.index][
+                                    this.features[change.index].properties[
                                         key
                                     ] = value;
                                     break;
@@ -50,8 +58,29 @@ export default class BelongingMapViewModel {
                         }
                     )
                 );
-                return this.belongingMarkers;
+                return {
+                    type: "FeatureCollection",
+                    features: this.features
+                };
             }, this)
         );
+    }
+
+    convertToFeature(
+        belongingLocation: BelongingLocation
+    ): Feature<Point, BelongingFeatureProperties> {
+        return {
+            type: "Feature",
+            geometry: {
+                type: "Point",
+                coordinates: [
+                    belongingLocation.longitude,
+                    belongingLocation.latitude
+                ]
+            },
+            properties: {
+                name: belongingLocation.name
+            }
+        };
     }
 }

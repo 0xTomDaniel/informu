@@ -7,6 +7,7 @@ import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import { Subscription, Observable, Subject } from "rxjs";
 import CollectionUpdate from "../../shared/metaLanguage/CollectionUpdate";
 import { take, map } from "rxjs/operators";
+import LifecycleObservable from "../../shared/metaLanguage/LifecycleObservable";
 
 export interface BelongingLocation {
     name: string;
@@ -24,21 +25,34 @@ export default interface BelongingMapInteractor {
     showOnMap: Observable<
         CollectionUpdate<BelongingLocation, BelongingLocationDelta>
     >;
-    open(): Promise<void>;
 }
 
 export class BelongingMapInteractorImpl implements BelongingMapInteractor {
     private readonly accountRepoLocal: AccountRepositoryLocalPort;
+    private readonly belongingLocations: BelongingLocation[] = [];
+    private readonly belongingLocationsUidToIndex: Map<
+        string,
+        number
+    > = new Map();
     private readonly locationSubscriptions = new Map<string, Subscription>();
     private readonly logger = Logger.instance;
     private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
-    readonly showOnMap: Observable<
+    private muTagsChangeSubscription: Subscription | undefined;
+    readonly showOnMap = LifecycleObservable(
+        new Observable<
+            CollectionUpdate<BelongingLocation, BelongingLocationDelta>
+        >(subscriber => {
+            this.showOnMapSubject.subscribe(subscriber);
+            // Must copy the array 'belongingLocations' to prevent mutation of
+            // original.
+            subscriber.next({ initial: [...this.belongingLocations] });
+        }),
+        this.start.bind(this),
+        this.stop.bind(this)
+    );
+    private readonly showOnMapSubject = new Subject<
         CollectionUpdate<BelongingLocation, BelongingLocationDelta>
-    >;
-    private readonly showOnMapCollection: string[] = [];
-    private readonly showOnMapSubject: Subject<
-        CollectionUpdate<BelongingLocation, BelongingLocationDelta>
-    >;
+    >();
 
     constructor(
         accountRepoLocal: AccountRepositoryLocalPort,
@@ -46,40 +60,57 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
     ) {
         this.accountRepoLocal = accountRepoLocal;
         this.muTagRepoLocal = muTagRepoLocal;
-        this.showOnMapSubject = new Subject<
-            CollectionUpdate<BelongingLocation, BelongingLocationDelta>
-        >();
-        this.showOnMap = this.showOnMapSubject.asObservable();
     }
 
-    async open(): Promise<void> {
+    private async start(): Promise<void> {
         const account = await this.accountRepoLocal.get();
-        account.muTagsChange.subscribe((change): void => {
-            if (change.insertion != null) {
-                this.muTagRepoLocal
-                    .getByUid(change.insertion)
-                    .then(belonging =>
-                        this.showLocationOnMap(new Set([belonging]))
-                    )
-                    .catch(e => this.logger.warn(e, true));
-            }
+        this.muTagsChangeSubscription = account.muTagsChange.subscribe(
+            (change): void => {
+                if (change.insertion != null) {
+                    this.muTagRepoLocal
+                        .getByUid(change.insertion)
+                        .then(belonging =>
+                            this.showLocationOnMap(new Set([belonging]))
+                        )
+                        .catch(e => this.logger.warn(e, true));
+                }
 
-            if (change.deletion != null) {
-                const index = this.showOnMapCollection.findIndex(
-                    belonging => belonging === change.deletion
-                );
-                this.showOnMapCollection.splice(index);
-                this.showOnMapSubject.next({
-                    removed: [{ index: index }]
-                });
-                this.locationSubscriptions.get(change.deletion)?.unsubscribe();
+                if (change.deletion != null) {
+                    const index = this.belongingLocationsUidToIndex.get(
+                        change.deletion
+                    );
+                    if (index == null) {
+                        this.logger.warn("Index not found.", true);
+                        return;
+                    }
+                    this.belongingLocations.splice(index, 1);
+                    this.belongingLocationsUidToIndex.delete(change.deletion);
+                    this.showOnMapSubject.next({
+                        removed: [{ index: index }]
+                    });
+                    this.locationSubscriptions
+                        .get(change.deletion)
+                        ?.unsubscribe();
+                }
             }
-        });
+        );
         const belongings = await this.muTagRepoLocal.getAll();
-        this.showLocationOnMap(belongings);
+        await this.showLocationOnMap(belongings, true);
     }
 
-    private showLocationOnMap(belongings: Set<ProvisionedMuTag>): void {
+    private async stop(): Promise<void> {
+        this.locationSubscriptions.forEach(subscription =>
+            subscription.unsubscribe()
+        );
+        this.muTagsChangeSubscription?.unsubscribe();
+        this.belongingLocations.length = 0;
+        this.belongingLocationsUidToIndex.clear();
+    }
+
+    private async showLocationOnMap(
+        belongings: Set<ProvisionedMuTag>,
+        initial = false
+    ): Promise<void> {
         const locations: Promise<{
             belonging: ProvisionedMuTag;
             location: Location;
@@ -97,30 +128,38 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                     .toPromise()
             )
         );
-        Promise.all(locations)
+        await Promise.all(locations)
             .then(results => {
                 const belongingLocations = results.map(result => {
+                    const belongingLocation: BelongingLocation = {
+                        name: result.belonging.name,
+                        latitude: result.location.latitude,
+                        longitude: result.location.longitude
+                    };
                     const index =
-                        this.showOnMapCollection.push(result.belonging.uid) - 1;
+                        this.belongingLocations.push(belongingLocation) - 1;
+                    this.belongingLocationsUidToIndex.set(
+                        result.belonging.uid,
+                        index
+                    );
                     return {
                         index: index,
-                        element: {
-                            name: result.belonging.name,
-                            latitude: result.location.latitude,
-                            longitude: result.location.longitude
-                        }
+                        element: belongingLocation
                     };
                 });
-                this.showOnMapSubject.next({
-                    added: belongingLocations
-                });
+                if (!initial) {
+                    this.showOnMapSubject.next({
+                        added: belongingLocations
+                    });
+                }
             })
             .catch(e => this.logger.warn(e, true));
-
         belongings.forEach(belonging => {
-            const index = this.showOnMapCollection.findIndex(
-                element => element === belonging.uid
-            );
+            const index = this.belongingLocationsUidToIndex.get(belonging.uid);
+            if (index == null) {
+                this.logger.warn("Index not found.", true);
+                return;
+            }
             const subscription = belonging.location.subscribe(
                 location =>
                     this.showOnMapSubject.next({
