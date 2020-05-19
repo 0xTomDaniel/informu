@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     },
     cardAddressView: {
         marginLeft: 58,
-        marginTop: -8,
+        marginTop: -7,
         flexDirection: "row"
     },
     cardAddressIcon: {
