@@ -10,10 +10,7 @@ import {
     Menu,
     Dialog,
     Paragraph,
-    Button,
-    Caption,
-    Subheading,
-    Title
+    Button
 } from "react-native-paper";
 import {
     StyleSheet,
@@ -58,9 +55,9 @@ const styles = StyleSheet.create({
         backgroundColor: Theme.Color.AlmostWhiteBackground
     },
     appBar: {
-        backgroundColor: Theme.Color.AlmostWhite,
-        borderBottomWidth: 1,
-        borderColor: Theme.Color.AlmostWhiteBorder,
+        backgroundColor: "transparent",
+        //borderBottomWidth: 1,
+        //borderColor: Theme.Color.AlmostWhiteBorder,
         ...Platform.select({
             ios: {},
             android: {
@@ -76,6 +73,17 @@ const styles = StyleSheet.create({
     },
     appBarContent: {
         marginBottom: 18
+    },
+    appBarActionAddMuTag: {
+        // Minor adjustments to icon needed to center it.
+        // NOTE: Use a background color temporarily to help center the icon.
+        paddingBottom: 2
+    },
+    appBarActionSignOut: {
+        // Minor adjustments to icon needed to center it.
+        // NOTE: Use a background color temporarily to help center the icon.
+        paddingLeft: 3,
+        paddingBottom: 2
     },
     triangle: {
         width: 0,
@@ -114,19 +122,37 @@ const styles = StyleSheet.create({
         //paddingVertical: 8,
         marginHorizontal: Scale(8),
         marginTop: Scale(12),
-        backgroundColor: Theme.Color.AlmostWhite,
+        backgroundColor: "white",
         borderWidth: 1,
         borderColor: Theme.Color.AlmostWhiteBorder
     },
     cardSubtitle: {
         color: "gray"
     },
-    iconView: {
+    cardIconView: {
         backgroundColor: Theme.Color.PrimaryBlue,
         marginLeft: 4
     },
+    cardIconButton: {
+        paddingRight: 4
+    },
     cardTitleText: {
         marginLeft: 8
+    },
+    cardContent: {
+        paddingHorizontal: 20
+    },
+    cardAddressView: {
+        marginLeft: 58,
+        marginTop: -7,
+        flexDirection: "row"
+    },
+    cardAddressIcon: {
+        marginRight: 2
+    },
+    cardAddressText: {
+        color: "gray",
+        fontSize: 12
     },
     activityModal: {
         alignSelf: "center",
@@ -134,12 +160,6 @@ const styles = StyleSheet.create({
         height: 80,
         borderRadius: 40,
         backgroundColor: Theme.Color.AlmostWhite
-    },
-    cardContent: {
-        marginLeft: 63,
-        marginTop: -8,
-        color: "gray",
-        fontSize: 12
     }
 });
 
@@ -205,7 +225,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         {...leftProps}
                         icon="radar"
                         color="white"
-                        style={styles.iconView}
+                        style={styles.cardIconView}
                     />
                 )}
                 right={(rightProps: any): ReactElement => (
@@ -216,6 +236,8 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                             <IconButton
                                 {...rightProps}
                                 icon="dots-vertical"
+                                color={Theme.Color.DarkGrey}
+                                style={styles.cardIconButton}
                                 onPress={showMenu}
                             />
                         }
@@ -230,15 +252,18 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                 titleStyle={styles.cardTitleText}
                 subtitleStyle={styles.cardTitleText}
             />
-            <Card.Content>
-                <Text style={styles.cardContent}>
+            <Card.Content style={styles.cardContent}>
+                <View style={styles.cardAddressView}>
                     <Icon
                         name="map-marker"
-                        size={12}
+                        size={14}
                         color={Theme.Color.PrimaryBlue}
+                        style={styles.cardAddressIcon}
                     />
-                    {` ${props.viewData.address}`}
-                </Text>
+                    <Text style={styles.cardAddressText}>
+                        {props.viewData.address}
+                    </Text>
+                </View>
             </Card.Content>
         </Card>
     );
@@ -335,12 +360,16 @@ const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
                 />
                 <Appbar.Action
                     icon="plus-circle-outline"
+                    color={Theme.Color.DarkGrey}
+                    style={styles.appBarActionAddMuTag}
                     onPress={(): void => {
                         props.addMuTagService.startAddingNewMuTag();
                     }}
                 />
                 <Appbar.Action
                     icon="logout"
+                    color={Theme.Color.DarkGrey}
+                    style={styles.appBarActionSignOut}
                     onPress={(): void => setShowSignOutDialog(true)}
                 />
             </Appbar.Header>

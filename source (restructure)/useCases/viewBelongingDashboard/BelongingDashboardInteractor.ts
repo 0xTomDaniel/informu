@@ -25,17 +25,13 @@ export default class BelongingDashboardInteractor {
     }
 
     async open(): Promise<void> {
+        await this.subscribeToAccountMuTagChanges();
         const muTags = await this.muTagRepoLocal.getAll();
-
-        await this.subscribeToMuTagChanges(muTags);
-
         if (muTags.size === 0) {
             this.belongingDashboardOutput.showNone();
             return;
         }
-
         const belongings: DashboardBelonging[] = [];
-
         muTags.forEach((muTag): void => {
             belongings.push({
                 uid: muTag.uid,
@@ -44,16 +40,16 @@ export default class BelongingDashboardInteractor {
                 lastSeen: muTag.lastSeen
             });
         });
-
         this.belongingDashboardOutput.showAll(belongings);
+        muTags.forEach((muTag): void => {
+            this.updateDashboardOnSafetyStatusChange(muTag);
+            this.updateDashboardOnAddressChange(muTag);
+        });
     }
 
-    private async subscribeToMuTagChanges(
-        muTags: Set<ProvisionedMuTag>
-    ): Promise<void> {
+    private async subscribeToAccountMuTagChanges(): Promise<void> {
         const account = await this.accountRepoLocal.get();
         account.muTagsChange.subscribe((change): void => {
-            debugger;
             if (change.insertion != null) {
                 this.muTagRepoLocal
                     .getByUid(change.insertion)
@@ -77,11 +73,6 @@ export default class BelongingDashboardInteractor {
                 this.belongingDashboardOutput.remove(change.deletion);
             }
         });
-
-        muTags.forEach((muTag): void => {
-            this.updateDashboardOnSafetyStatusChange(muTag);
-            this.updateDashboardOnAddressChange(muTag);
-        });
     }
 
     private updateDashboardOnSafetyStatusChange(muTag: ProvisionedMuTag): void {
@@ -104,10 +95,6 @@ export default class BelongingDashboardInteractor {
     }
 
     private addressOutput(address: Address | undefined): string | undefined {
-        //DEBUG
-        console.log(
-            `address.route: ${address?.route}, address.locality: ${address?.locality}, address.administrativeAreaLevel1: ${address?.administrativeAreaLevel1}`
-        );
         return address == null
             ? undefined
             : `${address.route}, ${address.locality}, ${address.administrativeAreaLevel1}`;

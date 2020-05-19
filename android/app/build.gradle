@@ -205,6 +205,11 @@ android {
 }
 
 dependencies {
+    // Fixes java.lang.NoClassDefFoundError: com.google.android.gms.location.LocationServices
+    // after installing Mapbox.
+    //
+    implementation 'com.google.android.gms:play-services-location:17.0.0'
+
     implementation project(':react-native-ble-plx')
     implementation fileTree(dir: "libs", include: ["*.jar"])
     implementation "com.facebook.react:react-native:+"  // From node_modules
