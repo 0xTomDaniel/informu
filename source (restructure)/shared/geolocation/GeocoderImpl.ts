@@ -1,6 +1,6 @@
 import { Geocoder } from "./LocationMonitor";
 import * as RNGeocoder from "react-native-geocoding";
-import { Address } from "../LocationMonitorPort";
+import { Address } from "../../useCases/updateBelongingsLocation/LocationMonitorPort";
 
 enum ReverseGeocodeStatus {
     Ok = "OK",

@@ -19,7 +19,7 @@ import LocationMonitor, {
     Geolocation,
     GeolocationEvent,
     Geocoder
-} from "./infrastructure/LocationMonitor";
+} from "../../shared/geolocation/LocationMonitor";
 import { EventSubscription } from "@mauron85/react-native-background-geolocation";
 import { take } from "rxjs/operators";
 import { Address } from "./LocationMonitorPort";

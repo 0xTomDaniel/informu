@@ -1,4 +1,5 @@
 import { Observable } from "rxjs";
+import { GeolocationOptions } from "../../shared/geolocation/LocationMonitor";
 
 export interface Address {
     formattedAddress: string;
@@ -20,4 +21,5 @@ export interface Location {
 
 export default interface LocationMonitorPort {
     location: Observable<Location>;
+    configure(options: GeolocationOptions): Promise<void>;
 }

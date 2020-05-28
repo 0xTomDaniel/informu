@@ -58,7 +58,6 @@ import { LoginService } from "./source/Core/Application/LoginService";
 import AccountRegistrationService from "./source/Core/Application/AccountRegistrationService";
 import NewAccountFactoryImpl from "./source/Core/Domain/NewAccountFactoryImpl";
 import MuTagDevices from "./source (restructure)/shared/muTagDevices/MuTagDevices";
-//import BluetoothImplRnBleManager from "./source (restructure)/shared/muTagDevices/BluetoothImplRnBleManager";
 import MuTagDevicesPortAddMuTag from "./source (restructure)/useCases/addMuTag/MuTagDevicesPort";
 import MuTagDevicesPortRemoveMuTag from "./source (restructure)/useCases/removeMuTag/MuTagDevicesPort";
 import Bluetooth from "./source (restructure)/shared/muTagDevices/Bluetooth";
@@ -70,20 +69,21 @@ import EventTracker, {
 import BelongingsLocationInteractor, {
     BelongingsLocation
 } from "./source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
-import LocationMonitorPort from "./source (restructure)/useCases/updateBelongingsLocation/LocationMonitorPort";
 import LocationMonitor, {
     Geocoder as LmGeocoder,
     Geolocation
-} from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/LocationMonitor";
-import GeocoderImpl from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/GeocoderImpl";
+} from "./source (restructure)/shared/geolocation/LocationMonitor";
+import GeocoderImpl from "./source (restructure)/shared/geolocation/GeocoderImpl";
 import Geocoder from "react-native-geocoding";
-import GeolocationImpl from "./source (restructure)/useCases/updateBelongingsLocation/infrastructure/GeolocationImpl";
+import GeolocationImpl from "./source (restructure)/shared/geolocation/GeolocationImpl";
 import BelongingMapView from "./source (restructure)/useCases/viewBelongingMap/presentation/BelongingMapView";
 import BelongingMapViewModel from "./source (restructure)/useCases/viewBelongingMap/presentation/BelongingMapViewModel";
 import BelongingMapInteractor, {
     BelongingMapInteractorImpl
 } from "./source (restructure)/useCases/viewBelongingMap/BelongingMapInteractor";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import AdjustGeolocationInteractor from "./source (restructure)/useCases/adjustGeolocation/AdjustGeolocationInteractor";
+import AppStateMonitor from "./source (restructure)/shared/appState/AppStateMonitor";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -124,8 +124,11 @@ export class Dependencies {
     geocodingApiKey: string;
     geocoderImpl: LmGeocoder;
     geoLocation: Geolocation;
-    locationMonitor: LocationMonitorPort;
+    locationMonitor: LocationMonitor;
     belongingsLocationInteractor: BelongingsLocation;
+    appStateMonitor: AppStateMonitor;
+    adjustGeolocationInteractor: AdjustGeolocationInteractor;
+    //adjustGeolocationInteractorDebug: AdjustGeolocationInteractorDebug;
     sessionService: SessionService;
     loginViewModel: LoginViewModel;
     loginPresenter: LoginPresenter;
@@ -222,6 +225,14 @@ export class Dependencies {
             this.locationMonitor,
             this.muTagRepoLocal
         );
+        this.appStateMonitor = new AppStateMonitor();
+        this.adjustGeolocationInteractor = new AdjustGeolocationInteractor(
+            this.appStateMonitor,
+            this.locationMonitor
+        );
+        /*this.adjustGeolocationInteractorDebug = new AdjustGeolocationInteractorDebug(
+            this.locationMonitor
+        );*/
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
         this.loginViewModel = new LoginViewModel();
         this.loginPresenter = new LoginPresenter(this.loginViewModel);
@@ -346,6 +357,14 @@ export class Dependencies {
             this.locationMonitor,
             this.muTagRepoLocal
         );
+        this.appStateMonitor = new AppStateMonitor();
+        this.adjustGeolocationInteractor = new AdjustGeolocationInteractor(
+            this.appStateMonitor,
+            this.locationMonitor
+        );
+        /*this.adjustGeolocationInteractorDebug = new AdjustGeolocationInteractorDebug(
+            this.locationMonitor
+        );*/
         this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
         this.newAccountFactory = new NewAccountFactoryImpl();
         this.accountRegistrationService = new AccountRegistrationService(
@@ -506,10 +525,44 @@ const MapStack = createStackNavigator(
     }
 );
 
+/*const DebugStack = createStackNavigator(
+    {
+        Debug: {
+            screen: (props: NavigationScreenProps): ReactElement => (
+                <AdjustGeolocationViewDebug
+                    adjustGeolocationInteractorDebug={
+                        dependencies.adjustGeolocationInteractorDebug
+                    }
+                    {...props}
+                />
+            )
+        }
+    },
+    {
+        defaultNavigationOptions: {
+            header: null
+        },
+        navigationOptions: {
+            tabBarIcon: ({ tintColor, focused }): ReactElement => (
+                <Icon
+                    name="bug"
+                    size={24}
+                    color={
+                        focused
+                            ? Theme.Color.SecondaryBlue
+                            : tintColor ?? undefined
+                    }
+                />
+            )
+        }
+    }
+);*/
+
 const AppStack = createMaterialBottomTabNavigator(
     {
         Home: { screen: HomeStack },
         Map: { screen: MapStack }
+        //Debug: { screen: DebugStack }
     },
     {
         defaultNavigationOptions: {

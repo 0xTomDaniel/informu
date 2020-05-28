@@ -14,7 +14,7 @@ import BelongingMapViewModel, {
 import MapboxGL, { SymbolLayerStyle } from "@react-native-mapbox-gl/maps";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { FeatureCollection, Point } from "geojson";
-import { IconButton, FAB } from "react-native-paper";
+import { FAB } from "react-native-paper";
 
 const styles = StyleSheet.create({
     safeAreaView: {
