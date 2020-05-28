@@ -5,6 +5,11 @@ import { take } from "rxjs/operators";
 import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Logger from "../../shared/metaLanguage/Logger";
+import {
+    GeolocationOptions,
+    GeolocationAccuracy,
+    LocationProvider
+} from "../../shared/geolocation/LocationMonitor";
 
 export interface BelongingsLocation {
     start(): Promise<void>;
@@ -15,6 +20,21 @@ export default class BelongingsLocationInteractor
     implements BelongingsLocation {
     private accountMuTagsChangeSubscription?: Subscription;
     private readonly accountRepoLocal: AccountRepositoryLocal;
+    private readonly defaultLocationMonitorOptions: GeolocationOptions = {
+        activitiesInterval: 10000,
+        desiredAccuracy: GeolocationAccuracy.Medium,
+        fastestInterval: 5000,
+        interval: 10000,
+        locationProvider: LocationProvider.Activity,
+        //notificationIconColor: string,
+        //notificationIconLarge: string,
+        //notificationIconSmall: string,
+        notificationText: "Keeping Mu tag location up-to-date.",
+        notificationTitle: "Mu Tag Tracking",
+        stopOnTerminate: false,
+        startForeground: true,
+        startOnBoot: true
+    };
     private readonly locationMonitor: LocationMonitorPort;
     private locationSubscription?: Subscription;
     private readonly muTagDetectionSubscriptions = new Map<
@@ -31,6 +51,8 @@ export default class BelongingsLocationInteractor
         this.accountRepoLocal = accountRepoLocal;
         this.locationMonitor = locationMonitor;
         this.muTagRepoLocal = muTagRepoLocal;
+
+        this.locationMonitor.configure(this.defaultLocationMonitorOptions);
     }
 
     async start(): Promise<void> {
