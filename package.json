@@ -1,6 +1,6 @@
 {
   "name": "MuTagReactNative",
-  "version": "v0.3.0-rc.1",
+  "version": "v0.4.0-rc.1",
   "private": true,
   "scripts": {
     "start": "react-native start",
