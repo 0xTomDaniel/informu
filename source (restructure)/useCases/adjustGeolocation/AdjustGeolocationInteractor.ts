@@ -13,7 +13,7 @@ export default class AdjustGeolocationInteractor {
         activitiesInterval: 10000,
         desiredAccuracy: GeolocationAccuracy.Medium,
         fastestInterval: 5000,
-        interval: 10000,
+        interval: 20000,
         locationProvider: LocationProvider.Activity
     };
     private readonly foregroundLocationConfiguration: GeolocationOptions = {
