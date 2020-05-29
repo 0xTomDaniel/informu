@@ -1,10 +1,11 @@
-import LocationMonitorPort, {
+import UpdateBelongingsLocationMonitorPort, {
     Location as PortLocation,
     Address
-} from "../LocationMonitorPort";
+} from "../../useCases/updateBelongingsLocation/LocationMonitorPort";
 import { fromEventPattern, defer } from "rxjs";
 import { finalize, publishReplay, refCount, concatMap } from "rxjs/operators";
-import Logger from "../../../shared/metaLanguage/Logger";
+import Logger from "../metaLanguage/Logger";
+import AdjustGeolocationLocationMonitorPort from "../../useCases/adjustGeolocation/LocationMonitorPort";
 
 export enum GeolocationEvent {
     Authorization = "authorization",
@@ -19,13 +20,26 @@ export enum GeolocationAccuracy {
     Passive
 }
 
+export enum LocationProvider {
+    DistanceFilter,
+    Activity,
+    Raw
+}
+
 export interface GeolocationOptions {
+    activitiesInterval?: number;
     desiredAccuracy?: GeolocationAccuracy;
     distanceFilter?: number;
+    fastestInterval?: number;
     interval?: number;
+    locationProvider?: LocationProvider;
+    notificationIconColor?: string;
+    notificationIconLarge?: string;
+    notificationIconSmall?: string;
     notificationText?: string;
     notificationTitle?: string;
     stopOnTerminate?: boolean;
+    startForeground?: boolean;
     startOnBoot?: boolean;
     stationaryRadius?: number;
 }
@@ -65,7 +79,10 @@ export interface Geocoder {
     ): Promise<Address | undefined>;
 }
 
-export default class LocationMonitor implements LocationMonitorPort {
+export default class LocationMonitor
+    implements
+        UpdateBelongingsLocationMonitorPort,
+        AdjustGeolocationLocationMonitorPort {
     private readonly geocoder: Geocoder;
     private readonly geoLocation: Geolocation;
     private geoLocationStarted = false;
@@ -88,6 +105,10 @@ export default class LocationMonitor implements LocationMonitorPort {
     constructor(geocoder: Geocoder, geoLocation: Geolocation) {
         this.geocoder = geocoder;
         this.geoLocation = geoLocation;
+    }
+
+    async configure(options: GeolocationOptions): Promise<void> {
+        await this.geoLocation.configure(options);
     }
 
     private startGeoLocation(): void {

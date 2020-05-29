@@ -120,12 +120,18 @@ interface SafetyStatus {
     readonly isSafe: boolean;
     readonly lastSeen: Date;
 }
+export interface Location {
+    latitude: number;
+    longitude: number;
+}
 
 interface AccessorValue {
     readonly didEnterRegion: Subject<void>;
     readonly isSafe: BehaviorSubject<boolean>;
     readonly lastSeen: BehaviorSubject<Date>;
     readonly recentAddress: BehaviorSubject<Address | undefined>;
+    readonly recentLatitude: BehaviorSubject<number>;
+    readonly recentLongitude: BehaviorSubject<number>;
 }
 
 export default class ProvisionedMuTag extends MuTag {
@@ -158,8 +164,18 @@ export default class ProvisionedMuTag extends MuTag {
     private set _recentAddress(newValue: Address | undefined) {
         this._accessorValue.recentAddress.next(newValue);
     }
-    private _recentLatitude: number;
-    private _recentLongitude: number;
+    private get _recentLatitude(): number {
+        return this._accessorValue.recentLatitude.value;
+    }
+    private set _recentLatitude(newValue: number) {
+        this._accessorValue.recentLatitude.next(newValue);
+    }
+    private get _recentLongitude(): number {
+        return this._accessorValue.recentLongitude.value;
+    }
+    private set _recentLongitude(newValue: number) {
+        this._accessorValue.recentLongitude.next(newValue);
+    }
     private _txPower: number;
     protected readonly _uid: string;
 
@@ -177,16 +193,30 @@ export default class ProvisionedMuTag extends MuTag {
 
     readonly didEnterRegion: Observable<void>;
 
-    get name(): string {
-        return this._name;
-    }
-
     get isSafe(): boolean {
         return this._isSafe;
     }
 
     get lastSeen(): Date {
         return this._lastSeen;
+    }
+
+    get location(): Observable<Location> {
+        return combineLatest(
+            this._accessorValue.recentLatitude,
+            this._accessorValue.recentLongitude
+        ).pipe(
+            map(
+                ([latitude, longitude]): Location => ({
+                    latitude: latitude,
+                    longitude: longitude
+                })
+            )
+        );
+    }
+
+    get name(): string {
+        return this._name;
     }
 
     get safetyStatus(): Observable<SafetyStatus> {
@@ -226,15 +256,15 @@ export default class ProvisionedMuTag extends MuTag {
         this._modelNumber = muTagData._modelNumber;
         this._muTagNumber = muTagData._muTagNumber;
         this._name = muTagData._name;
-        this._recentLatitude = muTagData._recentLatitude;
-        this._recentLongitude = muTagData._recentLongitude;
         this._txPower = muTagData._txPower;
         this._uid = muTagData._uid;
         this._accessorValue = {
             didEnterRegion: new Subject<void>(),
             isSafe: new BehaviorSubject(muTagData._isSafe),
             lastSeen: new BehaviorSubject(muTagData._lastSeen),
-            recentAddress: new BehaviorSubject(muTagData._recentAddress)
+            recentAddress: new BehaviorSubject(muTagData._recentAddress),
+            recentLatitude: new BehaviorSubject(muTagData._recentLatitude),
+            recentLongitude: new BehaviorSubject(muTagData._recentLongitude)
         };
         this.didEnterRegion = this._accessorValue.didEnterRegion.asObservable();
     }
@@ -293,7 +323,9 @@ export default class ProvisionedMuTag extends MuTag {
                     {
                         _isSafe: value._isSafe,
                         _lastSeen: value._lastSeen,
-                        _recentAddress: value._recentAddress
+                        _recentAddress: value._recentAddress,
+                        _recentLatitude: value._recentLatitude,
+                        _recentLongitude: value._recentLongitude
                     },
                     value
                 );

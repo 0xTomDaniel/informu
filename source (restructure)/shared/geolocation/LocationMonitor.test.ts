@@ -2,10 +2,12 @@ import LocationMonitor, {
     Geolocation,
     GeolocationEvent,
     Subscription as EventSubscription,
-    Geocoder
+    Geocoder,
+    GeolocationOptions,
+    GeolocationAccuracy
 } from "./LocationMonitor";
 import { v4 as uuidV4 } from "uuid";
-import { Location } from "../LocationMonitorPort";
+import { Location } from "../../useCases/updateBelongingsLocation/LocationMonitorPort";
 import { take } from "rxjs/operators";
 
 const GeocoderMock = jest.fn<Geocoder, any>(
@@ -173,4 +175,16 @@ it("geolocation starts once when there are subscribers and stops once when there
     });
     expect(geoLocationMock.start).toHaveBeenCalledTimes(1);
     expect(geoLocationMock.stop).toHaveBeenCalledTimes(1);
+});
+
+it("configures geolocation tracking", async (): Promise<void> => {
+    const options: GeolocationOptions = {
+        desiredAccuracy: GeolocationAccuracy.High,
+        distanceFilter: 0,
+        interval: 1000,
+        stationaryRadius: 0
+    };
+    locationMonitor.configure(options);
+    expect(geoLocationMock.configure).toHaveBeenCalledTimes(1);
+    expect(geoLocationMock.configure).toHaveBeenLastCalledWith(options);
 });

@@ -25,7 +25,9 @@ export default class Logger {
 
     log(message: any, report = false, toConsole = true): void {
         if (toConsole) {
-            console.log(JSON.stringify(message));
+            console.log(
+                JSON.stringify(message, Object.getOwnPropertyNames(message))
+            );
         }
         if (report) {
             this.eventTracker.log(message);
@@ -34,7 +36,9 @@ export default class Logger {
 
     warn(message: any, report = false, toConsole = true): void {
         if (toConsole) {
-            console.warn(JSON.stringify(message));
+            console.warn(
+                JSON.stringify(message, Object.getOwnPropertyNames(message))
+            );
         }
         if (report) {
             this.eventTracker.warn(message);
@@ -43,7 +47,9 @@ export default class Logger {
 
     error(message: any, report = false, toConsole = true): void {
         if (toConsole) {
-            console.error(JSON.stringify(message));
+            console.error(
+                JSON.stringify(message, Object.getOwnPropertyNames(message))
+            );
         }
         if (report) {
             this.eventTracker.error(message);
