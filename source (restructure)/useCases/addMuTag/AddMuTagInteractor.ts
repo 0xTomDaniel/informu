@@ -1,7 +1,8 @@
 import AddMuTagOutputPort from "./AddMuTagOutputPort";
 import MuTagDevicesPort, {
     TxPowerSetting,
-    UnprovisionedMuTag
+    UnprovisionedMuTag,
+    AdvertisingIntervalSetting
 } from "./MuTagDevicesPort";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import Percent from "../../shared/metaLanguage/Percent";
@@ -279,6 +280,13 @@ export default class AddMuTagInteractor {
                                 TxPowerSetting["+6 dBm"],
                                 accountNumber,
                                 beaconId
+                            )
+                            .then(() =>
+                                this.muTagDevices.changeAdvertisingInterval(
+                                    AdvertisingIntervalSetting["852 ms"],
+                                    accountNumber,
+                                    beaconId
+                                )
                             )
                             .finally(() =>
                                 this.muTagDevices.disconnectFromProvisionedMuTag(

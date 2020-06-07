@@ -1,7 +1,8 @@
 import MuTagDevicesPortAddMuTag, {
     UnprovisionedMuTag,
     MuTagDeviceId,
-    TxPowerSetting
+    TxPowerSetting,
+    AdvertisingIntervalSetting
 } from "../../useCases/addMuTag/MuTagDevicesPort";
 import MuTagDevicesPortRemoveMuTag from "../../useCases/removeMuTag/MuTagDevicesPort";
 import Bluetooth, { Peripheral, PeripheralId, ScanMode } from "./Bluetooth";
@@ -221,6 +222,28 @@ export default class MuTagDevices
                 this.bluetooth.disconnect(muTagPeripheralId)
             )
             .catch(e => console.warn(e));
+    }
+
+    async changeAdvertisingInterval(
+        interval: AdvertisingIntervalSetting,
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): Promise<void> {
+        const muTagProvisionId = MuTagDevices.getMuTagProvisionIdFrom(
+            accountNumber,
+            beaconId
+        );
+        const timeout = this.defaultTimeout;
+        const muTagPeripheralId = await this.getProvisionedMuTagPeripheralId(
+            muTagProvisionId,
+            timeout
+        );
+        const intervalHex = Hexadecimal.fromString(`0${interval}`);
+        await this.writeCharacteristic(
+            muTagPeripheralId,
+            MuTagBLEGATT.MuTagConfiguration.AdvertisingInterval,
+            intervalHex
+        );
     }
 
     async changeTxPower(

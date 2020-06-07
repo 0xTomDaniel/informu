@@ -373,6 +373,17 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // Then
         //
+        it("should set advertising interval to 0x01 (1285ms)", (): void => {
+            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
+                8,
+                discoveredPeripheral.id,
+                MuTagBLEGATT.MuTagConfiguration.AdvertisingInterval,
+                Hexadecimal.fromString("03")
+            );
+        });
+
+        // Then
+        //
         it("should show the remaining Mu tag setup screens", (): void => {
             expect(didShowMuTagFinalSetupScreen).toBe(true);
         });

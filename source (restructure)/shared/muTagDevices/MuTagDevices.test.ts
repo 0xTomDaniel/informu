@@ -10,7 +10,12 @@ import Percent from "../metaLanguage/Percent";
 import { Observable, Subscriber, Subscription } from "rxjs";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
 import { BeaconId } from "../../../source/Core/Domain/ProvisionedMuTag";
-import { UnprovisionedMuTag } from "../../useCases/addMuTag/MuTagDevicesPort";
+import {
+    UnprovisionedMuTag,
+    AdvertisingIntervalSetting
+} from "../../useCases/addMuTag/MuTagDevicesPort";
+import { MuTagBLEGATT } from "./MuTagBLEGATT/MuTagBLEGATT";
+import Hexadecimal from "../metaLanguage/Hexadecimal";
 
 let discoveredPeripheralSubscriber: Subscriber<Peripheral>;
 const discoveredPeripheral = new Observable<Peripheral>(subscriber => {
@@ -146,6 +151,20 @@ test("successfully provisions previously found Mu tag", async (): Promise<
         unprovisionedMuTag01.id,
         accountNumber,
         beaconId
+    );
+});
+
+test("successfully changes advertising interval", async (): Promise<void> => {
+    await muTagDevices.changeAdvertisingInterval(
+        AdvertisingIntervalSetting["852 ms"],
+        accountNumber,
+        beaconId
+    );
+    expect(bluetoothMock.write).toHaveBeenNthCalledWith(
+        7,
+        unprovisionedMuTag01.id,
+        MuTagBLEGATT.MuTagConfiguration.AdvertisingInterval,
+        Hexadecimal.fromString("03")
     );
 });
 

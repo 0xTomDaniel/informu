@@ -143,7 +143,7 @@ describe("Geolocation tracking adjusts automatically", (): void => {
                 activitiesInterval: 10000,
                 desiredAccuracy: GeolocationAccuracy.Medium,
                 fastestInterval: 5000,
-                interval: 10000,
+                interval: 20000,
                 locationProvider: LocationProvider.Activity
             };
             expect(locationMonitorMock.configure).toHaveBeenLastCalledWith(
