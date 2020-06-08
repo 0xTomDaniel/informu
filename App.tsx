@@ -477,7 +477,7 @@ const HomeStack = createStackNavigator(
         defaultNavigationOptions: {
             header: null
         },
-        navigationOptions: {
+        navigationOptions: ({ navigation }) => ({
             tabBarIcon: ({ tintColor, focused }): ReactElement => (
                 <Icon
                     name="view-dashboard"
@@ -488,8 +488,9 @@ const HomeStack = createStackNavigator(
                             : tintColor ?? undefined
                     }
                 />
-            )
-        }
+            ),
+            tabBarVisible: navigation.state.index === 0
+        })
     }
 );
 
