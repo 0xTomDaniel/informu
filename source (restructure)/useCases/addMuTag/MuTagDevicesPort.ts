@@ -19,6 +19,20 @@ export enum TxPowerSetting {
     "-20 dBm"
 }
 
+export enum AdvertisingIntervalSetting {
+    "1,285 ms" = 1,
+    "1,022 ms",
+    "852 ms",
+    "760 ms",
+    "546 ms",
+    "417 ms",
+    "318 ms",
+    "211 ms",
+    "152 ms",
+    "100 ms",
+    "200 ms"
+}
+
 export default interface MuTagDevicesPort {
     readonly unprovisionedMuTag: Observable<UnprovisionedMuTag>;
 
@@ -48,6 +62,11 @@ export default interface MuTagDevicesPort {
     ): void;
     changeTxPower(
         txPower: TxPowerSetting,
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): Promise<void>;
+    changeAdvertisingInterval(
+        interval: AdvertisingIntervalSetting,
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
     ): Promise<void>;
