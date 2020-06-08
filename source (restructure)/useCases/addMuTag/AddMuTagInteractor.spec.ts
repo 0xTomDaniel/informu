@@ -373,7 +373,7 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // Then
         //
-        it("should set advertising interval to 0x01 (1285ms)", (): void => {
+        it("should set advertising interval to 0x03 (852ms)", (): void => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 8,
                 discoveredPeripheral.id,
