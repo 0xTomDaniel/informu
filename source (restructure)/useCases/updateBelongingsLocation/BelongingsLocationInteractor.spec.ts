@@ -186,9 +186,14 @@ describe("Location of belongings continuously updates", (): void => {
         it("should update belonging location to user's current location", async (): Promise<
             void
         > => {
-            expect.assertions(1);
+            expect.assertions(2);
             expect(belonging.address.pipe(take(1)).toPromise()).resolves.toBe(
                 firstLocationUpdateAddress
+            );
+            expect(databaseMock.set).toHaveBeenNthCalledWith(
+                3,
+                `muTags/${belongingUid}`,
+                belonging.serialize()
             );
         });
     });
@@ -232,9 +237,13 @@ describe("Location of belongings continuously updates", (): void => {
         it("should not update belonging location to user's current location", async (): Promise<
             void
         > => {
-            expect.assertions(1);
+            expect.assertions(2);
             expect(belonging.address.pipe(take(1)).toPromise()).resolves.toBe(
                 firstLocationUpdateAddress
+            );
+            expect(databaseMock.set).toHaveBeenLastCalledWith(
+                `muTags/${belongingUid}`,
+                belonging.serialize()
             );
         });
     });
@@ -252,6 +261,8 @@ describe("Location of belongings continuously updates", (): void => {
     };
 
     describe("Scenario 3: Belonging comes into range", (): void => {
+        const belongingDetected = new Date();
+
         beforeAll(
             async (): Promise<void> => {
                 (geocoderMock.reverseGeocode as jest.Mock).mockResolvedValueOnce(
@@ -270,7 +281,7 @@ describe("Location of belongings continuously updates", (): void => {
 
                 // When belonging comes into range
                 //
-                belonging.userDidDetect(new Date());
+                belonging.userDidDetect(belongingDetected);
             }
         );
 
@@ -283,9 +294,14 @@ describe("Location of belongings continuously updates", (): void => {
         it("should update belonging location to user's current location", async (): Promise<
             void
         > => {
-            expect.assertions(1);
+            expect.assertions(2);
             expect(belonging.address.pipe(take(1)).toPromise()).resolves.toBe(
                 locationUpdateThreeAddress
+            );
+            expect(databaseMock.set).toHaveBeenNthCalledWith(
+                2,
+                `muTags/${belongingUid}`,
+                belonging.serialize()
             );
         });
     });
@@ -344,10 +360,15 @@ describe("Location of belongings continuously updates", (): void => {
         it("should update belonging location to user's current location", async (): Promise<
             void
         > => {
-            expect.assertions(1);
+            expect.assertions(2);
             expect(
                 newBelonging.address.pipe(take(1)).toPromise()
             ).resolves.toBe(locationUpdateThreeAddress);
+            expect(databaseMock.set).toHaveBeenNthCalledWith(
+                2,
+                `muTags/${newBelongingUid}`,
+                newBelonging.serialize()
+            );
         });
 
         // When belonging goes out of range and comes back in range
@@ -357,6 +378,7 @@ describe("Location of belongings continuously updates", (): void => {
         it("should update belonging location to user's current location a second time", async (): Promise<
             void
         > => {
+            debugger;
             newBelonging.userDidExitRegion();
             const locationUpdateFour = {
                 latitude: 39.80963962521709,
@@ -379,10 +401,15 @@ describe("Location of belongings continuously updates", (): void => {
                 locationEventSubscription.triggerEvent(locationUpdateFour);
             });
             newBelonging.userDidDetect(new Date());
-            expect.assertions(1);
+            expect.assertions(2);
             expect(
                 newBelonging.address.pipe(take(1)).toPromise()
             ).resolves.toBe(locationUpdateFourAddress);
+            expect(databaseMock.set).toHaveBeenNthCalledWith(
+                3,
+                `muTags/${newBelongingUid}`,
+                newBelonging.serialize()
+            );
         });
 
         // When user location changes
@@ -412,10 +439,15 @@ describe("Location of belongings continuously updates", (): void => {
                     .subscribe(undefined, undefined, () => resolve());
                 locationEventSubscription.triggerEvent(locationUpdateFive);
             });
-            expect.assertions(1);
+            expect.assertions(2);
             expect(
                 newBelonging.address.pipe(take(1)).toPromise()
             ).resolves.toBe(locationUpdateFiveAddress);
+            expect(databaseMock.set).toHaveBeenNthCalledWith(
+                5,
+                `muTags/${newBelongingUid}`,
+                newBelonging.serialize()
+            );
         });
     });
 });
