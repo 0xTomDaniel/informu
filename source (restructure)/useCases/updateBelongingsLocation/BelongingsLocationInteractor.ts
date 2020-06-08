@@ -1,4 +1,4 @@
-import LocationMonitorPort from "./LocationMonitorPort";
+import LocationMonitorPort, { Location } from "./LocationMonitorPort";
 import { Subscription } from "rxjs";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import { take } from "rxjs/operators";
@@ -37,6 +37,7 @@ export default class BelongingsLocationInteractor
     };
     private readonly locationMonitor: LocationMonitorPort;
     private locationSubscription?: Subscription;
+    private logger = Logger.instance;
     private readonly muTagDetectionSubscriptions = new Map<
         string,
         Subscription
@@ -61,15 +62,11 @@ export default class BelongingsLocationInteractor
                 this.muTagRepoLocal
                     .getAll()
                     .then(muTags => {
-                        muTags.forEach(muTag => {
-                            muTag.updateLocation(
-                                location.latitude,
-                                location.longitude
-                            );
-                            if (location.address != null) {
-                                muTag.updateAddress(location.address);
-                            }
-                        });
+                        muTags.forEach(muTag =>
+                            this.updateMuTagLocation(muTag, location).catch(e =>
+                                this.logger.warn(e, true)
+                            )
+                        );
                     })
                     .catch(e => Logger.instance.error(e, true));
             }
@@ -83,7 +80,7 @@ export default class BelongingsLocationInteractor
                     this.muTagRepoLocal
                         .getByUid(change.insertion)
                         .then(muTag => {
-                            this.updateMuTagLocation(muTag);
+                            this.updateMuTagWithLocationSubscription(muTag);
                             this.updateMuTagLocationWhenDetected(
                                 new Set([muTag])
                             );
@@ -114,18 +111,30 @@ export default class BelongingsLocationInteractor
     ): void {
         muTags.forEach(muTag => {
             const subscription = muTag.didEnterRegion.subscribe(() =>
-                this.updateMuTagLocation(muTag)
+                this.updateMuTagWithLocationSubscription(muTag)
             );
             this.muTagDetectionSubscriptions.set(muTag.uid, subscription);
         });
     }
 
-    private updateMuTagLocation(muTag: ProvisionedMuTag): void {
-        this.locationMonitor.location.pipe(take(1)).subscribe(location => {
-            muTag.updateLocation(location.latitude, location.longitude);
-            if (location.address != null) {
-                muTag.updateAddress(location.address);
-            }
-        });
+    private updateMuTagWithLocationSubscription(muTag: ProvisionedMuTag): void {
+        this.locationMonitor.location
+            .pipe(take(1))
+            .subscribe(location =>
+                this.updateMuTagLocation(muTag, location).catch(e =>
+                    this.logger.warn(e, true)
+                )
+            );
+    }
+
+    private async updateMuTagLocation(
+        muTag: ProvisionedMuTag,
+        location: Location
+    ): Promise<void> {
+        muTag.updateLocation(location.latitude, location.longitude);
+        if (location.address != null) {
+            muTag.updateAddress(location.address);
+        }
+        await this.muTagRepoLocal.update(muTag);
     }
 }
