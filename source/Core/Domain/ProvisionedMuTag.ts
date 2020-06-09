@@ -289,12 +289,12 @@ export default class ProvisionedMuTag extends MuTag {
     }
 
     userDidDetect(timestamp: Date): void {
+        this._isSafe = true;
+        this._lastSeen = timestamp;
         if (this._didExitRegion) {
             this._didExitRegion = false;
             this._accessorValue.didEnterRegion.next();
         }
-        this._isSafe = true;
-        this._lastSeen = timestamp;
     }
 
     userDidExitRegion(): void {
