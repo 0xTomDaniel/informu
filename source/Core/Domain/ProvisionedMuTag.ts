@@ -126,6 +126,7 @@ export interface Location {
 }
 
 interface AccessorValue {
+    readonly batteryLevel: BehaviorSubject<Percent>;
     readonly didEnterRegion: Subject<void>;
     readonly isSafe: BehaviorSubject<boolean>;
     readonly lastSeen: BehaviorSubject<Date>;
@@ -183,15 +184,19 @@ export default class ProvisionedMuTag extends MuTag {
     // properties observable.
     private readonly _accessorValue: AccessorValue;
 
-    get address(): Observable<Address | undefined> {
-        return this._accessorValue.recentAddress.asObservable();
-    }
+    readonly address: Observable<Address | undefined>;
+
+    readonly batteryLevel: Observable<Percent>;
 
     get beaconId(): BeaconId {
         return this._beaconId;
     }
 
     readonly didEnterRegion: Observable<void>;
+
+    get inRange(): boolean {
+        return !this._didExitRegion;
+    }
 
     get isSafe(): boolean {
         return this._isSafe;
@@ -259,6 +264,7 @@ export default class ProvisionedMuTag extends MuTag {
         this._txPower = muTagData._txPower;
         this._uid = muTagData._uid;
         this._accessorValue = {
+            batteryLevel: new BehaviorSubject(muTagData._batteryLevel),
             didEnterRegion: new Subject<void>(),
             isSafe: new BehaviorSubject(muTagData._isSafe),
             lastSeen: new BehaviorSubject(muTagData._lastSeen),
@@ -266,6 +272,8 @@ export default class ProvisionedMuTag extends MuTag {
             recentLatitude: new BehaviorSubject(muTagData._recentLatitude),
             recentLongitude: new BehaviorSubject(muTagData._recentLongitude)
         };
+        this.address = this._accessorValue.recentAddress.asObservable();
+        this.batteryLevel = this._accessorValue.batteryLevel.asObservable();
         this.didEnterRegion = this._accessorValue.didEnterRegion.asObservable();
     }
 
@@ -278,6 +286,10 @@ export default class ProvisionedMuTag extends MuTag {
             return;
         }
         this._recentAddress = address;
+    }
+
+    updateBatteryLevel(level: Percent): void {
+        this._accessorValue.batteryLevel.next(level);
     }
 
     updateLocation(latitude: number, longitude: number): void {
