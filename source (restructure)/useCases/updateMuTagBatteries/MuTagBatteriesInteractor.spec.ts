@@ -15,7 +15,11 @@ import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import BackgroundTaskPort from "./BackgroundTaskPort";
 import MuTagDevicesPort from "./MuTagDevicesPort";
 import { Millisecond } from "../../shared/metaLanguage/Types";
-import { v4 as uuidV4 } from "uuid";
+import Account, {
+    AccountData,
+    AccountNumber
+} from "../../../source/Core/Domain/Account";
+import { Observable, Subscriber } from "rxjs";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -29,48 +33,12 @@ const EventTrackerMock = jest.fn<EventTracker, any>(
 const eventTrackerMock = new EventTrackerMock();
 Logger.createInstance(eventTrackerMock);
 
-const clock = lolex.install();
-
 const AccountRepositoryLocalMock = jest.fn<AccountRepositoryLocalPort, any>(
     (): AccountRepositoryLocalPort => ({
         get: jest.fn()
     })
 );
 const accountRepositoryLocalMock = new AccountRepositoryLocalMock();
-const BackgroundTaskMock = jest.fn<BackgroundTaskPort, any>(
-    (): BackgroundTaskPort => ({
-        queueRepeatedTask: (
-            minimumInterval: Millisecond,
-            task: () => Promise<void>
-        ): string => {
-            const taskUid = uuidV4();
-            setInterval(task, minimumInterval);
-            return taskUid;
-        }
-    })
-);
-const backgroundTaskMock = new BackgroundTaskMock();
-const MuTagDevicesMock = jest.fn<MuTagDevicesPort, any>(
-    (): MuTagDevicesPort => ({
-        connectToProvisionedMuTag: jest.fn(),
-        disconnectFromProvisionedMuTag: jest.fn(),
-        readBatteryLevel: jest.fn()
-    })
-);
-const muTagDevicesMock = new MuTagDevicesMock();
-const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
-    (): MuTagRepositoryLocalPort => ({
-        getAll: jest.fn(),
-        update: jest.fn()
-    })
-);
-const muTagRepositoryLocalMock = new MuTagRepositoryLocalMock();
-const muTagBatteriesInteractor = new MuTagBatteriesInteractor(
-    accountRepositoryLocalMock,
-    backgroundTaskMock,
-    muTagDevicesMock,
-    muTagRepositoryLocalMock
-);
 const dateNow = new Date();
 const belongingsData: MuTagData[] = [
     {
@@ -124,11 +92,83 @@ const belongingsData: MuTagData[] = [
         _uid: uuidV4()
     }
 ];
+const validAccountData: AccountData = {
+    _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
+    _accountNumber: AccountNumber.fromString("0000000"),
+    _emailAddress: "support+test@informu.io",
+    _name: "Joe Brown",
+    _nextBeaconId: BeaconId.create("2"),
+    _nextSafeZoneNumber: 0,
+    _onboarding: false,
+    _recycledBeaconIds: new Set(),
+    _nextMuTagNumber: 2,
+    _muTags: new Set(belongingsData.map(belonging => belonging._uid))
+};
+const account = new Account({
+    _uid: validAccountData._uid,
+    _accountNumber: validAccountData._accountNumber,
+    _emailAddress: validAccountData._emailAddress,
+    _name: validAccountData._name,
+    _nextBeaconId: validAccountData._nextBeaconId,
+    _nextSafeZoneNumber: validAccountData._nextSafeZoneNumber,
+    _onboarding: validAccountData._onboarding,
+    _recycledBeaconIds: validAccountData._recycledBeaconIds,
+    _nextMuTagNumber: validAccountData._nextMuTagNumber,
+    _muTags: validAccountData._muTags
+});
+(accountRepositoryLocalMock.get as jest.Mock).mockResolvedValue(account);
+const BackgroundTaskMock = jest.fn<BackgroundTaskPort, any>(
+    (): BackgroundTaskPort => ({
+        queueRepeatedTask: (
+            minimumInterval: Millisecond,
+            task: () => void
+        ): string => {
+            const taskUid = uuidV4();
+            setInterval(task, minimumInterval);
+            return taskUid;
+        }
+    })
+);
+const backgroundTaskMock = new BackgroundTaskMock();
+let connectToProvisionedMuTagSubscriber: Subscriber<void>;
+const connectToProvisionedMuTagObservable = new Observable<void>(subscriber => {
+    connectToProvisionedMuTagSubscriber = subscriber;
+    subscriber.next();
+});
+const MuTagDevicesMock = jest.fn<MuTagDevicesPort, any>(
+    (): MuTagDevicesPort => ({
+        connectToProvisionedMuTag: (): Observable<void> =>
+            connectToProvisionedMuTagObservable,
+        disconnectFromProvisionedMuTag: (): void =>
+            connectToProvisionedMuTagSubscriber.complete(),
+        readBatteryLevel: jest.fn()
+    })
+);
+const muTagDevicesMock = new MuTagDevicesMock();
+const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
+    (): MuTagRepositoryLocalPort => ({
+        getAll: jest.fn(),
+        update: jest.fn()
+    })
+);
+const muTagRepositoryLocalMock = new MuTagRepositoryLocalMock();
 const belonging01 = new ProvisionedMuTag(belongingsData[0]);
 const belonging02 = new ProvisionedMuTag(belongingsData[1]);
+(muTagRepositoryLocalMock.getAll as jest.Mock).mockResolvedValue([
+    belonging01,
+    belonging02
+]);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const muTagBatteriesInteractor = new MuTagBatteriesInteractor(
+    accountRepositoryLocalMock,
+    backgroundTaskMock,
+    muTagDevicesMock,
+    muTagRepositoryLocalMock
+);
 const oneSecondInMs = 1000;
 const oneMinuteInMs = oneSecondInMs * 60;
 const oneHourInMs = oneMinuteInMs * 60;
+const clock = lolex.install();
 
 describe("Mu tag battery levels update", (): void => {
     //const belonging02BatteryLevelUpdate01 = new Percent(39);
@@ -138,13 +178,24 @@ describe("Mu tag battery levels update", (): void => {
         // Given that Mu tag is in range
 
         const belonging01BatteryLevelUpdate01 = new Percent(49);
-        const belonging01BatteryLevelUpdate02 = new Percent(48);
+        //const belonging01BatteryLevelUpdate02 = new Percent(48);
+        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockResolvedValueOnce(
+            belonging01BatteryLevelUpdate01
+        );
 
         // When the battery level hasn't been read for 12 hours
         //
         beforeAll(
             async (): Promise<void> => {
-                clock.tick(oneHourInMs * 12 + oneSecondInMs);
+                await muTagBatteriesInteractor.start();
+                await new Promise((resolve, reject) => {
+                    belonging01.batteryLevel.pipe(take(2)).subscribe(
+                        undefined,
+                        e => reject(e),
+                        () => resolve()
+                    );
+                    clock.tick(oneHourInMs * 12);
+                });
             }
         );
 
@@ -162,7 +213,7 @@ describe("Mu tag battery levels update", (): void => {
                 .pipe(take(1))
                 .toPromise()
                 .then(level =>
-                    expect(level).toEqual(belonging01BatteryLevelUpdate02)
+                    expect(level).toEqual(belonging01BatteryLevelUpdate01)
                 );
             await belonging02.batteryLevel
                 .pipe(take(1))

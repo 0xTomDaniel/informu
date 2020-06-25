@@ -1,4 +1,4 @@
-export interface DashboardBelonging {
+/*export interface DashboardBelonging {
     readonly uid: string;
     readonly name: string;
     readonly isSafe: boolean;
@@ -20,4 +20,4 @@ export interface BelongingDashboardOutputPort {
     add(belonging: DashboardBelonging): void;
     update(belonging: DashboardBelongingUpdate): void;
     remove(belongingUID: string): void;
-}
+}*/

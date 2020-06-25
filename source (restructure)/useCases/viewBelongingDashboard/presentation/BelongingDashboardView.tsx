@@ -4,10 +4,6 @@ import {
     Portal,
     Modal,
     ActivityIndicator,
-    Card,
-    Avatar,
-    IconButton,
-    Menu,
     Dialog,
     Paragraph,
     Button
@@ -30,18 +26,17 @@ import React, {
 } from "react";
 import DeviceInfo from "react-native-device-info";
 import LinearGradient from "react-native-linear-gradient";
-import {
-    BelongingDashboardViewModel,
+import BelongingDashboardViewModel, {
+    AppView,
     BelongingViewData
 } from "./BelongingDashboardViewModel";
 import AddMuTagInteractor from "../../addMuTag/AddMuTagInteractor";
-import LogoutService from "../../../../source/Core/Application/LogoutService";
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import SignOutInteractor from "../../signOut/SignOutInteractor";
 import { Images } from "../../../../source/Primary Adapters/Presentation/Images";
-import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
-import BelongingDashboardInteractor from "../BelongingDashboardInteractor";
 import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
+import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
+import BelongingCard from "./BelongingCard";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -118,42 +113,6 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: "center"
     },
-    card: {
-        //paddingVertical: 8,
-        marginHorizontal: Scale(8),
-        marginTop: Scale(12),
-        backgroundColor: "white",
-        borderWidth: 1,
-        borderColor: Theme.Color.AlmostWhiteBorder
-    },
-    cardSubtitle: {
-        color: "gray"
-    },
-    cardIconView: {
-        backgroundColor: Theme.Color.PrimaryBlue,
-        marginLeft: 4
-    },
-    cardIconButton: {
-        paddingRight: 4
-    },
-    cardTitleText: {
-        marginLeft: 8
-    },
-    cardContent: {
-        paddingHorizontal: 20
-    },
-    cardAddressView: {
-        marginLeft: 58,
-        marginTop: -7,
-        flexDirection: "row"
-    },
-    cardAddressIcon: {
-        marginRight: 2
-    },
-    cardAddressText: {
-        color: "gray",
-        fontSize: 12
-    },
     activityModal: {
         alignSelf: "center",
         width: 80,
@@ -187,107 +146,28 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
     );
 };
 
-interface BelongingCardProps {
-    viewData: BelongingViewData;
-    removeMuTagService: RemoveMuTagInteractor;
+interface HomeVcProps extends NavigationScreenProps {
+    belongingDashboardViewModel: BelongingDashboardViewModel;
+    logoutInteractor: SignOutInteractor;
+    addMuTagInteractor: AddMuTagInteractor;
+    removeMuTagInteractor: RemoveMuTagInteractor;
 }
 
-const BelongingCard: FunctionComponent<BelongingCardProps> = (
+const BelongingDashboardView: FunctionComponent<HomeVcProps> = (
     props
 ): ReactElement => {
-    const [isMenuVisible, setIsMenuVisible] = useState(false);
-
-    const showMenu = (): void => setIsMenuVisible(true);
-    const hideMenu = (): void => setIsMenuVisible(false);
-    const removeMuTag = (): void => {
-        hideMenu();
-        props.removeMuTagService.remove(props.viewData.uid).catch((e): void => {
-            console.warn(`removeMuTagService.remove() - error: ${e}`);
-        });
-    };
-
-    return (
-        <Card elevation={0} style={styles.card}>
-            <Card.Title
-                title={props.viewData.name}
-                subtitle={
-                    <Text style={styles.cardSubtitle}>
-                        <Icon
-                            name="checkbox-blank-circle"
-                            size={10}
-                            color={props.viewData.safeStatusColor}
-                        />
-                        {` ${props.viewData.lastSeen}`}
-                    </Text>
-                }
-                left={(leftProps: any): ReactElement => (
-                    <Avatar.Icon
-                        {...leftProps}
-                        icon="radar"
-                        color="white"
-                        style={styles.cardIconView}
-                    />
-                )}
-                right={(rightProps: any): ReactElement => (
-                    <Menu
-                        visible={isMenuVisible}
-                        onDismiss={hideMenu}
-                        anchor={
-                            <IconButton
-                                {...rightProps}
-                                icon="dots-vertical"
-                                color={Theme.Color.DarkGrey}
-                                style={styles.cardIconButton}
-                                onPress={showMenu}
-                            />
-                        }
-                    >
-                        <Menu.Item
-                            title="Remove"
-                            icon="minus-circle-outline"
-                            onPress={removeMuTag}
-                        />
-                    </Menu>
-                )}
-                titleStyle={styles.cardTitleText}
-                subtitleStyle={styles.cardTitleText}
-            />
-            <Card.Content style={styles.cardContent}>
-                <View style={styles.cardAddressView}>
-                    <Icon
-                        name="map-marker"
-                        size={14}
-                        color={Theme.Color.PrimaryBlue}
-                        style={styles.cardAddressIcon}
-                    />
-                    <Text style={styles.cardAddressText}>
-                        {props.viewData.address}
-                    </Text>
-                </View>
-            </Card.Content>
-        </Card>
-    );
-};
-
-interface HomeVCProps extends NavigationScreenProps {
-    homeViewModel: BelongingDashboardViewModel;
-    belongingDashboardInteractor: BelongingDashboardInteractor;
-    logoutService: LogoutService;
-    addMuTagService: AddMuTagInteractor;
-    removeMuTagService: RemoveMuTagInteractor;
-}
-
-const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
-    props
-): ReactElement => {
-    const [state, setState] = useState(props.homeViewModel.state);
+    const [belongings, setBelongings] = useState<BelongingViewData[]>([]);
+    const [showActivityIndicator, setShowActivityIndicator] = useState(true);
+    const [showEmptyDashboard, setShowEmptyDashboard] = useState(true);
+    const [showError, setShowError] = useState<UserErrorViewData | undefined>();
     const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
     const onDismissErrorDialog = (): void => {
-        props.homeViewModel.updateState({
-            errorDescription: "",
-            isErrorVisible: false
-        });
+        setShowError(undefined);
+    };
+
+    const onPressSignOut = (): void => {
+        props.logoutInteractor.logOut();
     };
 
     const requestPermissions = async (): Promise<void> => {
@@ -322,27 +202,51 @@ const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
         }
     };
 
-    useEffect((): (() => void) => {
-        props.homeViewModel.onDidUpdate((newState): void => {
-            setState(newState);
-        });
-        props.homeViewModel.onNavigateToAddMuTag((): boolean =>
-            props.navigation.navigate("AddMuTag")
-        );
-        props.homeViewModel.onShowLogoutComplete((): boolean =>
-            props.navigation.navigate("Login")
-        );
+    useEffect(
+        (): (() => void) =>
+            props.belongingDashboardViewModel.navigateToView.subscribe(view => {
+                switch (view) {
+                    case AppView.AddMuTag:
+                        props.navigation.navigate("AddMuTag");
+                        break;
+                    case AppView.SignIn:
+                        props.navigation.navigate("Login");
+                        break;
+                }
+            }).unsubscribe,
+        [props.belongingDashboardViewModel.navigateToView, props.navigation]
+    );
 
-        return (): void => {
-            props.homeViewModel.onDidUpdate(undefined);
-            props.homeViewModel.onNavigateToAddMuTag(undefined);
-            props.homeViewModel.onShowLogoutComplete(undefined);
-        };
-    });
+    useEffect(
+        (): (() => void) =>
+            props.belongingDashboardViewModel.showActivityIndicator.subscribe(
+                setShowActivityIndicator
+            ).unsubscribe,
+        [props.belongingDashboardViewModel.showActivityIndicator]
+    );
 
-    useEffect((): void => {
-        props.belongingDashboardInteractor.open().catch(e => console.warn(e));
-    }, [props.belongingDashboardInteractor]);
+    useEffect(
+        (): (() => void) =>
+            props.belongingDashboardViewModel.showBelongings.subscribe(
+                setBelongings
+            ).unsubscribe,
+        [props.belongingDashboardViewModel.showBelongings]
+    );
+
+    useEffect(
+        (): (() => void) =>
+            props.belongingDashboardViewModel.showEmptyDashboard.subscribe(
+                setShowEmptyDashboard
+            ).unsubscribe,
+        [props.belongingDashboardViewModel.showEmptyDashboard]
+    );
+
+    useEffect(
+        (): (() => void) =>
+            props.belongingDashboardViewModel.showError.subscribe(setShowError)
+                .unsubscribe,
+        [props.belongingDashboardViewModel.showError]
+    );
 
     useEffect((): void => {
         requestPermissions().catch(e => console.warn(e));
@@ -363,7 +267,7 @@ const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
                     color={Theme.Color.DarkGrey}
                     style={styles.appBarActionAddMuTag}
                     onPress={(): void => {
-                        props.addMuTagService.startAddingNewMuTag();
+                        props.addMuTagInteractor.startAddingNewMuTag();
                     }}
                 />
                 <Appbar.Action
@@ -376,12 +280,12 @@ const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
             <FlatList
                 contentContainerStyle={styles.belongingsContainer}
                 ListEmptyComponent={<BelongingsEmpty />}
-                scrollEnabled={!state.showEmptyBelongings}
-                data={state.belongings}
+                scrollEnabled={!showEmptyDashboard}
+                data={belongings}
                 renderItem={({ item }): ReactElement => (
                     <BelongingCard
                         viewData={item}
-                        removeMuTagService={props.removeMuTagService}
+                        removeMuTagService={props.removeMuTagInteractor}
                     />
                 )}
                 keyExtractor={(item): string => item.uid}
@@ -389,7 +293,7 @@ const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
             <Portal>
                 <Dialog
                     visible={showSignOutDialog}
-                    onDismiss={() => setShowSignOutDialog(false)}
+                    onDismiss={(): void => setShowSignOutDialog(false)}
                 >
                     <Dialog.Content>
                         <Paragraph>
@@ -397,13 +301,12 @@ const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
                         </Paragraph>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setShowSignOutDialog(false)}>
+                        <Button
+                            onPress={(): void => setShowSignOutDialog(false)}
+                        >
                             Cancel
                         </Button>
-                        <Button
-                            mode="contained"
-                            onPress={() => props.logoutService.logOut()}
-                        >
+                        <Button mode="contained" onPress={onPressSignOut}>
                             Sign Out
                         </Button>
                     </Dialog.Actions>
@@ -412,7 +315,7 @@ const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
             <Portal>
                 <Modal
                     dismissable={false}
-                    visible={state.showActivityIndicator}
+                    visible={showActivityIndicator}
                     contentContainerStyle={styles.activityModal}
                 >
                     <ActivityIndicator
@@ -422,13 +325,13 @@ const BelongingDashboardViewController: FunctionComponent<HomeVCProps> = (
                 </Modal>
             </Portal>
             <ErrorDialog
-                message={state.errorDescription}
-                detailMessage={state.detailedErrorDescription}
-                visible={state.isErrorVisible}
+                message={showError?.errorDescription ?? ""}
+                detailMessage={showError?.detailedErrorDescription ?? ""}
+                visible={showError != null}
                 onDismiss={onDismissErrorDialog}
             />
         </SafeAreaView>
     );
 };
 
-export default BelongingDashboardViewController;
+export default BelongingDashboardView;

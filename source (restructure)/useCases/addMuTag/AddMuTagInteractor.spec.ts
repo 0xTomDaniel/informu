@@ -2,7 +2,7 @@ import AddMuTagInteractor from "./AddMuTagInteractor";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import AddMuTagPresenter from "./presentation/AddMuTagPresenter";
-import { BelongingDashboardViewModel } from "../viewBelongingDashboard/presentation/BelongingDashboardViewModel";
+import { BelongingDashboardViewModel } from "../viewBelongingDashboard/presentation/BelongingDashboardViewModel.old";
 import { AddMuTagViewModel } from "./presentation/AddMuTagViewModel";
 import { NameMuTagViewModel } from "./presentation/NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./presentation/MuTagAddingViewModel";

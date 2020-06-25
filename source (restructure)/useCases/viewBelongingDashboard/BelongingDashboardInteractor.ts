@@ -1,25 +1,41 @@
 import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
-import {
-    BelongingDashboardOutputPort,
-    DashboardBelonging
-} from "./BelongingDashboardOutputPort";
 import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
 import ProvisionedMuTag, {
     Address
 } from "../../../source/Core/Domain/ProvisionedMuTag";
 import { skip } from "rxjs/operators";
+import ObjectCollectionUpdate from "../../shared/metaLanguage/ObjectCollectionUpdate";
+import { Observable } from "rxjs";
+import Percent from "../../shared/metaLanguage/Percent";
 
-export default class BelongingDashboardInteractor {
-    private readonly belongingDashboardOutput: BelongingDashboardOutputPort;
+export interface DashboardBelonging {
+    readonly address?: string;
+    readonly batteryLevel: Percent;
+    readonly isSafe: boolean;
+    readonly lastSeen: Date;
+    readonly name: string;
+    readonly uid: string;
+}
+
+export type DashboardBelongingDelta = Partial<DashboardBelonging> & {
+    readonly uid: string;
+};
+
+export default interface BelongingDashboardInteractor {
+    readonly showOnDashboard: Observable<
+        ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
+    >;
+}
+
+export class BelongingDashboardInteractorImpl
+    implements BelongingDashboardInteractor {
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly accountRepoLocal: AccountRepositoryLocal;
 
     constructor(
-        belongingDashboardOutput: BelongingDashboardOutputPort,
         muTagRepoLocal: MuTagRepositoryLocal,
         accountRepoLocal: AccountRepositoryLocal
     ) {
-        this.belongingDashboardOutput = belongingDashboardOutput;
         this.muTagRepoLocal = muTagRepoLocal;
         this.accountRepoLocal = accountRepoLocal;
     }

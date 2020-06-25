@@ -5,7 +5,7 @@ import ProvisionedMuTag, {
 import Logger from "../../shared/metaLanguage/Logger";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import { Subscription, Observable, Subject } from "rxjs";
-import CollectionUpdate from "../../shared/metaLanguage/CollectionUpdate";
+import ObjectCollectionUpdate from "../../shared/metaLanguage/ObjectCollectionUpdate";
 import { take, map } from "rxjs/operators";
 import LifecycleObservable from "../../shared/metaLanguage/LifecycleObservable";
 
@@ -23,7 +23,7 @@ export interface BelongingLocationDelta {
 
 export default interface BelongingMapInteractor {
     showOnMap: Observable<
-        CollectionUpdate<BelongingLocation, BelongingLocationDelta>
+        ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
     >;
 }
 
@@ -40,7 +40,7 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
     private muTagsChangeSubscription: Subscription | undefined;
     readonly showOnMap = LifecycleObservable(
         new Observable<
-            CollectionUpdate<BelongingLocation, BelongingLocationDelta>
+            ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
         >(subscriber => {
             this.showOnMapSubject.subscribe(subscriber);
             // Must copy the array 'belongingLocations' to prevent mutation of
@@ -51,7 +51,7 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
         this.stop.bind(this)
     );
     private readonly showOnMapSubject = new Subject<
-        CollectionUpdate<BelongingLocation, BelongingLocationDelta>
+        ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
     >();
 
     constructor(

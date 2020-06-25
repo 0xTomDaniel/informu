@@ -1,110 +1,203 @@
-import _ from "lodash";
+import BelongingDashboardInteractor, {
+    DashboardBelonging
+} from "../BelongingDashboardInteractor";
+import { Observable, combineLatest, timer, Subject } from "rxjs";
+import {
+    scan,
+    map,
+    publishBehavior,
+    refCount,
+    distinctUntilChanged,
+    share
+} from "rxjs/operators";
+import Percent from "../../../shared/metaLanguage/Percent";
+import { Millisecond } from "../../../shared/metaLanguage/Types";
+import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
+
+export enum BatteryBarLevel {
+    "0%",
+    "10%",
+    "20%",
+    "30%",
+    "40%",
+    "50%",
+    "60%",
+    "70%",
+    "80%",
+    "90%",
+    "100%"
+}
+
+export enum BatteryLevelRange {
+    High,
+    Medium,
+    Low
+}
+
+export enum SafeStatus {
+    InRange,
+    InSafeZone,
+    Unsafe
+}
 
 export interface BelongingViewData {
-    readonly uid: string;
-    readonly name: string;
-    readonly safeStatusColor: string;
-    readonly lastSeen: string;
     readonly address: string;
-}
-
-export interface BelongingViewDataDelta {
+    readonly batteryBarLevel: BatteryBarLevel;
+    readonly batteryLevelRange: BatteryLevelRange;
+    readonly lastSeen: string;
+    readonly name: string;
+    readonly safeStatus: SafeStatus;
     readonly uid: string;
-    readonly name?: string;
-    readonly safeStatusColor?: string;
-    readonly lastSeen?: string;
-    readonly address?: string;
 }
 
-export interface BelongingDashboardState {
-    readonly showEmptyBelongings: boolean;
-    readonly showActivityIndicator: boolean;
-    readonly errorDescription: string;
-    readonly detailedErrorDescription: string;
-    readonly isErrorVisible: boolean;
-    readonly belongings: BelongingViewData[];
+export enum AppView {
+    AddMuTag,
+    SignIn
 }
 
-export interface BelongingDashboardStateDelta {
-    readonly showEmptyBelongings?: boolean;
-    readonly showActivityIndicator?: boolean;
-    readonly errorDescription?: string;
-    readonly detailedErrorDescription?: string;
-    readonly isErrorVisible?: boolean;
-    readonly belongings?: BelongingViewDataDelta[];
-}
+export default class BelongingDashboardViewModel {
+    private static readonly hoursInDay = 24;
+    private static readonly minutesInHour = 60;
+    private static readonly secondsInMinute = 60;
+    private static readonly millisecondsInSecond = 1000;
 
-export class BelongingDashboardViewModel {
-    private _state: BelongingDashboardState = {
-        showEmptyBelongings: true,
-        showActivityIndicator: false,
-        errorDescription: "",
-        detailedErrorDescription: "",
-        isErrorVisible: false,
-        belongings: []
-    };
+    private readonly belongingDashboardInteractor: BelongingDashboardInteractor;
+    private readonly dashboardBelongings: Observable<DashboardBelonging[]>;
+    private readonly lastSeenDisplayUpdateInterval = 15000 as Millisecond;
+    private readonly navigateToViewSubject = new Subject<View>();
+    readonly navigateToView = this.navigateToViewSubject.asObservable();
+    private readonly showActivityIndicatorSubject = new Subject<boolean>();
+    readonly showActivityIndicator = this.showActivityIndicatorSubject.asObservable();
+    readonly showBelongings: Observable<BelongingViewData[]>;
+    readonly showEmptyDashboard: Observable<boolean>;
+    private readonly showErrorSubject = new Subject<UserErrorViewData>();
+    readonly showError = this.showErrorSubject.asObservable();
 
-    get state(): BelongingDashboardState {
-        return this._state;
+    constructor(belongingDashboardInteractor: BelongingDashboardInteractor) {
+        this.belongingDashboardInteractor = belongingDashboardInteractor;
+        this.dashboardBelongings = this.belongingDashboardInteractor.showOnDashboard.pipe(
+            scan(
+                (accumulated, update) => update.applyTo(accumulated),
+                [] as DashboardBelonging[]
+            ),
+            share()
+        );
+        this.showBelongings = combineLatest(
+            this.dashboardBelongings,
+            timer(0, this.lastSeenDisplayUpdateInterval)
+        ).pipe(
+            map(([dashboardBelongings]) =>
+                dashboardBelongings.map(dashboardBelonging =>
+                    BelongingDashboardViewModel.convertToBelongingViewData(
+                        dashboardBelonging
+                    )
+                )
+            ),
+            distinctUntilChanged()
+        );
+        this.showEmptyDashboard = this.dashboardBelongings.pipe(
+            map(belongings => belongings.length === 0),
+            distinctUntilChanged(),
+            publishBehavior(true),
+            refCount()
+        );
     }
 
-    private onDidUpdateCallback?: (newState: BelongingDashboardState) => void;
-    private onNavigateToAddMuTagCallback?: () => void;
-    private onShowLogoutCompleteCallback?: () => void;
+    private static convertToBelongingViewData(
+        dashboardBelonging: DashboardBelonging
+    ): BelongingViewData {
+        return {
+            address: dashboardBelonging.address ?? "no location name found",
+            batteryBarLevel: BelongingDashboardViewModel.getBatteryBarLevel(
+                dashboardBelonging.batteryLevel
+            ),
+            batteryLevelRange: BelongingDashboardViewModel.getBatteryLevelRange(
+                dashboardBelonging.batteryLevel
+            ),
+            lastSeen: BelongingDashboardViewModel.getLastSeenDisplay(
+                dashboardBelonging.lastSeen,
+                dashboardBelonging.isSafe
+            ),
+            name: dashboardBelonging.name,
+            safeStatus: BelongingDashboardViewModel.getSafeStatus(
+                dashboardBelonging.isSafe
+            ),
+            uid: dashboardBelonging.uid
+        };
+    }
 
-    updateState(delta: BelongingDashboardStateDelta): void {
-        const oldState = _.cloneDeep(this._state);
+    private static getBatteryBarLevel(percentage: Percent): BatteryBarLevel {
+        return Math.round(percentage.valueOf() / 10);
+    }
 
-        //DEBUG
-        //console.log(`updateState() - delta: ${JSON.stringify(delta)}`);
-        //console.log(`updateState() - oldState: ${JSON.stringify(oldState)}`);
-
-        _.mergeWith(this._state, delta, (destValue, deltaValue):
-            | any[]
-            | undefined => {
-            if (_.isArray(destValue)) {
-                const merged = _.values(
-                    _.merge(
-                        _.keyBy(destValue, "uid"),
-                        _.keyBy(deltaValue, "uid")
-                    )
-                );
-                return _.intersectionBy(merged, deltaValue, "uid");
-            }
-        });
-
-        if (!_.isEqual(this._state, oldState)) {
-            //DEBUG
-            /*console.log(
-                `updateState() - this._state: ${JSON.stringify(this._state)}`
-            );*/
-
-            this.triggerDidUpdate();
+    private static getBatteryLevelRange(
+        percentage: Percent
+    ): BatteryLevelRange {
+        if (percentage.valueOf() >= 45) {
+            return BatteryLevelRange.High;
+        } else if (percentage.valueOf() >= 25) {
+            return BatteryLevelRange.Medium;
+        } else {
+            return BatteryLevelRange.Low;
         }
     }
 
-    onDidUpdate(callback?: (newState: BelongingDashboardState) => void): void {
-        this.onDidUpdateCallback = callback;
+    private static getSafeStatus(isSafe: boolean): SafeStatus {
+        return isSafe ? SafeStatus.InRange : SafeStatus.Unsafe;
     }
 
-    onNavigateToAddMuTag(callback?: () => void): void {
-        this.onNavigateToAddMuTagCallback = callback;
+    private static getLastSeenDisplay(
+        timestamp: Date,
+        isSafe: boolean | undefined
+    ): string {
+        const now = new Date();
+        const daysSinceLastSeen = this.daysBetween(timestamp, now);
+        const hoursSinceLastSeen = this.hoursBetween(timestamp, now);
+        const minutesSinceLastSeen = this.minutesBetween(timestamp, now);
+
+        if (daysSinceLastSeen >= 7) {
+            return timestamp.toLocaleDateString();
+        } else if (daysSinceLastSeen >= 1) {
+            return `${daysSinceLastSeen}d ago`;
+        } else if (hoursSinceLastSeen >= 1) {
+            return `${hoursSinceLastSeen}h ago`;
+        } else if (minutesSinceLastSeen >= 1) {
+            return `${minutesSinceLastSeen}m ago`;
+        } else if (isSafe != null && !isSafe) {
+            return "Seconds ago";
+        } else {
+            return "Just now";
+        }
     }
 
-    navigateToAddMuTag(): void {
-        this.onNavigateToAddMuTagCallback?.();
+    private static daysBetween(firstDate: Date, secondDate: Date): number {
+        const oneDayInMilliseconds =
+            this.hoursInDay *
+            this.minutesInHour *
+            this.secondsInMinute *
+            this.millisecondsInSecond;
+        const diffInMilliseconds = firstDate.getTime() - secondDate.getTime();
+
+        return Math.floor(Math.abs(diffInMilliseconds / oneDayInMilliseconds));
     }
 
-    onShowLogoutComplete(callback?: () => void): void {
-        this.onShowLogoutCompleteCallback = callback;
+    private static hoursBetween(firstDate: Date, secondDate: Date): number {
+        const oneHourInMilliseconds =
+            this.minutesInHour *
+            this.secondsInMinute *
+            this.millisecondsInSecond;
+        const diffInMilliseconds = firstDate.getTime() - secondDate.getTime();
+
+        return Math.floor(Math.abs(diffInMilliseconds / oneHourInMilliseconds));
     }
 
-    showLogoutComplete(): void {
-        this.onShowLogoutCompleteCallback?.();
-    }
+    private static minutesBetween(firstDate: Date, secondDate: Date): number {
+        const oneMinuteInMilliseconds =
+            this.secondsInMinute * this.millisecondsInSecond;
+        const diffInMilliseconds = firstDate.getTime() - secondDate.getTime();
 
-    private triggerDidUpdate(): void {
-        const newState = _.cloneDeep(this._state);
-        this.onDidUpdateCallback?.(newState);
+        return Math.floor(
+            Math.abs(diffInMilliseconds / oneMinuteInMilliseconds)
+        );
     }
 }

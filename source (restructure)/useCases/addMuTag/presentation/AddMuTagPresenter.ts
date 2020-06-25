@@ -1,5 +1,5 @@
 import AddMuTagOutputPort from "../AddMuTagOutputPort";
-import { BelongingDashboardViewModel } from "../../viewBelongingDashboard/presentation/BelongingDashboardViewModel";
+import { BelongingDashboardViewModel } from "../../viewBelongingDashboard/presentation/BelongingDashboardViewModel.old";
 import { AddMuTagViewModel } from "./AddMuTagViewModel";
 import { NameMuTagViewModel } from "./NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./MuTagAddingViewModel";

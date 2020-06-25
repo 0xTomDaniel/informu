@@ -130,11 +130,6 @@ export default class LocationMonitor
     private async locationWithAddress(
         location: PortLocation
     ): Promise<PortLocation> {
-        //DEBUG
-        console.warn(
-            `locationWithAddress(location: ${JSON.stringify(location)})`
-        );
-
         const locationWithAddress = Object.assign({}, location);
         try {
             locationWithAddress.address = await this.geocoder.reverseGeocode(

@@ -1,13 +1,13 @@
-import LogoutService from "./LogoutService";
-import { LogoutOutput } from "../Ports/LogoutOutput";
-import { Session } from "./SessionService";
+import SignOutInteractor from "./SignOutInteractor";
+import { SignOutOutput } from "./SignOutOutput";
+import { Session } from "../../../source/Core/Application/SessionService";
 
 jest.mock("../../Secondary Adapters/Persistence/DatabaseImplWatermelon");
 jest.mock("./BelongingDetectionService");
 
 describe("user logs out of their account", (): void => {
-    const LogoutOutputMock = jest.fn<LogoutOutput, any>(
-        (): LogoutOutput => ({
+    const LogoutOutputMock = jest.fn<SignOutOutput, any>(
+        (): SignOutOutput => ({
             showBusyIndicator: jest.fn(),
             showLogoutComplete: jest.fn()
         })
@@ -26,7 +26,7 @@ describe("user logs out of their account", (): void => {
 
     const sessionServiceMock = new SessionServiceMock();
     const logoutOutputMock = new LogoutOutputMock();
-    const logoutService = new LogoutService(
+    const logoutService = new SignOutInteractor(
         logoutOutputMock,
         sessionServiceMock
     );

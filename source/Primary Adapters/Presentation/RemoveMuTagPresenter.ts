@@ -1,5 +1,5 @@
 import { RemoveMuTagOutputPort } from "../../../source (restructure)/useCases/removeMuTag/RemoveMuTagOutputPort";
-import { BelongingDashboardViewModel } from "../../../source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel";
+import { BelongingDashboardViewModel } from "../../../source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel.old";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export default class RemoveMuTagPresenter implements RemoveMuTagOutputPort {

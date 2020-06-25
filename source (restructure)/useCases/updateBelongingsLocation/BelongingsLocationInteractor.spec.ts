@@ -378,7 +378,6 @@ describe("Location of belongings continuously updates", (): void => {
         it("should update belonging location to user's current location a second time", async (): Promise<
             void
         > => {
-            debugger;
             newBelonging.userDidExitRegion();
             const locationUpdateFour = {
                 latitude: 39.80963962521709,

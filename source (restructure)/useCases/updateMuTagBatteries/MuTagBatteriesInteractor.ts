@@ -29,10 +29,9 @@ export default class MuTagBatteriesInteractor {
         this.backgroundTask = backgroundTask;
         this.muTagDevices = muTagDevices;
         this.muTagRepoLocal = muTagRepoLocal;
-        this.start();
     }
 
-    private async start(): Promise<void> {
+    async start(): Promise<void> {
         const muTags = await this.muTagRepoLocal.getAll();
         const account = await this.accountRepoLocal.get();
         muTags.forEach(async muTag => {
@@ -46,31 +45,27 @@ export default class MuTagBatteriesInteractor {
         accountNumber: AccountNumber,
         muTag: ProvisionedMuTag
     ): void {
-        this.backgroundTask.queueRepeatedTask(
-            this.batteryReadInterval,
-            async () => {
-                if (!this.isReadyToReadBattery(muTag.uid)) {
-                    return;
-                }
-                if (!muTag.inRange) {
-                    const error = Error(
-                        `Belonging (${muTag.name}) not in range for battery read.`
-                    );
-                    this.logger.warn(error);
-                }
-                try {
-                    const level = await this.readMuTagBattery(
-                        accountNumber,
-                        muTag
-                    );
-                    muTag.updateBatteryLevel(level);
-                    await this.muTagRepoLocal.update(muTag);
-                    this.lastBatteryReadTimestamps.set(muTag.uid, new Date());
-                } catch (e) {
-                    this.logger.warn(e, true);
-                }
+        this.backgroundTask.queueRepeatedTask(this.batteryReadInterval, () => {
+            if (!this.isReadyToReadBattery(muTag.uid)) {
+                return;
             }
-        );
+            if (!muTag.inRange) {
+                const error = Error(
+                    `Belonging (${muTag.name}) not in range for battery read.`
+                );
+                this.logger.warn(error);
+                return;
+            }
+            this.readMuTagBattery(accountNumber, muTag)
+                .then(level => {
+                    muTag.updateBatteryLevel(level);
+                    return this.muTagRepoLocal.update(muTag);
+                })
+                .then(() =>
+                    this.lastBatteryReadTimestamps.set(muTag.uid, new Date())
+                )
+                .catch(e => this.logger.warn(e, true));
+        });
     }
 
     private setupBatteryReadRetries(
@@ -92,7 +87,7 @@ export default class MuTagBatteriesInteractor {
         const lastBatteryReadTime =
             this.lastBatteryReadTimestamps.get(muTagUid)?.getTime() ?? 0;
         const timeSinceLastBatteryRead = timeNow - lastBatteryReadTime;
-        return timeSinceLastBatteryRead > this.batteryReadInterval;
+        return timeSinceLastBatteryRead >= this.batteryReadInterval;
     }
 
     private async readMuTagBattery(

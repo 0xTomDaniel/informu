@@ -22,7 +22,7 @@ import LoadSessionViewController from "./source/Primary Adapters/Presentation/Lo
 import Theme from "./source/Primary Adapters/Presentation/Theme";
 import { AuthenticationFirebase } from "./source/Secondary Adapters/Infrastructure/AuthenticationFirebase";
 import AccountRepoLocalImpl from "./source/Secondary Adapters/Persistence/AccountRepoLocalImpl";
-import BelongingDashboardViewController from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewController";
+import BelongingDashboardView from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardView";
 import { AccountRepoRNFirebase } from "./source/Secondary Adapters/Persistence/AccountRepoRNFirebase";
 import AppViewModel, {
     Screen
@@ -34,7 +34,7 @@ import AddMuTagViewController from "./source (restructure)/useCases/addMuTag/pre
 import { Rssi } from "./source (restructure)/shared/metaLanguage/Types";
 import Percent from "./source (restructure)/shared/metaLanguage/Percent";
 import AddMuTagInteractor from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
-import { BelongingDashboardViewModel } from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel";
+import { BelongingDashboardViewModel } from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel.old";
 import AddMuTagPresenter from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagPresenter";
 import { AddMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewModel";
 import MuTagRepoLocalImpl from "./source/Secondary Adapters/Persistence/MuTagRepoLocalImpl";
@@ -45,7 +45,9 @@ import { MuTagAddingViewModel } from "./source (restructure)/useCases/addMuTag/p
 import MuTagAddingViewController from "./source (restructure)/useCases/addMuTag/presentation/MuTagAddingViewController";
 import LogoutService from "./source/Core/Application/LogoutService";
 import LogoutPresenter from "./source/Primary Adapters/Presentation/LogoutPresenter";
-import BelongingDashboardInteractor from "./source (restructure)/useCases/viewBelongingDashboard/BelongingDashboardInteractor";
+import BelongingDashboardInteractor, {
+    BelongingDashboardInteractorImpl
+} from "./source (restructure)/useCases/viewBelongingDashboard/BelongingDashboardInteractor";
 import BelongingDashboardPresenter from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardPresenter";
 import BelongingDetectionService from "./source/Core/Application/BelongingDetectionService";
 import MuTagMonitorRnbm from "./source/Secondary Adapters/Infrastructure/MuTagMonitorRnbm";
@@ -201,7 +203,7 @@ export class Dependencies {
         this.belongingDashboardPresenter = new BelongingDashboardPresenter(
             this.homeViewModel
         );
-        this.belongingDashboardInteractor = new BelongingDashboardInteractor(
+        this.belongingDashboardInteractor = new BelongingDashboardInteractorImpl(
             this.belongingDashboardPresenter,
             this.muTagRepoLocal,
             this.accountRepoLocal
@@ -334,7 +336,7 @@ export class Dependencies {
         this.belongingDashboardPresenter = new BelongingDashboardPresenter(
             this.homeViewModel
         );
-        this.belongingDashboardInteractor = new BelongingDashboardInteractor(
+        this.belongingDashboardInteractor = new BelongingDashboardInteractorImpl(
             this.belongingDashboardPresenter,
             this.muTagRepoLocal,
             this.accountRepoLocal
@@ -433,7 +435,7 @@ const HomeStack = createStackNavigator(
     {
         Home: {
             screen: (props: NavigationScreenProps): ReactElement => (
-                <BelongingDashboardViewController
+                <BelongingDashboardView
                     homeViewModel={dependencies.homeViewModel}
                     belongingDashboardInteractor={
                         dependencies.belongingDashboardInteractor

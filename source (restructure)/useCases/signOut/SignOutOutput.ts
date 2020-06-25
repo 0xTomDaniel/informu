@@ -1,5 +1,4 @@
-export interface LogoutOutput {
-
+export interface SignOutOutput {
     showBusyIndicator(): void;
     showLogoutComplete(): void;
 }

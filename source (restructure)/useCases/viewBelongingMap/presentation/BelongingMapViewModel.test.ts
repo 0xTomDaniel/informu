@@ -4,10 +4,10 @@ import BelongingMapInteractor, {
     BelongingLocationDelta
 } from "../BelongingMapInteractor";
 import { Subject, Subscription } from "rxjs";
-import CollectionUpdate from "../../../shared/metaLanguage/CollectionUpdate";
+import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectionUpdate";
 
 const belongingMapInteractorShowOnMapSubject = new Subject<
-    CollectionUpdate<BelongingLocation, BelongingLocationDelta>
+    ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
 >();
 const belongingMapInteractorShowOnMap = belongingMapInteractorShowOnMapSubject.asObservable();
 const BelongingMapInteractorMock = jest.fn<BelongingMapInteractor, any>(

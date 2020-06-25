@@ -1,11 +1,11 @@
-import { LogoutOutput } from "../Ports/LogoutOutput";
-import { Session } from "./SessionService";
+import { SignOutOutput } from "./SignOutOutput";
+import { Session } from "../../../source/Core/Application/SessionService";
 
-export default class LogoutService {
-    private readonly logoutOutput: LogoutOutput;
+export default class SignOutInteractor {
+    private readonly logoutOutput: SignOutOutput;
     private readonly sessionService: Session;
 
-    constructor(logoutOutput: LogoutOutput, sessionService: Session) {
+    constructor(logoutOutput: SignOutOutput, sessionService: Session) {
         this.logoutOutput = logoutOutput;
         this.sessionService = sessionService;
     }
