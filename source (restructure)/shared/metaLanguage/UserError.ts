@@ -2,7 +2,7 @@ import Logger from "./Logger";
 
 export interface UserErrorViewData {
     errorDescription: string;
-    detailedErrorDescription: string;
+    detailedErrorDescription?: string;
 }
 
 export interface UserErrorType {
@@ -27,6 +27,16 @@ export default class UserError extends Error {
         this.name = name;
         this.userFriendlyMessage = userFriendlyMessage;
         this.originatingError = originatingError;
+    }
+
+    toViewData(): UserErrorViewData {
+        return {
+            errorDescription: this.userFriendlyMessage,
+            detailedErrorDescription: JSON.stringify(
+                this.originatingError,
+                Object.getOwnPropertyNames(this.originatingError)
+            )
+        };
     }
 
     static create(

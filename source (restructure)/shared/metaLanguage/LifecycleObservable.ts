@@ -10,13 +10,13 @@ import { finalize, shareReplay, mergeMap } from "rxjs/operators";
  *  occurs after there are zero subscribers.
  * @param {Observable<T>} source - source Observable.
  * @param {() => Promise<void>} init - optional initialization callback.
- * @param {() => Promise<void>} init - optional deinitialization callback.
+ * @param {() => void} init - optional deinitialization callback.
  * @returns {Observable<T>}
  */
 const LifecycleObservable = <T>(
     source: Observable<T>,
     init?: () => Promise<void>,
-    deinit?: () => Promise<void>
+    deinit?: () => void
 ): Observable<T> =>
     defer(() => {
         const firstObservable = init != null ? init() : of(undefined);

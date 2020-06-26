@@ -45,7 +45,11 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
             this.showOnMapSubject.subscribe(subscriber);
             // Must copy the array 'belongingLocations' to prevent mutation of
             // original.
-            subscriber.next({ initial: [...this.belongingLocations] });
+            subscriber.next(
+                new ObjectCollectionUpdate({
+                    initial: [...this.belongingLocations]
+                })
+            );
         }),
         this.start.bind(this),
         this.stop.bind(this)
@@ -85,9 +89,11 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                     }
                     this.belongingLocations.splice(index, 1);
                     this.belongingLocationsUidToIndex.delete(change.deletion);
-                    this.showOnMapSubject.next({
-                        removed: [{ index: index }]
-                    });
+                    this.showOnMapSubject.next(
+                        new ObjectCollectionUpdate({
+                            removed: [{ index: index }]
+                        })
+                    );
                     this.locationSubscriptions
                         .get(change.deletion)
                         ?.unsubscribe();
@@ -148,9 +154,11 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                     };
                 });
                 if (!initial) {
-                    this.showOnMapSubject.next({
-                        added: belongingLocations
-                    });
+                    this.showOnMapSubject.next(
+                        new ObjectCollectionUpdate({
+                            added: belongingLocations
+                        })
+                    );
                 }
             })
             .catch(e => this.logger.warn(e, true));
@@ -162,17 +170,19 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
             }
             const subscription = belonging.location.subscribe(
                 location =>
-                    this.showOnMapSubject.next({
-                        changed: [
-                            {
-                                index: index,
-                                elementChange: {
-                                    latitude: location.latitude,
-                                    longitude: location.longitude
+                    this.showOnMapSubject.next(
+                        new ObjectCollectionUpdate({
+                            changed: [
+                                {
+                                    index: index,
+                                    elementChange: {
+                                        latitude: location.latitude,
+                                        longitude: location.longitude
+                                    }
                                 }
-                            }
-                        ]
-                    }),
+                            ]
+                        })
+                    ),
                 error => this.logger.warn(error, true)
             );
             this.locationSubscriptions.set(belonging.uid, subscription);

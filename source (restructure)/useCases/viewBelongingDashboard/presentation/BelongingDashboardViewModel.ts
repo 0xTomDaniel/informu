@@ -1,7 +1,7 @@
 import BelongingDashboardInteractor, {
     DashboardBelonging
 } from "../BelongingDashboardInteractor";
-import { Observable, combineLatest, timer, Subject } from "rxjs";
+import { Observable, combineLatest, timer, Subject, merge } from "rxjs";
 import {
     scan,
     map,
@@ -13,6 +13,7 @@ import {
 import Percent from "../../../shared/metaLanguage/Percent";
 import { Millisecond } from "../../../shared/metaLanguage/Types";
 import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
+import SignOutInteractor from "../../signOut/SignOutInteractor";
 
 export enum BatteryBarLevel {
     "0%",
@@ -64,16 +65,19 @@ export default class BelongingDashboardViewModel {
     private readonly belongingDashboardInteractor: BelongingDashboardInteractor;
     private readonly dashboardBelongings: Observable<DashboardBelonging[]>;
     private readonly lastSeenDisplayUpdateInterval = 15000 as Millisecond;
-    private readonly navigateToViewSubject = new Subject<View>();
+    private readonly navigateToViewSubject = new Subject<AppView>();
     readonly navigateToView = this.navigateToViewSubject.asObservable();
     private readonly showActivityIndicatorSubject = new Subject<boolean>();
     readonly showActivityIndicator = this.showActivityIndicatorSubject.asObservable();
     readonly showBelongings: Observable<BelongingViewData[]>;
     readonly showEmptyDashboard: Observable<boolean>;
-    private readonly showErrorSubject = new Subject<UserErrorViewData>();
-    readonly showError = this.showErrorSubject.asObservable();
+    readonly showError: Observable<UserErrorViewData>;
+    private readonly signOutInteractor: SignOutInteractor;
 
-    constructor(belongingDashboardInteractor: BelongingDashboardInteractor) {
+    constructor(
+        belongingDashboardInteractor: BelongingDashboardInteractor,
+        signOutInteractor: SignOutInteractor
+    ) {
         this.belongingDashboardInteractor = belongingDashboardInteractor;
         this.dashboardBelongings = this.belongingDashboardInteractor.showOnDashboard.pipe(
             scan(
@@ -101,6 +105,14 @@ export default class BelongingDashboardViewModel {
             publishBehavior(true),
             refCount()
         );
+        this.signOutInteractor = signOutInteractor;
+        this.showError = merge(this.signOutInteractor.showError).pipe(
+            map(e => e.toViewData())
+        );
+    }
+
+    signOut(): void {
+        this.signOutInteractor.signOut();
     }
 
     private static convertToBelongingViewData(

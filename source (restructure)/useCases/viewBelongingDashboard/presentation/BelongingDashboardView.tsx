@@ -31,7 +31,6 @@ import BelongingDashboardViewModel, {
     BelongingViewData
 } from "./BelongingDashboardViewModel";
 import AddMuTagInteractor from "../../addMuTag/AddMuTagInteractor";
-import SignOutInteractor from "../../signOut/SignOutInteractor";
 import { Images } from "../../../../source/Primary Adapters/Presentation/Images";
 import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
@@ -148,7 +147,6 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
 
 interface HomeVcProps extends NavigationScreenProps {
     belongingDashboardViewModel: BelongingDashboardViewModel;
-    logoutInteractor: SignOutInteractor;
     addMuTagInteractor: AddMuTagInteractor;
     removeMuTagInteractor: RemoveMuTagInteractor;
 }
@@ -164,10 +162,6 @@ const BelongingDashboardView: FunctionComponent<HomeVcProps> = (
 
     const onDismissErrorDialog = (): void => {
         setShowError(undefined);
-    };
-
-    const onPressSignOut = (): void => {
-        props.logoutInteractor.logOut();
     };
 
     const requestPermissions = async (): Promise<void> => {
@@ -306,7 +300,10 @@ const BelongingDashboardView: FunctionComponent<HomeVcProps> = (
                         >
                             Cancel
                         </Button>
-                        <Button mode="contained" onPress={onPressSignOut}>
+                        <Button
+                            mode="contained"
+                            onPress={props.belongingDashboardViewModel.signOut}
+                        >
                             Sign Out
                         </Button>
                     </Dialog.Actions>

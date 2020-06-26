@@ -14,6 +14,13 @@ interface ObjectCollectionChange<D> {
     readonly elementChange: D;
 }
 
+interface ObjectCollectionUpdateData<E extends object, D extends Partial<E>> {
+    readonly initial?: E[];
+    readonly added?: ObjectCollectionAddition<E>[];
+    readonly removed?: ObjectCollectionRemoval[];
+    readonly changed?: ObjectCollectionChange<D>[];
+}
+
 export default class ObjectCollectionUpdate<
     E extends object,
     D extends Partial<E>
@@ -41,15 +48,10 @@ export default class ObjectCollectionUpdate<
     readonly removed?: ObjectCollectionRemoval[];
     readonly changed?: ObjectCollectionChange<D>[];
 
-    constructor(
-        initial?: E[],
-        added?: ObjectCollectionAddition<E>[],
-        removed?: ObjectCollectionRemoval[],
-        changed?: ObjectCollectionChange<D>[]
-    ) {
-        this.initial = initial;
-        this.added = added;
-        this.removed = removed;
-        this.changed = changed;
+    constructor(updateData: ObjectCollectionUpdateData<E, D>) {
+        this.initial = updateData.initial;
+        this.added = updateData.added;
+        this.removed = updateData.removed;
+        this.changed = updateData.changed;
     }
 }

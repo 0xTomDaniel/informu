@@ -10,21 +10,38 @@ import BelongingDashboardInteractor, {
     DashboardBelongingDelta
 } from "../BelongingDashboardInteractor";
 import { take, skip } from "rxjs/operators";
-import { Subject } from "rxjs";
+import { Subject, Observable } from "rxjs";
 import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectionUpdate";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { fakeSchedulers } from "rxjs-marbles/jest";
+import SignOutInteractor from "../../signOut/SignOutInteractor";
+import UserError from "../../../shared/metaLanguage/UserError";
 
 const showOnDashboardSubject = new Subject<
     ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
 >();
-const BelongingMapInteractorMock = jest.fn<BelongingDashboardInteractor, any>(
+const BelongingDashboardInteractorMock = jest.fn<
+    BelongingDashboardInteractor,
+    any
+>(
     (): BelongingDashboardInteractor => ({
         showOnDashboard: showOnDashboardSubject
     })
 );
-const belongingMapInteractorMock = BelongingMapInteractorMock();
-const viewModel = new BelongingDashboardViewModel(belongingMapInteractorMock);
+const belongingDashboardInteractorMock = BelongingDashboardInteractorMock();
+const SignOutInteractorMock = jest.fn<SignOutInteractor, any>(
+    (): SignOutInteractor => ({
+        showActivityIndicator: new Observable<boolean>(),
+        showError: new Observable<UserError>(),
+        showSignIn: new Observable<void>(),
+        signOut: jest.fn()
+    })
+);
+const signOutInteractorMock = SignOutInteractorMock();
+const viewModel = new BelongingDashboardViewModel(
+    belongingDashboardInteractorMock,
+    signOutInteractorMock
+);
 const belongings: DashboardBelonging[] = [
     {
         address: "Lamar St, Arvada, CO",

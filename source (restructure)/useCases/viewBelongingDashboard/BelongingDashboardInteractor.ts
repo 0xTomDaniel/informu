@@ -5,8 +5,9 @@ import ProvisionedMuTag, {
 } from "../../../source/Core/Domain/ProvisionedMuTag";
 import { skip } from "rxjs/operators";
 import ObjectCollectionUpdate from "../../shared/metaLanguage/ObjectCollectionUpdate";
-import { Observable } from "rxjs";
+import { Observable, Subject } from "rxjs";
 import Percent from "../../shared/metaLanguage/Percent";
+import UserError from "../../shared/metaLanguage/UserError";
 
 export interface DashboardBelonging {
     readonly address?: string;
@@ -22,6 +23,7 @@ export type DashboardBelongingDelta = Partial<DashboardBelonging> & {
 };
 
 export default interface BelongingDashboardInteractor {
+    readonly showError: Observable<UserError>;
     readonly showOnDashboard: Observable<
         ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
     >;
@@ -29,8 +31,14 @@ export default interface BelongingDashboardInteractor {
 
 export class BelongingDashboardInteractorImpl
     implements BelongingDashboardInteractor {
-    private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly accountRepoLocal: AccountRepositoryLocal;
+    private readonly muTagRepoLocal: MuTagRepositoryLocal;
+    private readonly showErrorSubject = new Subject<UserError>();
+    readonly showError = this.showErrorSubject.asObservable();
+    private readonly showOnDashboardSubject = new Subject<
+        ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
+    >();
+    readonly showOnDashboard = this.showOnDashboardSubject.asObservable();
 
     constructor(
         muTagRepoLocal: MuTagRepositoryLocal,
@@ -50,13 +58,15 @@ export class BelongingDashboardInteractorImpl
         const belongings: DashboardBelonging[] = [];
         muTags.forEach((muTag): void => {
             belongings.push({
+                batteryLevel: muTag,
                 uid: muTag.uid,
                 name: muTag.name,
                 isSafe: muTag.isSafe,
                 lastSeen: muTag.lastSeen
             });
         });
-        this.belongingDashboardOutput.showAll(belongings);
+        //this.belongingDashboardOutput.showAll(belongings);
+        this.showOnDashboardSubject.next(new ObjectCollectionUpdate());
         muTags.forEach((muTag): void => {
             this.updateDashboardOnSafetyStatusChange(muTag);
             this.updateDashboardOnAddressChange(muTag);
@@ -76,7 +86,10 @@ export class BelongingDashboardInteractorImpl
                             isSafe: muTag.isSafe,
                             lastSeen: muTag.lastSeen
                         };
-                        this.belongingDashboardOutput.add(dashboardBelonging);
+                        //this.belongingDashboardOutput.add(dashboardBelonging);
+                        this.showOnDashboardSubject.next(
+                            new ObjectCollectionUpdate()
+                        );
                         this.updateDashboardOnSafetyStatusChange(muTag);
                         this.updateDashboardOnAddressChange(muTag);
                     })
@@ -86,27 +99,30 @@ export class BelongingDashboardInteractorImpl
             }
 
             if (change.deletion != null) {
-                this.belongingDashboardOutput.remove(change.deletion);
+                //this.belongingDashboardOutput.remove(change.deletion);
+                this.showOnDashboardSubject.next(new ObjectCollectionUpdate());
             }
         });
     }
 
     private updateDashboardOnSafetyStatusChange(muTag: ProvisionedMuTag): void {
         muTag.safetyStatus.pipe(skip(1)).subscribe((update): void => {
-            this.belongingDashboardOutput.update({
+            /*this.belongingDashboardOutput.update({
                 uid: muTag.uid,
                 isSafe: update.isSafe,
                 lastSeen: update.lastSeen
-            });
+            });*/
+            this.showOnDashboardSubject.next(new ObjectCollectionUpdate());
         });
     }
 
     private updateDashboardOnAddressChange(muTag: ProvisionedMuTag): void {
         muTag.address.subscribe(addressUpdate => {
-            this.belongingDashboardOutput.update({
+            /*this.belongingDashboardOutput.update({
                 uid: muTag.uid,
                 address: this.addressOutput(addressUpdate)
-            });
+            });*/
+            this.showOnDashboardSubject.next(new ObjectCollectionUpdate());
         });
     }
 

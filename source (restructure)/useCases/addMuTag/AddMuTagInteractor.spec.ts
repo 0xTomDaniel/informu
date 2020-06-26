@@ -2,7 +2,7 @@ import AddMuTagInteractor from "./AddMuTagInteractor";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import AddMuTagPresenter from "./presentation/AddMuTagPresenter";
-import { BelongingDashboardViewModel } from "../viewBelongingDashboard/presentation/BelongingDashboardViewModel.old";
+import BelongingDashboardViewModel from "../viewBelongingDashboard/presentation/BelongingDashboardViewModel";
 import { AddMuTagViewModel } from "./presentation/AddMuTagViewModel";
 import { NameMuTagViewModel } from "./presentation/NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./presentation/MuTagAddingViewModel";
@@ -28,7 +28,6 @@ import Account, {
 import { MuTagBLEGATT } from "../../shared/muTagDevices/MuTagBLEGATT/MuTagBLEGATT";
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
-import lolex from "lolex";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
 
@@ -481,8 +480,6 @@ describe("Mu tag user adds Mu tag", (): void => {
         let didShowActivityIndicatorTimes = 0;
         let didNavigateToHomeScreen = false;
 
-        let clock: lolex.InstalledClock<lolex.Clock>;
-
         // When
         //
         beforeAll(
@@ -510,7 +507,7 @@ describe("Mu tag user adds Mu tag", (): void => {
                 nameMuTagViewModel.onNavigateToHomeScreen(
                     () => (didNavigateToHomeScreen = true)
                 );
-                clock = lolex.install();
+                jest.useFakeTimers("modern");
                 // user requests to add unprovisioned Mu tag
                 startAddingNewMuTagPromise = addMuTagInteractor.startAddingNewMuTag();
             }
@@ -518,7 +515,7 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         afterAll((): void => {
             jest.clearAllMocks();
-            clock.uninstall();
+            jest.useRealTimers();
         });
 
         // Then
@@ -548,7 +545,7 @@ describe("Mu tag user adds Mu tag", (): void => {
         // Then
         //
         it("should show Mu tag connecting screen", async (): Promise<void> => {
-            clock.tick(userEntersMuTagNameAfter);
+            jest.advanceTimersByTime(userEntersMuTagNameAfter);
             await addMuTagInteractor.setMuTagName(newMuTagName);
             expect(didNavigateToMuTagConnecting).toBe(true);
         });
@@ -558,7 +555,9 @@ describe("Mu tag user adds Mu tag", (): void => {
         // Then
         //
         it("should check the Mu tag battery level", async (): Promise<void> => {
-            clock.tick(muTagConnectsAfter - userEntersMuTagNameAfter);
+            jest.advanceTimersByTime(
+                muTagConnectsAfter - userEntersMuTagNameAfter
+            );
             await startAddingNewMuTagPromise;
 
             expect(bluetoothMock.read).toHaveBeenNthCalledWith(
