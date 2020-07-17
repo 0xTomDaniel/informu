@@ -1,6 +1,6 @@
 import _ from "lodash";
 
-interface ObjectCollectionAddition<E> {
+export interface ObjectCollectionAddition<E> {
     readonly index: number;
     readonly element: E;
 }
@@ -9,7 +9,7 @@ interface ObjectCollectionRemoval {
     readonly index: number;
 }
 
-interface ObjectCollectionChange<D> {
+export interface ObjectCollectionChange<D> {
     readonly index: number;
     readonly elementChange: D;
 }

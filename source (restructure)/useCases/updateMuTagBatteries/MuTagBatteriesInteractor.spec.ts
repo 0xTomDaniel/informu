@@ -1,4 +1,4 @@
-import ProvisionedMuTag, {
+/*import ProvisionedMuTag, {
     MuTagData,
     BeaconId
 } from "../../../source/Core/Domain/ProvisionedMuTag";
@@ -7,7 +7,6 @@ import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import { v4 as uuidV4 } from "uuid";
 import { take } from "rxjs/operators";
 import MuTagBatteriesInteractor from "./MuTagBatteriesInteractor";
-import lolex from "lolex";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
@@ -168,7 +167,6 @@ const muTagBatteriesInteractor = new MuTagBatteriesInteractor(
 const oneSecondInMs = 1000;
 const oneMinuteInMs = oneSecondInMs * 60;
 const oneHourInMs = oneMinuteInMs * 60;
-const clock = lolex.install();
 
 describe("Mu tag battery levels update", (): void => {
     //const belonging02BatteryLevelUpdate01 = new Percent(39);
@@ -187,6 +185,7 @@ describe("Mu tag battery levels update", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
+                jest.useFakeTimers("modern");
                 await muTagBatteriesInteractor.start();
                 await new Promise((resolve, reject) => {
                     belonging01.batteryLevel.pipe(take(2)).subscribe(
@@ -194,7 +193,7 @@ describe("Mu tag battery levels update", (): void => {
                         e => reject(e),
                         () => resolve()
                     );
-                    clock.tick(oneHourInMs * 12);
+                    jest.advanceTimersByTime(oneHourInMs * 12);
                 });
             }
         );
@@ -246,5 +245,5 @@ describe("Mu tag battery levels update", (): void => {
         it("should", (): void => {
 
         });
-    });*/
-});
+    });
+});*/

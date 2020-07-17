@@ -1,4 +1,4 @@
-import SignOutInteractor from "./SignOutInteractor";
+import { SignOutInteractorImpl } from "./SignOutInteractor";
 import { Session } from "../../../source/Core/Application/SessionService";
 import { take, skip } from "rxjs/operators";
 
@@ -14,7 +14,7 @@ const SessionServiceMock = jest.fn<Session, any>(
 );
 const sessionServiceMock = new SessionServiceMock();
 (sessionServiceMock.end as jest.Mock).mockResolvedValue(undefined);
-const signOutInteractor = new SignOutInteractor(sessionServiceMock);
+const signOutInteractor = new SignOutInteractorImpl(sessionServiceMock);
 
 describe("user signs out of their account", (): void => {
     describe("user is signed in", (): void => {

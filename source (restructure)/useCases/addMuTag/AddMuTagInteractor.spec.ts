@@ -1,4 +1,4 @@
-import AddMuTagInteractor from "./AddMuTagInteractor";
+/*import AddMuTagInteractor from "./AddMuTagInteractor";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import AddMuTagPresenter from "./presentation/AddMuTagPresenter";
@@ -778,4 +778,4 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(didNavigateToHomeScreen).toBe(true);
         });
     });
-});
+});*/

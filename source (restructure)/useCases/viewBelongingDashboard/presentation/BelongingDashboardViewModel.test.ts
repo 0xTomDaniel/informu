@@ -17,6 +17,7 @@ import { fakeSchedulers } from "rxjs-marbles/jest";
 import SignOutInteractor from "../../signOut/SignOutInteractor";
 import UserError from "../../../shared/metaLanguage/UserError";
 
+const showErrorSubject = new Subject<UserError>();
 const showOnDashboardSubject = new Subject<
     ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
 >();
@@ -25,6 +26,7 @@ const BelongingDashboardInteractorMock = jest.fn<
     any
 >(
     (): BelongingDashboardInteractor => ({
+        showError: showErrorSubject,
         showOnDashboard: showOnDashboardSubject
     })
 );
@@ -112,7 +114,9 @@ test("show all current belongings", async (): Promise<void> => {
             e => reject(e),
             () => resolveWhenAllCompleted()
         );
-        showOnDashboardSubject.next(new ObjectCollectionUpdate(belongings));
+        showOnDashboardSubject.next(
+            new ObjectCollectionUpdate({ initial: belongings })
+        );
     });
 });
 
@@ -156,14 +160,18 @@ test("show added belonging", async (): Promise<void> => {
             e => reject(e),
             () => resolveWhenAllCompleted()
         );
-        showOnDashboardSubject.next(new ObjectCollectionUpdate(belongings));
         showOnDashboardSubject.next(
-            new ObjectCollectionUpdate(undefined, [
-                {
-                    index: 1,
-                    element: newBelonging
-                }
-            ])
+            new ObjectCollectionUpdate({ initial: belongings })
+        );
+        showOnDashboardSubject.next(
+            new ObjectCollectionUpdate({
+                added: [
+                    {
+                        index: 1,
+                        element: newBelonging
+                    }
+                ]
+            })
         );
         belongings.splice(1, 0, newBelonging);
     });
@@ -209,14 +217,18 @@ test("show belonging update", async (): Promise<void> => {
             e => reject(e),
             () => resolveWhenAllCompleted()
         );
-        showOnDashboardSubject.next(new ObjectCollectionUpdate(belongings));
         showOnDashboardSubject.next(
-            new ObjectCollectionUpdate(undefined, undefined, undefined, [
-                {
-                    index: 2,
-                    elementChange: belongingChange
-                }
-            ])
+            new ObjectCollectionUpdate({ initial: belongings })
+        );
+        showOnDashboardSubject.next(
+            new ObjectCollectionUpdate({
+                changed: [
+                    {
+                        index: 2,
+                        elementChange: belongingChange
+                    }
+                ]
+            })
         );
         belongings.splice(2, 1, {
             address: belongingChange.address!,
@@ -248,7 +260,9 @@ test(
             e => console.error(e)
         );
 
-        showOnDashboardSubject.next(new ObjectCollectionUpdate(belongings));
+        showOnDashboardSubject.next(
+            new ObjectCollectionUpdate({ initial: belongings })
+        );
 
         advance(oneSecondInMS * 5);
         expect(belongingsViewDataUpdate[1].lastSeen).toEqual("Just now");
@@ -293,27 +307,31 @@ test(
 
         const newLastSeenDate = new Date();
         showOnDashboardSubject.next(
-            new ObjectCollectionUpdate(undefined, undefined, undefined, [
-                {
-                    index: 1,
-                    elementChange: {
-                        uid: "randomUUID03",
-                        isSafe: true,
-                        lastSeen: newLastSeenDate
+            new ObjectCollectionUpdate({
+                changed: [
+                    {
+                        index: 1,
+                        elementChange: {
+                            uid: "randomUUID03",
+                            isSafe: true,
+                            lastSeen: newLastSeenDate
+                        }
                     }
-                }
-            ])
+                ]
+            })
         );
         showOnDashboardSubject.next(
-            new ObjectCollectionUpdate(undefined, undefined, undefined, [
-                {
-                    index: 1,
-                    elementChange: {
-                        uid: "randomUUID03",
-                        isSafe: false
+            new ObjectCollectionUpdate({
+                changed: [
+                    {
+                        index: 1,
+                        elementChange: {
+                            uid: "randomUUID03",
+                            isSafe: false
+                        }
                     }
-                }
-            ])
+                ]
+            })
         );
         belongings.splice(1, 1, {
             address: belongings[1].address,
@@ -368,13 +386,17 @@ test(
             shouldShow => expect(shouldShow).toBe(false),
             e => console.error(e)
         );
-        showOnDashboardSubject.next(new ObjectCollectionUpdate(belongings));
         showOnDashboardSubject.next(
-            new ObjectCollectionUpdate(undefined, undefined, [
-                {
-                    index: 2
-                }
-            ])
+            new ObjectCollectionUpdate({ initial: belongings })
+        );
+        showOnDashboardSubject.next(
+            new ObjectCollectionUpdate({
+                removed: [
+                    {
+                        index: 2
+                    }
+                ]
+            })
         );
 
         advance(1);
