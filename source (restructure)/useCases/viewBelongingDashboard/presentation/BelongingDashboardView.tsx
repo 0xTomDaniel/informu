@@ -30,9 +30,7 @@ import BelongingDashboardViewModel, {
     AppView,
     BelongingViewData
 } from "./BelongingDashboardViewModel";
-import AddMuTagInteractor from "../../addMuTag/AddMuTagInteractor";
 import { Images } from "../../../../source/Primary Adapters/Presentation/Images";
-import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
 import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
 import BelongingCard from "./BelongingCard";
@@ -121,7 +119,7 @@ const styles = StyleSheet.create({
     }
 });
 
-const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
+const BelongingsEmpty: FunctionComponent = (): ReactElement => {
     return (
         <View style={styles.belongingsEmpty}>
             <View>
@@ -147,8 +145,6 @@ const BelongingsEmpty: FunctionComponent<object> = (): ReactElement => {
 
 interface HomeVcProps extends NavigationScreenProps {
     belongingDashboardViewModel: BelongingDashboardViewModel;
-    addMuTagInteractor: AddMuTagInteractor;
-    removeMuTagInteractor: RemoveMuTagInteractor;
 }
 
 const BelongingDashboardView: FunctionComponent<HomeVcProps> = (
@@ -242,7 +238,7 @@ const BelongingDashboardView: FunctionComponent<HomeVcProps> = (
         [props.belongingDashboardViewModel.showError]
     );
 
-    useEffect((): void => {
+    useEffect(() => {
         requestPermissions().catch(e => console.warn(e));
     }, []);
 
@@ -260,15 +256,13 @@ const BelongingDashboardView: FunctionComponent<HomeVcProps> = (
                     icon="plus-circle-outline"
                     color={Theme.Color.DarkGrey}
                     style={styles.appBarActionAddMuTag}
-                    onPress={(): void => {
-                        props.addMuTagInteractor.startAddingNewMuTag();
-                    }}
+                    onPress={props.belongingDashboardViewModel.addMuTag}
                 />
                 <Appbar.Action
                     icon="logout"
                     color={Theme.Color.DarkGrey}
                     style={styles.appBarActionSignOut}
-                    onPress={(): void => setShowSignOutDialog(true)}
+                    onPress={() => setShowSignOutDialog(true)}
                 />
             </Appbar.Header>
             <FlatList
@@ -278,8 +272,10 @@ const BelongingDashboardView: FunctionComponent<HomeVcProps> = (
                 data={belongings}
                 renderItem={({ item }): ReactElement => (
                     <BelongingCard
+                        onRemoveMuTag={
+                            props.belongingDashboardViewModel.removeMuTag
+                        }
                         viewData={item}
-                        removeMuTagService={props.removeMuTagInteractor}
                     />
                 )}
                 keyExtractor={(item): string => item.uid}

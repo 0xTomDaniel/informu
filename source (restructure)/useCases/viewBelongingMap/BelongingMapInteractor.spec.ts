@@ -1,4 +1,4 @@
-/*import ProvisionedMuTag, {
+import ProvisionedMuTag, {
     MuTagData,
     BeaconId
 } from "../../../source/Core/Domain/ProvisionedMuTag";
@@ -145,13 +145,13 @@ describe("View belongings location on map", (): void => {
         beforeAll(
             async (): Promise<void> => {
                 await new Promise((resolve, reject) => {
-                    belongingMapInteractor.showOnMap.pipe(take(1)).subscribe(
-                        update => {
-                            showBelongingLocations = update.initial;
-                        },
-                        e => reject(e),
-                        () => resolve()
-                    );
+                    belongingMapInteractor.showOnMap
+                        .pipe(take(1))
+                        .subscribe(
+                            update => (showBelongingLocations = update.initial),
+                            reject,
+                            resolve
+                        );
                 });
             }
         );
@@ -397,4 +397,4 @@ describe("View belongings location on map", (): void => {
             expect(removedBelonging).toEqual([2]);
         });
     });
-});*/
+});

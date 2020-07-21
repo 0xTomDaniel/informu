@@ -9,7 +9,6 @@ import {
     SafeStatus,
     BatteryBarLevel
 } from "./BelongingDashboardViewModel";
-import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
 
@@ -62,8 +61,8 @@ const styles = StyleSheet.create({
 });
 
 interface BelongingCardProps {
+    onRemoveMuTag: (uid: string) => void;
     viewData: BelongingViewData;
-    removeMuTagService: RemoveMuTagInteractor;
 }
 
 const BelongingCard: FunctionComponent<BelongingCardProps> = (
@@ -114,12 +113,6 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
 
     const [isMenuVisible, setIsMenuVisible] = useState(false);
     const hideMenu = (): void => setIsMenuVisible(false);
-    const removeMuTag = (): void => {
-        hideMenu();
-        props.removeMuTagService.remove(props.viewData.uid).catch((e): void => {
-            console.warn(`removeMuTagService.remove() - error: ${e}`);
-        });
-    };
     const showMenu = (): void => setIsMenuVisible(true);
 
     const [safeStatusColor, setSafeStatusColor] = useState(
@@ -189,7 +182,9 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         <Menu.Item
                             title="Remove"
                             icon="minus-circle-outline"
-                            onPress={removeMuTag}
+                            onPress={() =>
+                                props.onRemoveMuTag(props.viewData.uid)
+                            }
                         />
                     </Menu>
                 )}

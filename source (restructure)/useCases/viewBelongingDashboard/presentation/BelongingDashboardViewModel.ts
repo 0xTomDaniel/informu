@@ -8,12 +8,15 @@ import {
     publishBehavior,
     refCount,
     distinctUntilChanged,
-    share
+    share,
+    mapTo,
+    distinct
 } from "rxjs/operators";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { Millisecond } from "../../../shared/metaLanguage/Types";
 import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
 import SignOutInteractor from "../../signOut/SignOutInteractor";
+import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 
 export enum BatteryBarLevel {
     "0%",
@@ -67,8 +70,8 @@ export default class BelongingDashboardViewModel {
     private readonly lastSeenDisplayUpdateInterval = 15000 as Millisecond;
     private readonly navigateToViewSubject = new Subject<AppView>();
     readonly navigateToView = this.navigateToViewSubject.asObservable();
-    private readonly showActivityIndicatorSubject = new Subject<boolean>();
-    readonly showActivityIndicator = this.showActivityIndicatorSubject.asObservable();
+    private readonly removeMuTagInteractor: RemoveMuTagInteractor;
+    readonly showActivityIndicator: Observable<boolean>;
     readonly showBelongings: Observable<BelongingViewData[]>;
     readonly showEmptyDashboard: Observable<boolean>;
     readonly showError: Observable<UserErrorViewData>;
@@ -76,6 +79,7 @@ export default class BelongingDashboardViewModel {
 
     constructor(
         belongingDashboardInteractor: BelongingDashboardInteractor,
+        removeMuTagInteractor: RemoveMuTagInteractor,
         signOutInteractor: SignOutInteractor
     ) {
         this.belongingDashboardInteractor = belongingDashboardInteractor;
@@ -86,6 +90,7 @@ export default class BelongingDashboardViewModel {
             ),
             share()
         );
+        this.removeMuTagInteractor = removeMuTagInteractor;
         this.showBelongings = combineLatest(
             this.dashboardBelongings,
             timer(0, this.lastSeenDisplayUpdateInterval)
@@ -106,9 +111,26 @@ export default class BelongingDashboardViewModel {
             refCount()
         );
         this.signOutInteractor = signOutInteractor;
-        this.showError = merge(this.signOutInteractor.showError).pipe(
-            map(e => e.toViewData())
-        );
+        this.signOutInteractor.showSignIn
+            .pipe(mapTo(AppView.SignIn))
+            .subscribe(this.navigateToViewSubject);
+        this.showActivityIndicator = merge(
+            removeMuTagInteractor.showActivityIndicator,
+            signOutInteractor.showActivityIndicator
+        ).pipe(distinct());
+        this.showError = merge(
+            belongingDashboardInteractor.showError,
+            removeMuTagInteractor.showError,
+            signOutInteractor.showError
+        ).pipe(map(e => e.toViewData()));
+    }
+
+    addMuTag(): void {
+        this.navigateToViewSubject.next(AppView.AddMuTag);
+    }
+
+    removeMuTag(uid: string): void {
+        this.removeMuTagInteractor.remove(uid);
     }
 
     signOut(): void {

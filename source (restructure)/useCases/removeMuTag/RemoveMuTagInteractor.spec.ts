@@ -11,12 +11,11 @@ import Account, {
     AccountNumber
 } from "../../../source/Core/Domain/Account";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
-import RemoveMuTagInteractor, {
+import {
     LowMuTagBattery,
-    FailedToConnectToMuTag
+    FailedToConnectToMuTag,
+    RemoveMuTagInteractorImpl
 } from "./RemoveMuTagInteractor";
-import { RemoveMuTagOutputPort } from "./RemoveMuTagOutputPort";
-//import MuTagDevicesPort from "./MuTagDevicesPort";
 import UserError from "../../shared/metaLanguage/UserError";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
@@ -123,30 +122,19 @@ describe("Mu tag user removes Mu tag", (): void => {
         })
     );
 
-    const RemoveMuTagOutputMock = jest.fn<RemoveMuTagOutputPort, any>(
-        (): RemoveMuTagOutputPort => ({
-            showBusyIndicator: jest.fn(),
-            hideBusyIndicator: jest.fn(),
-            showError: jest.fn()
-        })
-    );
-
-    //const muTagDevicesMock = new MuTagDevicesMock();
     const muTagRepoLocalMock = new MuTagRepoLocalMock();
     const muTagRepoRemoteMock = new MuTagRepoRemoteMock();
     const accountRepoLocalMock = new AccountRepoLocalMock();
     const accountRepoRemoteMock = new AccountRepoRemoteMock();
-    const removeMuTagOutputMock = new RemoveMuTagOutputMock();
 
     const removeMuTagBatteryThreshold = new Percent(15);
-    const removeMuTagInteractor = new RemoveMuTagInteractor(
+    const removeMuTagInteractor = new RemoveMuTagInteractorImpl(
         removeMuTagBatteryThreshold,
         muTagDevices,
         accountRepoLocalMock,
         accountRepoRemoteMock,
         muTagRepoLocalMock,
-        muTagRepoRemoteMock,
-        removeMuTagOutputMock
+        muTagRepoRemoteMock
     );
 
     const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
@@ -263,8 +251,8 @@ describe("Mu tag user removes Mu tag", (): void => {
         //
         it("should show busy indicator", (): void => {
             expect(
-                removeMuTagOutputMock.showBusyIndicator
-            ).toHaveBeenCalledTimes(1);
+                removeMuTagInteractor.showActivityIndicator.toPromise()
+            ).resolves.toBe(true);
         });
 
         // Then
@@ -330,8 +318,8 @@ describe("Mu tag user removes Mu tag", (): void => {
         //
         it("should hide busy indicator", (): void => {
             expect(
-                removeMuTagOutputMock.hideBusyIndicator
-            ).toHaveBeenCalledTimes(1);
+                removeMuTagInteractor.showActivityIndicator.toPromise()
+            ).resolves.toBe(false);
         });
     });
 
@@ -391,8 +379,8 @@ describe("Mu tag user removes Mu tag", (): void => {
         //
         it("should show busy indicator", (): void => {
             expect(
-                removeMuTagOutputMock.showBusyIndicator
-            ).toHaveBeenCalledTimes(1);
+                removeMuTagInteractor.showActivityIndicator.toPromise()
+            ).resolves.toBe(true);
         });
 
         // Then
@@ -408,15 +396,14 @@ describe("Mu tag user removes Mu tag", (): void => {
         //
         it("should hide busy indicator", (): void => {
             expect(
-                removeMuTagOutputMock.hideBusyIndicator
-            ).toHaveBeenCalledTimes(1);
+                removeMuTagInteractor.showActivityIndicator.toPromise()
+            ).resolves.toBe(false);
         });
 
         // Then
         //
         it("should show message to move Mu tag closer to mobile device, check Mu tag battery level, and try again", (): void => {
-            expect(removeMuTagOutputMock.showError).toHaveBeenCalledTimes(1);
-            expect(removeMuTagOutputMock.showError).toHaveBeenCalledWith(
+            expect(removeMuTagInteractor.showError.toPromise()).resolves.toBe(
                 UserError.create(FailedToConnectToMuTag, originatingError)
             );
         });
@@ -471,8 +458,8 @@ describe("Mu tag user removes Mu tag", (): void => {
         //
         it("should show busy indicator", (): void => {
             expect(
-                removeMuTagOutputMock.showBusyIndicator
-            ).toHaveBeenCalledTimes(1);
+                removeMuTagInteractor.showActivityIndicator.toPromise()
+            ).resolves.toBe(true);
         });
 
         // Then
@@ -505,15 +492,14 @@ describe("Mu tag user removes Mu tag", (): void => {
         //
         it("should hide busy indicator", (): void => {
             expect(
-                removeMuTagOutputMock.hideBusyIndicator
-            ).toHaveBeenCalledTimes(1);
+                removeMuTagInteractor.showActivityIndicator.toPromise()
+            ).resolves.toBe(false);
         });
 
         // Then
         //
         it("should show message that removal failed, Mu tag battery needs to be charged, and then try again", (): void => {
-            expect(removeMuTagOutputMock.showError).toHaveBeenCalledTimes(1);
-            expect(removeMuTagOutputMock.showError).toHaveBeenCalledWith(
+            expect(removeMuTagInteractor.showError.toPromise()).resolves.toBe(
                 UserError.create(
                     LowMuTagBattery(removeMuTagBatteryThreshold.valueOf())
                 )

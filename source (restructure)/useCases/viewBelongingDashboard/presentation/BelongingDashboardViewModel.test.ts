@@ -16,6 +16,7 @@ import Percent from "../../../shared/metaLanguage/Percent";
 import { fakeSchedulers } from "rxjs-marbles/jest";
 import SignOutInteractor from "../../signOut/SignOutInteractor";
 import UserError from "../../../shared/metaLanguage/UserError";
+import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 
 const showErrorSubject = new Subject<UserError>();
 const showOnDashboardSubject = new Subject<
@@ -31,6 +32,14 @@ const BelongingDashboardInteractorMock = jest.fn<
     })
 );
 const belongingDashboardInteractorMock = BelongingDashboardInteractorMock();
+const RemoveMuTagInteractorMock = jest.fn<RemoveMuTagInteractor, any>(
+    (): RemoveMuTagInteractor => ({
+        showActivityIndicator: new Observable<boolean>(),
+        showError: new Observable<UserError>(),
+        remove: jest.fn()
+    })
+);
+const removeMuTagInteractorMock = RemoveMuTagInteractorMock();
 const SignOutInteractorMock = jest.fn<SignOutInteractor, any>(
     (): SignOutInteractor => ({
         showActivityIndicator: new Observable<boolean>(),
@@ -42,6 +51,7 @@ const SignOutInteractorMock = jest.fn<SignOutInteractor, any>(
 const signOutInteractorMock = SignOutInteractorMock();
 const viewModel = new BelongingDashboardViewModel(
     belongingDashboardInteractorMock,
+    removeMuTagInteractorMock,
     signOutInteractorMock
 );
 const belongings: DashboardBelonging[] = [

@@ -1,4 +1,4 @@
-/*import ProvisionedMuTag, {
+import ProvisionedMuTag, {
     MuTagData,
     BeaconId
 } from "../../../source/Core/Domain/ProvisionedMuTag";
@@ -187,6 +187,7 @@ describe("Mu tag battery levels update", (): void => {
             async (): Promise<void> => {
                 jest.useFakeTimers("modern");
                 await muTagBatteriesInteractor.start();
+                debugger;
                 await new Promise((resolve, reject) => {
                     belonging01.batteryLevel.pipe(take(2)).subscribe(
                         undefined,
@@ -195,6 +196,7 @@ describe("Mu tag battery levels update", (): void => {
                     );
                     jest.advanceTimersByTime(oneHourInMs * 12);
                 });
+                debugger;
             }
         );
 
@@ -245,5 +247,5 @@ describe("Mu tag battery levels update", (): void => {
         it("should", (): void => {
 
         });
-    });
-});*/
+    });*/
+});

@@ -38,25 +38,14 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
     private readonly logger = Logger.instance;
     private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
     private muTagsChangeSubscription: Subscription | undefined;
-    readonly showOnMap = LifecycleObservable(
-        new Observable<
-            ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
-        >(subscriber => {
-            this.showOnMapSubject.subscribe(subscriber);
-            // Must copy the array 'belongingLocations' to prevent mutation of
-            // original.
-            subscriber.next(
-                new ObjectCollectionUpdate({
-                    initial: [...this.belongingLocations]
-                })
-            );
-        }),
-        this.start.bind(this),
-        this.stop.bind(this)
-    );
     private readonly showOnMapSubject = new Subject<
         ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
     >();
+    readonly showOnMap = LifecycleObservable(
+        this.showOnMapSubject,
+        this.start.bind(this),
+        this.stop.bind(this)
+    );
 
     constructor(
         accountRepoLocal: AccountRepositoryLocalPort,
@@ -153,7 +142,13 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                         element: belongingLocation
                     };
                 });
-                if (!initial) {
+                if (initial) {
+                    this.showOnMapSubject.next(
+                        new ObjectCollectionUpdate({
+                            initial: [...this.belongingLocations]
+                        })
+                    );
+                } else {
                     this.showOnMapSubject.next(
                         new ObjectCollectionUpdate({
                             added: belongingLocations
