@@ -5,7 +5,7 @@ import ProvisionedMuTag, {
 import Percent from "../../shared/metaLanguage/Percent";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import { v4 as uuidV4 } from "uuid";
-import { take } from "rxjs/operators";
+import { take, skip } from "rxjs/operators";
 import MuTagBatteriesInteractor from "./MuTagBatteriesInteractor";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
@@ -19,6 +19,7 @@ import Account, {
     AccountNumber
 } from "../../../source/Core/Domain/Account";
 import { Observable, Subscriber } from "rxjs";
+import { fakeSchedulers } from "rxjs-marbles/jest";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -115,7 +116,9 @@ const account = new Account({
     _nextMuTagNumber: validAccountData._nextMuTagNumber,
     _muTags: validAccountData._muTags
 });
-(accountRepositoryLocalMock.get as jest.Mock).mockResolvedValue(account);
+(accountRepositoryLocalMock.get as jest.Mock).mockReturnValue(
+    Promise.resolve(account)
+);
 const BackgroundTaskMock = jest.fn<BackgroundTaskPort, any>(
     (): BackgroundTaskPort => ({
         queueRepeatedTask: (
@@ -153,10 +156,9 @@ const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
 const muTagRepositoryLocalMock = new MuTagRepositoryLocalMock();
 const belonging01 = new ProvisionedMuTag(belongingsData[0]);
 const belonging02 = new ProvisionedMuTag(belongingsData[1]);
-(muTagRepositoryLocalMock.getAll as jest.Mock).mockResolvedValue([
-    belonging01,
-    belonging02
-]);
+(muTagRepositoryLocalMock.getAll as jest.Mock).mockReturnValue(
+    Promise.resolve(new Set([belonging01, belonging02]))
+);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const muTagBatteriesInteractor = new MuTagBatteriesInteractor(
     accountRepositoryLocalMock,
@@ -169,16 +171,16 @@ const oneMinuteInMs = oneSecondInMs * 60;
 const oneHourInMs = oneMinuteInMs * 60;
 
 describe("Mu tag battery levels update", (): void => {
-    //const belonging02BatteryLevelUpdate01 = new Percent(39);
-    //const belonging02BatteryLevelUpdate02 = new Percent(38);
-
     describe("Scenario 1: Mu tag is in range", (): void => {
         // Given that Mu tag is in range
 
-        const belonging01BatteryLevelUpdate01 = new Percent(49);
-        //const belonging01BatteryLevelUpdate02 = new Percent(48);
-        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockResolvedValueOnce(
-            belonging01BatteryLevelUpdate01
+        const batteryLevelUpdate01 = new Percent(49);
+        const batteryLevelUpdate02 = new Percent(48);
+        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
+            Promise.resolve(batteryLevelUpdate01)
+        );
+        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
+            Promise.resolve(batteryLevelUpdate02)
         );
 
         // When the battery level hasn't been read for 12 hours
@@ -187,16 +189,6 @@ describe("Mu tag battery levels update", (): void => {
             async (): Promise<void> => {
                 jest.useFakeTimers("modern");
                 await muTagBatteriesInteractor.start();
-                debugger;
-                await new Promise((resolve, reject) => {
-                    belonging01.batteryLevel.pipe(take(2)).subscribe(
-                        undefined,
-                        e => reject(e),
-                        () => resolve()
-                    );
-                    jest.advanceTimersByTime(oneHourInMs * 12);
-                });
-                debugger;
             }
         );
 
@@ -206,46 +198,65 @@ describe("Mu tag battery levels update", (): void => {
 
         // Then
         //
-        it("should read and update the Mu tag battery level", async (): Promise<
-            void
-        > => {
-            expect.assertions(2);
-            await belonging01.batteryLevel
-                .pipe(take(1))
-                .toPromise()
-                .then(level =>
-                    expect(level).toEqual(belonging01BatteryLevelUpdate01)
-                );
-            await belonging02.batteryLevel
-                .pipe(take(1))
-                .toPromise()
-                .then(level =>
-                    expect(level).toEqual(belongingsData[1]._batteryLevel)
-                );
-        });
+        it(
+            "should read and update the Mu tag battery level",
+            fakeSchedulers(async advance => {
+                expect.assertions(3);
+                const promise01 = belonging01.batteryLevel
+                    .pipe(skip(1), take(1))
+                    .toPromise();
+                advance(oneHourInMs * 12);
+                const batteryLevel01 = await promise01;
+                expect(batteryLevel01).toBe(batteryLevelUpdate01);
+                const promise02 = belonging01.batteryLevel
+                    .pipe(skip(1), take(1))
+                    .toPromise();
+                advance(oneHourInMs * 12);
+                const batteryLevel02 = await promise02;
+                expect(batteryLevel02).toBe(batteryLevelUpdate02);
+                const batterylevel03 = await belonging02.batteryLevel
+                    .pipe(take(1))
+                    .toPromise();
+                expect(batterylevel03).toEqual(belongingsData[1]._batteryLevel);
+            })
+        );
     });
 
-    /*describe("Scenario 2: Mu tag is out of range", (): void => {
-        // Given 
+    describe("Scenario 2: Mu tag is out of range", (): void => {
+        // Given that the Mu tag is out of range
 
-        
+        const batteryLevelUpdate = new Percent(36);
+        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
+            Promise.resolve(batteryLevelUpdate)
+        );
 
-        // When 
+        let promise01: Promise<Percent>;
+        // When the battery level hasn't been read for 12 hours
+        //
+        // And the Mu tag comes back into range
         //
         beforeAll(
             async (): Promise<void> => {
-                
+                promise01 = belonging02.batteryLevel
+                    .pipe(skip(1), take(1))
+                    .toPromise();
+                belonging02.userDidDetect(new Date());
             }
         );
 
         afterAll((): void => {
+            jest.useRealTimers();
             jest.clearAllMocks();
         });
 
         // Then
         //
-        it("should", (): void => {
-
-        });
-    });*/
+        it(
+            "should read and update the Mu tag battery level",
+            fakeSchedulers(async () => {
+                const batteryLevel = await promise01;
+                expect(batteryLevel).toBe(batteryLevelUpdate);
+            })
+        );
+    });
 });

@@ -56,15 +56,7 @@ export default class MuTagBatteriesInteractor {
                 this.logger.warn(error);
                 return;
             }
-            this.readMuTagBattery(accountNumber, muTag)
-                .then(level => {
-                    muTag.updateBatteryLevel(level);
-                    return this.muTagRepoLocal.update(muTag);
-                })
-                .then(() =>
-                    this.lastBatteryReadTimestamps.set(muTag.uid, new Date())
-                )
-                .catch(e => this.logger.warn(e, true));
+            this.updateMuTagBatteryLevel(accountNumber, muTag);
         });
     }
 
@@ -75,11 +67,23 @@ export default class MuTagBatteriesInteractor {
         muTag.didEnterRegion.subscribe(
             () => {
                 if (this.isReadyToReadBattery(muTag.uid)) {
-                    this.readMuTagBattery(accountNumber, muTag);
+                    this.updateMuTagBatteryLevel(accountNumber, muTag);
                 }
             },
             e => this.logger.error(e, true)
         );
+    }
+
+    private updateMuTagBatteryLevel(
+        accountNumber: AccountNumber,
+        muTag: ProvisionedMuTag
+    ) {
+        this.readMuTagBattery(accountNumber, muTag)
+            .then(level => {
+                muTag.updateBatteryLevel(level);
+                return this.muTagRepoLocal.update(muTag);
+            })
+            .catch(e => this.logger.warn(e, true));
     }
 
     private isReadyToReadBattery(muTagUid: string): boolean {
