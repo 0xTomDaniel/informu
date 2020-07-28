@@ -347,6 +347,8 @@ export default class ProvisionedMuTag extends MuTag {
                 return value.toString();
             /*case 'lastSeen':
                 return value.toISOString();*/
+            case "address":
+            case "batteryLevel":
             case "didEnterRegion":
             case "_accessorValue":
                 // This property is not part of the model. It only serves to
