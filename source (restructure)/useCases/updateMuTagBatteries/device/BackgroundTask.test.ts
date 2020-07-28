@@ -56,12 +56,16 @@ const tasks = [
         interval: 20000 as Millisecond
     }
 ];
+let taskUid01: string;
 
 beforeAll(() => {
     jest.useFakeTimers("modern");
-    backgroundTask.queueRepeatedTask(tasks[0].interval, tasks[0].task);
-    backgroundTask.queueRepeatedTask(tasks[1].interval, tasks[1].task);
-    backgroundTask.queueRepeatedTask(tasks[2].interval, tasks[2].task);
+    taskUid01 = backgroundTask.enqueueRepeatedTask(
+        tasks[0].interval,
+        tasks[0].task
+    );
+    backgroundTask.enqueueRepeatedTask(tasks[1].interval, tasks[1].task);
+    backgroundTask.enqueueRepeatedTask(tasks[2].interval, tasks[2].task);
 });
 
 afterAll(() => {
@@ -130,5 +134,24 @@ test(
         expect(tasks[0].task).toHaveBeenCalledTimes(5);
         expect(tasks[1].task).toHaveBeenCalledTimes(3);
         expect(tasks[2].task).toHaveBeenCalledTimes(2);
+    })
+);
+
+test(
+    "stop executing task once dequeued",
+    fakeSchedulers(async advance => {
+        backgroundTask.dequeueRepeatedTask(taskUid01);
+        expect.assertions(2);
+        const promise = notifier
+            .pipe(
+                filter(task => task === Task.Two),
+                take(1)
+            )
+            .toPromise();
+        advance(5000);
+        advance(5000);
+        await promise;
+        expect(tasks[0].task).toHaveBeenCalledTimes(5);
+        expect(tasks[1].task).toHaveBeenCalledTimes(4);
     })
 );

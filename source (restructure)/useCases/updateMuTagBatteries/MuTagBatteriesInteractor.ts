@@ -8,12 +8,19 @@ import { AccountNumber } from "../../../source/Core/Domain/Account";
 import { switchMap } from "rxjs/operators";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Percent from "../../shared/metaLanguage/Percent";
+import { Subscription } from "rxjs";
 
 export default class MuTagBatteriesInteractor {
+    private accountMuTagsChangeSubscription: Subscription | undefined;
     private readonly accountRepoLocal: AccountRepositoryLocalPort;
     private readonly backgroundTask: BackgroundTaskPort;
+    private readonly backgroundTaskUids = new Map<string, string>();
     private readonly batteryReadInterval = 43200000 as Millisecond;
     private readonly batteryReadRetryInterval = 14400000 as Millisecond;
+    private readonly didEnterRegionSubscriptions = new Map<
+        string,
+        Subscription
+    >();
     private readonly lastBatteryReadTimestamps = new Map<string, Date>();
     private readonly logger = Logger.instance;
     private readonly muTagDevices: MuTagDevicesPort;
@@ -34,18 +41,55 @@ export default class MuTagBatteriesInteractor {
     async start(): Promise<void> {
         const muTags = await this.muTagRepoLocal.getAll();
         const account = await this.accountRepoLocal.get();
-        muTags.forEach(async muTag => {
-            this.lastBatteryReadTimestamps.set(muTag.uid, new Date());
-            this.queueBatteryRead(account.accountNumber, muTag);
-            this.setupBatteryReadRetries(account.accountNumber, muTag);
-        });
+        muTags.forEach(async muTag =>
+            this.startUpBatteryReads(muTag, account.accountNumber)
+        );
+        this.accountMuTagsChangeSubscription = account.muTagsChange.subscribe(
+            change => {
+                if (change.insertion != null) {
+                    this.muTagRepoLocal
+                        .getByUid(change.insertion)
+                        .then(muTag =>
+                            this.startUpBatteryReads(
+                                muTag,
+                                account.accountNumber
+                            )
+                        )
+                        .catch(e => this.logger.error(e, true));
+                }
+                if (change.deletion != null) {
+                    this.shutDownBatteryReads(change.deletion);
+                }
+            }
+        );
     }
 
-    private queueBatteryRead(
+    stop(): void {
+        for (const key of this.lastBatteryReadTimestamps.keys()) {
+            this.shutDownBatteryReads(key);
+        }
+    }
+
+    private startUpBatteryReads(
+        muTag: ProvisionedMuTag,
+        accountNumber: AccountNumber
+    ): void {
+        this.lastBatteryReadTimestamps.set(muTag.uid, new Date());
+        this.enqueueBatteryReads(accountNumber, muTag);
+        this.setUpBatteryReadRetries(accountNumber, muTag);
+    }
+
+    private shutDownBatteryReads(muTagUid: string): void {
+        this.lastBatteryReadTimestamps.delete(muTagUid);
+        this.dequeueBatteryReads(muTagUid);
+        this.tearDownBatteryReadRetries(muTagUid);
+    }
+
+    private enqueueBatteryReads(
         accountNumber: AccountNumber,
         muTag: ProvisionedMuTag
     ): void {
-        this.backgroundTask.queueRepeatedTask(
+        const taskUid = this.backgroundTask.enqueueRepeatedTask(
             this.batteryReadInterval,
             async () => {
                 if (!this.isReadyToReadBattery(muTag.uid)) {
@@ -64,13 +108,21 @@ export default class MuTagBatteriesInteractor {
                 ).catch(e => this.logger.warn(e, true));
             }
         );
+        this.backgroundTaskUids.set(muTag.uid, taskUid);
     }
 
-    private setupBatteryReadRetries(
+    private dequeueBatteryReads(muTagUid: string): void {
+        const taskUid = this.backgroundTaskUids.get(muTagUid);
+        if (taskUid != null) {
+            this.backgroundTask.dequeueRepeatedTask(taskUid);
+        }
+    }
+
+    private setUpBatteryReadRetries(
         accountNumber: AccountNumber,
         muTag: ProvisionedMuTag
     ) {
-        muTag.didEnterRegion.subscribe(
+        const subscription = muTag.didEnterRegion.subscribe(
             () => {
                 if (this.isReadyToReadBattery(muTag.uid)) {
                     this.updateMuTagBatteryLevel(accountNumber, muTag);
@@ -78,6 +130,11 @@ export default class MuTagBatteriesInteractor {
             },
             e => this.logger.error(e, true)
         );
+        this.didEnterRegionSubscriptions.set(muTag.uid, subscription);
+    }
+
+    private tearDownBatteryReadRetries(muTagUid: string): void {
+        this.didEnterRegionSubscriptions.get(muTagUid)?.unsubscribe();
     }
 
     private async updateMuTagBatteryLevel(

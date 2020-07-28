@@ -17,6 +17,7 @@ import Account from "../Domain/Account";
 import LoginOutput from "../Ports/LoginOutput";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import { BelongingsLocation } from "../../../source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
+import MuTagBatteriesInteractor from "../../../source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 
 /*export class SignedIntoOtherDevice extends UserWarning {
     name = "SignedIntoOtherDevice";
@@ -54,6 +55,7 @@ export default class SessionService implements Session {
     private readonly belongingsLocationInteractor: BelongingsLocation;
     private readonly localDatabase: Database;
     private readonly accountRegistrationService: AccountRegistrationService;
+    private readonly muTagBatteriesInteractor: MuTagBatteriesInteractor;
     private shouldPauseLoadOnce = false;
     private appSessionId?: string;
     private continueNewSession?: (value: boolean) => void;
@@ -72,7 +74,8 @@ export default class SessionService implements Session {
         belongingDetectionService: BelongingDetection,
         belongingsLocationInteractor: BelongingsLocation,
         localDatabase: Database,
-        accountRegistrationService: AccountRegistrationService
+        accountRegistrationService: AccountRegistrationService,
+        muTagBatteriesInteractor: MuTagBatteriesInteractor
     ) {
         this.eventTracker = eventTracker;
         this.sessionOutput = sessionOutput;
@@ -86,6 +89,7 @@ export default class SessionService implements Session {
         this.belongingsLocationInteractor = belongingsLocationInteractor;
         this.localDatabase = localDatabase;
         this.accountRegistrationService = accountRegistrationService;
+        this.muTagBatteriesInteractor = muTagBatteriesInteractor;
     }
 
     async load(): Promise<void> {
@@ -116,6 +120,7 @@ export default class SessionService implements Session {
             this.sessionOutput.showHomeScreen();
             await this.belongingDetectionService.start();
             await this.belongingsLocationInteractor.start();
+            await this.muTagBatteriesInteractor.start();
         } catch (e) {
             if (e.name === "DoesNotExist") {
                 this.sessionOutput.showLoginScreen();
@@ -168,6 +173,7 @@ export default class SessionService implements Session {
         this.sessionOutput.showHomeScreen();
         await this.belongingDetectionService.start();
         await this.belongingsLocationInteractor.start();
+        await this.muTagBatteriesInteractor.start();
     }
 
     continueStart(): void {
@@ -194,6 +200,7 @@ export default class SessionService implements Session {
         }
         await this.belongingDetectionService.stop();
         this.belongingsLocationInteractor.stop();
+        this.muTagBatteriesInteractor.stop();
         await this.localDatabase.destroy();
         this.eventTracker.removeUser();
         this.resetAllDependencies.complete();

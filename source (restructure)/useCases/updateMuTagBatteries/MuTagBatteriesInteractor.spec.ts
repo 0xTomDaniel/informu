@@ -91,6 +91,31 @@ const belongingsData: MuTagData[] = [
         _recentLongitude: -105.09686516468388,
         _txPower: 1,
         _uid: uuidV4()
+    },
+    {
+        _advertisingInterval: 1,
+        _batteryLevel: new Percent(65),
+        _beaconId: BeaconId.create("2"),
+        _color: MuTagColor.MuOrange,
+        _dateAdded: new Date("1995-12-17T03:24:00"),
+        _didExitRegion: true,
+        _firmwareVersion: "1.6.1",
+        _isSafe: false,
+        _lastSeen: new Date("1995-12-17T03:24:00"),
+        _macAddress: "BBCCDD238734",
+        _modelNumber: "REV8",
+        _muTagNumber: 1,
+        _name: "Laptop",
+        _recentAddress: {
+            formattedAddress: "7722 Everett St, Arvada, CO 80005, USA",
+            route: "Everett St",
+            locality: "Arvada",
+            administrativeAreaLevel1: "CO"
+        },
+        _recentLatitude: 39.836557861962184,
+        _recentLongitude: -105.09686516468388,
+        _txPower: 1,
+        _uid: uuidV4()
     }
 ];
 const validAccountData: AccountData = {
@@ -152,6 +177,7 @@ const muTagDevicesMock = new MuTagDevicesMock();
 const MuTagRepositoryLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
     (): MuTagRepositoryLocalPort => ({
         getAll: jest.fn(),
+        getByUid: jest.fn(),
         update: jest.fn()
     })
 );
@@ -161,7 +187,6 @@ const belonging02 = new ProvisionedMuTag(belongingsData[1]);
 (muTagRepositoryLocalMock.getAll as jest.Mock).mockReturnValue(
     Promise.resolve(new Set([belonging01, belonging02]))
 );
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const muTagBatteriesInteractor = new MuTagBatteriesInteractor(
     accountRepositoryLocalMock,
     backgroundTask,
@@ -247,6 +272,125 @@ describe("Mu tag battery levels update", (): void => {
         );
 
         afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it(
+            "should read and update the Mu tag battery level",
+            fakeSchedulers(async () => {
+                const batteryLevel = await promise01;
+                expect(batteryLevel).toBe(batteryLevelUpdate);
+            })
+        );
+    });
+
+    const newBelongingBeaconId = account.newBeaconId;
+    const newBelongingUid = uuidV4();
+    const dateAdded = new Date();
+    const newBelongingData: MuTagData = {
+        _advertisingInterval: 1,
+        _batteryLevel: new Percent(65),
+        _beaconId: newBelongingBeaconId,
+        _color: MuTagColor.Sky,
+        _dateAdded: dateAdded,
+        _didExitRegion: false,
+        _firmwareVersion: "1.6.1",
+        _isSafe: true,
+        _lastSeen: dateAdded,
+        _macAddress: "BBCCDD273734",
+        _modelNumber: "REV8",
+        _muTagNumber: 2,
+        _name: "Bag",
+        _recentAddress: {
+            formattedAddress: "7722 Everett St, Arvada, CO 80005, USA",
+            route: "Everett St",
+            locality: "Arvada",
+            administrativeAreaLevel1: "CO"
+        },
+        _recentLatitude: 39.836557861962184,
+        _recentLongitude: -105.09686516468388,
+        _txPower: 1,
+        _uid: newBelongingUid
+    };
+    const newBelonging = new ProvisionedMuTag(newBelongingData);
+
+    describe("Scenario 3: Mu tag is added", (): void => {
+        // Given that a Mu tag is unprovisioned
+
+        (muTagRepositoryLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
+            newBelonging
+        );
+        const belonging01BatteryLevel = new Percent(48);
+        const belonging02BatteryLevel = new Percent(36);
+        const batteryLevelUpdate = new Percent(62);
+        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
+            Promise.resolve(belonging01BatteryLevel)
+        );
+        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
+            Promise.resolve(belonging02BatteryLevel)
+        );
+        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
+            Promise.resolve(batteryLevelUpdate)
+        );
+
+        // When the Mu tag is added to the current account
+        //
+        beforeAll(
+            async (): Promise<void> => {
+                account.addNewMuTag(
+                    newBelongingData._uid,
+                    newBelongingData._beaconId
+                );
+            }
+        );
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it(
+            "should read and update the Mu tag battery level every 12 hours",
+            fakeSchedulers(async advance => {
+                expect.assertions(1);
+                const promise = newBelonging.batteryLevel
+                    .pipe(skip(1), take(1))
+                    .toPromise();
+                advance(oneHourInMs * 12);
+                const batteryLevel = await promise;
+                expect(batteryLevel).toBe(batteryLevelUpdate);
+            })
+        );
+    });
+
+    describe("Scenario 4: Mu tag is removed", (): void => {
+        // Given that a Mu tag is added to the current account
+
+        //const belonging01BatteryLevel = new Percent(43);
+        const belonging02BatteryLevel = new Percent(36);
+        const batteryLevelUpdate = new Percent(59);
+        /*(muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
+            Promise.resolve(belonging01BatteryLevel)
+        );*/
+        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
+            Promise.resolve(belonging02BatteryLevel)
+        );
+        (muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
+            Promise.resolve(batteryLevelUpdate)
+        );
+
+        // When the Mu tag is added to the current account
+        //
+        beforeAll(
+            async (): Promise<void> => {
+                account.removeMuTag(belonging01.uid, belonging01.beaconId);
+            }
+        );
+
+        afterAll((): void => {
             if (interval != null) {
                 clearInterval(interval);
             }
@@ -257,9 +401,14 @@ describe("Mu tag battery levels update", (): void => {
         // Then
         //
         it(
-            "should read and update the Mu tag battery level",
-            fakeSchedulers(async () => {
-                const batteryLevel = await promise01;
+            "should read and update the Mu tag battery level every 12 hours",
+            fakeSchedulers(async advance => {
+                expect.assertions(1);
+                const promise = newBelonging.batteryLevel
+                    .pipe(skip(1), take(1))
+                    .toPromise();
+                advance(oneHourInMs * 12);
+                const batteryLevel = await promise;
                 expect(batteryLevel).toBe(batteryLevelUpdate);
             })
         );

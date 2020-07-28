@@ -42,7 +42,7 @@ export default class BackgroundTask implements BackgroundTaskPort {
         );
     }
 
-    queueRepeatedTask(
+    enqueueRepeatedTask(
         minimumInterval: Millisecond,
         task: () => Promise<void>
     ): string {
@@ -50,6 +50,11 @@ export default class BackgroundTask implements BackgroundTaskPort {
         this.tasks.set(uid, task);
         this.intervals.set(uid, minimumInterval);
         return uid;
+    }
+
+    dequeueRepeatedTask(taskUid: string): void {
+        this.tasks.delete(taskUid);
+        this.intervals.delete(taskUid);
     }
 
     private isReadyToExecute(uid: string): boolean {
