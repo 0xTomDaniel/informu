@@ -143,11 +143,11 @@ const BelongingsEmpty: FunctionComponent = (): ReactElement => {
     );
 };
 
-interface HomeVcProps extends NavigationScreenProps {
+interface BelongingDashboardViewProps extends NavigationScreenProps {
     belongingDashboardViewModel: BelongingDashboardViewModel;
 }
 
-const BelongingDashboardView: FunctionComponent<HomeVcProps> = (
+const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     props
 ): ReactElement => {
     const [belongings, setBelongings] = useState<BelongingViewData[]>([]);

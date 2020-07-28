@@ -34,7 +34,6 @@ import AddMuTagViewController from "./source (restructure)/useCases/addMuTag/pre
 import { Rssi } from "./source (restructure)/shared/metaLanguage/Types";
 import Percent from "./source (restructure)/shared/metaLanguage/Percent";
 import AddMuTagInteractor from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
-import { BelongingDashboardViewModel } from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel.old";
 import AddMuTagPresenter from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagPresenter";
 import { AddMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewModel";
 import MuTagRepoLocalImpl from "./source/Secondary Adapters/Persistence/MuTagRepoLocalImpl";
@@ -43,16 +42,14 @@ import NameMuTagViewController from "./source (restructure)/useCases/addMuTag/pr
 import { NameMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./source (restructure)/useCases/addMuTag/presentation/MuTagAddingViewModel";
 import MuTagAddingViewController from "./source (restructure)/useCases/addMuTag/presentation/MuTagAddingViewController";
-import LogoutService from "./source/Core/Application/LogoutService";
-import LogoutPresenter from "./source/Primary Adapters/Presentation/LogoutPresenter";
 import BelongingDashboardInteractor, {
     BelongingDashboardInteractorImpl
 } from "./source (restructure)/useCases/viewBelongingDashboard/BelongingDashboardInteractor";
-import BelongingDashboardPresenter from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardPresenter";
 import BelongingDetectionService from "./source/Core/Application/BelongingDetectionService";
 import MuTagMonitorRnbm from "./source/Secondary Adapters/Infrastructure/MuTagMonitorRnbm";
-import RemoveMuTagInteractor from "./source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
-import RemoveMuTagPresenter from "./source/Primary Adapters/Presentation/RemoveMuTagPresenter";
+import RemoveMuTagInteractor, {
+    RemoveMuTagInteractorImpl
+} from "./source (restructure)/useCases/removeMuTag/RemoveMuTagInteractor";
 import DatabaseImplWatermelon from "./source/Secondary Adapters/Persistence/DatabaseImplWatermelon";
 import { LoginViewModel } from "./source/Primary Adapters/Presentation/LoginViewModel";
 import LoginPresenter from "./source/Primary Adapters/Presentation/LoginPresenter";
@@ -86,6 +83,10 @@ import BelongingMapInteractor, {
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import AdjustGeolocationInteractor from "./source (restructure)/useCases/adjustGeolocation/AdjustGeolocationInteractor";
 import AppStateMonitor from "./source (restructure)/shared/appState/AppStateMonitor";
+import BelongingDashboardViewModel from "./source (restructure)/useCases/viewBelongingDashboard/presentation/BelongingDashboardViewModel";
+import SignOutInteractor, {
+    SignOutInteractorImpl
+} from "./source (restructure)/useCases/signOut/SignOutInteractor";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -106,7 +107,7 @@ export class Dependencies {
     belongingMapViewModel: BelongingMapViewModel;
     connectThreshold: Rssi;
     addMuTagBatteryThreshold: Percent;
-    homeViewModel: BelongingDashboardViewModel;
+    belongingDashboardViewModel: BelongingDashboardViewModel;
     addMuTagViewModel: AddMuTagViewModel;
     nameMuTagViewModel: NameMuTagViewModel;
     muTagAddingViewModel: MuTagAddingViewModel;
@@ -115,11 +116,8 @@ export class Dependencies {
     muTagDevices: MuTagDevicesPortAddMuTag & MuTagDevicesPortRemoveMuTag;
     addMuTagInteractor: AddMuTagInteractor;
     removeMuTagBatteryThreshold: Percent;
-    removeMuTagPresenter: RemoveMuTagPresenter;
     removeMuTagInteractor: RemoveMuTagInteractor;
-    logoutPresenter: LogoutPresenter;
-    logoutService: LogoutService;
-    belongingDashboardPresenter: BelongingDashboardPresenter;
+    signOutInteractor: SignOutInteractor;
     belongingDashboardInteractor: BelongingDashboardInteractor;
     muTagMonitor: MuTagMonitorRnbm;
     belongingDetectionService: BelongingDetectionService;
@@ -165,12 +163,10 @@ export class Dependencies {
         );
         this.connectThreshold = -80 as Rssi;
         this.addMuTagBatteryThreshold = new Percent(20);
-        this.homeViewModel = new BelongingDashboardViewModel();
         this.addMuTagViewModel = new AddMuTagViewModel();
         this.nameMuTagViewModel = new NameMuTagViewModel();
         this.muTagAddingViewModel = new MuTagAddingViewModel();
         this.addMuTagPresenter = new AddMuTagPresenter(
-            this.homeViewModel,
             this.addMuTagViewModel,
             this.nameMuTagViewModel,
             this.muTagAddingViewModel
@@ -188,25 +184,13 @@ export class Dependencies {
             this.accountRepoRemote
         );
         this.removeMuTagBatteryThreshold = new Percent(20);
-        this.removeMuTagPresenter = new RemoveMuTagPresenter(
-            this.homeViewModel
-        );
-        this.removeMuTagInteractor = new RemoveMuTagInteractor(
+        this.removeMuTagInteractor = new RemoveMuTagInteractorImpl(
             this.removeMuTagBatteryThreshold,
             this.muTagDevices,
             this.accountRepoLocal,
             this.accountRepoRemote,
             this.muTagRepoLocal,
-            this.muTagRepoRemote,
-            this.removeMuTagPresenter
-        );
-        this.belongingDashboardPresenter = new BelongingDashboardPresenter(
-            this.homeViewModel
-        );
-        this.belongingDashboardInteractor = new BelongingDashboardInteractorImpl(
-            this.belongingDashboardPresenter,
-            this.muTagRepoLocal,
-            this.accountRepoLocal
+            this.muTagRepoRemote
         );
         this.muTagMonitor = new MuTagMonitorRnbm();
         this.belongingDetectionService = new BelongingDetectionService(
@@ -235,7 +219,6 @@ export class Dependencies {
         /*this.adjustGeolocationInteractorDebug = new AdjustGeolocationInteractorDebug(
             this.locationMonitor
         );*/
-        this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
         this.loginViewModel = new LoginViewModel();
         this.loginPresenter = new LoginPresenter(this.loginViewModel);
         this.newAccountFactory = new NewAccountFactoryImpl();
@@ -263,9 +246,15 @@ export class Dependencies {
             undefined,
             () => this.resetAll()
         );
-        this.logoutService = new LogoutService(
-            this.logoutPresenter,
-            this.sessionService
+        this.signOutInteractor = new SignOutInteractorImpl(this.sessionService);
+        this.belongingDashboardInteractor = new BelongingDashboardInteractorImpl(
+            this.muTagRepoLocal,
+            this.accountRepoLocal
+        );
+        this.belongingDashboardViewModel = new BelongingDashboardViewModel(
+            this.belongingDashboardInteractor,
+            this.removeMuTagInteractor,
+            this.signOutInteractor
         );
         this.loginService = new LoginService(
             this.loginPresenter,
@@ -281,7 +270,7 @@ export class Dependencies {
     }
 
     private resetAll(): void {
-        this.authentication = new AuthenticationFirebase(this.webClientId);
+        this.authentication = new AuthenticationFirebase(webClientId);
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
@@ -299,16 +288,15 @@ export class Dependencies {
         );
         this.connectThreshold = -80 as Rssi;
         this.addMuTagBatteryThreshold = new Percent(20);
-        this.homeViewModel = new BelongingDashboardViewModel();
         this.addMuTagViewModel = new AddMuTagViewModel();
         this.nameMuTagViewModel = new NameMuTagViewModel();
         this.muTagAddingViewModel = new MuTagAddingViewModel();
         this.addMuTagPresenter = new AddMuTagPresenter(
-            this.homeViewModel,
             this.addMuTagViewModel,
             this.nameMuTagViewModel,
             this.muTagAddingViewModel
         );
+        this.bluetooth = new BluetoothImplRnBlePlx();
         this.muTagDevices = new MuTagDevices(this.bluetooth);
         this.addMuTagInteractor = new AddMuTagInteractor(
             this.connectThreshold,
@@ -321,33 +309,21 @@ export class Dependencies {
             this.accountRepoRemote
         );
         this.removeMuTagBatteryThreshold = new Percent(20);
-        this.removeMuTagPresenter = new RemoveMuTagPresenter(
-            this.homeViewModel
-        );
-        this.removeMuTagInteractor = new RemoveMuTagInteractor(
+        this.removeMuTagInteractor = new RemoveMuTagInteractorImpl(
             this.removeMuTagBatteryThreshold,
             this.muTagDevices,
             this.accountRepoLocal,
             this.accountRepoRemote,
             this.muTagRepoLocal,
-            this.muTagRepoRemote,
-            this.removeMuTagPresenter
-        );
-        this.belongingDashboardPresenter = new BelongingDashboardPresenter(
-            this.homeViewModel
-        );
-        this.belongingDashboardInteractor = new BelongingDashboardInteractorImpl(
-            this.belongingDashboardPresenter,
-            this.muTagRepoLocal,
-            this.accountRepoLocal
+            this.muTagRepoRemote
         );
         this.muTagMonitor = new MuTagMonitorRnbm();
-        this.belongingDetectionService.stop();
         this.belongingDetectionService = new BelongingDetectionService(
             this.muTagMonitor,
             this.muTagRepoLocal,
             this.accountRepoLocal
         );
+        // Should not call Geocoder.init again
         this.geocoderImpl = new GeocoderImpl(Geocoder);
         this.geoLocation = new GeolocationImpl();
         this.locationMonitor = new LocationMonitor(
@@ -367,16 +343,15 @@ export class Dependencies {
         /*this.adjustGeolocationInteractorDebug = new AdjustGeolocationInteractorDebug(
             this.locationMonitor
         );*/
-        this.logoutPresenter = new LogoutPresenter(this.homeViewModel);
+        // Should not reset loginViewModel because forced sign out message must
+        // persist and be displayed after all dependencies have been reset.
+        this.loginPresenter = new LoginPresenter(this.loginViewModel);
         this.newAccountFactory = new NewAccountFactoryImpl();
         this.accountRegistrationService = new AccountRegistrationService(
             this.newAccountFactory,
             this.accountRepoRemote,
             this.accountRepoLocal
         );
-        // Should not reset loginViewModel because forced sign out message must
-        // persist and be displayed after all dependencies have been reset.
-        this.loginPresenter = new LoginPresenter(this.loginViewModel);
         this.sessionService = new SessionService(
             this.eventTracker,
             sessionPresenter,
@@ -396,9 +371,15 @@ export class Dependencies {
             undefined,
             () => this.resetAll()
         );
-        this.logoutService = new LogoutService(
-            this.logoutPresenter,
-            this.sessionService
+        this.signOutInteractor = new SignOutInteractorImpl(this.sessionService);
+        this.belongingDashboardInteractor = new BelongingDashboardInteractorImpl(
+            this.muTagRepoLocal,
+            this.accountRepoLocal
+        );
+        this.belongingDashboardViewModel = new BelongingDashboardViewModel(
+            this.belongingDashboardInteractor,
+            this.removeMuTagInteractor,
+            this.signOutInteractor
         );
         this.loginService = new LoginService(
             this.loginPresenter,
@@ -410,7 +391,6 @@ export class Dependencies {
             this.sessionService,
             this.accountRegistrationService
         );
-        this.appStateController.destructor();
         this.appStateController = new AppStateController(this.sessionService);
     }
 }
@@ -436,13 +416,9 @@ const HomeStack = createStackNavigator(
         Home: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <BelongingDashboardView
-                    homeViewModel={dependencies.homeViewModel}
-                    belongingDashboardInteractor={
-                        dependencies.belongingDashboardInteractor
+                    belongingDashboardViewModel={
+                        dependencies.belongingDashboardViewModel
                     }
-                    logoutService={dependencies.logoutService}
-                    addMuTagService={dependencies.addMuTagInteractor}
-                    removeMuTagService={dependencies.removeMuTagInteractor}
                     {...props}
                 />
             )

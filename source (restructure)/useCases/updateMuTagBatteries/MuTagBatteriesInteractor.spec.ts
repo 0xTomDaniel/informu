@@ -11,15 +11,16 @@ import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
-import BackgroundTaskPort from "./BackgroundTaskPort";
 import MuTagDevicesPort from "./MuTagDevicesPort";
-import { Millisecond } from "../../shared/metaLanguage/Types";
 import Account, {
     AccountData,
     AccountNumber
 } from "../../../source/Core/Domain/Account";
 import { Observable, Subscriber } from "rxjs";
 import { fakeSchedulers } from "rxjs-marbles/jest";
+import { BackgroundFetchProxy } from "./device/BackgroundFetchProxy";
+import BackgroundTask from "./device/BackgroundTask";
+import { BackgroundFetchConfig } from "react-native-background-fetch";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -119,19 +120,20 @@ const account = new Account({
 (accountRepositoryLocalMock.get as jest.Mock).mockReturnValue(
     Promise.resolve(account)
 );
-const BackgroundTaskMock = jest.fn<BackgroundTaskPort, any>(
-    (): BackgroundTaskPort => ({
-        queueRepeatedTask: (
-            minimumInterval: Millisecond,
-            task: () => void
-        ): string => {
-            const taskUid = uuidV4();
-            setInterval(task, minimumInterval);
-            return taskUid;
-        }
+let interval: NodeJS.Timeout | undefined;
+const BackgroundFetchProxyMock = jest.fn<BackgroundFetchProxy, any>(
+    (): BackgroundFetchProxy => ({
+        configure: (
+            _config: BackgroundFetchConfig,
+            callback: (taskId: string) => void
+        ) => {
+            interval = setInterval(() => callback("taskId"), 1000);
+        },
+        finish: jest.fn()
     })
 );
-const backgroundTaskMock = new BackgroundTaskMock();
+const backgroundFetchProxyMock = new BackgroundFetchProxyMock();
+const backgroundTask = new BackgroundTask(backgroundFetchProxyMock);
 let connectToProvisionedMuTagSubscriber: Subscriber<void>;
 const connectToProvisionedMuTagObservable = new Observable<void>(subscriber => {
     connectToProvisionedMuTagSubscriber = subscriber;
@@ -162,7 +164,7 @@ const belonging02 = new ProvisionedMuTag(belongingsData[1]);
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const muTagBatteriesInteractor = new MuTagBatteriesInteractor(
     accountRepositoryLocalMock,
-    backgroundTaskMock,
+    backgroundTask,
     muTagDevicesMock,
     muTagRepositoryLocalMock
 );
@@ -245,6 +247,9 @@ describe("Mu tag battery levels update", (): void => {
         );
 
         afterAll((): void => {
+            if (interval != null) {
+                clearInterval(interval);
+            }
             jest.useRealTimers();
             jest.clearAllMocks();
         });

@@ -29,7 +29,7 @@
     "lodash": "^4.17.15",
     "react": "^16.8.6",
     "react-native": "0.60.6",
-    "react-native-background-fetch": "^3.0.6",
+    "react-native-background-fetch": "^3.1.0",
     "react-native-beacons-manager": "^1.0.7",
     "react-native-ble-manager": "^7.0.0",
     "react-native-ble-plx": "^1.1.1",

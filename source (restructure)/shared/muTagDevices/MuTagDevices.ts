@@ -26,6 +26,7 @@ import Characteristic, {
 } from "./MuTagBLEGATT/Characteristic";
 import { MuTagBLEGATT } from "./MuTagBLEGATT/MuTagBLEGATT";
 import Hexadecimal from "../metaLanguage/Hexadecimal";
+import MuTagDevicesPortBatteryUpdates from "../../useCases/updateMuTagBatteries/MuTagDevicesPort";
 
 type MuTagProvisionId = string & { readonly _: unique symbol };
 type MuTagPeripheralId = PeripheralId & { readonly _: unique symbol };
@@ -34,7 +35,10 @@ interface MuTagPeripheral extends Peripheral {
 }
 
 export default class MuTagDevices
-    implements MuTagDevicesPortAddMuTag, MuTagDevicesPortRemoveMuTag {
+    implements
+        MuTagDevicesPortAddMuTag,
+        MuTagDevicesPortRemoveMuTag,
+        MuTagDevicesPortBatteryUpdates {
     private readonly muTagDeviceUuid = "de7ec7ed1055b055c0dedefea7edfa7e";
     private readonly defaultTimeout = 10000 as Millisecond;
     private readonly bluetooth: Bluetooth;

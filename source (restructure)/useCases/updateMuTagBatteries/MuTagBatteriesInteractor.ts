@@ -45,25 +45,31 @@ export default class MuTagBatteriesInteractor {
         accountNumber: AccountNumber,
         muTag: ProvisionedMuTag
     ): void {
-        this.backgroundTask.queueRepeatedTask(this.batteryReadInterval, () => {
-            if (!this.isReadyToReadBattery(muTag.uid)) {
-                return;
+        this.backgroundTask.queueRepeatedTask(
+            this.batteryReadInterval,
+            async () => {
+                if (!this.isReadyToReadBattery(muTag.uid)) {
+                    return;
+                }
+                if (!muTag.inRange) {
+                    const error = Error(
+                        `Belonging (${muTag.name}) not in range for battery read.`
+                    );
+                    this.logger.warn(error);
+                    return;
+                }
+                await this.updateMuTagBatteryLevel(
+                    accountNumber,
+                    muTag
+                ).catch(e => this.logger.warn(e, true));
             }
-            if (!muTag.inRange) {
-                const error = Error(
-                    `Belonging (${muTag.name}) not in range for battery read.`
-                );
-                this.logger.warn(error);
-                return;
-            }
-            this.updateMuTagBatteryLevel(accountNumber, muTag);
-        });
+        );
     }
 
     private setupBatteryReadRetries(
         accountNumber: AccountNumber,
         muTag: ProvisionedMuTag
-    ): void {
+    ) {
         muTag.didEnterRegion.subscribe(
             () => {
                 if (this.isReadyToReadBattery(muTag.uid)) {
@@ -74,16 +80,13 @@ export default class MuTagBatteriesInteractor {
         );
     }
 
-    private updateMuTagBatteryLevel(
+    private async updateMuTagBatteryLevel(
         accountNumber: AccountNumber,
         muTag: ProvisionedMuTag
     ) {
-        this.readMuTagBattery(accountNumber, muTag)
-            .then(level => {
-                muTag.updateBatteryLevel(level);
-                return this.muTagRepoLocal.update(muTag);
-            })
-            .catch(e => this.logger.warn(e, true));
+        const batteryLevel = await this.readMuTagBattery(accountNumber, muTag);
+        muTag.updateBatteryLevel(batteryLevel);
+        await this.muTagRepoLocal.update(muTag);
     }
 
     private isReadyToReadBattery(muTagUid: string): boolean {
