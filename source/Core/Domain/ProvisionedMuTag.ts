@@ -324,6 +324,7 @@ export default class ProvisionedMuTag extends MuTag {
         return JSON.parse(jsonString, ProvisionedMuTag.reviver);
     }
 
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     static replacer(key: string, value: any): any {
         switch (key) {
             case "":
@@ -359,6 +360,7 @@ export default class ProvisionedMuTag extends MuTag {
         }
     }
 
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     static reviver(key: string, value: any): any {
         switch (key) {
             case "":
