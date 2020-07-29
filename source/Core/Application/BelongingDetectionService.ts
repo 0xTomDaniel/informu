@@ -11,9 +11,10 @@ export interface BelongingDetection {
 }
 
 export default class BelongingDetectionService implements BelongingDetection {
+    private readonly accountRepoLocal: AccountRepositoryLocal;
+    private hasStarted = false;
     private readonly muTagMonitor: MuTagMonitor;
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
-    private readonly accountRepoLocal: AccountRepositoryLocal;
     private muTagsChangeSubscription?: Subscription;
     private muTagDetectionSubscription?: Subscription;
     private muTagRegionExitSubscription?: Subscription;
@@ -29,6 +30,10 @@ export default class BelongingDetectionService implements BelongingDetection {
     }
 
     async start(): Promise<void> {
+        if (this.hasStarted) {
+            return;
+        }
+        this.hasStarted = true;
         this.updateMuTagsWhenDetected();
         this.updateMuTagsWhenRegionExited();
         const muTags = await this.muTagRepoLocal.getAll();
@@ -38,10 +43,14 @@ export default class BelongingDetectionService implements BelongingDetection {
     }
 
     async stop(): Promise<void> {
+        if (!this.hasStarted) {
+            return;
+        }
         await this.muTagMonitor.stopAllMonitoringAndRanging();
         this.muTagsChangeSubscription?.unsubscribe();
         this.muTagDetectionSubscription?.unsubscribe();
         this.muTagRegionExitSubscription?.unsubscribe();
+        this.hasStarted = false;
     }
 
     private async controlMonitoringForMuTagChanges(): Promise<void> {
