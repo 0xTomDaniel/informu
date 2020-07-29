@@ -21,6 +21,7 @@ export default class MuTagBatteriesInteractor {
         string,
         Subscription
     >();
+    private hasStarted = false;
     private readonly lastBatteryReadTimestamps = new Map<string, Date>();
     private readonly logger = Logger.instance;
     private readonly muTagDevices: MuTagDevicesPort;
@@ -39,6 +40,10 @@ export default class MuTagBatteriesInteractor {
     }
 
     async start(): Promise<void> {
+        if (this.hasStarted) {
+            return;
+        }
+        this.hasStarted = true;
         const muTags = await this.muTagRepoLocal.getAll();
         const account = await this.accountRepoLocal.get();
         muTags.forEach(async muTag =>
@@ -65,9 +70,13 @@ export default class MuTagBatteriesInteractor {
     }
 
     stop(): void {
+        if (!this.hasStarted) {
+            return;
+        }
         for (const key of this.lastBatteryReadTimestamps.keys()) {
             this.shutDownBatteryReads(key);
         }
+        this.hasStarted = false;
     }
 
     private startUpBatteryReads(

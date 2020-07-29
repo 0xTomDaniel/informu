@@ -35,6 +35,7 @@ export default class BelongingsLocationInteractor
         startForeground: true,
         startOnBoot: true
     };
+    private hasStarted = false;
     private readonly locationMonitor: LocationMonitorPort;
     private locationSubscription?: Subscription;
     private logger = Logger.instance;
@@ -57,6 +58,10 @@ export default class BelongingsLocationInteractor
     }
 
     async start(): Promise<void> {
+        if (this.hasStarted) {
+            return;
+        }
+        this.hasStarted = true;
         this.locationSubscription = this.locationMonitor.location.subscribe(
             location => {
                 this.muTagRepoLocal
@@ -99,11 +104,15 @@ export default class BelongingsLocationInteractor
     }
 
     stop(): void {
+        if (!this.hasStarted) {
+            return;
+        }
         this.accountMuTagsChangeSubscription?.unsubscribe();
         this.locationSubscription?.unsubscribe();
         this.muTagDetectionSubscriptions.forEach(subscription =>
             subscription.unsubscribe()
         );
+        this.hasStarted = false;
     }
 
     private updateMuTagLocationWhenDetected(
