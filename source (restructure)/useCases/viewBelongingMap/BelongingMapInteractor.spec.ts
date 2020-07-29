@@ -19,6 +19,7 @@ import Account, {
 } from "../../../source/Core/Domain/Account";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import { Subscription } from "rxjs";
+import { take } from "rxjs/operators";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -138,27 +139,24 @@ describe("View belongings location on map", (): void => {
         // Given that belongings have a recent location
 
         let showBelongingLocations: BelongingLocation[] | undefined;
-        let subscription: Subscription;
 
         // When the map is opened
         //
         beforeAll(
             async (): Promise<void> => {
-                await new Promise(resolve => {
-                    subscription = belongingMapInteractor.showOnMap.subscribe(
-                        update => {
-                            showBelongingLocations = update.initial;
-                            resolve();
-                        },
-                        e => Logger.instance.error(e),
-                        () => Logger.instance.log("showOnMap completed.")
-                    );
+                await new Promise((resolve, reject) => {
+                    belongingMapInteractor.showOnMap
+                        .pipe(take(1))
+                        .subscribe(
+                            update => (showBelongingLocations = update.initial),
+                            reject,
+                            resolve
+                        );
                 });
             }
         );
 
         afterAll((): void => {
-            subscription.unsubscribe();
             jest.clearAllMocks();
         });
 

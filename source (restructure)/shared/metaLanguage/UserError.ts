@@ -1,5 +1,10 @@
 import Logger from "./Logger";
 
+export interface UserErrorViewData {
+    errorDescription: string;
+    detailedErrorDescription?: string;
+}
+
 export interface UserErrorType {
     name: string;
     userFriendlyMessage: string;
@@ -22,6 +27,16 @@ export default class UserError extends Error {
         this.name = name;
         this.userFriendlyMessage = userFriendlyMessage;
         this.originatingError = originatingError;
+    }
+
+    toViewData(): UserErrorViewData {
+        return {
+            errorDescription: this.userFriendlyMessage,
+            detailedErrorDescription: JSON.stringify(
+                this.originatingError,
+                Object.getOwnPropertyNames(this.originatingError)
+            )
+        };
     }
 
     static create(

@@ -79,7 +79,6 @@ export default class AddMuTagInteractor {
     }
 
     async startAddingNewMuTag(): Promise<void> {
-        this.addMuTagOutput.showAddMuTagScreen();
         const findTimeout = 120000 as Millisecond;
         try {
             this.unprovisionedMuTag = await this.findFirstUnprovisionedMuTag(

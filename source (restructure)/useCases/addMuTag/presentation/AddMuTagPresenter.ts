@@ -1,5 +1,4 @@
 import AddMuTagOutputPort from "../AddMuTagOutputPort";
-import { BelongingDashboardViewModel } from "../../viewBelongingDashboard/presentation/BelongingDashboardViewModel";
 import { AddMuTagViewModel } from "./AddMuTagViewModel";
 import { NameMuTagViewModel } from "./NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./MuTagAddingViewModel";
@@ -7,35 +6,34 @@ import UserError from "../../../shared/metaLanguage/UserError";
 import UserWarning from "../../../shared/metaLanguage/UserWarning";
 
 type CurrentViewModel =
-    | BelongingDashboardViewModel
     | AddMuTagViewModel
     | NameMuTagViewModel
     | MuTagAddingViewModel;
 
 export default class AddMuTagPresenter implements AddMuTagOutputPort {
-    private readonly homeViewModel: BelongingDashboardViewModel;
+    //private readonly homeViewModel: BelongingDashboardViewModel;
     private readonly addMuTagViewModel: AddMuTagViewModel;
     private readonly nameMuTagViewModel: NameMuTagViewModel;
     private readonly muTagAddingViewModel: MuTagAddingViewModel;
     private currentViewModel: CurrentViewModel;
 
     constructor(
-        homeViewModel: BelongingDashboardViewModel,
+        //homeViewModel: BelongingDashboardViewModel,
         addMuTagViewModel: AddMuTagViewModel,
         nameMuTagViewModel: NameMuTagViewModel,
         muTagAddingViewModel: MuTagAddingViewModel
     ) {
-        this.homeViewModel = homeViewModel;
+        //this.homeViewModel = homeViewModel;
         this.addMuTagViewModel = addMuTagViewModel;
         this.nameMuTagViewModel = nameMuTagViewModel;
         this.muTagAddingViewModel = muTagAddingViewModel;
-        this.currentViewModel = homeViewModel;
+        this.currentViewModel = addMuTagViewModel;
     }
 
-    showAddMuTagScreen(): void {
+    /*showAddMuTagScreen(): void {
         this.homeViewModel.navigateToAddMuTag();
         this.currentViewModel = this.addMuTagViewModel;
-    }
+    }*/
 
     showMuTagNamingScreen(): void {
         this.addMuTagViewModel.navigateToNameMuTag();
@@ -71,7 +69,7 @@ export default class AddMuTagPresenter implements AddMuTagOutputPort {
             this.currentViewModel.userErrorDescription = "";
             this.currentViewModel.detailedErrorDescription = "";
             this.currentViewModel.navigateToHomeScreen();
-            this.currentViewModel = this.homeViewModel;
+            this.currentViewModel = this.addMuTagViewModel;
         }
 
         this.resetViewModelsToDefault();

@@ -12,6 +12,9 @@ import MuTagRepositoryLocalPortAddMuTag from "../../../source (restructure)/useC
 import MuTagRepositoryLocalPortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/MuTagRepositoryLocalPort";
 import { defer } from "rxjs";
 import { publish, refCount } from "rxjs/operators";
+import MuTagRepositoryLocalPortUpdateBelongingsLocation from "../../../source (restructure)/useCases/updateBelongingsLocation/MuTagRepositoryLocalPort";
+import MuTagRepositoryLocalPortViewBelongingMap from "../../../source (restructure)/useCases/viewBelongingMap/MuTagRepositoryLocalPort";
+import MuTagRepositoryLocalPortUpdateMuTagBatteries from "../../../source (restructure)/useCases/updateMuTagBatteries/MuTagRepositoryLocalPort";
 
 interface PromiseExecutor {
     resolve: (value?: void | PromiseLike<void> | undefined) => void;
@@ -22,7 +25,10 @@ export default class MuTagRepoLocalImpl
     implements
         MuTagRepositoryLocal,
         MuTagRepositoryLocalPortAddMuTag,
-        MuTagRepositoryLocalPortRemoveMuTag {
+        MuTagRepositoryLocalPortRemoveMuTag,
+        MuTagRepositoryLocalPortUpdateBelongingsLocation,
+        MuTagRepositoryLocalPortViewBelongingMap,
+        MuTagRepositoryLocalPortUpdateMuTagBatteries {
     private readonly database: Database;
     private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly muTagCache = new Map<string, ProvisionedMuTag>();

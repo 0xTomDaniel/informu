@@ -4,10 +4,10 @@ import BelongingMapInteractor, {
     BelongingLocationDelta
 } from "../BelongingMapInteractor";
 import { Subject, Subscription } from "rxjs";
-import CollectionUpdate from "../../../shared/metaLanguage/CollectionUpdate";
+import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectionUpdate";
 
 const belongingMapInteractorShowOnMapSubject = new Subject<
-    CollectionUpdate<BelongingLocation, BelongingLocationDelta>
+    ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
 >();
 const belongingMapInteractorShowOnMap = belongingMapInteractorShowOnMapSubject.asObservable();
 const BelongingMapInteractorMock = jest.fn<BelongingMapInteractor, any>(
@@ -60,20 +60,22 @@ test("show all belongings", async (): Promise<void> => {
                 resolve();
             }
         );
-        belongingMapInteractorShowOnMapSubject.next({
-            initial: [
-                {
-                    latitude: 39.836557861962184,
-                    longitude: -105.09686516468388,
-                    name: "Keys"
-                },
-                {
-                    latitude: 39.80963962521709,
-                    longitude: -105.06733748256252,
-                    name: "Wallet"
-                }
-            ]
-        });
+        belongingMapInteractorShowOnMapSubject.next(
+            new ObjectCollectionUpdate({
+                initial: [
+                    {
+                        latitude: 39.836557861962184,
+                        longitude: -105.09686516468388,
+                        name: "Keys"
+                    },
+                    {
+                        latitude: 39.80963962521709,
+                        longitude: -105.06733748256252,
+                        name: "Wallet"
+                    }
+                ]
+            })
+        );
     });
     subscription?.unsubscribe();
 });
@@ -118,22 +120,24 @@ test("show belonging change", async (): Promise<void> => {
                 resolve();
             }
         );
-        belongingMapInteractorShowOnMapSubject.next({
-            changed: [
-                {
-                    index: 0,
-                    elementChange: {
-                        longitude: -105.09686516468381
+        belongingMapInteractorShowOnMapSubject.next(
+            new ObjectCollectionUpdate({
+                changed: [
+                    {
+                        index: 0,
+                        elementChange: {
+                            longitude: -105.09686516468381
+                        }
+                    },
+                    {
+                        index: 1,
+                        elementChange: {
+                            name: "Bag"
+                        }
                     }
-                },
-                {
-                    index: 1,
-                    elementChange: {
-                        name: "Bag"
-                    }
-                }
-            ]
-        });
+                ]
+            })
+        );
     });
     subscription?.unsubscribe();
 });
@@ -204,26 +208,28 @@ test("show added belongings", async (): Promise<void> => {
                 resolve();
             }
         );
-        belongingMapInteractorShowOnMapSubject.next({
-            added: [
-                {
-                    index: 1,
-                    element: {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Laptop"
+        belongingMapInteractorShowOnMapSubject.next(
+            new ObjectCollectionUpdate({
+                added: [
+                    {
+                        index: 1,
+                        element: {
+                            latitude: 39.80963962521709,
+                            longitude: -105.06733748256252,
+                            name: "Laptop"
+                        }
+                    },
+                    {
+                        index: 3,
+                        element: {
+                            latitude: 39.80963962521709,
+                            longitude: -105.06733748256252,
+                            name: "Wallet"
+                        }
                     }
-                },
-                {
-                    index: 3,
-                    element: {
-                        latitude: 39.80963962521709,
-                        longitude: -105.06733748256252,
-                        name: "Wallet"
-                    }
-                }
-            ]
-        });
+                ]
+            })
+        );
     });
     subscription?.unsubscribe();
 });
@@ -268,16 +274,18 @@ test("remove belonging", async (): Promise<void> => {
                 resolve();
             }
         );
-        belongingMapInteractorShowOnMapSubject.next({
-            removed: [
-                {
-                    index: 2
-                },
-                {
-                    index: 0
-                }
-            ]
-        });
+        belongingMapInteractorShowOnMapSubject.next(
+            new ObjectCollectionUpdate({
+                removed: [
+                    {
+                        index: 2
+                    },
+                    {
+                        index: 0
+                    }
+                ]
+            })
+        );
     });
     subscription?.unsubscribe();
 });
