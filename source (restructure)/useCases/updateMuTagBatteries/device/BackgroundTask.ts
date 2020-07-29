@@ -29,10 +29,10 @@ export default class BackgroundTask implements BackgroundTaskPort {
                 await Promise.all(queuedTasks);
                 backgroundFetchProxy.finish(taskId);
                 const backgroundFetchSecondsElapsed =
-                    (backgroundFetchStarted.getTime() - new Date().getTime()) /
+                    (new Date().getTime() - backgroundFetchStarted.getTime()) /
                     1000;
                 this.logger.log(
-                    `Background fetch completed in ${backgroundFetchSecondsElapsed} seconds.`,
+                    `Background fetch executed ${queuedTasks.length}/${this.tasks.size} task(s) in ${backgroundFetchSecondsElapsed} seconds.`,
                     true
                 );
             },
