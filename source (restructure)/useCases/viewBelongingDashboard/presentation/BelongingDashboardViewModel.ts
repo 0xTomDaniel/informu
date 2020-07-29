@@ -9,14 +9,14 @@ import {
     refCount,
     distinctUntilChanged,
     share,
-    mapTo,
-    distinct
+    mapTo
 } from "rxjs/operators";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { Millisecond } from "../../../shared/metaLanguage/Types";
 import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
 import SignOutInteractor from "../../signOut/SignOutInteractor";
 import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
+import { isEqual } from "lodash";
 
 export enum BatteryBarLevel {
     "0%",
@@ -102,7 +102,7 @@ export default class BelongingDashboardViewModel {
                     )
                 )
             ),
-            distinctUntilChanged()
+            distinctUntilChanged(isEqual)
         );
         this.showEmptyDashboard = this.dashboardBelongings.pipe(
             map(belongings => belongings.length === 0),
@@ -117,7 +117,7 @@ export default class BelongingDashboardViewModel {
         this.showActivityIndicator = merge(
             removeMuTagInteractor.showActivityIndicator,
             signOutInteractor.showActivityIndicator
-        ).pipe(distinct());
+        ).pipe(distinctUntilChanged());
         this.showError = merge(
             belongingDashboardInteractor.showError,
             removeMuTagInteractor.showError,
