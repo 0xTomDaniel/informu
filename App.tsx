@@ -87,6 +87,9 @@ import BelongingDashboardViewModel from "./source (restructure)/useCases/viewBel
 import SignOutInteractor, {
     SignOutInteractorImpl
 } from "./source (restructure)/useCases/signOut/SignOutInteractor";
+import MuTagBatteriesInteractor from "./source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
+import BackgroundTask from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundTask";
+import BackgroundFetchProxyImpl from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundFetchProxy";
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -129,6 +132,9 @@ export class Dependencies {
     appStateMonitor: AppStateMonitor;
     adjustGeolocationInteractor: AdjustGeolocationInteractor;
     //adjustGeolocationInteractorDebug: AdjustGeolocationInteractorDebug;
+    backgroundFetchProxy: BackgroundFetchProxyImpl;
+    backgroundTask: BackgroundTask;
+    muTagBatteriesInteractor: MuTagBatteriesInteractor;
     sessionService: SessionService;
     loginViewModel: LoginViewModel;
     loginPresenter: LoginPresenter;
@@ -227,6 +233,14 @@ export class Dependencies {
             this.accountRepoRemote,
             this.accountRepoLocal
         );
+        this.backgroundFetchProxy = BackgroundFetchProxyImpl.instance;
+        this.backgroundTask = new BackgroundTask(this.backgroundFetchProxy);
+        this.muTagBatteriesInteractor = new MuTagBatteriesInteractor(
+            this.accountRepoLocal,
+            this.backgroundTask,
+            this.muTagDevices,
+            this.muTagRepoLocal
+        );
         this.sessionService = new SessionService(
             this.eventTracker,
             sessionPresenter,
@@ -239,7 +253,8 @@ export class Dependencies {
             this.belongingDetectionService,
             this.belongingsLocationInteractor,
             this.database,
-            this.accountRegistrationService
+            this.accountRegistrationService,
+            this.muTagBatteriesInteractor
         );
         this.sessionService.resetAllDependencies.subscribe(
             undefined,
@@ -270,7 +285,7 @@ export class Dependencies {
     }
 
     private resetAll(): void {
-        this.authentication = new AuthenticationFirebase(webClientId);
+        this.authentication = new AuthenticationFirebase(this.webClientId);
         this.database = new DatabaseImplWatermelon();
         this.accountRepoLocal = new AccountRepoLocalImpl(this.database);
         this.accountRepoRemote = new AccountRepoRNFirebase();
@@ -352,6 +367,15 @@ export class Dependencies {
             this.accountRepoRemote,
             this.accountRepoLocal
         );
+        // BackgroundFetchProxyImpl instance is a singleton that doesn't need to
+        // be instantiated again.
+        this.backgroundTask = new BackgroundTask(this.backgroundFetchProxy);
+        this.muTagBatteriesInteractor = new MuTagBatteriesInteractor(
+            this.accountRepoLocal,
+            this.backgroundTask,
+            this.muTagDevices,
+            this.muTagRepoLocal
+        );
         this.sessionService = new SessionService(
             this.eventTracker,
             sessionPresenter,
@@ -364,7 +388,8 @@ export class Dependencies {
             this.belongingDetectionService,
             this.belongingsLocationInteractor,
             this.database,
-            this.accountRegistrationService
+            this.accountRegistrationService,
+            this.muTagBatteriesInteractor
         );
         this.sessionService.resetAllDependencies.subscribe(
             undefined,
