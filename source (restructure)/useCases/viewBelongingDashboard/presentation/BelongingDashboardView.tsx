@@ -256,7 +256,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                     icon="plus-circle-outline"
                     color={Theme.Color.DarkGrey}
                     style={styles.appBarActionAddMuTag}
-                    onPress={props.belongingDashboardViewModel.addMuTag}
+                    onPress={() => props.belongingDashboardViewModel.addMuTag()}
                 />
                 <Appbar.Action
                     icon="logout"
@@ -270,20 +270,20 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                 ListEmptyComponent={<BelongingsEmpty />}
                 scrollEnabled={!showEmptyDashboard}
                 data={belongings}
-                renderItem={({ item }): ReactElement => (
+                renderItem={({ item }) => (
                     <BelongingCard
-                        onRemoveMuTag={
-                            props.belongingDashboardViewModel.removeMuTag
+                        onRemoveMuTag={uid =>
+                            props.belongingDashboardViewModel.removeMuTag(uid)
                         }
                         viewData={item}
                     />
                 )}
-                keyExtractor={(item): string => item.uid}
+                keyExtractor={item => item.uid}
             />
             <Portal>
                 <Dialog
                     visible={showSignOutDialog}
-                    onDismiss={(): void => setShowSignOutDialog(false)}
+                    onDismiss={() => setShowSignOutDialog(false)}
                 >
                     <Dialog.Content>
                         <Paragraph>
@@ -291,14 +291,14 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                         </Paragraph>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button
-                            onPress={(): void => setShowSignOutDialog(false)}
-                        >
+                        <Button onPress={() => setShowSignOutDialog(false)}>
                             Cancel
                         </Button>
                         <Button
                             mode="contained"
-                            onPress={props.belongingDashboardViewModel.signOut}
+                            onPress={() =>
+                                props.belongingDashboardViewModel.signOut()
+                            }
                         >
                             Sign Out
                         </Button>
