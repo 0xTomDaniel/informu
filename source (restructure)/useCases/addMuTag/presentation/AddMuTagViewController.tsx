@@ -115,6 +115,7 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
         this.props.viewModel.onNavigateToHomeScreen(
             this.props.navigation.goBack
         );
+        this.props.addMuTagService.startAddingNewMuTag();
     }
 
     componentWillUnmount(): void {
