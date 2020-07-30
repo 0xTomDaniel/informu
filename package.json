@@ -83,8 +83,5 @@
     "eslint-plugin-react-native": "^3.8.1",
     "@typescript-eslint/eslint-plugin": "^2.10.0",
     "@typescript-eslint/parser": "^2.10.0"
-  },
-  "jest": {
-    "preset": "react-native"
   }
 }

@@ -87,7 +87,9 @@ import BelongingDashboardViewModel from "./source (restructure)/useCases/viewBel
 import SignOutInteractor, {
     SignOutInteractorImpl
 } from "./source (restructure)/useCases/signOut/SignOutInteractor";
-import MuTagBatteriesInteractor from "./source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
+import MuTagBatteriesInteractor, {
+    MuTagBatteriesInteractorImpl
+} from "./source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 import BackgroundTask from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundTask";
 import BackgroundFetchProxyImpl from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundFetchProxy";
 
@@ -235,7 +237,7 @@ export class Dependencies {
         );
         this.backgroundFetchProxy = BackgroundFetchProxyImpl.instance;
         this.backgroundTask = new BackgroundTask(this.backgroundFetchProxy);
-        this.muTagBatteriesInteractor = new MuTagBatteriesInteractor(
+        this.muTagBatteriesInteractor = new MuTagBatteriesInteractorImpl(
             this.accountRepoLocal,
             this.backgroundTask,
             this.muTagDevices,
@@ -370,7 +372,7 @@ export class Dependencies {
         // BackgroundFetchProxyImpl instance is a singleton that doesn't need to
         // be instantiated again.
         this.backgroundTask = new BackgroundTask(this.backgroundFetchProxy);
-        this.muTagBatteriesInteractor = new MuTagBatteriesInteractor(
+        this.muTagBatteriesInteractor = new MuTagBatteriesInteractorImpl(
             this.accountRepoLocal,
             this.backgroundTask,
             this.muTagDevices,

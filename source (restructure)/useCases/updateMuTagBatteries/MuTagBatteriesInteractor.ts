@@ -10,7 +10,12 @@ import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Subscription } from "rxjs";
 
-export default class MuTagBatteriesInteractor {
+export default interface MuTagBatteriesInteractor {
+    start(): Promise<void>;
+    stop(): void;
+}
+
+export class MuTagBatteriesInteractorImpl {
     private accountMuTagsChangeSubscription: Subscription | undefined;
     private readonly accountRepoLocal: AccountRepositoryLocalPort;
     private readonly backgroundTask: BackgroundTaskPort;

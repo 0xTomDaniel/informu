@@ -6,7 +6,7 @@ import Percent from "../../shared/metaLanguage/Percent";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import { v4 as uuidV4 } from "uuid";
 import { take, skip } from "rxjs/operators";
-import MuTagBatteriesInteractor from "./MuTagBatteriesInteractor";
+import { MuTagBatteriesInteractorImpl } from "./MuTagBatteriesInteractor";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
@@ -187,7 +187,7 @@ const belonging02 = new ProvisionedMuTag(belongingsData[1]);
 (muTagRepositoryLocalMock.getAll as jest.Mock).mockReturnValue(
     Promise.resolve(new Set([belonging01, belonging02]))
 );
-const muTagBatteriesInteractor = new MuTagBatteriesInteractor(
+const muTagBatteriesInteractor = new MuTagBatteriesInteractorImpl(
     accountRepositoryLocalMock,
     backgroundTask,
     muTagDevicesMock,

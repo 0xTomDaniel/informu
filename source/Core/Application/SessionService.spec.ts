@@ -21,6 +21,7 @@ import EventTracker from "../../../source (restructure)/shared/metaLanguage/Even
 import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
 import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 import { BelongingsLocation } from "../../../source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
+import MuTagBatteriesInteractor from "../../../source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -137,6 +138,9 @@ describe("user opens saved login session", (): void => {
     (belongingDetectionServiceMock.start as jest.Mock).mockResolvedValue(
         undefined
     );
+    (belongingDetectionServiceMock.stop as jest.Mock).mockResolvedValue(
+        undefined
+    );
     const localDatabaseMock = new LocalDatabaseMock();
     const newAccountFactoryMock = new NewAccountFactoryMock();
 
@@ -150,6 +154,9 @@ describe("user opens saved login session", (): void => {
     (belongingsLocationInteractorMock.start as jest.Mock).mockResolvedValue(
         undefined
     );
+    (belongingsLocationInteractorMock.stop as jest.Mock).mockReturnValue(
+        undefined
+    );
 
     const accountRegistrationService = new AccountRegistrationService(
         newAccountFactoryMock,
@@ -160,6 +167,17 @@ describe("user opens saved login session", (): void => {
         accountRegistrationService,
         "register"
     );
+    const MuTagBatteriesInteractorMock = jest.fn<MuTagBatteriesInteractor, any>(
+        (): MuTagBatteriesInteractor => ({
+            start: jest.fn(),
+            stop: jest.fn()
+        })
+    );
+    const muTagBatteriesInteractorMock = new MuTagBatteriesInteractorMock();
+    (muTagBatteriesInteractorMock.start as jest.Mock).mockResolvedValue(
+        undefined
+    );
+    (muTagBatteriesInteractorMock.stop as jest.Mock).mockReturnValue(undefined);
     const sessionService = new SessionService(
         eventTrackerMock,
         sessionOutputMock,
@@ -172,7 +190,8 @@ describe("user opens saved login session", (): void => {
         belongingDetectionServiceMock,
         belongingsLocationInteractorMock,
         localDatabaseMock,
-        accountRegistrationService
+        accountRegistrationService,
+        muTagBatteriesInteractorMock
     );
 
     const recycledBeaconIds = [BeaconId.create("1")];
@@ -248,6 +267,12 @@ describe("user opens saved login session", (): void => {
             expect(
                 belongingsLocationInteractorMock.start
             ).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should start Mu tag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.start).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -328,6 +353,12 @@ describe("user opens saved login session", (): void => {
             expect(belongingsLocationInteractorMock.stop).toHaveBeenCalledTimes(
                 1
             );
+        });
+
+        // Then
+        //
+        it("should stop Mu tag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.stop).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -414,6 +445,12 @@ describe("user opens saved login session", (): void => {
                 belongingsLocationInteractorMock.start
             ).toHaveBeenCalledTimes(1);
         });
+
+        // Then
+        //
+        it("should start Mu tag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.start).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe("user signs in while other device already in session", (): void => {
@@ -495,6 +532,12 @@ describe("user opens saved login session", (): void => {
                 belongingsLocationInteractorMock.start
             ).toHaveBeenCalledTimes(1);
         });
+
+        // Then
+        //
+        it("should start Mu tag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.start).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe("user is signed in on other device while signed in", (): void => {
@@ -537,6 +580,12 @@ describe("user opens saved login session", (): void => {
             expect(belongingsLocationInteractorMock.stop).toHaveBeenCalledTimes(
                 1
             );
+        });
+
+        // Then
+        //
+        it("should stop Mu tag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.stop).toHaveBeenCalledTimes(1);
         });
 
         // Then
