@@ -42,12 +42,16 @@ export default class BelongingMapViewModel {
                                 case "latitude":
                                     this.features[
                                         change.index
-                                    ].geometry.coordinates[1] = value;
+                                    ].geometry.coordinates[1] = this.addRandomOffset(
+                                        value
+                                    );
                                     break;
                                 case "longitude":
                                     this.features[
                                         change.index
-                                    ].geometry.coordinates[0] = value;
+                                    ].geometry.coordinates[0] = this.addRandomOffset(
+                                        value
+                                    );
                                     break;
                                 case "name":
                                     this.features[change.index].properties[
@@ -66,7 +70,12 @@ export default class BelongingMapViewModel {
         );
     }
 
-    convertToFeature(
+    private addRandomOffset(coordinate: number): number {
+        const randomOffset = Math.round(Math.random() * 100 - 50) / 1000000;
+        return coordinate - randomOffset;
+    }
+
+    private convertToFeature(
         belongingLocation: BelongingLocation
     ): Feature<Point, BelongingFeatureProperties> {
         return {
@@ -74,8 +83,8 @@ export default class BelongingMapViewModel {
             geometry: {
                 type: "Point",
                 coordinates: [
-                    belongingLocation.longitude,
-                    belongingLocation.latitude
+                    this.addRandomOffset(belongingLocation.longitude),
+                    this.addRandomOffset(belongingLocation.latitude)
                 ]
             },
             properties: {

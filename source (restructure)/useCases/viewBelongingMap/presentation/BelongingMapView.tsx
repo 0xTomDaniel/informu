@@ -11,7 +11,10 @@ import React, {
 import BelongingMapViewModel, {
     BelongingFeatureProperties
 } from "./BelongingMapViewModel";
-import MapboxGL, { SymbolLayerStyle } from "@react-native-mapbox-gl/maps";
+import MapboxGL, {
+    SymbolLayerStyle,
+    CircleLayerStyle
+} from "@react-native-mapbox-gl/maps";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { FeatureCollection, Point } from "geojson";
 import { FAB } from "react-native-paper";
@@ -70,37 +73,75 @@ const BelongingMapView: FunctionComponent<BelongingMapViewProps> = (
         coords: { latitude: 0, longitude: 0 }
     });
 
-    const mapboxStyles: { [key: string]: StyleProp<SymbolLayerStyle> } = {
+    const symbolLayerStyles: { [key: string]: StyleProp<SymbolLayerStyle> } = {
         belongingMarker: {
+            iconAllowOverlap: true,
             iconImage: belongingMarkerIcon,
-            iconAnchor: "bottom",
+            iconPadding: 0,
+            iconSize: ["interpolate", ["linear"], ["zoom"], 18, 0.5, 20, 1],
             textField: ["get", "name"],
             textFont: ["Open Sans SemiBold"],
-            textAnchor: "bottom",
-            textOffset: [0, -2.25],
+            textJustify: "auto",
+            textPadding: 0,
+            textSize: ["interpolate", ["linear"], ["zoom"], 18, 12, 20, 18],
             textHaloColor: "rgba(255, 255, 255, 0.8)",
             textHaloWidth: 1,
-            textHaloBlur: 1
+            textHaloBlur: 1,
+            textRadialOffset: 1.4,
+            textVariableAnchor: [
+                "bottom",
+                "top",
+                "left",
+                "right",
+                "bottom-left",
+                "bottom-right",
+                "top-left",
+                "top-right"
+            ]
+        },
+        clusterCount: {
+            textField: "{point_count}",
+            textSize: 18,
+            textPitchAlignment: "map",
+            textColor: "white",
+            textFont: ["Open Sans SemiBold"]
+        }
+    };
+    const circleLayerStyles: { [key: string]: StyleProp<CircleLayerStyle> } = {
+        clusteredPoint: {
+            circlePitchAlignment: "map",
+            circleColor: Theme.Color.PrimaryOrange,
+            circleRadius: ["interpolate", ["linear"], ["zoom"], 14, 20, 17, 30],
+            circleStrokeWidth: 5,
+            circleStrokeColor: Theme.Color.SecondaryOrange,
+            circleStrokeOpacity: 0.5
+        },
+        belongingMarkerCircle: {
+            circlePitchAlignment: "map",
+            circleColor: Theme.Color.SecondaryOrange,
+            circleRadius: ["interpolate", ["linear"], ["zoom"], 18, 25, 20, 50],
+            circleOpacity: 0.15,
+            circleStrokeWidth: 2,
+            circleStrokeColor: Theme.Color.PrimaryOrange,
+            circleStrokeOpacity: 0.15
         }
     };
 
-    useEffect(() => {
-        const subscription = props.belongingMapViewModel.showBelongingMarkers.subscribe(
-            update => {
-                setBelongingMarkers(update);
-                /*if (update.features.length !== 0) {
+    useEffect(
+        () =>
+            props.belongingMapViewModel.showBelongingMarkers.subscribe(
+                update => {
+                    setBelongingMarkers(update);
+                    /*if (update.features.length !== 0) {
                     setMapLocation([
                         update.features[0].geometry.coordinates[0],
                         update.features[0].geometry.coordinates[1]
                     ]);
                 }*/
-            }
-        );
-
-        return (): void => {
-            subscription.unsubscribe();
-        };
-    }, [props.belongingMapViewModel.showBelongingMarkers]);
+                }
+            ).unsubscribe,
+        [props.belongingMapViewModel.showBelongingMarkers]
+    );
 
     useEffect(() => {
         MapboxGL.setAccessToken(props.mapboxAccessToken);
@@ -108,7 +149,7 @@ const BelongingMapView: FunctionComponent<BelongingMapViewProps> = (
 
     useEffect(() => {
         Icon.getImageSource(
-            "map-marker",
+            "radar",
             36,
             Theme.Color.PrimaryOrange
         ).then(source => setBelongingMarkerIcon(source));
@@ -152,16 +193,40 @@ const BelongingMapView: FunctionComponent<BelongingMapViewProps> = (
                 logoEnabled={false}
                 attributionPosition={{ bottom: 24, left: 16 }}
             >
-                <MapboxGL.UserLocation onUpdate={updateUserLocation} />
+                <MapboxGL.UserLocation
+                    onUpdate={updateUserLocation}
+                    visible={false}
+                />
                 <MapboxGL.Camera
-                    zoomLevel={17}
+                    zoomLevel={18}
                     centerCoordinate={mapLocation}
                     animationMode="flyTo"
                 />
-                <MapboxGL.ShapeSource id="belongings" shape={belongingMarkers}>
+                <MapboxGL.ShapeSource
+                    id="belongings"
+                    cluster
+                    shape={belongingMarkers}
+                >
                     <MapboxGL.SymbolLayer
-                        id="belongingMarker"
-                        style={mapboxStyles.belongingMarker}
+                        id="pointCount"
+                        style={symbolLayerStyles.clusterCount}
+                    />
+                    <MapboxGL.CircleLayer
+                        id="clusteredPoints"
+                        belowLayerID="pointCount"
+                        filter={["has", "point_count"]}
+                        style={circleLayerStyles.clusteredPoints}
+                    />
+                    <MapboxGL.SymbolLayer
+                        id="belongingMarkers"
+                        filter={["!", ["has", "point_count"]]}
+                        style={symbolLayerStyles.belongingMarker}
+                    />
+                    <MapboxGL.CircleLayer
+                        id="belongingMarkerCircles"
+                        belowLayerID="pointCount"
+                        filter={["!", ["has", "point_count"]]}
+                        style={circleLayerStyles.belongingMarkerCircle}
                     />
                 </MapboxGL.ShapeSource>
             </MapboxGL.MapView>
