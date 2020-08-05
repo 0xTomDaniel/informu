@@ -6,8 +6,9 @@ import Logger from "../../shared/metaLanguage/Logger";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import { Subscription, Observable, Subject } from "rxjs";
 import ObjectCollectionUpdate from "../../shared/metaLanguage/ObjectCollectionUpdate";
-import { take, map } from "rxjs/operators";
+import { take, map, skip, distinctUntilChanged } from "rxjs/operators";
 import LifecycleObservable from "../../shared/metaLanguage/LifecycleObservable";
+import { isEqual } from "lodash";
 
 export interface BelongingLocation {
     name: string;
@@ -163,23 +164,25 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                 this.logger.warn("Index not found.", true);
                 return;
             }
-            const subscription = belonging.location.subscribe(
-                location =>
-                    this.showOnMapSubject.next(
-                        new ObjectCollectionUpdate({
-                            changed: [
-                                {
-                                    index: index,
-                                    elementChange: {
-                                        latitude: location.latitude,
-                                        longitude: location.longitude
+            const subscription = belonging.location
+                .pipe(skip(1), distinctUntilChanged(isEqual))
+                .subscribe(
+                    location =>
+                        this.showOnMapSubject.next(
+                            new ObjectCollectionUpdate({
+                                changed: [
+                                    {
+                                        index: index,
+                                        elementChange: {
+                                            latitude: location.latitude,
+                                            longitude: location.longitude
+                                        }
                                     }
-                                }
-                            ]
-                        })
-                    ),
-                error => this.logger.warn(error, true)
-            );
+                                ]
+                            })
+                        ),
+                    error => this.logger.warn(error, true)
+                );
             this.locationSubscriptions.set(belonging.uid, subscription);
         });
     }
