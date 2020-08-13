@@ -1740,6 +1740,11 @@
   resolved "https://registry.yarnpkg.com/@types/prop-types/-/prop-types-15.7.3.tgz#2ab0d5da2e5815f94b0b9d4b95d1e5f243ab2ca7"
   integrity sha512-KfRL3PuHmqQLOG+2tGpRO26Ctg+Cq1E01D2DMriKEATHgWLfeNDmq9e29Q9WIky0dQ3NPkd1mzYH8Lm936Z9qw==
 
+"@types/react-native-background-timer@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@types/react-native-background-timer/-/react-native-background-timer-2.0.0.tgz#c44c57f8fbca9d9d5521fdd72a8f55232b79381e"
+  integrity sha512-y5VW82dL/ESOLg+5QQHyBdsFVA4ZklENxmOyxv8o06T+3HBG2JOSuz/CIPz1vKdB7dmWDGPZNuPosdtnp+xv2A==
+
 "@types/react-native-fbsdk@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@types/react-native-fbsdk/-/react-native-fbsdk-1.0.0.tgz#fc1acf555628d107417a0290d293f283ca6af025"
@@ -6618,6 +6623,11 @@ react-native-background-fetch@^3.1.0:
     fast-plist "^0.1.2"
     plist "^3.0.1"
     xcode "^2.0.0"
+
+react-native-background-timer@^2.3.1:
+  version "2.3.1"
+  resolved "https://registry.yarnpkg.com/react-native-background-timer/-/react-native-background-timer-2.3.1.tgz#83044a4572c62f5b99e929057b7bda5596b033ae"
+  integrity sha512-cqsXqNOZYtFYrzdwXdfFciJOXjQwr1DpCb2Oy4Z3+FGETRRl+wH3uf8YuqnYUHFnKulHJ0BwYKTvkmmbY0eTxQ==
 
 react-native-beacons-manager@^1.0.7:
   version "1.0.7"
