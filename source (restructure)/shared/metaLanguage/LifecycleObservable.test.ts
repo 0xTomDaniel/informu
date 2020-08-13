@@ -206,7 +206,7 @@ test("begin callback executes again upon first subscription", async (): Promise<
     });
 });
 
-test("source observable may be emitted from within begin callback", async (): Promise<
+test("source observable may be emitted from within begin callback and before begin callback completes", async (): Promise<
     void
 > => {
     beginStarted.next(0);

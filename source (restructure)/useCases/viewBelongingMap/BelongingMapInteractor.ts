@@ -6,7 +6,7 @@ import Logger from "../../shared/metaLanguage/Logger";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import { Subscription, Observable, Subject } from "rxjs";
 import ObjectCollectionUpdate from "../../shared/metaLanguage/ObjectCollectionUpdate";
-import { take, map, skip, distinctUntilChanged } from "rxjs/operators";
+import { take, map, distinctUntilChanged } from "rxjs/operators";
 import LifecycleObservable from "../../shared/metaLanguage/LifecycleObservable";
 import { isEqual } from "lodash";
 
@@ -165,7 +165,7 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                 return;
             }
             const subscription = belonging.location
-                .pipe(skip(1), distinctUntilChanged(isEqual))
+                .pipe(distinctUntilChanged(isEqual))
                 .subscribe(
                     location =>
                         this.showOnMapSubject.next(
