@@ -192,9 +192,9 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
         }
     };
 
-    useEffect(
-        (): (() => void) =>
-            props.belongingDashboardViewModel.navigateToView.subscribe(view => {
+    useEffect(() => {
+        const subscription = props.belongingDashboardViewModel.navigateToView.subscribe(
+            view => {
                 switch (view) {
                     case AppView.AddMuTag:
                         props.navigation.navigate("AddMuTag");
@@ -203,40 +203,38 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                         props.navigation.navigate("Login");
                         break;
                 }
-            }).unsubscribe,
-        [props.belongingDashboardViewModel.navigateToView, props.navigation]
-    );
+            }
+        );
+        return () => subscription.unsubscribe();
+    }, [props.belongingDashboardViewModel.navigateToView, props.navigation]);
 
-    useEffect(
-        (): (() => void) =>
-            props.belongingDashboardViewModel.showActivityIndicator.subscribe(
-                setShowActivityIndicator
-            ).unsubscribe,
-        [props.belongingDashboardViewModel.showActivityIndicator]
-    );
+    useEffect((): (() => void) => {
+        const subscription = props.belongingDashboardViewModel.showActivityIndicator.subscribe(
+            setShowActivityIndicator
+        );
+        return () => subscription.unsubscribe();
+    }, [props.belongingDashboardViewModel.showActivityIndicator]);
 
-    useEffect(
-        (): (() => void) =>
-            props.belongingDashboardViewModel.showBelongings.subscribe(
-                setBelongings
-            ).unsubscribe,
-        [props.belongingDashboardViewModel.showBelongings]
-    );
+    useEffect((): (() => void) => {
+        const subscription = props.belongingDashboardViewModel.showBelongings.subscribe(
+            setBelongings
+        );
+        return () => subscription.unsubscribe();
+    }, [props.belongingDashboardViewModel.showBelongings]);
 
-    useEffect(
-        (): (() => void) =>
-            props.belongingDashboardViewModel.showEmptyDashboard.subscribe(
-                setShowEmptyDashboard
-            ).unsubscribe,
-        [props.belongingDashboardViewModel.showEmptyDashboard]
-    );
+    useEffect((): (() => void) => {
+        const subscription = props.belongingDashboardViewModel.showEmptyDashboard.subscribe(
+            setShowEmptyDashboard
+        );
+        return () => subscription.unsubscribe();
+    }, [props.belongingDashboardViewModel.showEmptyDashboard]);
 
-    useEffect(
-        (): (() => void) =>
-            props.belongingDashboardViewModel.showError.subscribe(setShowError)
-                .unsubscribe,
-        [props.belongingDashboardViewModel.showError]
-    );
+    useEffect((): (() => void) => {
+        const subscription = props.belongingDashboardViewModel.showError.subscribe(
+            setShowError
+        );
+        return () => subscription.unsubscribe();
+    }, [props.belongingDashboardViewModel.showError]);
 
     useEffect(() => {
         requestPermissions().catch(e => console.warn(e));
