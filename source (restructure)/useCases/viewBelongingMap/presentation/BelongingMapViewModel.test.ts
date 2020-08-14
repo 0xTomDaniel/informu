@@ -1,10 +1,14 @@
-import BelongingMapViewModel from "./BelongingMapViewModel";
+import BelongingMapViewModel, {
+    BelongingFeatureProperties
+} from "./BelongingMapViewModel";
 import BelongingMapInteractor, {
     BelongingLocation,
     BelongingLocationDelta
 } from "../BelongingMapInteractor";
 import { Subject, Subscription } from "rxjs";
 import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectionUpdate";
+import { FeatureCollection, Point } from "geojson";
+import { cloneDeep } from "lodash";
 
 const belongingMapInteractorShowOnMapSubject = new Subject<
     ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
@@ -19,44 +23,48 @@ const belongingMapInteractorMock = BelongingMapInteractorMock();
 const belongingMapViewModel = new BelongingMapViewModel(
     belongingMapInteractorMock
 );
+/*const roundCoordinates = (
+    update: FeatureCollection<Point, BelongingFeatureProperties>
+) => {
+    const updateClone = cloneDeep(update);
+    updateClone.features.forEach(feature => {
+        const longitude = parseFloat(
+            feature.geometry.coordinates[0].toFixed(12)
+        );
+        const latitude = parseFloat(
+            feature.geometry.coordinates[1].toFixed(12)
+        );
+        feature.geometry.coordinates = [longitude, latitude];
+    });
+    return updateClone;
+};*/
 
 test("show all belongings", async (): Promise<void> => {
-    expect.assertions(1);
+    expect.assertions(6);
     let subscription: Subscription | undefined;
     await new Promise(resolve => {
         subscription = belongingMapViewModel.showBelongingMarkers.subscribe(
             update => {
-                expect(update).toEqual({
-                    type: "FeatureCollection",
-                    features: [
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.09686516468388,
-                                    39.836557861962184
-                                ]
-                            },
-                            properties: {
-                                name: "Keys"
-                            }
-                        },
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.06733748256252,
-                                    39.80963962521709
-                                ]
-                            },
-                            properties: {
-                                name: "Wallet"
-                            }
-                        }
-                    ]
-                });
+                // Using precision of four decimal places because randomness is
+                // added to latitude and longitude.
+                expect(update.features[0].geometry.coordinates[0]).toBeCloseTo(
+                    -105.09686516468388,
+                    4
+                );
+                expect(update.features[0].geometry.coordinates[1]).toBeCloseTo(
+                    39.836557861962184,
+                    4
+                );
+                expect(update.features[0].properties.name).toBe("Keys");
+                expect(update.features[1].geometry.coordinates[0]).toBeCloseTo(
+                    -105.06733748256252,
+                    4
+                );
+                expect(update.features[1].geometry.coordinates[1]).toBeCloseTo(
+                    39.80963962521709,
+                    4
+                );
+                expect(update.features[1].properties.name).toBe("Wallet");
                 resolve();
             }
         );
@@ -81,42 +89,29 @@ test("show all belongings", async (): Promise<void> => {
 });
 
 test("show belonging change", async (): Promise<void> => {
-    expect.assertions(1);
+    expect.assertions(6);
     let subscription: Subscription | undefined;
     await new Promise(resolve => {
         subscription = belongingMapViewModel.showBelongingMarkers.subscribe(
             update => {
-                expect(update).toEqual({
-                    type: "FeatureCollection",
-                    features: [
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.09686516468381,
-                                    39.836557861962184
-                                ]
-                            },
-                            properties: {
-                                name: "Keys"
-                            }
-                        },
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.06733748256252,
-                                    39.80963962521709
-                                ]
-                            },
-                            properties: {
-                                name: "Bag"
-                            }
-                        }
-                    ]
-                });
+                expect(update.features[0].geometry.coordinates[0]).toBeCloseTo(
+                    -105.09686516468381,
+                    4
+                );
+                expect(update.features[0].geometry.coordinates[1]).toBeCloseTo(
+                    39.836557861962184,
+                    4
+                );
+                expect(update.features[0].properties.name).toBe("Keys");
+                expect(update.features[1].geometry.coordinates[0]).toBeCloseTo(
+                    -105.06733748256252,
+                    4
+                );
+                expect(update.features[1].geometry.coordinates[1]).toBeCloseTo(
+                    39.80963962521709,
+                    4
+                );
+                expect(update.features[1].properties.name).toBe("Bag");
                 resolve();
             }
         );
@@ -143,68 +138,47 @@ test("show belonging change", async (): Promise<void> => {
 });
 
 test("show added belongings", async (): Promise<void> => {
-    expect.assertions(1);
+    expect.assertions(12);
     let subscription: Subscription | undefined;
     await new Promise(resolve => {
         subscription = belongingMapViewModel.showBelongingMarkers.subscribe(
             update => {
-                expect(update).toEqual({
-                    type: "FeatureCollection",
-                    features: [
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.09686516468381,
-                                    39.836557861962184
-                                ]
-                            },
-                            properties: {
-                                name: "Keys"
-                            }
-                        },
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.06733748256252,
-                                    39.80963962521709
-                                ]
-                            },
-                            properties: {
-                                name: "Laptop"
-                            }
-                        },
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.06733748256252,
-                                    39.80963962521709
-                                ]
-                            },
-                            properties: {
-                                name: "Bag"
-                            }
-                        },
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.06733748256252,
-                                    39.80963962521709
-                                ]
-                            },
-                            properties: {
-                                name: "Wallet"
-                            }
-                        }
-                    ]
-                });
+                expect(update.features[0].geometry.coordinates[0]).toBeCloseTo(
+                    -105.09686516468381,
+                    4
+                );
+                expect(update.features[0].geometry.coordinates[1]).toBeCloseTo(
+                    39.836557861962184,
+                    4
+                );
+                expect(update.features[0].properties.name).toBe("Keys");
+                expect(update.features[1].geometry.coordinates[0]).toBeCloseTo(
+                    -105.06733748256252,
+                    4
+                );
+                expect(update.features[1].geometry.coordinates[1]).toBeCloseTo(
+                    39.80963962521709,
+                    4
+                );
+                expect(update.features[1].properties.name).toBe("Laptop");
+                expect(update.features[2].geometry.coordinates[0]).toBeCloseTo(
+                    -105.06733748256252,
+                    4
+                );
+                expect(update.features[2].geometry.coordinates[1]).toBeCloseTo(
+                    39.80963962521709,
+                    4
+                );
+                expect(update.features[2].properties.name).toBe("Bag");
+                expect(update.features[3].geometry.coordinates[0]).toBeCloseTo(
+                    -105.06733748256252,
+                    4
+                );
+                expect(update.features[3].geometry.coordinates[1]).toBeCloseTo(
+                    39.80963962521709,
+                    4
+                );
+                expect(update.features[3].properties.name).toBe("Wallet");
                 resolve();
             }
         );
@@ -235,42 +209,29 @@ test("show added belongings", async (): Promise<void> => {
 });
 
 test("remove belonging", async (): Promise<void> => {
-    expect.assertions(1);
+    expect.assertions(6);
     let subscription: Subscription | undefined;
     await new Promise(resolve => {
         subscription = belongingMapViewModel.showBelongingMarkers.subscribe(
             update => {
-                expect(update).toEqual({
-                    type: "FeatureCollection",
-                    features: [
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.06733748256252,
-                                    39.80963962521709
-                                ]
-                            },
-                            properties: {
-                                name: "Laptop"
-                            }
-                        },
-                        {
-                            type: "Feature",
-                            geometry: {
-                                type: "Point",
-                                coordinates: [
-                                    -105.06733748256252,
-                                    39.80963962521709
-                                ]
-                            },
-                            properties: {
-                                name: "Wallet"
-                            }
-                        }
-                    ]
-                });
+                expect(update.features[0].geometry.coordinates[0]).toBeCloseTo(
+                    -105.06733748256252,
+                    4
+                );
+                expect(update.features[0].geometry.coordinates[1]).toBeCloseTo(
+                    39.80963962521709,
+                    4
+                );
+                expect(update.features[0].properties.name).toBe("Laptop");
+                expect(update.features[1].geometry.coordinates[0]).toBeCloseTo(
+                    -105.06733748256252,
+                    4
+                );
+                expect(update.features[1].geometry.coordinates[1]).toBeCloseTo(
+                    39.80963962521709,
+                    4
+                );
+                expect(update.features[1].properties.name).toBe("Wallet");
                 resolve();
             }
         );
