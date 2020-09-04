@@ -1,10 +1,13 @@
 import { Session } from "../../../source/Core/Application/SessionService";
 import { Subject, Observable } from "rxjs";
 import UserError, { UserErrorType } from "../../shared/metaLanguage/UserError";
+import Localize from "../../shared/localization/Localize";
+
+const localize = Localize.instance;
 
 const SignOutFailed: UserErrorType = {
     name: "SignOutFailed",
-    userFriendlyMessage: "Failed to sign out. Please try again."
+    userFriendlyMessage: localize.getText("signOut", "error", "signOutFailed")
 };
 
 export default interface SignOutInteractor {

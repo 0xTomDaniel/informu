@@ -10,30 +10,45 @@ import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import { switchMap, take } from "rxjs/operators";
 import { Observable, Subject, BehaviorSubject } from "rxjs";
 import Logger from "../../shared/metaLanguage/Logger";
+import { template } from "lodash";
+import Localize from "../../shared/localization/Localize";
+
+const localize = Localize.instance;
 
 export const LowMuTagBattery = (
     lowBatteryThreshold: number
 ): UserErrorType => ({
     name: "LowMuTagBattery",
-    userFriendlyMessage: `Unable to remove Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.`
+    userFriendlyMessage: template(
+        localize.getText("addMuTag", "error", "lowMuTagBattery")
+    )({ lowBatteryThreshold: lowBatteryThreshold })
 });
 
 export const FailedToConnectToMuTag: UserErrorType = {
     name: "FailedToConnectToMuTag",
-    userFriendlyMessage:
-        "Could not connect to Mu tag. Please ensure that Mu tag is charged and move it closer to the app."
+    userFriendlyMessage: localize.getText(
+        "removeMuTag",
+        "error",
+        "failedToConnectToMuTag"
+    )
 };
 
 export const MuTagCommunicationFailure: UserErrorType = {
     name: "MuTagCommunicationFailure",
-    userFriendlyMessage:
-        "There was a problem communicating with the Mu tag. Please move Mu tag closer to the app."
+    userFriendlyMessage: localize.getText(
+        "removeMuTag",
+        "error",
+        "muTagCommunicationFailure"
+    )
 };
 
 export const FailedToRemoveMuTagFromAccount: UserErrorType = {
     name: "FailedToRemoveMuTagFromAccount",
-    userFriendlyMessage:
-        "The Mu tag device successfully reset and disconnected from your account, but there was a problem removing the Mu tag from the app. Please notify support@informu.io."
+    userFriendlyMessage: localize.getText(
+        "removeMuTag",
+        "error",
+        "failedToRemoveMuTagFromAccount"
+    )
 };
 
 export default interface RemoveMuTagInteractor {

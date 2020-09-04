@@ -16,6 +16,7 @@ import AddMuTagInteractor from "../AddMuTagInteractor";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
 import { MuTagColor } from "../../../../source/Core/Domain/MuTag";
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
+import Localize from "../../../shared/localization/Localize";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -77,6 +78,8 @@ interface NameMuTagVCProps extends NavigationScreenProps {
     addMuTagService: AddMuTagInteractor;
 }
 
+const localize = Localize.instance;
+
 export default class NameMuTagViewController extends Component<
     NameMuTagVCProps
 > {
@@ -123,10 +126,18 @@ export default class NameMuTagViewController extends Component<
                     </Appbar.Header>
                     <View style={styles.mainContainer}>
                         <Headline style={styles.headline}>
-                            What is the name of this Mu tag?
+                            {localize.getText(
+                                "addMuTag",
+                                "naming",
+                                "askNameTitle"
+                            )}
                         </Headline>
                         <TextInput
-                            label="Attached to"
+                            label={localize.getText(
+                                "addMuTag",
+                                "naming",
+                                "nameInputLabel"
+                            )}
                             mode="outlined"
                             value={this.state.attachedToInput}
                             onChangeText={(text: string): void => {
@@ -151,7 +162,17 @@ export default class NameMuTagViewController extends Component<
                         loading={this.state.showActivityIndicator}
                         style={styles.button}
                     >
-                        {this.state.showActivityIndicator ? "Adding" : "Add"}
+                        {this.state.showActivityIndicator
+                            ? localize.getText(
+                                  "addMuTag",
+                                  "naming",
+                                  "buttonAdding"
+                              )
+                            : localize.getText(
+                                  "addMuTag",
+                                  "naming",
+                                  "buttonAdd"
+                              )}
                     </Button>
                     <ErrorDialog
                         message={this.state.userErrorDescription}

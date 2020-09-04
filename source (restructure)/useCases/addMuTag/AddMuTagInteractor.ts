@@ -13,36 +13,75 @@ import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import UserError, { UserErrorType } from "../../shared/metaLanguage/UserError";
+import { AccountNumber } from "../../../source/Core/Domain/Account";
+import { take, switchMap } from "rxjs/operators";
 import UserWarning, {
     UserWarningType
 } from "../../shared/metaLanguage/UserWarning";
-import { AccountNumber } from "../../../source/Core/Domain/Account";
-import { take, switchMap } from "rxjs/operators";
 
-const LowMuTagBattery = (lowBatteryThreshold: number): UserErrorType => ({
-    name: "LowMuTagBattery",
-    userFriendlyMessage: `Unable to add Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.`
-});
+interface FailedToAddMuTag extends UserErrorType {
+    name: "failedToAddMuTag";
+}
 
-const NewMuTagNotFound: UserErrorType = {
-    name: "NewMuTagNotFound",
-    userFriendlyMessage:
-        "Could not find a new Mu tag. Be sure the Mu tag light is flashing and keep it close to the app."
-};
+interface FailedToSaveSettings extends UserWarningType {
+    name: "failedToSaveSettings";
+}
 
-const FailedToAddMuTag: UserErrorType = {
-    name: "FailedToAddMuTag",
-    userFriendlyMessage:
-        "There was problem adding the Mu tag. Please keep Mu tag close to the app and try again."
-};
+interface LowMuTagBattery extends UserErrorType {
+    name: "lowMuTagBattery";
+    lowBatteryThreshold: string;
+}
 
-const FailedToSaveSettings: UserWarningType = {
-    name: "FailedToSaveSettings",
-    userFriendlyMessage:
-        "Your Mu tag added successfully but some settings failed to save."
-};
+interface NewMuTagNotFound extends UserErrorType {
+    name: "newMuTagNotFound";
+}
+
+export type AddMuTagError =
+    | FailedToAddMuTag
+    | LowMuTagBattery
+    | NewMuTagNotFound;
+
+export type AddMuTagWarning = FailedToSaveSettings;
 
 export default class AddMuTagInteractor {
+    /*private static readonly FailedToAddMuTag: UserErrorType<undefined> = {
+        name: "FailedToAddMuTag",
+        properties: undefined
+        userFriendlyMessage: Localize.instance.getText(
+            "addMuTag",
+            "error",
+            "failedToAddMuTag"
+        )
+    };
+    private static readonly FailedToSaveSettings: UserWarningType = {
+        name: "FailedToSaveSettings",
+        userFriendlyMessage: Localize.instance.getText(
+            "addMuTag",
+            "error",
+            "failedToSaveSettings"
+        )
+    };
+    private static readonly LowMuTagBattery = (
+        lowBatteryThreshold: number
+    ): UserErrorType<"lowBatteryThreshold"> => ({
+        name: "LowMuTagBattery",
+        properties: {
+            lowBatteryThreshold: lowBatteryThreshold.toString()
+        }
+        userFriendlyMessage: template(
+            Localize.instance.getText("addMuTag", "error", "lowMuTagBattery")
+        )({ lowBatteryThreshold: lowBatteryThreshold })
+    });
+    private static readonly NewMuTagNotFound: UserErrorType<undefined> = {
+        name: "NewMuTagNotFound",
+        properties: undefined
+        userFriendlyMessage: Localize.instance.getText(
+            "addMuTag",
+            "error",
+            "newMuTagNotFound"
+        )
+    };*/
+
     private readonly connectThreshold: Rssi;
     private readonly addMuTagBatteryThreshold: Percent;
     private readonly addMuTagOutput: AddMuTagOutputPort;
@@ -85,17 +124,22 @@ export default class AddMuTagInteractor {
                 findTimeout
             );
         } catch (e) {
-            this.showError(UserError.create(NewMuTagNotFound, e));
+            this.showError(UserError.create({ name: "newMuTagNotFound" }, e));
             return;
         }
         if (
             this.unprovisionedMuTag.batteryLevel.valueOf() <
             this.addMuTagBatteryThreshold.valueOf()
         ) {
-            const error = UserError.create(
-                LowMuTagBattery(this.addMuTagBatteryThreshold.valueOf())
+            const lowBatteryThreshold = this.addMuTagBatteryThreshold
+                .valueOf()
+                .toString();
+            this.showError(
+                UserError.create({
+                    name: "lowMuTagBattery",
+                    lowBatteryThreshold: lowBatteryThreshold
+                })
             );
-            this.showError(error);
             return;
         }
 
@@ -103,7 +147,11 @@ export default class AddMuTagInteractor {
             await this.addNewMuTag(
                 this.unprovisionedMuTag,
                 this.muTagName
-            ).catch(e => this.showError(UserError.create(FailedToAddMuTag, e)));
+            ).catch(e =>
+                this.showError(
+                    UserError.create({ name: "failedToAddMuTag" }, e)
+                )
+            );
         }
     }
 
@@ -122,7 +170,14 @@ export default class AddMuTagInteractor {
 
         if (this.unprovisionedMuTag != null) {
             await this.addNewMuTag(this.unprovisionedMuTag, name).catch(e =>
-                this.showError(UserError.create(FailedToAddMuTag, e))
+                this.showError(
+                    UserError.create(
+                        {
+                            name: "failedToAddMuTag"
+                        },
+                        e
+                    )
+                )
             );
         } else {
             this.muTagName = name;
@@ -148,7 +203,12 @@ export default class AddMuTagInteractor {
             );
         } catch (e) {
             this.addMuTagOutput.showWarning(
-                UserWarning.create(FailedToSaveSettings, e)
+                UserWarning.create(
+                    {
+                        name: "failedToSaveSettings"
+                    },
+                    e
+                )
             );
         } finally {
             this.resetAddNewMuTagState();
@@ -303,7 +363,7 @@ export default class AddMuTagInteractor {
         this.addMuTagOutput.showMuTagFinalSetupScreen();
     }
 
-    private showError(error: UserError): void {
+    private showError(error: UserError<AddMuTagError>): void {
         this.resetAddNewMuTagState();
         this.addMuTagOutput.showError(error);
     }

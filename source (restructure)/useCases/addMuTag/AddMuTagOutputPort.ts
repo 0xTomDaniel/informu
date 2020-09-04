@@ -1,5 +1,6 @@
 import UserError from "../../shared/metaLanguage/UserError";
 import UserWarning from "../../shared/metaLanguage/UserWarning";
+import { AddMuTagWarning, AddMuTagError } from "./AddMuTagInteractor";
 
 export default interface AddMuTagOutputPort {
     showMuTagNamingScreen(): void;
@@ -7,6 +8,6 @@ export default interface AddMuTagOutputPort {
     showMuTagFinalSetupScreen(): void;
     showActivityIndicator(): void;
     showHomeScreen(): void;
-    showWarning(warning: UserWarning): void;
-    showError(error: UserError): void;
+    showWarning(warning: UserWarning<AddMuTagWarning>): void;
+    showError(error: UserError<AddMuTagError>): void;
 }

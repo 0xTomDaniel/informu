@@ -1,0 +1,81 @@
+{
+    "addMuTag": {
+        "instructions": {
+            "list1": "Keep the Mu tag close to the app during this setup.",
+            "list2": "Press the Mu tag button now to wake it up.",
+            "info": "Once the dot on the Mu tag logo starts flashing green, press 'Continue' below.",
+            "buttonContinue": "Continue"
+        },
+        "naming": {
+            "askNameTitle": "What is the name of this Mu tag?",
+            "nameInputLabel": "Attached to",
+            "buttonAdd": "Add",
+            "buttonAdding": "Adding"
+        },
+        "adding": {
+            "connecting": "Connecting to Mu tag...",
+            "info": "If nothing seems to be happening, then press the Mu tag button to ensure it's awake.",
+            "buttonCancel": "Cancel"
+        },
+        "error": {
+            "lowMuTagBattery": "Unable to add Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.",
+            "newMuTagNotFound": "Could not find a new Mu tag. Be sure the Mu tag light is flashing and keep it close to the app.",
+            "failedToAddMuTag": "There was problem adding the Mu tag. Please keep Mu tag close to the app and try again."
+        },
+        "warning": {
+            "failedToSaveSettings": "Your Mu tag added successfully but some settings failed to save."
+        }
+    },
+    "removeMuTag": {
+        "error": {
+            "lowMuTagBattery": "Unable to remove Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.",
+            "failedToConnectToMuTag": "Could not connect to Mu tag. Please ensure that Mu tag is charged and move it closer to the app.",
+            "muTagCommunicationFailure": "There was a problem communicating with the Mu tag. Please move Mu tag closer to the app.",
+            "failedToRemoveMuTagFromAccount": "The Mu tag device successfully reset and disconnected from your account, but there was a problem removing the Mu tag from the app. Please notify support@informu.io."
+        }
+    },
+    "signOut": {
+        "error": {
+            "signOutFailed": "Failed to sign out. Please try again."
+        }
+    },
+    "belongingsLocation": {
+        "foregroundServiceNotification": {
+            "title": "Mu Tag Tracking",
+            "description": "Keeping Mu tag location up-to-date."
+        }
+    },
+    "viewBelongingDashboard": {
+        "belongingCard": {
+            "noAddressName": "no location name found",
+            "buttonRemove": "Remove"
+        },
+        "lastSeen": {
+            "daysAgo": "d ago",
+            "hoursAgo": "h ago",
+            "minutesAgo": "m ago",
+            "secondsAgo": "Seconds ago",
+            "justNow": "Just now"
+        },
+        "locationPermissionRequest": {
+            "title": "Mu Tags Require 'Coarse Location' Permission",
+            "message": "Please select 'Allow'. This is required for your Mu tags to have accurate and up-to-date locations.",
+            "buttonDeny": "Deny",
+            "buttonAllow": "Allow"
+        },
+        "signOutDialog": {
+            "message": "Are you sure you want to sign out?",
+            "buttonCancel": "Cancel",
+            "buttonSignOut": "Sign Out"
+        },
+        "dashboard": {
+            "noMuTagMessage": "Add your first Mu tag to get started."
+        }
+    },
+    "tabBar": {
+        "screen": {
+            "home": "Home",
+            "map": "Map"
+        }
+    }
+}

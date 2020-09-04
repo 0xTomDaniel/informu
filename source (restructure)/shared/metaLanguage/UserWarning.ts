@@ -2,38 +2,19 @@ import Logger from "./Logger";
 
 export interface UserWarningType {
     name: string;
-    userFriendlyMessage: string;
 }
 
-export default class UserWarning extends Error {
+export default class UserWarning<T extends UserWarningType> {
     private static get logger(): Logger {
         return Logger.instance;
     }
-    readonly name: string;
-    readonly originatingError?: any;
-    readonly userFriendlyMessage: string;
 
-    private constructor(
-        name: string,
-        userFriendlyMessage: string,
-        originatingError?: any
-    ) {
-        super(userFriendlyMessage);
-        this.name = name;
-        this.userFriendlyMessage = userFriendlyMessage;
-        this.originatingError = originatingError;
-    }
-
-    static create(
-        type: UserWarningType,
-        originatingError?: any,
+    static create<T extends Readonly<UserWarningType>>(
+        type: T,
+        originatingError?: unknown,
         logEvent = true
-    ): UserWarning {
-        const userWarning = new this(
-            type.name,
-            type.userFriendlyMessage,
-            originatingError
-        );
+    ): UserWarning<T> {
+        const userWarning = new this(type, originatingError);
         if (logEvent) {
             if (this.logger == null) {
                 throw Error("Logger instance is undefined.");
@@ -41,5 +22,21 @@ export default class UserWarning extends Error {
             this.logger.warn(userWarning, true);
         }
         return userWarning;
+    }
+
+    get details(): string {
+        return JSON.stringify(
+            this.originatingError,
+            Object.getOwnPropertyNames(this.originatingError),
+            2
+        );
+    }
+
+    readonly originatingError?: unknown;
+    readonly type: T;
+
+    private constructor(type: T, originatingError?: unknown) {
+        this.originatingError = originatingError;
+        this.type = type;
     }
 }

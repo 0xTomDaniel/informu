@@ -92,6 +92,8 @@ import MuTagBatteriesInteractor, {
 } from "./source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 import BackgroundTask from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundTask";
 import BackgroundFetchProxyImpl from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundFetchProxy";
+import Localize from "./source (restructure)/shared/localization/Localize";
+const localize = Localize.instance;
 
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
@@ -566,15 +568,15 @@ const MapStack = createStackNavigator(
 
 const AppStack = createMaterialBottomTabNavigator(
     {
-        Home: { screen: HomeStack },
-        Map: { screen: MapStack }
+        [localize.getText("tabBar", "screen", "home")]: { screen: HomeStack },
+        [localize.getText("tabBar", "screen", "map")]: { screen: MapStack }
         //Debug: { screen: DebugStack }
     },
     {
         defaultNavigationOptions: {
             header: null
         },
-        initialRouteName: "Home",
+        initialRouteName: localize.getText("tabBar", "screen", "home"),
         activeColor: Theme.Color.PrimaryBlue,
         shifting: true,
         barStyle: { backgroundColor: "white" }

@@ -34,6 +34,9 @@ import { Images } from "../../../../source/Primary Adapters/Presentation/Images"
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
 import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
 import BelongingCard from "./BelongingCard";
+import Localize from "../../../shared/localization/Localize";
+
+const localize = Localize.instance;
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -134,7 +137,11 @@ const BelongingsEmpty: FunctionComponent = (): ReactElement => {
                     style={styles.tooltipContent}
                 >
                     <Text style={styles.tooltipText}>
-                        Add your first Mu tag to get started.
+                        {localize.getText(
+                            "viewBelongingDashboard",
+                            "dashboard",
+                            "noMuTagMessage"
+                        )}
                     </Text>
                 </LinearGradient>
             </View>
@@ -175,13 +182,27 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
         const permissionStatus = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
             {
-                title: "Mu Tags Require 'Coarse Location' Permission",
-                message:
-                    "Please select 'Allow'. This is required for your " +
-                    "Mu tags to have accurate and up-to-date locations.",
+                title: localize.getText(
+                    "viewBelongingDashboard",
+                    "locationPermissionRequest",
+                    "title"
+                ),
+                message: localize.getText(
+                    "viewBelongingDashboard",
+                    "locationPermissionRequest",
+                    "message"
+                ),
                 //buttonNeutral: "Ask Me Later",
-                buttonNegative: "Deny",
-                buttonPositive: "Allow"
+                buttonNegative: localize.getText(
+                    "viewBelongingDashboard",
+                    "locationPermissionRequest",
+                    "buttonDeny"
+                ),
+                buttonPositive: localize.getText(
+                    "viewBelongingDashboard",
+                    "locationPermissionRequest",
+                    "buttonAllow"
+                )
             }
         );
 
@@ -285,12 +306,20 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                 >
                     <Dialog.Content>
                         <Paragraph>
-                            Are you sure you want to sign out?
+                            {localize.getText(
+                                "viewBelongingDashboard",
+                                "signOutDialog",
+                                "message"
+                            )}
                         </Paragraph>
                     </Dialog.Content>
                     <Dialog.Actions>
                         <Button onPress={() => setShowSignOutDialog(false)}>
-                            Cancel
+                            {localize.getText(
+                                "viewBelongingDashboard",
+                                "signOutDialog",
+                                "buttonCancel"
+                            )}
                         </Button>
                         <Button
                             mode="contained"
@@ -298,7 +327,11 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                                 props.belongingDashboardViewModel.signOut()
                             }
                         >
-                            Sign Out
+                            {localize.getText(
+                                "viewBelongingDashboard",
+                                "signOutDialog",
+                                "buttonSignOut"
+                            )}
                         </Button>
                     </Dialog.Actions>
                 </Dialog>

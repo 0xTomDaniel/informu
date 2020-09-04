@@ -4,6 +4,9 @@ import { NameMuTagViewModel } from "./NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./MuTagAddingViewModel";
 import UserError from "../../../shared/metaLanguage/UserError";
 import UserWarning from "../../../shared/metaLanguage/UserWarning";
+import { AddMuTagWarning, AddMuTagError } from "../AddMuTagInteractor";
+import Localize from "../../../shared/localization/Localize";
+import { template } from "lodash";
 
 type CurrentViewModel =
     | AddMuTagViewModel
@@ -75,33 +78,48 @@ export default class AddMuTagPresenter implements AddMuTagOutputPort {
         this.resetViewModelsToDefault();
     }
 
-    showWarning(warning: UserWarning): void {
+    showWarning(warning: UserWarning<AddMuTagWarning>): void {
         if (
             this.currentViewModel instanceof NameMuTagViewModel ||
             this.currentViewModel instanceof MuTagAddingViewModel
         ) {
-            this.currentViewModel.userWarningDescription =
-                warning.userFriendlyMessage;
-            this.currentViewModel.detailedWarningDescription =
-                warning.originatingError != null
-                    ? JSON.stringify(warning.originatingError)
-                    : "";
+            const message = Localize.instance.getText(
+                "addMuTag",
+                "warning",
+                warning.type.name
+            );
+            this.currentViewModel.userWarningDescription = message;
+            this.currentViewModel.detailedWarningDescription = warning.details;
             this.currentViewModel.showWarning = true;
         }
     }
 
-    showError(error: UserError): void {
+    showError(error: UserError<AddMuTagError>): void {
+        let message: string;
+        switch (error.type.name) {
+            case "lowMuTagBattery":
+                message = template(
+                    Localize.instance.getText(
+                        "addMuTag",
+                        "error",
+                        error.type.name
+                    )
+                )({ lowBatteryThreshold: error.type.lowBatteryThreshold });
+                break;
+            default:
+                message = Localize.instance.getText(
+                    "addMuTag",
+                    "error",
+                    error.type.name
+                );
+        }
         if (
             this.currentViewModel instanceof AddMuTagViewModel ||
             this.currentViewModel instanceof NameMuTagViewModel ||
             this.currentViewModel instanceof MuTagAddingViewModel
         ) {
-            this.currentViewModel.userErrorDescription =
-                error.userFriendlyMessage;
-            this.currentViewModel.detailedErrorDescription =
-                error.originatingError != null
-                    ? String(error.originatingError)
-                    : "";
+            this.currentViewModel.userErrorDescription = message;
+            this.currentViewModel.detailedErrorDescription = error.details;
             this.currentViewModel.showError = true;
         }
     }

@@ -43,44 +43,6 @@ const EventTrackerMock = jest.fn<EventTracker, any>(
 const eventTrackerMock = new EventTrackerMock();
 Logger.createInstance(eventTrackerMock);
 
-/*const bdiShowErrorSubject = new Subject<UserError>();
-const showOnDashboardSubject = new Subject<
-    ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
->();
-const BelongingDashboardInteractorMock = jest.fn<
-    BelongingDashboardInteractor,
-    any
->(
-    (): BelongingDashboardInteractor => ({
-        showError: bdiShowErrorSubject,
-        showOnDashboard: showOnDashboardSubject
-    })
-);
-const belongingDashboardInteractor = new BelongingDashboardInteractorMock();
-const showActivityIndicatorSubject = new Subject<boolean>();
-const soiShowErrorSubject = new Subject<UserError>();
-const showSignInSubject = new Subject<void>();
-const RemoveMuTagInteractorMock = jest.fn<RemoveMuTagInteractor, any>(
-    (): RemoveMuTagInteractor => ({
-        showActivityIndicator: new Observable<boolean>(),
-        showError: new Observable<UserError>(),
-        remove: jest.fn()
-    })
-);
-const removeMuTagInteractorMock = RemoveMuTagInteractorMock();
-const SignOutInteractorMock = jest.fn<SignOutInteractor, any>(
-    (): SignOutInteractor => ({
-        showActivityIndicator: showActivityIndicatorSubject,
-        showError: soiShowErrorSubject,
-        showSignIn: showSignInSubject,
-        signOut: jest.fn()
-    })
-);
-const signOutInteractor = SignOutInteractorMock();
-const homeViewModel = new BelongingDashboardViewModel(
-    belongingDashboardInteractor,
-    signOutInteractor
-);*/
 const addMuTagViewModel = new AddMuTagViewModel();
 const nameMuTagViewModel = new NameMuTagViewModel();
 const muTagAddingViewModel = new MuTagAddingViewModel();

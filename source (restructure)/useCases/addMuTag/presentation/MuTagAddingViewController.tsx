@@ -10,6 +10,7 @@ import { Scale } from "../../../../source/Primary Adapters/Presentation/Responsi
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { MuTagColor } from "../../../../source/Core/Domain/MuTag";
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
+import Localize from "../../../shared/localization/Localize";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -94,6 +95,8 @@ interface MuTagAddingVCProps extends NavigationScreenProps {
     addMuTagService: AddMuTagInteractor;
 }
 
+const localize = Localize.instance;
+
 export default class MuTagAddingViewController extends Component<
     MuTagAddingVCProps
 > {
@@ -125,7 +128,7 @@ export default class MuTagAddingViewController extends Component<
             <SafeAreaView style={[styles.safeAreaView, styles.base]}>
                 <View style={styles.mainContainer}>
                     <Headline style={styles.headline}>
-                        Connecting to Mu tag...
+                        {localize.getText("addMuTag", "adding", "connecting")}
                     </Headline>
                     <ActivityIndicator
                         animating={true}
@@ -149,8 +152,7 @@ export default class MuTagAddingViewController extends Component<
                             styles.instructionsInfoText
                         ]}
                     >
-                        If nothing seems to be happening, then press the Mu tag
-                        button to ensure it's awake.
+                        {localize.getText("addMuTag", "adding", "info")}
                     </Text>
                 </View>
                 <Button
@@ -160,7 +162,7 @@ export default class MuTagAddingViewController extends Component<
                     }
                     style={styles.button}
                 >
-                    Cancel
+                    {localize.getText("addMuTag", "adding", "buttonCancel")}
                 </Button>
                 <ErrorDialog
                     message={this.state.userErrorDescription}

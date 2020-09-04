@@ -1,54 +1,25 @@
 import Logger from "./Logger";
 
-export interface UserErrorViewData {
+/*export interface UserErrorViewData {
     errorDescription: string;
     detailedErrorDescription?: string;
-}
+}*/
 
 export interface UserErrorType {
     name: string;
-    userFriendlyMessage: string;
 }
 
-export default class UserError extends Error {
+export default class UserError<T extends UserErrorType> {
     private static get logger(): Logger {
         return Logger.instance;
     }
-    readonly name: string;
-    readonly originatingError?: any;
-    readonly userFriendlyMessage: string;
 
-    private constructor(
-        name: string,
-        userFriendlyMessage: string,
-        originatingError?: any
-    ) {
-        super(userFriendlyMessage);
-        this.name = name;
-        this.userFriendlyMessage = userFriendlyMessage;
-        this.originatingError = originatingError;
-    }
-
-    toViewData(): UserErrorViewData {
-        return {
-            errorDescription: this.userFriendlyMessage,
-            detailedErrorDescription: JSON.stringify(
-                this.originatingError,
-                Object.getOwnPropertyNames(this.originatingError)
-            )
-        };
-    }
-
-    static create(
-        type: UserErrorType,
-        originatingError?: any,
+    static create<T extends Readonly<UserErrorType>>(
+        type: T,
+        originatingError?: unknown,
         logEvent = true
-    ): UserError {
-        const userError = new this(
-            type.name,
-            type.userFriendlyMessage,
-            originatingError
-        );
+    ): UserError<T> {
+        const userError = new this(type, originatingError);
         if (logEvent) {
             if (this.logger == null) {
                 throw Error("Logger instance is undefined.");
@@ -56,5 +27,21 @@ export default class UserError extends Error {
             this.logger.error(userError, true);
         }
         return userError;
+    }
+
+    get details(): string {
+        return JSON.stringify(
+            this.originatingError,
+            Object.getOwnPropertyNames(this.originatingError),
+            2
+        );
+    }
+
+    readonly originatingError?: unknown;
+    readonly type: T;
+
+    private constructor(type: T, originatingError?: unknown) {
+        this.originatingError = originatingError;
+        this.type = type;
     }
 }

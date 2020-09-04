@@ -16,6 +16,7 @@ import { AddMuTagViewModel, AddMuTagState } from "./AddMuTagViewModel";
 import AddMuTagInteractor from "../AddMuTagInteractor";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
+import Localize from "../../../shared/localization/Localize";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -102,6 +103,8 @@ interface AddMuTagVCProps extends NavigationScreenProps {
     addMuTagService: AddMuTagInteractor;
 }
 
+const localize = Localize.instance;
+
 export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
     state: Readonly<AddMuTagState> = this.props.viewModel;
 
@@ -162,8 +165,11 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                                         styles.instructionsText
                                     ]}
                                 >
-                                    Keep the Mu tag close to the app during this
-                                    setup.
+                                    {localize.getText(
+                                        "addMuTag",
+                                        "instructions",
+                                        "list1"
+                                    )}
                                 </Text>
                             </View>
                             <View>
@@ -182,8 +188,11 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                                             styles.instructionsText
                                         ]}
                                     >
-                                        Press the Mu tag button now to wake it
-                                        up.
+                                        {localize.getText(
+                                            "addMuTag",
+                                            "instructions",
+                                            "list2"
+                                        )}
                                     </Text>
                                 </View>
                                 <View
@@ -205,8 +214,11 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                                             styles.instructionsInfoText
                                         ]}
                                     >
-                                        Once the dot on the Mu tag logo starts
-                                        flashing green, press 'Continue' below.
+                                        {localize.getText(
+                                            "addMuTag",
+                                            "instructions",
+                                            "info"
+                                        )}
                                     </Text>
                                 </View>
                             </View>
@@ -219,7 +231,11 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
                         }
                         style={styles.button}
                     >
-                        Continue
+                        {localize.getText(
+                            "addMuTag",
+                            "instructions",
+                            "buttonContinue"
+                        )}
                     </Button>
                     <ErrorDialog
                         message={this.state.userErrorDescription}

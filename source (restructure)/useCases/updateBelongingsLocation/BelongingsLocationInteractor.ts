@@ -10,6 +10,9 @@ import {
     GeolocationAccuracy,
     LocationProvider
 } from "../../shared/geolocation/LocationMonitor";
+import Localize from "../../shared/localization/Localize";
+
+const localize = Localize.instance;
 
 export interface BelongingsLocation {
     start(): Promise<void>;
@@ -29,8 +32,16 @@ export default class BelongingsLocationInteractor
         //notificationIconColor: string,
         //notificationIconLarge: string,
         //notificationIconSmall: string,
-        notificationText: "Keeping Mu tag location up-to-date.",
-        notificationTitle: "Mu Tag Tracking",
+        notificationTitle: localize.getText(
+            "belongingsLocation",
+            "foregroundServiceNotification",
+            "title"
+        ),
+        notificationText: localize.getText(
+            "belongingsLocation",
+            "foregroundServiceNotification",
+            "description"
+        ),
         stopOnTerminate: false,
         startForeground: true,
         startOnBoot: true

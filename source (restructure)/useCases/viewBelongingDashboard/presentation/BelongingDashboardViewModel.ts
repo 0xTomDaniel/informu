@@ -17,6 +17,9 @@ import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
 import SignOutInteractor from "../../signOut/SignOutInteractor";
 import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 import { isEqual } from "lodash";
+import Localize from "../../../shared/localization/Localize";
+
+const localize = Localize.instance;
 
 export enum BatteryBarLevel {
     "0%",
@@ -141,7 +144,13 @@ export default class BelongingDashboardViewModel {
         dashboardBelonging: DashboardBelonging
     ): BelongingViewData {
         return {
-            address: dashboardBelonging.address ?? "no location name found",
+            address:
+                dashboardBelonging.address ??
+                localize.getText(
+                    "viewBelongingDashboard",
+                    "belongingCard",
+                    "noAddressName"
+                ),
             batteryBarLevel: BelongingDashboardViewModel.getBatteryBarLevel(
                 dashboardBelonging.batteryLevel
             ),
@@ -192,15 +201,35 @@ export default class BelongingDashboardViewModel {
         if (daysSinceLastSeen >= 7) {
             return timestamp.toLocaleDateString();
         } else if (daysSinceLastSeen >= 1) {
-            return `${daysSinceLastSeen}d ago`;
+            return `${daysSinceLastSeen}${localize.getText(
+                "viewBelongingDashboard",
+                "lastSeen",
+                "daysAgo"
+            )}`;
         } else if (hoursSinceLastSeen >= 1) {
-            return `${hoursSinceLastSeen}h ago`;
+            return `${hoursSinceLastSeen}${localize.getText(
+                "viewBelongingDashboard",
+                "lastSeen",
+                "hoursAgo"
+            )}`;
         } else if (minutesSinceLastSeen >= 1) {
-            return `${minutesSinceLastSeen}m ago`;
+            return `${minutesSinceLastSeen}${localize.getText(
+                "viewBelongingDashboard",
+                "lastSeen",
+                "minutesAgo"
+            )}`;
         } else if (isSafe != null && !isSafe) {
-            return "Seconds ago";
+            return localize.getText(
+                "viewBelongingDashboard",
+                "lastSeen",
+                "secondsAgo"
+            );
         } else {
-            return "Just now";
+            return localize.getText(
+                "viewBelongingDashboard",
+                "lastSeen",
+                "justNow"
+            );
         }
     }
 

@@ -11,6 +11,9 @@ import {
 } from "./BelongingDashboardViewModel";
 import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
+import Localize from "../../../shared/localization/Localize";
+
+const localize = Localize.instance;
 
 const styles = StyleSheet.create({
     card: {
@@ -180,7 +183,11 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         }
                     >
                         <Menu.Item
-                            title="Remove"
+                            title={localize.getText(
+                                "viewBelongingDashboard",
+                                "belongingCard",
+                                "buttonRemove"
+                            )}
                             icon="minus-circle-outline"
                             onPress={() =>
                                 props.onRemoveMuTag(props.viewData.uid)
