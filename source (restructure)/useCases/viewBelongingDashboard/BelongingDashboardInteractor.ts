@@ -7,7 +7,6 @@ import { skip, take } from "rxjs/operators";
 import ObjectCollectionUpdate from "../../shared/metaLanguage/ObjectCollectionUpdate";
 import { Observable, Subject, Subscription } from "rxjs";
 import Percent from "../../shared/metaLanguage/Percent";
-import UserError from "../../shared/metaLanguage/UserError";
 import Logger from "../../shared/metaLanguage/Logger";
 import LifecycleObservable from "../../shared/metaLanguage/LifecycleObservable";
 
@@ -25,7 +24,7 @@ export type DashboardBelongingDelta = Partial<DashboardBelonging> & {
 };
 
 export default interface BelongingDashboardInteractor {
-    readonly showError: Observable<UserError>;
+    //readonly showError: Observable<UserError>;
     readonly showOnDashboard: Observable<
         ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
     >;
@@ -47,8 +46,8 @@ export class BelongingDashboardInteractorImpl
     private readonly muTagIndexCache: string[] = [];
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private muTagsChangeSubscription: Subscription | undefined;
-    private readonly showErrorSubject = new Subject<UserError>();
-    readonly showError = this.showErrorSubject.asObservable();
+    //private readonly showErrorSubject = new Subject<UserError>();
+    //readonly showError = this.showErrorSubject.asObservable();
     private readonly showOnDashboardSubject = new Subject<
         ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
     >();

@@ -1,10 +1,5 @@
 import Logger from "./Logger";
 
-/*export interface UserErrorViewData {
-    errorDescription: string;
-    detailedErrorDescription?: string;
-}*/
-
 export interface UserErrorType {
     name: string;
 }

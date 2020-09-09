@@ -13,11 +13,18 @@ import {
 } from "rxjs/operators";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { Millisecond } from "../../../shared/metaLanguage/Types";
-import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
-import SignOutInteractor from "../../signOut/SignOutInteractor";
-import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
-import { isEqual } from "lodash";
+import UserError from "../../../shared/metaLanguage/UserError";
+import SignOutInteractor, {
+    SignOutError
+} from "../../signOut/SignOutInteractor";
+import RemoveMuTagInteractor, {
+    RemoveMuTagError
+} from "../../removeMuTag/RemoveMuTagInteractor";
+import { isEqual, template } from "lodash";
 import Localize from "../../../shared/localization/Localize";
+import ViewModel, {
+    UserErrorViewData
+} from "../../../shared/metaLanguage/ViewModel";
 
 const localize = Localize.instance;
 
@@ -62,7 +69,9 @@ export enum AppView {
     SignIn
 }
 
-export default class BelongingDashboardViewModel {
+type ViewModelUserError = RemoveMuTagError | SignOutError;
+
+export default class BelongingDashboardViewModel extends ViewModel {
     private static readonly hoursInDay = 24;
     private static readonly minutesInHour = 60;
     private static readonly secondsInMinute = 60;
@@ -85,6 +94,7 @@ export default class BelongingDashboardViewModel {
         removeMuTagInteractor: RemoveMuTagInteractor,
         signOutInteractor: SignOutInteractor
     ) {
+        super();
         this.belongingDashboardInteractor = belongingDashboardInteractor;
         this.dashboardBelongings = this.belongingDashboardInteractor.showOnDashboard.pipe(
             scan(
@@ -122,10 +132,18 @@ export default class BelongingDashboardViewModel {
             signOutInteractor.showActivityIndicator
         ).pipe(distinctUntilChanged());
         this.showError = merge(
-            belongingDashboardInteractor.showError,
+            //belongingDashboardInteractor.showError,
             removeMuTagInteractor.showError,
             signOutInteractor.showError
-        ).pipe(map(e => e.toViewData()));
+        ).pipe(
+            map(e => {
+                const errorMessage = this.getUserErrorMessage(e);
+                return this.getUserErrorViewData(
+                    errorMessage,
+                    e.originatingError
+                );
+            })
+        );
     }
 
     addMuTag(): void {
@@ -138,6 +156,35 @@ export default class BelongingDashboardViewModel {
 
     signOut(): void {
         this.signOutInteractor.signOut();
+    }
+
+    protected getUserErrorMessage(
+        error: UserError<ViewModelUserError>
+    ): string {
+        switch (error.type.name) {
+            case "lowMuTagBattery":
+                return template(
+                    Localize.instance.getText(
+                        "removeMuTag",
+                        "error",
+                        error.type.name
+                    )
+                )({ lowBatteryThreshold: error.type.lowBatteryThreshold });
+            case "failedToConnectToMuTag":
+            case "failedToRemoveMuTagFromAccount":
+            case "muTagCommunicationFailure":
+                return Localize.instance.getText(
+                    "removeMuTag",
+                    "error",
+                    error.type.name
+                );
+            case "signOutFailed":
+                return Localize.instance.getText(
+                    "signOut",
+                    "error",
+                    error.type.name
+                );
+        }
     }
 
     private static convertToBelongingViewData(

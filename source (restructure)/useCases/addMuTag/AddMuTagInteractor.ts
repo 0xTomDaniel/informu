@@ -44,44 +44,6 @@ export type AddMuTagError =
 export type AddMuTagWarning = FailedToSaveSettings;
 
 export default class AddMuTagInteractor {
-    /*private static readonly FailedToAddMuTag: UserErrorType<undefined> = {
-        name: "FailedToAddMuTag",
-        properties: undefined
-        userFriendlyMessage: Localize.instance.getText(
-            "addMuTag",
-            "error",
-            "failedToAddMuTag"
-        )
-    };
-    private static readonly FailedToSaveSettings: UserWarningType = {
-        name: "FailedToSaveSettings",
-        userFriendlyMessage: Localize.instance.getText(
-            "addMuTag",
-            "error",
-            "failedToSaveSettings"
-        )
-    };
-    private static readonly LowMuTagBattery = (
-        lowBatteryThreshold: number
-    ): UserErrorType<"lowBatteryThreshold"> => ({
-        name: "LowMuTagBattery",
-        properties: {
-            lowBatteryThreshold: lowBatteryThreshold.toString()
-        }
-        userFriendlyMessage: template(
-            Localize.instance.getText("addMuTag", "error", "lowMuTagBattery")
-        )({ lowBatteryThreshold: lowBatteryThreshold })
-    });
-    private static readonly NewMuTagNotFound: UserErrorType<undefined> = {
-        name: "NewMuTagNotFound",
-        properties: undefined
-        userFriendlyMessage: Localize.instance.getText(
-            "addMuTag",
-            "error",
-            "newMuTagNotFound"
-        )
-    };*/
-
     private readonly connectThreshold: Rssi;
     private readonly addMuTagBatteryThreshold: Percent;
     private readonly addMuTagOutput: AddMuTagOutputPort;

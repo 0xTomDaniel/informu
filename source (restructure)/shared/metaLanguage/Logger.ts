@@ -23,7 +23,7 @@ export default class Logger {
         this._instance = new this(eventTracker);
     }
 
-    log(message: any, report = false, toConsole = true): void {
+    log(message: unknown, report = false, toConsole = true): void {
         if (toConsole) {
             console.log(
                 JSON.stringify(message, Object.getOwnPropertyNames(message))
@@ -34,7 +34,7 @@ export default class Logger {
         }
     }
 
-    warn(message: any, report = false, toConsole = true): void {
+    warn(message: unknown, report = false, toConsole = true): void {
         if (toConsole) {
             console.warn(
                 JSON.stringify(message, Object.getOwnPropertyNames(message))
@@ -45,7 +45,7 @@ export default class Logger {
         }
     }
 
-    error(message: any, report = false, toConsole = true): void {
+    error(message: unknown, report = false, toConsole = true): void {
         if (toConsole) {
             console.error(
                 JSON.stringify(message, Object.getOwnPropertyNames(message))
