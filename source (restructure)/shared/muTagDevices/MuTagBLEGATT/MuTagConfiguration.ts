@@ -3,7 +3,7 @@ import Characteristic, {
     WritableCharacteristic,
     HexCharacteristic,
     UTF8Characteristic
-} from "./Characteristic";
+} from "../../bluetooth/Characteristic";
 import Service from "./Service";
 import Hexadecimal from "../../metaLanguage/Hexadecimal";
 import { Buffer } from "buffer";

@@ -1,4 +1,7 @@
-import { WritableCharacteristic, HexCharacteristic } from "./Characteristic";
+import {
+    WritableCharacteristic,
+    HexCharacteristic
+} from "../../bluetooth/Characteristic";
 import Service from "./Service";
 import Hexadecimal from "../../metaLanguage/Hexadecimal";
 

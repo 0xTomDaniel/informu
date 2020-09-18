@@ -12,7 +12,7 @@ import {
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
-} from "./MuTagBLEGATT/Characteristic";
+} from "../bluetooth/Characteristic";
 import { Millisecond, Rssi } from "../metaLanguage/Types";
 import {
     filter,
@@ -51,7 +51,9 @@ export default class BluetoothImplRnBlePlx extends Bluetooth {
     private readonly bleManager = new BleManager();
     private handleScanEligibilitySubscription?: Subscription;
     private handleConnectQueueSubscription?: Subscription;
-    private readonly scanCache = new Set<PeripheralId>();
+    //private readonly scanCache = new Set<PeripheralId>();
+    private readonly scanCache = new Set<string>();
+    //private readonly peripheralCache = new Set<PeripheralId>();
     private readonly scanState = new BehaviorSubject(ScanState.Stopped);
     private readonly scanEligibleToPause = new BehaviorSubject(false);
     private readonly scanEligibleToStart = new BehaviorSubject(true);
@@ -66,16 +68,28 @@ export default class BluetoothImplRnBlePlx extends Bluetooth {
             if (device.manufacturerData == null) {
                 return false;
             }
+
+            // DEBUG
+            console.log(`bleManagerDiscoveredDevice (${device.id})`);
+
+            if (this.scanCache.has(device.id)) {
+                return false;
+            }
+
+            // DEBUG
+            console.log(`NEW - bleManagerDiscoveredDevice (${device.id})`);
+
+            this.scanCache.add(device.id);
             return true;
         }),
-        map((device): Peripheral => this.getPeripheralFrom(device)),
-        filter(peripheral => {
+        map((device): Peripheral => this.getPeripheralFrom(device))
+        /*filter(peripheral => {
             if (this.scanCache.has(peripheral.id)) {
                 return false;
             }
             this.scanCache.add(peripheral.id);
             return true;
-        })
+        })*/
     );
 
     private readonly connectQueuePushed = new Subject<PeripheralId>();
@@ -175,19 +189,32 @@ export default class BluetoothImplRnBlePlx extends Bluetooth {
         const observable = new Observable<void>(subscriber => {
             const subscription = this.bleManager.onDeviceDisconnected(
                 peripheralId,
-                error => {
+                hasError => {
+                    // DEBUG
+                    console.log(
+                        `bleManager.onDeviceDisconnected (${peripheralId})`
+                    );
+
                     subscription.remove();
                     this.connectQueuePopped.next(peripheralId);
-                    if (error != null) {
-                        subscriber.error(error);
+                    if (hasError != null) {
+                        subscriber.error(hasError);
                     } else {
                         subscriber.complete();
                     }
                 }
             );
+            // DEBUG
+            console.log(`bleManager.connectToDevice (${peripheralId})...`);
             this.bleManager
                 .connectToDevice(peripheralId)
-                .then(() => subscriber.next())
+                .then(() => {
+                    // DEBUG
+                    console.log(
+                        `CONNECTED - bleManager.connectToDevice (${peripheralId})`
+                    );
+                    subscriber.next();
+                })
                 .catch(e => {
                     this.connectQueuePopped.next(peripheralId);
                     subscriber.error(e);
@@ -198,10 +225,16 @@ export default class BluetoothImplRnBlePlx extends Bluetooth {
     }
 
     async disconnect(peripheralId: PeripheralId): Promise<void> {
+        // DEBUG
+        console.log(`bleManager.cancelDeviceConnection (${peripheralId})`);
         await this.bleManager.cancelDeviceConnection(peripheralId);
     }
 
     async retrieveServices(peripheralId: PeripheralId): Promise<void> {
+        // DEBUG
+        console.log(
+            `bleManager.discoverAllServicesAndCharacteristicsForDevice (${peripheralId})`
+        );
         await this.bleManager.discoverAllServicesAndCharacteristicsForDevice(
             peripheralId
         );
@@ -211,10 +244,25 @@ export default class BluetoothImplRnBlePlx extends Bluetooth {
         peripheralId: PeripheralId,
         characteristic: Characteristic<T> & ReadableCharacteristic<T>
     ): Promise<T> {
+        // DEBUG
+        console.log(
+            `bleManager.readCharacteristicForDevice (${peripheralId})...`
+        );
+        console.log(
+            `characteristic.serviceUuid (${characteristic.serviceUuid})`
+        );
+        console.log(`characteristic.uuid (${characteristic.uuid})`);
         const deviceCharacteristic = await this.bleManager.readCharacteristicForDevice(
             peripheralId,
             fullUUID(characteristic.serviceUuid),
             fullUUID(characteristic.uuid)
+        );
+        // DEBUG
+        console.log(
+            `DONE - bleManager.readCharacteristicForDevice (${peripheralId})`
+        );
+        console.log(
+            `deviceCharacteristic.value (${deviceCharacteristic.value})`
         );
         const value =
             deviceCharacteristic.value == null ||
@@ -230,6 +278,12 @@ export default class BluetoothImplRnBlePlx extends Bluetooth {
         value: T,
         transactionId?: string
     ): Promise<void> {
+        // DEBUG
+        console.log(`bleManager.writeCharacteristic (${value})`);
+        console.log(
+            `characteristic.serviceUuid (${characteristic.serviceUuid})`
+        );
+        console.log(`characteristic.uuid (${characteristic.uuid})`);
         const base64Value = characteristic.toBase64(value);
         if (characteristic.withResponse) {
             await this.bleManager.writeCharacteristicWithResponseForDevice(
@@ -248,6 +302,8 @@ export default class BluetoothImplRnBlePlx extends Bluetooth {
                 transactionId
             );
         }
+        // DEBUG
+        console.log(`DONE - bleManager.writeCharacteristic (${peripheralId})`);
     }
 
     async enableBluetooth(): Promise<void> {
@@ -335,6 +391,8 @@ export default class BluetoothImplRnBlePlx extends Bluetooth {
                 return;
             }
             const handleCanPause = (): void => {
+                // DEBUG
+                console.log(`pauseScan - bleManager.stopDeviceScan...`);
                 this.bleManager.stopDeviceScan();
                 this.scanState.next(ScanState.Paused);
                 resolve();
@@ -352,6 +410,8 @@ export default class BluetoothImplRnBlePlx extends Bluetooth {
         options: ScanOptions
     ): Promise<void> {
         return new Promise((resolve, reject) => {
+            // DEBUG
+            console.log(`bleManager.startDeviceScan...`);
             this.bleManager.startDeviceScan(
                 serviceUuids,
                 options,

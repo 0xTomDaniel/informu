@@ -14,7 +14,7 @@ import { NativeModules, NativeEventEmitter } from "react-native";
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
-} from "./MuTagBLEGATT/Characteristic";
+} from "../bluetooth/Characteristic";
 import { Buffer } from "buffer";
 import { Millisecond } from "../metaLanguage/Types";
 import {

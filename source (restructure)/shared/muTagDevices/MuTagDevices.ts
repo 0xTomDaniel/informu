@@ -23,7 +23,7 @@ import { Rssi, Millisecond } from "../metaLanguage/Types";
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
-} from "./MuTagBLEGATT/Characteristic";
+} from "../bluetooth/Characteristic";
 import { MuTagBLEGATT } from "./MuTagBLEGATT/MuTagBLEGATT";
 import Hexadecimal from "../metaLanguage/Hexadecimal";
 import MuTagDevicesPortBatteryUpdates from "../../useCases/updateMuTagBatteries/MuTagDevicesPort";

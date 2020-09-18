@@ -1,12 +1,12 @@
 import { Buffer } from "buffer";
-import Hexadecimal from "../../metaLanguage/Hexadecimal";
+import Hexadecimal from "../metaLanguage/Hexadecimal";
 
-export interface ReadableCharacteristic<T> {
+export interface ReadableCharacteristic<T> extends Characteristic<T> {
     fromBase64(base64?: string): T;
     fromData(data?: Buffer): T;
 }
 
-export interface WritableCharacteristic<T> {
+export interface WritableCharacteristic<T> extends Characteristic<T> {
     readonly withResponse: boolean;
 
     toBase64(value: T): string;

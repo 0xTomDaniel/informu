@@ -2,7 +2,7 @@ import {
     ReadableCharacteristic,
     HexCharacteristic,
     UTF8Characteristic
-} from "./Characteristic";
+} from "../../bluetooth/Characteristic";
 import Service from "./Service";
 import Hexadecimal from "../../metaLanguage/Hexadecimal";
 

@@ -1,4 +1,7 @@
-import { ReadableCharacteristic, UTF8Characteristic } from "./Characteristic";
+import {
+    ReadableCharacteristic,
+    UTF8Characteristic
+} from "../../bluetooth/Characteristic";
 import Service from "./Service";
 
 abstract class GenericAccessUTF8Characteristic extends UTF8Characteristic {
