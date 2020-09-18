@@ -15,13 +15,13 @@ export default class UserError extends Error {
         return Logger.instance;
     }
     readonly name: string;
-    readonly originatingError?: any;
+    readonly originatingError?: unknown;
     readonly userFriendlyMessage: string;
 
     private constructor(
         name: string,
         userFriendlyMessage: string,
-        originatingError?: any
+        originatingError?: unknown
     ) {
         super(userFriendlyMessage);
         this.name = name;
@@ -30,18 +30,21 @@ export default class UserError extends Error {
     }
 
     toViewData(): UserErrorViewData {
-        return {
-            errorDescription: this.userFriendlyMessage,
-            detailedErrorDescription: JSON.stringify(
+        const viewData: UserErrorViewData = {
+            errorDescription: this.userFriendlyMessage
+        };
+        if (this.originatingError != null) {
+            viewData.detailedErrorDescription = JSON.stringify(
                 this.originatingError,
                 Object.getOwnPropertyNames(this.originatingError)
-            )
-        };
+            );
+        }
+        return viewData;
     }
 
     static create(
         type: UserErrorType,
-        originatingError?: any,
+        originatingError?: unknown,
         logEvent = true
     ): UserError {
         const userError = new this(
