@@ -51,8 +51,6 @@ export interface Peripheral {
 }
 
 export default interface Bluetooth {
-    //discoveredPeripheral: Observable<Peripheral>;
-
     connect(
         peripheralId: PeripheralId,
         timeout?: Millisecond
