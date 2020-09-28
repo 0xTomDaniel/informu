@@ -6,7 +6,7 @@ import {
     WritableCharacteristic
 } from "./Characteristic";
 
-export default interface BluetoothFacade {
+export default interface BluetoothPlatformFacade {
     discoveredPeripheral: Observable<Peripheral>;
     startScan(
         serviceUuids: Array<string>,

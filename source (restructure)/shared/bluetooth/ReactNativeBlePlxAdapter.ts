@@ -1,5 +1,11 @@
-import Bluetooth, { Peripheral, ScanMode, PeripheralId } from "./Bluetooth";
-import { Observable, Subject, Subscriber } from "rxjs";
+import Bluetooth, {
+    Peripheral,
+    ScanMode,
+    PeripheralId,
+    BluetoothError,
+    BluetoothErrorType
+} from "./Bluetooth";
+import { Observable, BehaviorSubject, throwError } from "rxjs";
 import {
     ReadableCharacteristic,
     WritableCharacteristic
@@ -7,29 +13,31 @@ import {
 import {
     BleManager,
     ScanOptions,
-    ScanMode as BleManagerScanMode,
     Device,
-    fullUUID,
-    State,
-    ConnectionOptions
+    ConnectionOptions,
+    fullUUID
 } from "react-native-ble-plx";
 import { Millisecond, Rssi } from "../metaLanguage/Types";
 import { Buffer } from "buffer";
+import { distinct, skip } from "rxjs/operators";
+
+enum ScanState {
+    Started,
+    Stopped
+}
 
 export default class ReactNativeBlePlxAdapter implements Bluetooth {
     //
     // Public instance interface
 
-    discoveredPeripheral: Observable<Peripheral>;
-
-    constructor(reactNativeBlePlx: BleManager) {
+    constructor(reactNativeBlePlx: BleManager, fullUuid: typeof fullUUID) {
         this.bleManager = reactNativeBlePlx;
-        this.discoveredPeripheral = this.discoveredPeripheralSubject.asObservable();
+        this.fullUuid = fullUuid;
     }
 
     connect(
         peripheralId: PeripheralId,
-        timeout = 30 as Millisecond
+        timeout = 30000 as Millisecond
     ): Observable<void> {
         return new Observable<void>(subscriber => {
             const subscription = this.bleManager.onDeviceDisconnected(
@@ -49,7 +57,7 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
                 .connectToDevice(peripheralId, options)
                 .then(device => device.discoverAllServicesAndCharacteristics())
                 .then(() => subscriber.next())
-                .catch(subscriber.error);
+                .catch(e => subscriber.error(e));
             const teardown = () => subscription.remove();
             return teardown;
         });
@@ -63,52 +71,104 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
         await this.bleManager.enable();
     }
 
-    read<T>(
+    async read<T>(
         peripheralId: PeripheralId,
         characteristic: ReadableCharacteristic<T>
     ): Promise<T> {
-        throw new Error("Method not implemented.");
+        const deviceCharacteristic = await this.bleManager.readCharacteristicForDevice(
+            peripheralId,
+            this.fullUuid(characteristic.serviceUuid),
+            this.fullUuid(characteristic.uuid)
+        );
+        const value =
+            deviceCharacteristic.value == null ||
+            deviceCharacteristic.value.length === 0
+                ? undefined
+                : deviceCharacteristic.value;
+        return characteristic.fromBase64(value);
     }
 
-    async startScan(
+    startScan(
         serviceUuids: string[],
-        timeout: Millisecond,
-        scanMode: ScanMode = ScanMode.balanced
-    ): Promise<void> {
+        timeout?: Millisecond,
+        scanMode: ScanMode = ScanMode.Balanced
+    ): Observable<Peripheral> {
+        if (this.scanState.value === ScanState.Started) {
+            const error = new BluetoothError(
+                BluetoothErrorType.ScanAlreadyStarted
+            );
+            return throwError(error);
+        }
+        this.scanState.next(ScanState.Started);
         const options: ScanOptions = {
             scanMode: scanMode as number
         };
-        await new Promise((resolve, reject) => {
-            let hasResolved = false;
+        return new Observable<Peripheral>(subscriber => {
+            const subscription = this.onScanStateChange.subscribe(() => {
+                subscriber.complete();
+            });
             this.bleManager.startDeviceScan(
                 serviceUuids,
                 options,
                 (error, device) => {
                     if (error != null) {
-                        reject(error);
-                    } else if (!hasResolved) {
-                        hasResolved = true;
-                        resolve();
-                    }
-                    if (device != null) {
+                        subscriber.error(error);
+                    } else if (device != null) {
                         const peripheral = This.toPeripheral(device);
-                        this.discoveredPeripheralSubject.next(peripheral);
+                        subscriber.next(peripheral);
                     }
                 }
             );
+            let timeoutId: NodeJS.Timeout | undefined;
+            if (timeout != null) {
+                timeoutId = setTimeout(() => {
+                    this.stopScan();
+                }, timeout);
+            }
+            const teardown = () => {
+                if (timeoutId != null) {
+                    clearTimeout(timeoutId);
+                }
+                subscription.unsubscribe();
+                if (this.scanState.value === ScanState.Started) {
+                    this.scanState.next(ScanState.Stopped);
+                }
+            };
+            return teardown;
         });
     }
 
     async stopScan(): Promise<void> {
+        if (this.scanState.value === ScanState.Stopped) {
+            return;
+        }
         this.bleManager.stopDeviceScan();
+        this.scanState.next(ScanState.Stopped);
     }
 
-    write<T>(
+    async write<T>(
         peripheralId: PeripheralId,
         characteristic: WritableCharacteristic<T>,
         value: T
     ): Promise<void> {
-        throw new Error("Method not implemented.");
+        const base64Value = characteristic.toBase64(value);
+        const serviceUuid = this.fullUuid(characteristic.serviceUuid);
+        const characteristicUuid = this.fullUuid(characteristic.uuid);
+        if (characteristic.withResponse) {
+            await this.bleManager.writeCharacteristicWithResponseForDevice(
+                peripheralId,
+                serviceUuid,
+                characteristicUuid,
+                base64Value
+            );
+        } else {
+            await this.bleManager.writeCharacteristicWithoutResponseForDevice(
+                peripheralId,
+                serviceUuid,
+                characteristicUuid,
+                base64Value
+            );
+        }
     }
 
     // Protected instance interface
@@ -116,7 +176,10 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
     // Private instance interface
 
     private bleManager: BleManager;
-    private discoveredPeripheralSubject = new Subject<Peripheral>();
+    private scanState = new BehaviorSubject<ScanState>(ScanState.Stopped);
+    private onScanStateChange = this.scanState.pipe(distinct(), skip(1));
+
+    private fullUuid: typeof fullUUID;
 
     // Public static interface
 
@@ -127,7 +190,7 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
     private static toPeripheral(device: Device): Peripheral {
         // react-native-ble-manager includes 5 extra bytes at the beginning of
         // the manufacturing data compared to react-native-ble-plx. For
-        // interface compatibility we must add a 5-byte padding.
+        // interface interoperability we must add a 5-byte padding.
 
         let manufacturerData: Buffer;
 
@@ -153,4 +216,5 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
         };
     }
 }
+
 const This = ReactNativeBlePlxAdapter;

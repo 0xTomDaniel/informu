@@ -5,11 +5,32 @@ import {
     WritableCharacteristic
 } from "./Characteristic";
 
+export enum BluetoothErrorType {
+    ScanAlreadyStarted
+}
+
+const getBluetoothErrorMessage = (type: BluetoothErrorType): string => {
+    switch (type) {
+        case BluetoothErrorType.ScanAlreadyStarted:
+            return "Bluetooth device scanning was already started.";
+    }
+};
+
+export class BluetoothError extends Error {
+    type: BluetoothErrorType;
+
+    constructor(type: BluetoothErrorType) {
+        super(getBluetoothErrorMessage(type));
+        this.name = BluetoothErrorType[type];
+        this.type = type;
+    }
+}
+
 export enum ScanMode {
-    opportunistic = -1,
+    Opportunistic = -1,
     lowPower,
-    balanced,
-    lowLatency
+    Balanced,
+    LowLatency
 }
 
 export interface Advertising {
@@ -30,7 +51,7 @@ export interface Peripheral {
 }
 
 export default interface Bluetooth {
-    discoveredPeripheral: Observable<Peripheral>;
+    //discoveredPeripheral: Observable<Peripheral>;
 
     connect(
         peripheralId: PeripheralId,
@@ -44,9 +65,9 @@ export default interface Bluetooth {
     ): Promise<T>;
     startScan(
         serviceUuids: Array<string>,
-        timeout: Millisecond,
+        timeout?: Millisecond,
         scanMode?: ScanMode
-    ): Promise<void>;
+    ): Observable<Peripheral>;
     stopScan(): Promise<void>;
     write<T>(
         peripheralId: PeripheralId,
