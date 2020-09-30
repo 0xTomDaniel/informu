@@ -28,7 +28,7 @@ export class BluetoothError extends Error {
 
 export enum ScanMode {
     Opportunistic = -1,
-    lowPower,
+    LowPower,
     Balanced,
     LowLatency
 }
