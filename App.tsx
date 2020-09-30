@@ -93,6 +93,19 @@ import MuTagBatteriesInteractor, {
 import BackgroundTask from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundTask";
 import BackgroundFetchProxyImpl from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundFetchProxy";
 
+// DEBUG
+import MessageQueue from "react-native/Libraries/BatchedBridge/MessageQueue.js";
+
+const spyFunction = (msg: unknown) => {
+    if (msg.module === "66" || msg.module === "54") {
+        return;
+    }
+    console.warn(msg);
+};
+
+MessageQueue.spy(spyFunction);
+// END DEBUG
+
 // These dependencies should never be reset because the RN App Component depends
 // on them never changing.
 //
