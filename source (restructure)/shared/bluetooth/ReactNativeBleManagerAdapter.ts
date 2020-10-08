@@ -14,7 +14,7 @@ import { NativeModules, NativeEventEmitter } from "react-native";
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
-} from "../bluetooth/Characteristic";
+} from "./Characteristic";
 import { Buffer } from "buffer";
 import { Millisecond } from "../metaLanguage/Types";
 import {
@@ -43,7 +43,7 @@ enum ScanState {
     Paused
 }
 
-export default class BluetoothImplRnBleManager implements Bluetooth {
+export default class ReactNativeBleManagerAdapter implements Bluetooth {
     private readonly bleManagerEmitter = new NativeEventEmitter(
         NativeModules.BleManager
     );
