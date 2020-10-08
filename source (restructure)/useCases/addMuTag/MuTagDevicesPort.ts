@@ -34,8 +34,6 @@ export enum AdvertisingIntervalSetting {
 }
 
 export default interface MuTagDevicesPort {
-    readonly unprovisionedMuTag: Observable<UnprovisionedMuTag>;
-
     /**
      * @function startFindingUnprovisionedMuTags
      * @param {Rssi} proximityThreshold - Mu tag with an RSSI less than this threshold will be ignored.
@@ -44,8 +42,7 @@ export default interface MuTagDevicesPort {
     startFindingUnprovisionedMuTags(
         proximityThreshold: Rssi,
         timeout: number
-    ): Promise<void>;
-
+    ): Observable<UnprovisionedMuTag>;
     stopFindingUnprovisionedMuTags(): void;
     provisionMuTag(
         id: MuTagDeviceId,

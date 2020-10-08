@@ -20,6 +20,7 @@ import {
     ReadableCharacteristic,
     WritableCharacteristic
 } from "../bluetooth/Characteristic";
+import { Buffer } from "buffer";
 
 const connections = new Map<PeripheralId, Subscriber<void>>();
 const connectMock = jest.fn<
@@ -32,7 +33,15 @@ const connectMock = jest.fn<
             subscriber.next();
         })
 );
-const disconnectMock = jest.fn<Promise<void>, [PeripheralId]>();
+const disconnectMock = jest.fn<Promise<void>, [PeripheralId]>(
+    (peripheralId: PeripheralId) =>
+        new Promise(resolve => {
+            const subscriber = connections.get(peripheralId);
+            subscriber?.complete();
+            connections.delete(peripheralId);
+            resolve();
+        })
+);
 const enableBluetoothMock = jest.fn<Promise<void>, []>();
 const readMock = jest.fn<
     Promise<any>,
@@ -59,30 +68,11 @@ const BluetoothMock = jest.fn(
     })
 );
 const bluetoothMock = new BluetoothMock();
-
-(bluetoothMock.connect as jest.Mock).mockImplementation();
-(bluetoothMock.disconnect as jest.Mock).mockImplementation(
-    (peripheralId: PeripheralId) =>
-        new Promise(resolve => {
-            const subscriber = connections.get(peripheralId);
-            subscriber?.complete();
-            connections.delete(peripheralId);
-            resolve();
-        })
-);
-(bluetoothMock.write as jest.Mock).mockResolvedValue(undefined);
 const muTagDevices = new MuTagDevices(bluetoothMock);
 
 const manufacturerDataJson =
     "[2,1,6,26,255,76,0,2,21,222,126,199,237,16,85,176,85,192,222,222,254,167,237,250,126,255,255,255,255,182,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
-const manufacturerDataBytes = new Uint8Array(JSON.parse(manufacturerDataJson));
-const manufacturerDataBase64 =
-    "AgEGGv9MAAIV3n7H7RBVsFXA3t7+p+36fv////+2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-const manufacturerData: ManufacturerData = {
-    bytes: manufacturerDataBytes,
-    data: manufacturerDataBase64,
-    cdvType: "ArrayBuffer"
-};
+const manufacturerData = Buffer.from(JSON.parse(manufacturerDataJson));
 const discoveredPeripheral01: Peripheral = {
     id: uuidV4() as PeripheralId,
     name: "informu beacon",
@@ -96,6 +86,10 @@ const discoveredPeripheral01: Peripheral = {
     }
 };
 let unprovisionedMuTag01: UnprovisionedMuTag;
+
+beforeEach(() => {
+    jest.clearAllMocks();
+});
 
 test("successfully finds two unprovisioned Mu tags", async (): Promise<
     void
@@ -113,14 +107,18 @@ test("successfully finds two unprovisioned Mu tags", async (): Promise<
         }
     };
 
-    (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(() => {
-        discoveredPeripheralSubscriber.next(discoveredPeripheral01);
-        discoveredPeripheralSubscriber.next(discoveredPeripheral02);
-    });
-    (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(undefined);
+    startScanMock.mockReturnValueOnce(
+        new Observable(subscriber => {
+            subscriber.next(discoveredPeripheral01);
+            subscriber.next(discoveredPeripheral02);
+        })
+    );
+    /*(bluetoothMock.read as jest.Mock).mockResolvedValueOnce(undefined);
     (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(undefined);
     (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(new Percent(96));
-    (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(new Percent(38));
+    (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(new Percent(38));*/
+    readMock.mockResolvedValueOnce(new Percent(96));
+    readMock.mockResolvedValueOnce(new Percent(38));
 
     expect.assertions(8);
     let subscription: Subscription | undefined;
@@ -204,15 +202,23 @@ test("successfully unprovisions provisioned Mu tag that's not cached", async ():
             txPowerLevel: 6
         }
     };
-    (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
+    /*(bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
         (serviceUuids, timeout) => {
             discoveredPeripheralSubscriber.next(discoveredPeripheralUncached);
             return new Promise(resolve => setTimeout(() => resolve(), timeout));
         }
+    );*/
+    startScanMock.mockReturnValueOnce(
+        new Observable(subscriber => {
+            subscriber.next(discoveredPeripheralUncached);
+        })
     );
-    (bluetoothMock.read as jest.Mock).mockResolvedValueOnce("01");
+    /*(bluetoothMock.read as jest.Mock).mockResolvedValueOnce("01");
     (bluetoothMock.read as jest.Mock).mockResolvedValueOnce("0000");
-    (bluetoothMock.read as jest.Mock).mockResolvedValueOnce("0072");
+    (bluetoothMock.read as jest.Mock).mockResolvedValueOnce("0072");*/
+    readMock.mockResolvedValueOnce("01");
+    readMock.mockResolvedValueOnce("0000");
+    readMock.mockResolvedValueOnce("0072");
     const accountNumberUncached = AccountNumber.fromString("0000007");
     const beaconIdUncached = BeaconId.fromNumber(2);
     await muTagDevices.unprovisionMuTag(
