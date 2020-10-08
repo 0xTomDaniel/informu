@@ -2,9 +2,9 @@ import MuTagDevices from "./MuTagDevices";
 import { Rssi, Millisecond } from "../metaLanguage/Types";
 import Bluetooth, {
     Peripheral,
-    ManufacturerData,
-    PeripheralId
-} from "./Bluetooth";
+    PeripheralId,
+    ScanMode
+} from "../bluetooth/Bluetooth";
 import { v4 as uuidV4 } from "uuid";
 import Percent from "../metaLanguage/Percent";
 import { Observable, Subscriber, Subscription } from "rxjs";
@@ -14,38 +14,53 @@ import {
     UnprovisionedMuTag,
     AdvertisingIntervalSetting
 } from "../../useCases/addMuTag/MuTagDevicesPort";
-import { MuTagBLEGATT } from "./MuTagBLEGATT/MuTagBLEGATT";
+import { MuTagBLEGATT } from "./MuTagBLEGATT/MuTagBleGatt";
 import Hexadecimal from "../metaLanguage/Hexadecimal";
+import {
+    ReadableCharacteristic,
+    WritableCharacteristic
+} from "../bluetooth/Characteristic";
 
-let discoveredPeripheralSubscriber: Subscriber<Peripheral>;
-const discoveredPeripheral = new Observable<Peripheral>(subscriber => {
-    discoveredPeripheralSubscriber = subscriber;
-});
-const BluetoothMock = jest.fn<Bluetooth, any>(
-    (): Bluetooth => ({
-        discoveredPeripheral: discoveredPeripheral,
-        startScan: jest.fn(),
-        stopScan: jest.fn(),
-        retrieveServices: jest.fn(),
-        connect: jest.fn(),
-        disconnect: jest.fn(),
-        read: jest.fn(),
-        write: jest.fn(),
-        enableBluetooth: jest.fn()
-    })
-);
-const bluetoothMock = new BluetoothMock();
-(bluetoothMock.enableBluetooth as jest.Mock).mockResolvedValue(undefined);
-(bluetoothMock.retrieveServices as jest.Mock).mockResolvedValue({});
-(bluetoothMock.stopScan as jest.Mock).mockResolvedValue(undefined);
 const connections = new Map<PeripheralId, Subscriber<void>>();
-(bluetoothMock.connect as jest.Mock).mockImplementation(
+const connectMock = jest.fn<
+    Observable<void>,
+    [PeripheralId, Millisecond | undefined]
+>(
     (peripheralId: PeripheralId) =>
         new Observable<void>(subscriber => {
             connections.set(peripheralId, subscriber);
             subscriber.next();
         })
 );
+const disconnectMock = jest.fn<Promise<void>, [PeripheralId]>();
+const enableBluetoothMock = jest.fn<Promise<void>, []>();
+const readMock = jest.fn<
+    Promise<any>,
+    [PeripheralId, ReadableCharacteristic<any>]
+>();
+const startScanMock = jest.fn<
+    Observable<Peripheral>,
+    [Array<string>, Millisecond | undefined, ScanMode | undefined]
+>();
+const stopScanMock = jest.fn<Promise<void>, []>();
+const writeMock = jest.fn<
+    Promise<void>,
+    [PeripheralId, WritableCharacteristic<any>, any]
+>();
+const BluetoothMock = jest.fn(
+    (): Bluetooth => ({
+        connect: connectMock,
+        disconnect: disconnectMock,
+        enableBluetooth: enableBluetoothMock,
+        read: readMock,
+        startScan: startScanMock,
+        stopScan: stopScanMock,
+        write: writeMock
+    })
+);
+const bluetoothMock = new BluetoothMock();
+
+(bluetoothMock.connect as jest.Mock).mockImplementation();
 (bluetoothMock.disconnect as jest.Mock).mockImplementation(
     (peripheralId: PeripheralId) =>
         new Promise(resolve => {
