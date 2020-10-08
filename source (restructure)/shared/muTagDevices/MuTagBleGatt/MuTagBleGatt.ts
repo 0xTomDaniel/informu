@@ -1,14 +1,11 @@
-import GenericAccess from './GenericAccess';
-import DeviceInformation from './DeviceInformation';
-import MuTagConfiguration from './MuTagConfiguration';
-import SiliconLabsOTA from './SiliconLabsOTA';
+import GenericAccess from "./GenericAccess";
+import DeviceInformation from "./DeviceInformation";
+import MuTagConfiguration from "./MuTagConfiguration";
+import SiliconLabsOta from "./SiliconLabsOta";
 
-export class MuTagBLEGATT {
+export abstract class MuTagBleGatt {
     static readonly GenericAccess = GenericAccess;
     static readonly DeviceInformation = DeviceInformation;
     static readonly MuTagConfiguration = MuTagConfiguration;
-    static readonly SiliconLabsOTA = SiliconLabsOTA;
-
-    // Prevents instantiation because this class is just being used to hold static values
-    private constructor() {}
+    static readonly SiliconLabsOta = SiliconLabsOta;
 }
