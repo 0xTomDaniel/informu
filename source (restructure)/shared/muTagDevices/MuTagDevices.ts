@@ -5,7 +5,11 @@ import MuTagDevicesPortAddMuTag, {
     AdvertisingIntervalSetting
 } from "../../useCases/addMuTag/MuTagDevicesPort";
 import MuTagDevicesPortRemoveMuTag from "../../useCases/removeMuTag/MuTagDevicesPort";
-import Bluetooth, { Peripheral, PeripheralId, ScanMode } from "./Bluetooth";
+import Bluetooth, {
+    Peripheral,
+    PeripheralId,
+    ScanMode
+} from "../bluetooth/Bluetooth";
 import { NEVER, Observable, BehaviorSubject, from } from "rxjs";
 import {
     switchMap,
@@ -24,7 +28,7 @@ import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
 } from "../bluetooth/Characteristic";
-import { MuTagBLEGATT } from "./MuTagBLEGATT/MuTagBLEGATT";
+import { MuTagBleGatt } from "./MuTagBleGatt/MuTagBleGatt";
 import Hexadecimal from "../metaLanguage/Hexadecimal";
 import MuTagDevicesPortBatteryUpdates from "../../useCases/updateMuTagBatteries/MuTagDevicesPort";
 
@@ -130,7 +134,7 @@ export default class MuTagDevices
                     const major = MuTagDevices.getMajor(accountNumber);
                     return this.writeCharacteristic(
                         muTagPeripheralId,
-                        MuTagBLEGATT.MuTagConfiguration.Major,
+                        MuTagBleGatt.MuTagConfiguration.Major,
                         major
                     );
                 }),
@@ -141,15 +145,15 @@ export default class MuTagDevices
                     );
                     return this.writeCharacteristic(
                         muTagPeripheralId,
-                        MuTagBLEGATT.MuTagConfiguration.Minor,
+                        MuTagBleGatt.MuTagConfiguration.Minor,
                         minor
                     );
                 }),
                 switchMap(() => {
                     return this.writeCharacteristic(
                         muTagPeripheralId,
-                        MuTagBLEGATT.MuTagConfiguration.Provision,
-                        MuTagBLEGATT.MuTagConfiguration.Provision.provisionCode
+                        MuTagBleGatt.MuTagConfiguration.Provision,
+                        MuTagBleGatt.MuTagConfiguration.Provision.provisionCode
                     );
                 }),
                 take(1),
@@ -185,8 +189,8 @@ export default class MuTagDevices
         // Write fails because Mu tag restarts as soon as it is unprovisioned
         this.writeCharacteristic(
             muTagPeripheralId,
-            MuTagBLEGATT.MuTagConfiguration.Provision,
-            MuTagBLEGATT.MuTagConfiguration.Provision.unprovisionCode
+            MuTagBleGatt.MuTagConfiguration.Provision,
+            MuTagBleGatt.MuTagConfiguration.Provision.unprovisionCode
         ).catch(e => console.warn(e));
     }
 
@@ -245,7 +249,7 @@ export default class MuTagDevices
         const intervalHex = Hexadecimal.fromString(`0${interval}`);
         await this.writeCharacteristic(
             muTagPeripheralId,
-            MuTagBLEGATT.MuTagConfiguration.AdvertisingInterval,
+            MuTagBleGatt.MuTagConfiguration.AdvertisingInterval,
             intervalHex
         );
     }
@@ -284,7 +288,7 @@ export default class MuTagDevices
         }
         await this.writeCharacteristic(
             muTagPeripheralId,
-            MuTagBLEGATT.MuTagConfiguration.TxPower,
+            MuTagBleGatt.MuTagConfiguration.TxPower,
             txPowerHex
         );
     }
@@ -304,7 +308,7 @@ export default class MuTagDevices
         );
         const batteryLevelHex = await this.readCharacteristic(
             muTagPeripheralId,
-            MuTagBLEGATT.DeviceInformation.BatteryLevel
+            MuTagBleGatt.DeviceInformation.BatteryLevel
         );
         return new Percent(batteryLevelHex.valueOf());
     }
@@ -410,7 +414,7 @@ export default class MuTagDevices
     private async authenticateToMuTag(
         muTagPeripheralId: MuTagPeripheralId
     ): Promise<void> {
-        const authenticate = MuTagBLEGATT.MuTagConfiguration.Authenticate;
+        const authenticate = MuTagBleGatt.MuTagConfiguration.Authenticate;
         await this.writeCharacteristic(
             muTagPeripheralId,
             authenticate,
@@ -511,7 +515,7 @@ export default class MuTagDevices
     ): Promise<boolean> {
         const provisioned = await this.readCharacteristic(
             muTagPeripheralId,
-            MuTagBLEGATT.MuTagConfiguration.Provision
+            MuTagBleGatt.MuTagConfiguration.Provision
         );
         return provisioned !== undefined;
     }
@@ -521,7 +525,7 @@ export default class MuTagDevices
     ): Promise<UnprovisionedMuTag> {
         const batteryLevelHex = await this.readCharacteristic(
             muTagPeripheralId,
-            MuTagBLEGATT.DeviceInformation.BatteryLevel
+            MuTagBleGatt.DeviceInformation.BatteryLevel
         );
         const macAddress = muTagPeripheralId.replace(/:/g, "");
         return {
@@ -565,11 +569,11 @@ export default class MuTagDevices
     ): Promise<MuTagProvisionId> {
         const major = await this.readCharacteristic(
             muTagPeripheralId,
-            MuTagBLEGATT.MuTagConfiguration.Major
+            MuTagBleGatt.MuTagConfiguration.Major
         );
         const minor = await this.readCharacteristic(
             muTagPeripheralId,
-            MuTagBLEGATT.MuTagConfiguration.Minor
+            MuTagBleGatt.MuTagConfiguration.Minor
         );
         if (major == null || minor == null) {
             throw Error(

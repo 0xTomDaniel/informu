@@ -2,8 +2,8 @@ import {
     WritableCharacteristic,
     HexCharacteristic
 } from "../../bluetooth/Characteristic";
-import Service from "./Service";
 import Hexadecimal from "../../metaLanguage/Hexadecimal";
+import Service from "../../bluetooth/Service";
 
 abstract class SiliconLabsOtaHexCharacteristic extends HexCharacteristic {
     readonly serviceUuid = "1D14D6EE-FD63-4FA1-BFA4-8F47B42119F0";

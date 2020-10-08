@@ -2,7 +2,7 @@ import {
     ReadableCharacteristic,
     UTF8Characteristic
 } from "../../bluetooth/Characteristic";
-import Service from "./Service";
+import Service from "../../bluetooth/Service";
 
 abstract class GenericAccessUTF8Characteristic extends UTF8Characteristic {
     readonly serviceUuid = "00001800-0000-1000-8000-00805F9B34FB";

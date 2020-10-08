@@ -14,7 +14,7 @@ import {
     UnprovisionedMuTag,
     AdvertisingIntervalSetting
 } from "../../useCases/addMuTag/MuTagDevicesPort";
-import { MuTagBLEGATT } from "./MuTagBLEGATT/MuTagBleGatt";
+import { MuTagBleGatt } from "./MuTagBleGatt/MuTagBleGatt";
 import Hexadecimal from "../metaLanguage/Hexadecimal";
 import {
     ReadableCharacteristic,
@@ -178,7 +178,7 @@ test("successfully changes advertising interval", async (): Promise<void> => {
     expect(bluetoothMock.write).toHaveBeenNthCalledWith(
         7,
         unprovisionedMuTag01.id,
-        MuTagBLEGATT.MuTagConfiguration.AdvertisingInterval,
+        MuTagBleGatt.MuTagConfiguration.AdvertisingInterval,
         Hexadecimal.fromString("03")
     );
 });
