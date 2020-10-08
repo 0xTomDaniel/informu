@@ -2,8 +2,7 @@ import Bluetooth, {
     Peripheral,
     ScanMode,
     PeripheralId,
-    BluetoothError,
-    BluetoothErrorType
+    BluetoothError
 } from "./Bluetooth";
 import { Observable, BehaviorSubject, throwError } from "rxjs";
 import {
@@ -94,9 +93,7 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
         scanMode: ScanMode = ScanMode.Balanced
     ): Observable<Peripheral> {
         if (this.scanState.value === ScanState.Started) {
-            const error = new BluetoothError(
-                BluetoothErrorType.ScanAlreadyStarted
-            );
+            const error = BluetoothError.ScanAlreadyStarted;
             return throwError(error);
         }
         this.scanState.next(ScanState.Started);

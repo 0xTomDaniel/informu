@@ -9,20 +9,21 @@ export enum BluetoothErrorType {
     ScanAlreadyStarted
 }
 
-const getBluetoothErrorMessage = (type: BluetoothErrorType): string => {
-    switch (type) {
-        case BluetoothErrorType.ScanAlreadyStarted:
-            return "Bluetooth device scanning was already started.";
-    }
-};
-
 export class BluetoothError extends Error {
     type: BluetoothErrorType;
 
-    constructor(type: BluetoothErrorType) {
-        super(getBluetoothErrorMessage(type));
+    constructor(type: BluetoothErrorType, message: string) {
+        super(message);
         this.name = BluetoothErrorType[type];
         this.type = type;
+    }
+
+    static get ScanAlreadyStarted(): BluetoothError {
+        const message = "Bluetooth device scanning was already started.";
+        return new BluetoothError(
+            BluetoothErrorType.ScanAlreadyStarted,
+            message
+        );
     }
 }
 

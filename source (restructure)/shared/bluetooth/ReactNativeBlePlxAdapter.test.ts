@@ -19,8 +19,7 @@ import {
     ScanMode,
     Peripheral,
     PeripheralId,
-    BluetoothError,
-    BluetoothErrorType
+    BluetoothError
 } from "./Bluetooth";
 import { take } from "rxjs/operators";
 import { Buffer } from "buffer";
@@ -242,7 +241,7 @@ test("Fail to start Bluetooth scan again before first completes.", async () => {
     const startScanPromise02 = reactNativeBlePlxAdapter
         .startScan(deviceUuids, undefined, scanMode)
         .toPromise();
-    const error = new BluetoothError(BluetoothErrorType.ScanAlreadyStarted);
+    const error = BluetoothError.ScanAlreadyStarted;
     await expect(startScanPromise02).rejects.toThrow(error);
     reactNativeBlePlxAdapter.stopScan();
     await expect(startScanPromise01).resolves.toBeUndefined();
