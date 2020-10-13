@@ -545,7 +545,7 @@ export default class MuTagDevices
         muTagPeripheralId: MuTagPeripheralId,
         characteristic: Characteristic<T> & ReadableCharacteristic<T>
     ): Promise<T> {
-        return await this.bluetooth.read(muTagPeripheralId, characteristic);
+        return this.bluetooth.read(muTagPeripheralId, characteristic);
     }
 
     private async writeCharacteristic<T>(
