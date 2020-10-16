@@ -8,9 +8,8 @@ import { MuTagAddingViewModel } from "./presentation/MuTagAddingViewModel";
 import MuTagDevices from "../../shared/muTagDevices/MuTagDevices";
 import Bluetooth, {
     Peripheral,
-    ManufacturerData,
     PeripheralId
-} from "../../shared/muTagDevices/Bluetooth";
+} from "../../shared/bluetooth/Bluetooth";
 import { Observable, Subscriber, Subject } from "rxjs";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
@@ -24,7 +23,7 @@ import Account, {
     AccountData,
     AccountNumber
 } from "../../../source/Core/Domain/Account";
-import { MuTagBLEGATT } from "../../shared/muTagDevices/MuTagBLEGATT/MuTagBLEGATT";
+import { MuTagBleGatt } from "../../shared/muTagDevices/MuTagBleGatt/MuTagBleGatt";
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
@@ -318,7 +317,7 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(bluetoothMock.read).toHaveBeenNthCalledWith(
                 2,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.DeviceInformation.BatteryLevel
+                MuTagBleGatt.DeviceInformation.BatteryLevel
             );
             expect(bluetoothMock.read).toHaveBeenCalledTimes(2);
         });
@@ -361,20 +360,20 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 3,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.MuTagConfiguration.Major,
+                MuTagBleGatt.MuTagConfiguration.Major,
                 Hexadecimal.fromString("0000")
             );
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 4,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.MuTagConfiguration.Minor,
+                MuTagBleGatt.MuTagConfiguration.Minor,
                 Hexadecimal.fromString("0002")
             );
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 5,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.MuTagConfiguration.Provision,
-                MuTagBLEGATT.MuTagConfiguration.Provision.provisionCode
+                MuTagBleGatt.MuTagConfiguration.Provision,
+                MuTagBleGatt.MuTagConfiguration.Provision.provisionCode
             );
 
             expect(account.muTags.size).toBe(2);
@@ -395,7 +394,7 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 7,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.MuTagConfiguration.TxPower,
+                MuTagBleGatt.MuTagConfiguration.TxPower,
                 Hexadecimal.fromString("01")
             );
         });
@@ -406,7 +405,7 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 8,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.MuTagConfiguration.AdvertisingInterval,
+                MuTagBleGatt.MuTagConfiguration.AdvertisingInterval,
                 Hexadecimal.fromString("03")
             );
         });
@@ -578,7 +577,7 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(bluetoothMock.read).toHaveBeenNthCalledWith(
                 2,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.DeviceInformation.BatteryLevel
+                MuTagBleGatt.DeviceInformation.BatteryLevel
             );
             expect(bluetoothMock.read).toHaveBeenCalledTimes(2);
         });
@@ -603,20 +602,20 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 3,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.MuTagConfiguration.Major,
+                MuTagBleGatt.MuTagConfiguration.Major,
                 Hexadecimal.fromString("0000")
             );
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 4,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.MuTagConfiguration.Minor,
+                MuTagBleGatt.MuTagConfiguration.Minor,
                 Hexadecimal.fromString("0005")
             );
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 5,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.MuTagConfiguration.Provision,
-                MuTagBLEGATT.MuTagConfiguration.Provision.provisionCode
+                MuTagBleGatt.MuTagConfiguration.Provision,
+                MuTagBleGatt.MuTagConfiguration.Provision.provisionCode
             );
 
             expect(account.muTags.size).toBe(2);
@@ -637,7 +636,7 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 7,
                 discoveredPeripheral.id,
-                MuTagBLEGATT.MuTagConfiguration.TxPower,
+                MuTagBleGatt.MuTagConfiguration.TxPower,
                 Hexadecimal.fromString("01")
             );
         });

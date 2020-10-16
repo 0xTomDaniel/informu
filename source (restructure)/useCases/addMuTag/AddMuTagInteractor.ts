@@ -159,7 +159,13 @@ export default class AddMuTagInteractor {
     private async findFirstUnprovisionedMuTag(
         timeout: Millisecond
     ): Promise<UnprovisionedMuTag> {
-        let didPromiseComplete = false;
+        const unprovisionedMuTag = await this.muTagDevices
+            .startFindingUnprovisionedMuTags(this.connectThreshold, timeout)
+            .pipe(take(1))
+            .toPromise();
+        this.muTagDevices.stopFindingUnprovisionedMuTags();
+        return unprovisionedMuTag;
+        /*let didPromiseComplete = false;
         return new Promise((resolve, reject) => {
             const subscription = this.muTagDevices.unprovisionedMuTag
                 .pipe(take(1))
@@ -184,7 +190,7 @@ export default class AddMuTagInteractor {
                     }
                 })
                 .catch(e => reject(e));
-        });
+        });*/
     }
 
     private async addNewMuTag(
