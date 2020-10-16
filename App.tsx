@@ -59,8 +59,7 @@ import NewAccountFactoryImpl from "./source/Core/Domain/NewAccountFactoryImpl";
 import MuTagDevices from "./source (restructure)/shared/muTagDevices/MuTagDevices";
 import MuTagDevicesPortAddMuTag from "./source (restructure)/useCases/addMuTag/MuTagDevicesPort";
 import MuTagDevicesPortRemoveMuTag from "./source (restructure)/useCases/removeMuTag/MuTagDevicesPort";
-import Bluetooth from "./source (restructure)/shared/muTagDevices/Bluetooth";
-import BluetoothImplRnBlePlx from "./source (restructure)/shared/muTagDevices/BluetoothImplRnBlePlx";
+import Bluetooth from "./source (restructure)/shared/bluetooth/Bluetooth";
 import Logger from "./source (restructure)/shared/metaLanguage/Logger";
 import EventTracker, {
     EventTrackerImpl
@@ -92,18 +91,29 @@ import MuTagBatteriesInteractor, {
 } from "./source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 import BackgroundTask from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundTask";
 import BackgroundFetchProxyImpl from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundFetchProxy";
+import { Platform } from "react-native";
+import BluetoothAndroidDecorator from "./source (restructure)/shared/bluetooth/BluetoothAndroidDecorator";
+import ReactNativeBlePlxAdapter from "./source (restructure)/shared/bluetooth/ReactNativeBlePlxAdapter";
+import { BleManager, fullUUID } from "react-native-ble-plx";
 
 // DEBUG
-import MessageQueue from "react-native/Libraries/BatchedBridge/MessageQueue.js";
+/*import MessageQueue from "react-native/Libraries/BatchedBridge/MessageQueue.js";
 
 const spyFunction = (msg: unknown) => {
-    if (msg.module === "66" || msg.module === "54") {
+    if (
+        msg.module === "66" ||
+        msg.module === "54" ||
+        msg.module === "UIManager" ||
+        msg.module === "Timing" ||
+        msg.module === "JSTimers" ||
+        msg.module === "RCTEventEmitter"
+    ) {
         return;
     }
-    console.warn(msg);
+    console.log(msg);
 };
 
-MessageQueue.spy(spyFunction);
+MessageQueue.spy(spyFunction);*/
 // END DEBUG
 
 // These dependencies should never be reset because the RN App Component depends
@@ -192,7 +202,18 @@ export class Dependencies {
             this.nameMuTagViewModel,
             this.muTagAddingViewModel
         );
-        this.bluetooth = new BluetoothImplRnBlePlx();
+        const bluetooth = new ReactNativeBlePlxAdapter(
+            new BleManager(),
+            fullUUID,
+            Platform
+        );
+        switch (Platform.OS) {
+            case "android":
+                this.bluetooth = new BluetoothAndroidDecorator(bluetooth);
+                break;
+            default:
+                this.bluetooth = bluetooth;
+        }
         this.muTagDevices = new MuTagDevices(this.bluetooth);
         this.addMuTagInteractor = new AddMuTagInteractor(
             this.connectThreshold,
@@ -326,7 +347,6 @@ export class Dependencies {
             this.nameMuTagViewModel,
             this.muTagAddingViewModel
         );
-        this.bluetooth = new BluetoothImplRnBlePlx();
         this.muTagDevices = new MuTagDevices(this.bluetooth);
         this.addMuTagInteractor = new AddMuTagInteractor(
             this.connectThreshold,

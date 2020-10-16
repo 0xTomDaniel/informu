@@ -7,7 +7,7 @@ import Bluetooth, {
 } from "../bluetooth/Bluetooth";
 import { v4 as uuidV4 } from "uuid";
 import Percent from "../metaLanguage/Percent";
-import { Observable, Subscriber, Subscription } from "rxjs";
+import { Observable, Subscriber } from "rxjs";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
 import { BeaconId } from "../../../source/Core/Domain/ProvisionedMuTag";
 import {
@@ -22,7 +22,7 @@ import {
     WritableCharacteristic
 } from "../bluetooth/Characteristic";
 import { Buffer } from "buffer";
-import { take, toArray, tap } from "rxjs/operators";
+import { take, toArray } from "rxjs/operators";
 
 const connections = new Map<PeripheralId, Subscriber<void>>();
 const connectMock = jest.fn<

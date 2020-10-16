@@ -57,7 +57,6 @@ export default interface Bluetooth {
         timeout?: Millisecond
     ): Observable<void>;
     disconnect(peripheralId: PeripheralId): Promise<void>;
-    enableBluetooth(): Promise<void>;
     read<T>(
         peripheralId: PeripheralId,
         characteristic: ReadableCharacteristic<T>
