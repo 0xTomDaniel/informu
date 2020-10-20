@@ -7,7 +7,7 @@ import Bluetooth, {
 } from "../bluetooth/Bluetooth";
 import { v4 as uuidV4 } from "uuid";
 import Percent from "../metaLanguage/Percent";
-import { Observable, Subscriber } from "rxjs";
+import { Observable, Subscriber, Subject } from "rxjs";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
 import { BeaconId } from "../../../source/Core/Domain/ProvisionedMuTag";
 import {
@@ -22,7 +22,7 @@ import {
     WritableCharacteristic
 } from "../bluetooth/Characteristic";
 import { Buffer } from "buffer";
-import { take, toArray } from "rxjs/operators";
+import { take, toArray, filter, mapTo } from "rxjs/operators";
 
 const connections = new Map<PeripheralId, Subscriber<void>>();
 const connectMock = jest.fn<
@@ -44,7 +44,6 @@ const disconnectMock = jest.fn<Promise<void>, [PeripheralId]>(
             resolve();
         })
 );
-const enableBluetoothMock = jest.fn<Promise<void>, []>(() => Promise.resolve());
 const readMock = jest.fn<
     Promise<any>,
     [PeripheralId, ReadableCharacteristic<any>]
@@ -62,7 +61,6 @@ const BluetoothMock = jest.fn(
     (): Bluetooth => ({
         connect: connectMock,
         disconnect: disconnectMock,
-        enableBluetooth: enableBluetoothMock,
         read: readMock,
         startScan: startScanMock,
         stopScan: stopScanMock,
@@ -90,7 +88,6 @@ const discoveredPeripheral01: Peripheral = {
 
 beforeEach(() => {
     jest.clearAllMocks();
-    //muTagDevices = new MuTagDevices(bluetoothMock);
 });
 
 let unprovisionedMuTag: UnprovisionedMuTag;
@@ -155,21 +152,6 @@ test("successfully provisions an unprovisioned Mu tag.", async (): Promise<
     void
 > => {
     expect.assertions(1);
-    /*startScanMock.mockReturnValueOnce(
-        new Observable(subscriber => {
-            subscriber.next(discoveredPeripheral01);
-            subscriber.complete();
-        })
-    );
-    readMock.mockResolvedValueOnce(undefined);
-    const batteryLevel01 = new Percent(96);
-    readMock.mockResolvedValueOnce(batteryLevel01);
-    const proximityThreshold = -72 as Rssi;
-    const timeout = 5000 as Millisecond;
-    const foundMuTag = await muTagDevices
-        .startFindingUnprovisionedMuTags(proximityThreshold, timeout)
-        .pipe(take(1))
-        .toPromise();*/
     await expect(
         muTagDevices.provisionMuTag(
             unprovisionedMuTag.id,
@@ -180,11 +162,24 @@ test("successfully provisions an unprovisioned Mu tag.", async (): Promise<
     provisionedMuTagDeviceId = unprovisionedMuTag.id;
 });
 
-test("successfully changes advertising interval of provisioned Mu tag.", async (): Promise<
+test("successfully connects to previously provisioned Mu tag.", async (): Promise<
     void
 > => {
-    expect.assertions(2);
-    /*startScanMock.mockReturnValueOnce(
+    expect.assertions(1);
+    const connectPromise = muTagDevices
+        .connectToProvisionedMuTag(accountNumber, beaconId)
+        .pipe(take(1))
+        .toPromise();
+    await expect(connectPromise).resolves.toBeUndefined();
+    await muTagDevices.disconnectFromProvisionedMuTag(accountNumber, beaconId);
+});
+
+test("successfully connects to provisioned Mu tag that's not cached.", async (): Promise<
+    void
+> => {
+    expect.assertions(1);
+    muTagDevices = new MuTagDevices(bluetoothMock);
+    startScanMock.mockReturnValueOnce(
         new Observable(subscriber => {
             subscriber.next(discoveredPeripheral01);
             subscriber.complete();
@@ -195,7 +190,52 @@ test("successfully changes advertising interval of provisioned Mu tag.", async (
     const majorResponse = Hexadecimal.fromString("0000");
     readMock.mockResolvedValueOnce(majorResponse);
     const minorResponse = Hexadecimal.fromString("0075");
-    readMock.mockResolvedValueOnce(minorResponse);*/
+    readMock.mockResolvedValueOnce(minorResponse);
+    const connectPromise = muTagDevices
+        .connectToProvisionedMuTag(accountNumber, beaconId)
+        .pipe(take(1))
+        .toPromise();
+    await expect(connectPromise).resolves.toBeUndefined();
+    await muTagDevices.disconnectFromProvisionedMuTag(accountNumber, beaconId);
+});
+
+test("successfully disconnects from provisioned Mu tag.", async (): Promise<
+    void
+> => {
+    expect.assertions(2);
+    enum ConnectionState {
+        Connected,
+        Disconnected
+    }
+    const connectionState = new Subject<ConnectionState>();
+    const connectPromise: Promise<void> = connectionState
+        .pipe(
+            filter(state => state === ConnectionState.Connected),
+            take(1),
+            mapTo(undefined)
+        )
+        .toPromise();
+    const disconnectPromise: Promise<void> = connectionState
+        .pipe(
+            filter(state => state === ConnectionState.Disconnected),
+            take(1),
+            mapTo(undefined)
+        )
+        .toPromise();
+    muTagDevices.connectToProvisionedMuTag(accountNumber, beaconId).subscribe(
+        () => connectionState.next(ConnectionState.Connected),
+        e => connectionState.error(e),
+        () => connectionState.next(ConnectionState.Disconnected)
+    );
+    await expect(connectPromise).resolves.toBeUndefined();
+    await muTagDevices.disconnectFromProvisionedMuTag(accountNumber, beaconId);
+    await expect(disconnectPromise).resolves.toBeUndefined();
+});
+
+test("successfully changes advertising interval of provisioned Mu tag.", async (): Promise<
+    void
+> => {
+    expect.assertions(2);
     await expect(
         muTagDevices.changeAdvertisingInterval(
             AdvertisingIntervalSetting["852 ms"],
@@ -211,47 +251,11 @@ test("successfully changes advertising interval of provisioned Mu tag.", async (
     );
 });
 
-test("successfully unprovisions previously provisioned Mu tag", async (): Promise<
+test("successfully unprovisions previously provisioned Mu tag.", async (): Promise<
     void
 > => {
     expect.assertions(1);
     await expect(
         muTagDevices.unprovisionMuTag(accountNumber, beaconId)
     ).resolves.toBeUndefined();
-});
-
-test("successfully unprovisions provisioned Mu tag that's not cached", async (): Promise<
-    void
-> => {
-    muTagDevices = new MuTagDevices(bluetoothMock);
-    const discoveredPeripheralUncached: Peripheral = {
-        id: uuidV4() as PeripheralId,
-        name: "informu beacon",
-        rssi: -67 as Rssi,
-        advertising: {
-            isConnectable: true,
-            serviceUuids: [],
-            manufacturerData: manufacturerData,
-            serviceData: {},
-            txPowerLevel: 6
-        }
-    };
-    startScanMock.mockReturnValueOnce(
-        new Observable(subscriber => {
-            subscriber.next(discoveredPeripheralUncached);
-            subscriber.complete();
-        })
-    );
-    const provisionedResponse = Hexadecimal.fromString("01");
-    readMock.mockResolvedValueOnce(provisionedResponse);
-    const majorResponse = Hexadecimal.fromString("0000");
-    readMock.mockResolvedValueOnce(majorResponse);
-    const minorResponse = Hexadecimal.fromString("0075");
-    readMock.mockResolvedValueOnce(minorResponse);
-    const accountNumberUncached = AccountNumber.fromString("0000007");
-    const beaconIdUncached = BeaconId.fromNumber(2);
-    await muTagDevices.unprovisionMuTag(
-        accountNumberUncached,
-        beaconIdUncached
-    );
 });
