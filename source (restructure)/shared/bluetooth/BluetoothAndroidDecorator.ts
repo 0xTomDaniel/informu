@@ -6,7 +6,6 @@ import {
     from,
     merge,
     timer,
-    NEVER,
     of,
     throwError
 } from "rxjs";
@@ -113,10 +112,6 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
         await this.bluetooth.disconnect(peripheralId);
     }
 
-    async enableBluetooth(): Promise<void> {
-        await this.bluetooth.enableBluetooth();
-    }
-
     async read<T>(
         peripheralId: PeripheralId,
         characteristic: ReadableCharacteristic<T>
@@ -159,23 +154,12 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
         const scanTask = shouldPauseScan.pipe(
             switchMap(shouldPause => {
                 if (shouldPause) {
-                    this.pauseScan();
-                    return NEVER;
+                    return from(this.pauseScan()).pipe(ignoreElements());
                 } else {
                     this.scanState.next(ScanState.Started);
                     return this.bluetooth
                         .startScan(serviceUuids, timeout, scanMode)
                         .pipe(
-                            finalize(() => {
-                                switch (this.scanState.value) {
-                                    case ScanState.Pausing:
-                                        this.scanState.next(ScanState.Paused);
-                                        break;
-                                    case ScanState.Stopping:
-                                        this.scanState.next(ScanState.Stopped);
-                                        break;
-                                }
-                            }),
                             catchError(error => {
                                 this.scanState.next(ScanState.Stopped);
                                 throw error;
@@ -185,21 +169,21 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
             })
         );
         return onStartScan.pipe(
-            switchMap(() => {
-                return scanTask;
-            }),
+            switchMap(() => scanTask),
             takeUntil(onStopScan)
         );
     }
 
     async stopScan(): Promise<void> {
         if (
-            this.scanState.value !== ScanState.Stopped &&
-            this.scanState.value !== ScanState.Stopping
+            this.scanState.value === ScanState.Stopped ||
+            this.scanState.value === ScanState.Stopping
         ) {
-            this.scanState.next(ScanState.Stopping);
+            return;
         }
+        this.scanState.next(ScanState.Stopping);
         await this.bluetooth.stopScan();
+        this.scanState.next(ScanState.Stopped);
     }
 
     async write<T>(
@@ -222,9 +206,10 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
         ScanState.Stopped
     );
 
-    private pauseScan(): void {
+    private async pauseScan(): Promise<void> {
         this.scanState.next(ScanState.Pausing);
-        this.bluetooth.stopScan();
+        await this.bluetooth.stopScan();
+        this.scanState.next(ScanState.Paused);
     }
 
     // Public static interface

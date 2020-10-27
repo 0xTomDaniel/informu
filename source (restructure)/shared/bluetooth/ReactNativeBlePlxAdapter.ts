@@ -67,9 +67,6 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
                 const options: ConnectionOptions = {
                     timeout: timeout
                 };
-                // TODO: I need to determine what happens when connect is called
-                // multiple times.
-                debugger;
                 this.bleManager
                     .connectToDevice(peripheralId, options)
                     .then(device =>
