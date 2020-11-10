@@ -1,37 +1,13 @@
 import { Rssi } from "../../shared/metaLanguage/Types";
-import Percent from "../../shared/metaLanguage/Percent";
 import { Observable } from "rxjs";
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
-
-export type MuTagDeviceId = string & { readonly _: unique symbol };
-
-export interface UnprovisionedMuTag {
-    id: MuTagDeviceId;
-    batteryLevel: Percent;
-    macAddress: string;
-}
-
-export enum TxPowerSetting {
-    "+6 dBm" = 1,
-    "0 dBm",
-    "-8 dBm",
-    "-15 dBm",
-    "-20 dBm"
-}
-
-export enum AdvertisingIntervalSetting {
-    "1,285 ms" = 1,
-    "1,022 ms",
-    "852 ms",
-    "760 ms",
-    "546 ms",
-    "417 ms",
-    "318 ms",
-    "211 ms",
-    "152 ms",
-    "100 ms",
-    "200 ms"
-}
+import {
+    ConnectionId,
+    UnprovisionedMuTag,
+    TxPowerSetting,
+    AdvertisingIntervalSetting
+} from "../../shared/muTagDevices/MuTagDevices";
+import Percent from "../../shared/metaLanguage/Percent";
 
 export default interface MuTagDevicesPort {
     /**
@@ -45,26 +21,22 @@ export default interface MuTagDevicesPort {
     ): Observable<UnprovisionedMuTag>;
     stopFindingUnprovisionedMuTags(): void;
     provisionMuTag(
-        id: MuTagDeviceId,
+        unprovisionedMuTag: UnprovisionedMuTag,
         accountNumber: Hexadecimal,
-        beaconId: Hexadecimal
+        beaconId: Hexadecimal,
+        minimumBatteryLevel: Percent
     ): Promise<void>;
     connectToProvisionedMuTag(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
-    ): Observable<void>;
-    disconnectFromProvisionedMuTag(
-        accountNumber: Hexadecimal,
-        beaconId: Hexadecimal
-    ): void;
+    ): Observable<ConnectionId>;
+    disconnectFromProvisionedMuTag(connectionId: ConnectionId): void;
     changeTxPower(
         txPower: TxPowerSetting,
-        accountNumber: Hexadecimal,
-        beaconId: Hexadecimal
+        connectionId: ConnectionId
     ): Promise<void>;
     changeAdvertisingInterval(
         interval: AdvertisingIntervalSetting,
-        accountNumber: Hexadecimal,
-        beaconId: Hexadecimal
+        connectionId: ConnectionId
     ): Promise<void>;
 }

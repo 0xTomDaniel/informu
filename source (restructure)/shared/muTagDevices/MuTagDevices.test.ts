@@ -25,17 +25,35 @@ import { Buffer } from "buffer";
 import { take, toArray, filter, mapTo } from "rxjs/operators";
 import BluetoothAndroidDecorator from "../bluetooth/BluetoothAndroidDecorator";
 import { fakeSchedulers } from "rxjs-marbles/jest";
+import EventTracker from "../metaLanguage/EventTracker";
+import Logger from "../metaLanguage/Logger";
 
-const onConnectIsReady = new Subject<void>();
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+Logger.createInstance(eventTrackerMock);
+
+//const onConnectIsReady = new Subject<Subscriber<void>>();
 const connections = new Map<PeripheralId, Subscriber<void>>();
+let connectionError: Error | undefined;
 const connectMock = jest.fn<
     Observable<void>,
     [PeripheralId, Millisecond | undefined]
 >((peripheralId: PeripheralId) => {
-    onConnectIsReady.next();
     return new Observable<void>(subscriber => {
         connections.set(peripheralId, subscriber);
-        subscriber.next();
+        if (connectionError == null) {
+            subscriber.next();
+        } else {
+            subscriber.error(connectionError);
+        }
     });
 });
 const disconnectMock = jest.fn<Promise<void>, [PeripheralId]>(
@@ -190,7 +208,7 @@ test("successfully connects to previously provisioned Mu tag.", async (): Promis
 });
 
 test(
-    "successfully connects to provisioned Mu tag that's not cached.",
+    "fails to connect to provisioned Mu tag that's not cached.",
     fakeSchedulers(async advance => {
         expect.assertions(1);
         jest.useFakeTimers("modern");
@@ -201,6 +219,60 @@ test(
         readMock.mockResolvedValueOnce(majorResponse);
         const minorResponse = Hexadecimal.fromString("0075");
         readMock.mockResolvedValueOnce(minorResponse);
+        connectionError = Error("Failed to connected to Mu tag.");
+        const connectPromise = muTagDevices
+            .connectToProvisionedMuTag(accountNumber, beaconId)
+            .pipe(take(1))
+            .toPromise();
+        discoveredPeripheralSubject.next(discoveredPeripheral01);
+        advance(500);
+        await expect(connectPromise).rejects.toBe(connectionError);
+        await muTagDevices.disconnectFromProvisionedMuTag(
+            accountNumber,
+            beaconId
+        );
+        connectionError = undefined;
+    })
+);
+
+/*test(
+    "fails to connect to provisioned Mu tag that's cached.",
+    fakeSchedulers(async advance => {
+        expect.assertions(1);
+        jest.useFakeTimers("modern");
+        muTagDevices = new MuTagDevices(bluetoothAndroidDecorator);
+        const provisionedResponse = Hexadecimal.fromString("01");
+        readMock.mockResolvedValueOnce(provisionedResponse);
+        const majorResponse = Hexadecimal.fromString("0000");
+        readMock.mockResolvedValueOnce(majorResponse);
+        const minorResponse = Hexadecimal.fromString("0075");
+        readMock.mockResolvedValueOnce(minorResponse);
+        const connectPromise = muTagDevices
+            .connectToProvisionedMuTag(accountNumber, beaconId)
+            .pipe(take(1))
+            .toPromise();
+        discoveredPeripheralSubject.next(discoveredPeripheral01);
+        advance(500);
+        await expect(connectPromise).resolves.toBeUndefined();
+        await muTagDevices.disconnectFromProvisionedMuTag(
+            accountNumber,
+            beaconId
+        );
+    })
+);*/
+
+test(
+    "successfully connects to provisioned Mu tag that's not cached.",
+    fakeSchedulers(async advance => {
+        expect.assertions(1);
+        jest.useFakeTimers("modern");
+        /*muTagDevices = new MuTagDevices(bluetoothAndroidDecorator);
+        const provisionedResponse = Hexadecimal.fromString("01");
+        readMock.mockResolvedValueOnce(provisionedResponse);
+        const majorResponse = Hexadecimal.fromString("0000");
+        readMock.mockResolvedValueOnce(majorResponse);
+        const minorResponse = Hexadecimal.fromString("0075");
+        readMock.mockResolvedValueOnce(minorResponse);*/
         const connectPromise = muTagDevices
             .connectToProvisionedMuTag(accountNumber, beaconId)
             .pipe(take(1))
