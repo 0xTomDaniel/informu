@@ -2,7 +2,7 @@ import { Rssi } from "../../shared/metaLanguage/Types";
 import { Observable } from "rxjs";
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import {
-    ConnectionId,
+    Connection,
     UnprovisionedMuTag,
     TxPowerSetting,
     AdvertisingIntervalSetting
@@ -21,22 +21,22 @@ export default interface MuTagDevicesPort {
     ): Observable<UnprovisionedMuTag>;
     stopFindingUnprovisionedMuTags(): void;
     provisionMuTag(
-        unprovisionedMuTag: UnprovisionedMuTag,
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal,
+        connection: Connection,
         minimumBatteryLevel: Percent
     ): Promise<void>;
     connectToProvisionedMuTag(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
-    ): Observable<ConnectionId>;
-    disconnectFromProvisionedMuTag(connectionId: ConnectionId): void;
+    ): Observable<Connection>;
+    disconnectFromMuTag(connection: Connection): void;
     changeTxPower(
         txPower: TxPowerSetting,
-        connectionId: ConnectionId
+        connection: Connection
     ): Promise<void>;
     changeAdvertisingInterval(
         interval: AdvertisingIntervalSetting,
-        connectionId: ConnectionId
+        connection: Connection
     ): Promise<void>;
 }
