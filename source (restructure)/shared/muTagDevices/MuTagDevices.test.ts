@@ -1,8 +1,3 @@
-import MuTagDevices, {
-    UnprovisionedMuTag,
-    Connection,
-    AdvertisingIntervalSetting
-} from "./MuTagDevices";
 import { Rssi, Millisecond } from "../metaLanguage/Types";
 import Bluetooth, {
     Peripheral,
@@ -26,6 +21,15 @@ import BluetoothAndroidDecorator from "../bluetooth/BluetoothAndroidDecorator";
 import { fakeSchedulers } from "rxjs-marbles/jest";
 import EventTracker from "../metaLanguage/EventTracker";
 import Logger from "../metaLanguage/Logger";
+import MuTagDevices from "./MuTagDevices";
+import {
+    UnprovisionedMuTag,
+    Connection,
+    AdvertisingIntervalSetting,
+    FailedToConnectToMuTag,
+    FailedToFindMuTag
+} from "./MuTagDevicesPort";
+import UserError from "../metaLanguage/UserError";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -70,6 +74,7 @@ const readMock = jest.fn<
 >();
 let startScanSubscriber: Subscriber<Peripheral> | undefined;
 const discoveredPeripheralSubject = new Subject<Peripheral>();
+const scanTimeout = 5000;
 const startScanMock = jest.fn<
     Observable<Peripheral>,
     [Array<string>, Millisecond | undefined, ScanMode | undefined]
@@ -80,7 +85,15 @@ const startScanMock = jest.fn<
             const subscription = discoveredPeripheralSubject.subscribe(
                 peripheral => subscriber.next(peripheral)
             );
-            const teardown = () => subscription.unsubscribe();
+            const timeoutId = setTimeout(() => {
+                debugger;
+                subscriber.complete();
+            }, scanTimeout);
+            const teardown = () => {
+                debugger;
+                clearTimeout(timeoutId);
+                subscription.unsubscribe();
+            };
             return teardown;
         })
 );
@@ -248,18 +261,36 @@ test("Successfully connects to provisioned Mu tag.", async (): Promise<
 });
 
 test(
+    "Fails to find provisioned Mu tag.",
+    fakeSchedulers(async advance => {
+        expect.assertions(1);
+        jest.useFakeTimers("modern");
+        debugger;
+        const connectPromise = muTagDevices
+            .connectToProvisionedMuTag(accountNumber, beaconId)
+            .pipe(take(1))
+            .toPromise();
+        debugger;
+        advance(5000);
+        debugger;
+        await expect(connectPromise).rejects.toStrictEqual(connectionError);
+        debugger;
+    })
+);
+
+/*test(
     "Fails to connect to provisioned Mu tag.",
     fakeSchedulers(async advance => {
         expect.assertions(1);
         jest.useFakeTimers("modern");
-        connectionError = Error("Failed to connected to Mu tag.");
+        connectionError = UserError.create(FailedToConnectToMuTag);
         const connectPromise = muTagDevices
             .connectToProvisionedMuTag(accountNumber, beaconId)
             .pipe(take(1))
             .toPromise();
         discoveredPeripheralSubject.next(discoveredProvisionedPeripheral);
         advance(500);
-        await expect(connectPromise).rejects.toBe(connectionError);
+        await expect(connectPromise).rejects.toStrictEqual(connectionError);
         connectionError = undefined;
     })
 );
@@ -333,4 +364,4 @@ test("Successfully unprovisions a provisioned Mu tag.", async (): Promise<
         MuTagBleGatt.MuTagConfiguration.Provision,
         MuTagBleGatt.MuTagConfiguration.Provision.unprovisionCode
     );
-});
+});*/

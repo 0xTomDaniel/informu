@@ -148,21 +148,67 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
             mapTo<number, void>(undefined)
         );
         const onStopScan = this.scanState.pipe(
+            tap(
+                v => {
+                    switch (v) {
+                        case ScanState.Stopped:
+                            debugger;
+                            break;
+                        case ScanState.Stopping:
+                            debugger;
+                            break;
+                        case ScanState.Started:
+                            debugger;
+                            break;
+                        case ScanState.Starting:
+                            debugger;
+                            break;
+                        case ScanState.Paused:
+                            debugger;
+                            break;
+                        case ScanState.Pausing:
+                            debugger;
+                            break;
+                    }
+                },
+                e => {
+                    debugger;
+                },
+                () => {
+                    debugger;
+                }
+            ),
             filter(state => state === ScanState.Stopping),
-            mapTo<number, void>(undefined)
+            mapTo<number, void>(undefined),
+            tap(
+                v => {
+                    debugger;
+                },
+                e => {
+                    debugger;
+                },
+                () => {
+                    debugger;
+                }
+            )
         );
         const scanTask = shouldPauseScan.pipe(
             switchMap(shouldPause => {
                 if (shouldPause) {
+                    debugger;
                     return from(this.pauseScan()).pipe(ignoreElements());
                 } else {
+                    debugger;
                     this.scanState.next(ScanState.Started);
                     return this.bluetooth
                         .startScan(serviceUuids, timeout, scanMode)
                         .pipe(
-                            catchError(error => {
+                            /*catchError(error => {
                                 this.scanState.next(ScanState.Stopped);
                                 throw error;
+                            })*/
+                            finalize(() => {
+                                this.scanState.next(ScanState.Stopped);
                             })
                         );
                 }
@@ -170,7 +216,18 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
         );
         return onStartScan.pipe(
             switchMap(() => scanTask),
-            takeUntil(onStopScan)
+            takeUntil(onStopScan),
+            tap(
+                v => {
+                    debugger;
+                },
+                e => {
+                    debugger;
+                },
+                () => {
+                    debugger;
+                }
+            )
         );
     }
 
@@ -181,8 +238,49 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
         ) {
             return;
         }
+        const onScanStopping = this.scanState
+            .pipe(
+                tap(
+                    v => {
+                        switch (v) {
+                            case ScanState.Stopped:
+                                debugger;
+                                break;
+                            case ScanState.Stopping:
+                                debugger;
+                                break;
+                            case ScanState.Started:
+                                debugger;
+                                break;
+                            case ScanState.Starting:
+                                debugger;
+                                break;
+                            case ScanState.Paused:
+                                debugger;
+                                break;
+                            case ScanState.Pausing:
+                                debugger;
+                                break;
+                        }
+                    },
+                    e => {
+                        debugger;
+                    },
+                    () => {
+                        debugger;
+                    }
+                ),
+                filter(state => state === ScanState.Stopping),
+                mapTo<number, void>(undefined),
+                take(1)
+            )
+            .toPromise();
         this.scanState.next(ScanState.Stopping);
+        debugger;
+        await onScanStopping;
+        debugger;
         await this.bluetooth.stopScan();
+        debugger;
         this.scanState.next(ScanState.Stopped);
     }
 
@@ -207,6 +305,7 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
     );
 
     private async pauseScan(): Promise<void> {
+        debugger;
         this.scanState.next(ScanState.Pausing);
         await this.bluetooth.stopScan();
         this.scanState.next(ScanState.Paused);

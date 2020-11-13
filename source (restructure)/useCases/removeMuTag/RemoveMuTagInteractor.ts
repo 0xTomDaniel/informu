@@ -1,7 +1,6 @@
 import Percent from "../../shared/metaLanguage/Percent";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Account from "../../../source/Core/Domain/Account";
-import MuTagDevicesPort from "./MuTagDevicesPort";
 import UserError, { UserErrorType } from "../../shared/metaLanguage/UserError";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
@@ -10,6 +9,15 @@ import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import { switchMap, take } from "rxjs/operators";
 import { Observable, Subject, BehaviorSubject } from "rxjs";
 import Logger from "../../shared/metaLanguage/Logger";
+import MuTagDevicesPort, {
+    Connection
+} from "../../shared/muTagDevices/MuTagDevicesPort";
+
+export const FailedToRemoveMuTagFromAccount: UserErrorType = {
+    name: "FailedToRemoveMuTagFromAccount",
+    userFriendlyMessage:
+        "The Mu tag device successfully reset and disconnected from your account, but there was a problem removing the Mu tag from the app. Please notify support@informu.io."
+};
 
 export const LowMuTagBattery = (
     lowBatteryThreshold: number
@@ -17,24 +25,6 @@ export const LowMuTagBattery = (
     name: "LowMuTagBattery",
     userFriendlyMessage: `Unable to remove Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.`
 });
-
-export const FailedToConnectToMuTag: UserErrorType = {
-    name: "FailedToConnectToMuTag",
-    userFriendlyMessage:
-        "Could not connect to Mu tag. Please ensure that Mu tag is charged and move it closer to the app."
-};
-
-export const MuTagCommunicationFailure: UserErrorType = {
-    name: "MuTagCommunicationFailure",
-    userFriendlyMessage:
-        "There was a problem communicating with the Mu tag. Please move Mu tag closer to the app."
-};
-
-export const FailedToRemoveMuTagFromAccount: UserErrorType = {
-    name: "FailedToRemoveMuTagFromAccount",
-    userFriendlyMessage:
-        "The Mu tag device successfully reset and disconnected from your account, but there was a problem removing the Mu tag from the app. Please notify support@informu.io."
-};
 
 export default interface RemoveMuTagInteractor {
     readonly showActivityIndicator: Observable<boolean>;
@@ -78,20 +68,17 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
         try {
             account = await this.accountRepoLocal.get();
             muTag = await this.muTagRepoLocal.getByUid(uid);
+            let connection: Connection;
             await this.muTagDevices
                 .connectToProvisionedMuTag(
                     account.accountNumber,
                     muTag.beaconId
                 )
                 .pipe(
-                    switchMap(() =>
-                        this.muTagDevices.readBatteryLevel(
-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                            account!.accountNumber,
-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                            muTag!.beaconId
-                        )
-                    ),
+                    switchMap(cnnctn => {
+                        connection = cnnctn;
+                        return this.muTagDevices.readBatteryLevel(cnnctn);
+                    }),
                     switchMap(batteryLevel => {
                         if (batteryLevel < this.removeMuTagBatteryThreshold) {
                             throw UserError.create(
@@ -101,10 +88,7 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
                             );
                         } else {
                             return this.muTagDevices.unprovisionMuTag(
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                account!.accountNumber,
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                muTag!.beaconId
+                                connection
                             );
                         }
                     }),
@@ -114,14 +98,8 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
                 )
                 .toPromise();
         } catch (e) {
-            let error: UserError;
-            if (e.name === "LowMuTagBattery") {
-                error = e;
-            } else {
-                error = UserError.create(FailedToConnectToMuTag, e);
-            }
             this.showActivityIndicatorSubject.next(false);
-            this.showErrorSubject.next(error);
+            this.showErrorSubject.next(e);
             return;
         }
         await this.removeMuTagFromPersistence(account, muTag);

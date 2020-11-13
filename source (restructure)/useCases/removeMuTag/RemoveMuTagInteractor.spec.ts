@@ -84,11 +84,11 @@ const readMock = jest.fn<
 const startScanSubscriber = new BehaviorSubject<
     Subscriber<Peripheral> | undefined
 >(undefined);
-const onScanStarted = startScanSubscriber.pipe(
+const onStartScanMock = startScanSubscriber.pipe(
     skip(1),
     filter((s): s is Subscriber<Peripheral> => s != null)
 );
-const onScanStopped = new Subject<void>();
+const onStopScanMock = new Subject<void>();
 const startScanMock = jest.fn<
     Observable<Peripheral>,
     [string[], Millisecond?, ScanMode?]
@@ -96,17 +96,14 @@ const startScanMock = jest.fn<
     () =>
         new Observable<Peripheral>(subscriber => {
             startScanSubscriber.next(subscriber);
-            const teardown = () => onScanStopped.next();
+            const teardown = () => onStopScanMock.next();
             return teardown;
         })
 );
 const stopScanMock = jest.fn(
     () =>
         new Promise<void>(resolve => {
-            const foo = startScanSubscriber.value;
-            debugger;
             startScanSubscriber.value?.complete();
-            debugger;
             startScanSubscriber.next(undefined);
             resolve();
         })
@@ -248,7 +245,7 @@ const muTag = new ProvisionedMuTag({
     _uid: muTagUid
 });
 const manufacturerDataJson =
-    "[2,1,6,26,255,76,0,2,21,222,126,199,237,16,85,176,85,192,222,222,254,167,237,250,126,255,255,255,255,182,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
+    "[2, 1, 6, 26, 255, 76, 0, 2, 21, 222, 126, 199, 237, 16, 85, 176, 85, 192, 222, 222, 254, 167, 237, 250, 126, 0, 0, 0, 1, 182, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]";
 const manufacturerData = Buffer.from(JSON.parse(manufacturerDataJson));
 const discoveredPeripheral: Peripheral = {
     id: uuidV4() as PeripheralId,
@@ -266,8 +263,8 @@ const discoveredPeripheral: Peripheral = {
 // TODO: In addition to Mu tag failing to connect, add another scenario where
 // Mu tag cannot be found.
 
-describe("Mu tag user removes Mu tag", (): void => {
-    describe("Mu tag removes successfully", (): void => {
+describe("Mu tag user removes Mu tag.", (): void => {
+    describe("Scenario 1: Mu tag removes successfully.", (): void => {
         // Given that the account connected to the current Mu tag is logged in
         //
         getMock.mockResolvedValueOnce(account);
@@ -282,14 +279,7 @@ describe("Mu tag user removes Mu tag", (): void => {
         let removePromise: Promise<void>;
         const executionOrder: number[] = [];
         let activityIndicatorPromise01: Promise<boolean>;
-        let connectPromise01: Promise<[
-            PeripheralId,
-            (Millisecond | undefined)?
-        ]>;
-        let connectPromise02: Promise<[
-            PeripheralId,
-            (Millisecond | undefined)?
-        ]>;
+        let connectPromise: Promise<[PeripheralId, (Millisecond | undefined)?]>;
         let readPromise: Promise<[PeripheralId, ReadableCharacteristic<any>]>;
         let writePromise: Promise<[
             PeripheralId,
@@ -311,73 +301,63 @@ describe("Mu tag user removes Mu tag", (): void => {
                 const onReadMock = new Subject<
                     [PeripheralId, ReadableCharacteristic<any>]
                 >();
-                const readValues = [
-                    Hexadecimal.fromNumber(1),
-                    Hexadecimal.fromString("0000"),
-                    Hexadecimal.fromString("0001"),
-                    muTagBatteryLevel
-                ];
-                readMock.mockImplementation(
+                readMock.mockImplementationOnce(
                     (
                         peripheralId: PeripheralId,
                         characteristic: ReadableCharacteristic<any>
                     ) => {
                         onReadMock.next([peripheralId, characteristic]);
-                        return Promise.resolve(readValues.shift());
+                        return Promise.resolve(muTagBatteryLevel);
                     }
                 );
                 activityIndicatorPromise01 = removeMuTagInteractor.showActivityIndicator
                     .pipe(skip(1), take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(0));
-                connectPromise01 = onConnectMock
+                connectPromise = onConnectMock
                     .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(1));
-                connectPromise02 = onConnectMock
-                    .pipe(skip(1), take(1))
+                readPromise = onReadMock
+                    .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(2));
-                readPromise = onReadMock
-                    .pipe(skip(3), take(1))
+                writePromise = onWriteMock
+                    .pipe(skip(1), take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(3));
-                writePromise = onWriteMock
-                    .pipe(skip(2), take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(4));
                 removeMuTagPromise = onRemoveMuTagSpy
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(5));
+                    .finally(() => executionOrder.push(4));
                 accountUpdateLocalPromise = onLocalUpdateMock
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(6));
+                    .finally(() => executionOrder.push(5));
                 removeLocalMuTagPromise = onLocalRemoveByUidMock
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(7));
+                    .finally(() => executionOrder.push(6));
                 accountUpdateRemotePromise = onRemoteUpdateMock
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(8));
+                    .finally(() => executionOrder.push(7));
                 removeRemoteMuTagPromise = onRemoteRemoveByUidMock
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(9));
+                    .finally(() => executionOrder.push(8));
                 activityIndicatorPromise02 = removeMuTagInteractor.showActivityIndicator
                     .pipe(skip(2), take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(10));
-                onConnectMock.pipe(take(2)).subscribe(([peripheralId]) => {
-                    const foo = connections.get(peripheralId);
-                    connections.get(peripheralId)?.next();
-                });
+                    .finally(() => executionOrder.push(9));
+                onConnectMock
+                    .pipe(take(1))
+                    .subscribe(([peripheralId]) =>
+                        connections.get(peripheralId)?.next()
+                    );
                 // user removes Mu tag
                 removePromise = removeMuTagInteractor.remove(muTagUid);
-
-                const startScanSbscrbr = await onScanStarted
+                const startScanSbscrbr = await onStartScanMock
                     .pipe(take(1))
                     .toPromise();
                 startScanSbscrbr.next(discoveredPeripheral);
@@ -388,12 +368,11 @@ describe("Mu tag user removes Mu tag", (): void => {
         afterAll((): void => {
             jest.clearAllMocks();
             jest.useRealTimers();
-            debugger;
         });
 
         // Then
         //
-        it("should show busy indicator", async (): Promise<void> => {
+        it("Should show busy indicator.", async (): Promise<void> => {
             expect.assertions(2);
             await expect(activityIndicatorPromise01).resolves.toBe(true);
             expect(executionOrder[0]).toBe(0);
@@ -401,211 +380,7 @@ describe("Mu tag user removes Mu tag", (): void => {
 
         // Then
         //
-        it("should connect to the Mu tag", async (): Promise<void> => {
-            expect.assertions(4);
-            await expect(connectPromise01).resolves.toStrictEqual([
-                discoveredPeripheral.id,
-                undefined
-            ]);
-            expect(executionOrder[1]).toBe(1);
-            await expect(connectPromise02).resolves.toStrictEqual([
-                discoveredPeripheral.id,
-                undefined
-            ]);
-            expect(executionOrder[2]).toBe(2);
-        });
-
-        // Then
-        //
-        it("should check the Mu tag battery level", async (): Promise<void> => {
-            expect.assertions(2);
-            await expect(readPromise).resolves.toStrictEqual([
-                discoveredPeripheral.id,
-                MuTagBleGatt.DeviceInformation.BatteryLevel
-            ]);
-            expect(executionOrder[3]).toBe(3);
-        });
-
-        // Then
-        //
-        it("should unprovision the Mu tag hardware", async (): Promise<
-            void
-        > => {
-            expect.assertions(2);
-            await expect(writePromise).resolves.toStrictEqual([
-                discoveredPeripheral.id,
-                MuTagBleGatt.MuTagConfiguration.Provision,
-                MuTagBleGatt.MuTagConfiguration.Provision.unprovisionCode
-            ]);
-            expect(executionOrder[4]).toBe(4);
-        });
-
-        // Then
-        //
-        it("should remove the Mu tag from local persistence", async (): Promise<
-            void
-        > => {
-            expect.assertions(6);
-            await expect(removeMuTagPromise).resolves.toStrictEqual([
-                muTagUid,
-                beaconId
-            ]);
-            expect(executionOrder[5]).toBe(5);
-            await expect(accountUpdateLocalPromise).resolves.toBe(account);
-            expect(executionOrder[6]).toBe(6);
-            await expect(removeLocalMuTagPromise).resolves.toBe(muTagUid);
-            expect(executionOrder[7]).toBe(7);
-        });
-
-        // Then
-        //
-        it("should remove the Mu tag from remote persistence", async (): Promise<
-            void
-        > => {
-            expect.assertions(4);
-            await expect(accountUpdateRemotePromise).resolves.toBe(account);
-            expect(executionOrder[8]).toBe(8);
-            await expect(removeRemoteMuTagPromise).resolves.toStrictEqual([
-                muTagUid,
-                validAccountData._uid
-            ]);
-            expect(executionOrder[9]).toBe(9);
-        });
-
-        // Then
-        //
-        it("should hide busy indicator", async (): Promise<void> => {
-            expect.assertions(2);
-            await expect(activityIndicatorPromise02).resolves.toBe(false);
-            await expect(removePromise).resolves.toBeUndefined();
-        });
-    });
-
-    /*describe("Mu tag is unconnectable", (): void => {
-        // Given that the account connected to the current Mu tag is logged in
-        //
-        getMock.mockResolvedValueOnce(account);
-        getByUidMock.mockResolvedValueOnce(muTag);
-
-        // Given Mu tag is unconnectable
-        //
-        const originatingError = Error("Failed to connect to device");
-
-        let removePromise: Promise<void>;
-        const executionOrder: number[] = [];
-        let activityIndicatorPromise01: Promise<boolean>;
-        let connectPromise: Promise<[PeripheralId, (Millisecond | undefined)?]>;
-        let activityIndicatorPromise02: Promise<boolean>;
-        let showErrorPromise: Promise<void>;
-
-        // When
-        //
-        beforeAll(
-            fakeSchedulers(async advance => {
-                /*(bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
-                    () => {
-                        discoveredPeripheralSubscriber.next(
-                            discoveredPeripheral
-                        );
-                    }
-                );
-                (bluetoothMock.connect as jest.Mock).mockImplementationOnce(
-                    (peripheralId: PeripheralId) =>
-                        new Observable<void>(subscriber => {
-                            connections.set(peripheralId, subscriber);
-                            subscriber.next();
-                        })
-                );
-                (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
-                    Hexadecimal.fromNumber(1)
-                );
-                (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
-                    Hexadecimal.fromString("0000")
-                );
-                (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
-                    Hexadecimal.fromString("0001")
-                );
-                (bluetoothMock.connect as jest.Mock).mockImplementationOnce(
-                    () =>
-                        new Observable<void>(subscriber => {
-                            subscriber.error(originatingError);
-                        })
-                );*/
-    /*const onReadMock = new Subject<
-                    [PeripheralId, ReadableCharacteristic<any>]
-                >();
-                const readValues = [
-                    Hexadecimal.fromNumber(1),
-                    Hexadecimal.fromString("0000"),
-                    Hexadecimal.fromString("0001")
-                ];
-                readMock.mockImplementation(
-                    (
-                        peripheralId: PeripheralId,
-                        characteristic: ReadableCharacteristic<any>
-                    ) => {
-                        onReadMock.next([peripheralId, characteristic]);
-                        return Promise.resolve(readValues.shift());
-                    }
-                );
-                activityIndicatorPromise01 = removeMuTagInteractor.showActivityIndicator
-                    .pipe(skip(1), take(1))
-                    .toPromise()
-                    .finally(() => {
-                        executionOrder.push(0);
-                    });
-                connectPromise = onConnectMock
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => {
-                        executionOrder.push(1);
-                    });
-                activityIndicatorPromise02 = removeMuTagInteractor.showActivityIndicator
-                    .pipe(skip(2), take(1))
-                    .toPromise()
-                    .finally(() => {
-                        executionOrder.push(2);
-                    });
-                showErrorPromise = removeMuTagInteractor.showError
-                    .pipe(take(1))
-                    .toPromise()
-                    .then(e => {
-                        debugger;
-                    })
-                    .finally(() => {
-                        executionOrder.push(3);
-                    });
-                onConnectMock.pipe(take(1)).subscribe(([peripheralId]) => {
-                    const foo = connections.get(peripheralId);
-                    connections.get(peripheralId)?.error(originatingError);
-                });
-                // user removes Mu tag
-                removePromise = removeMuTagInteractor.remove(muTagUid);
-                debugger;
-                const startScanSbscrbr = await onScanStarted
-                    .pipe(take(1))
-                    .toPromise();
-                debugger;
-                startScanSbscrbr.next(discoveredPeripheral);
-                advance(500);
-            })
-        );
-
-        afterAll((): void => {
-            jest.clearAllMocks();
-        });
-
-        // Then
-        //
-        it("should show busy indicator", async () => {
-            expect.assertions(2);
-            await expect(activityIndicatorPromise01).resolves.toBe(true);
-            expect(executionOrder[0]).toBe(0);
-        });
-
-        // Then
-        //
-        it("should connect to the Mu tag", async () => {
+        it("Should connect to the Mu tag.", async (): Promise<void> => {
             expect.assertions(2);
             await expect(connectPromise).resolves.toStrictEqual([
                 discoveredPeripheral.id,
@@ -616,7 +391,131 @@ describe("Mu tag user removes Mu tag", (): void => {
 
         // Then
         //
-        it("should hide busy indicator", async () => {
+        it("Should check the Mu tag battery level.", async (): Promise<
+            void
+        > => {
+            expect.assertions(2);
+            await expect(readPromise).resolves.toStrictEqual([
+                discoveredPeripheral.id,
+                MuTagBleGatt.DeviceInformation.BatteryLevel
+            ]);
+            expect(executionOrder[2]).toBe(2);
+        });
+
+        // Then
+        //
+        it("Should unprovision the Mu tag hardware.", async (): Promise<
+            void
+        > => {
+            expect.assertions(2);
+            await expect(writePromise).resolves.toStrictEqual([
+                discoveredPeripheral.id,
+                MuTagBleGatt.MuTagConfiguration.Provision,
+                MuTagBleGatt.MuTagConfiguration.Provision.unprovisionCode
+            ]);
+            expect(executionOrder[3]).toBe(3);
+        });
+
+        // Then
+        //
+        it("Should remove the Mu tag from local persistence.", async (): Promise<
+            void
+        > => {
+            expect.assertions(6);
+            await expect(removeMuTagPromise).resolves.toStrictEqual([
+                muTagUid,
+                beaconId
+            ]);
+            expect(executionOrder[4]).toBe(4);
+            await expect(accountUpdateLocalPromise).resolves.toBe(account);
+            expect(executionOrder[5]).toBe(5);
+            await expect(removeLocalMuTagPromise).resolves.toBe(muTagUid);
+            expect(executionOrder[6]).toBe(6);
+        });
+
+        // Then
+        //
+        it("Should remove the Mu tag from remote persistence.", async (): Promise<
+            void
+        > => {
+            expect.assertions(4);
+            await expect(accountUpdateRemotePromise).resolves.toBe(account);
+            expect(executionOrder[7]).toBe(7);
+            await expect(removeRemoteMuTagPromise).resolves.toStrictEqual([
+                muTagUid,
+                validAccountData._uid
+            ]);
+            expect(executionOrder[8]).toBe(8);
+        });
+
+        // Then
+        //
+        it("Should hide busy indicator.", async (): Promise<void> => {
+            expect.assertions(3);
+            await expect(activityIndicatorPromise02).resolves.toBe(false);
+            expect(executionOrder[9]).toBe(9);
+            await expect(removePromise).resolves.toBeUndefined();
+        });
+    });
+
+    describe("Scenario 2: Mu tag not found.", (): void => {
+        // Given that the account connected to the current Mu tag is logged in.
+        //
+        getMock.mockResolvedValueOnce(account);
+        getByUidMock.mockResolvedValueOnce(muTag);
+
+        // Given that Mu tag cannot be found.
+        //
+        const originatingError = Error("Failed to connect to device");
+
+        let removePromise: Promise<void>;
+        const executionOrder: number[] = [];
+        let activityIndicatorPromise01: Promise<boolean>;
+        let activityIndicatorPromise02: Promise<boolean>;
+        let showErrorPromise: Promise<UserError>;
+
+        // When
+        //
+        beforeAll(async () => {
+            debugger;
+            activityIndicatorPromise01 = removeMuTagInteractor.showActivityIndicator
+                .pipe(skip(1), take(1))
+                .toPromise()
+                .finally(() => {
+                    executionOrder.push(0);
+                });
+            activityIndicatorPromise02 = removeMuTagInteractor.showActivityIndicator
+                .pipe(skip(2), take(1))
+                .toPromise()
+                .finally(() => {
+                    executionOrder.push(1);
+                });
+            showErrorPromise = removeMuTagInteractor.showError
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => {
+                    executionOrder.push(2);
+                });
+            // user removes Mu tag
+            removePromise = removeMuTagInteractor.remove(muTagUid);
+            await onStopScanMock.pipe(take(1)).toPromise();
+        });
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it("Should show busy indicator.", async () => {
+            expect.assertions(2);
+            await expect(activityIndicatorPromise01).resolves.toBe(true);
+            expect(executionOrder[0]).toBe(0);
+        });
+
+        // Then
+        //
+        /*it("Should hide busy indicator.", async () => {
             expect.assertions(2);
             await expect(activityIndicatorPromise02).resolves.toBe(false);
             expect(executionOrder[2]).toBe(2);
@@ -624,15 +523,115 @@ describe("Mu tag user removes Mu tag", (): void => {
 
         // Then
         //
-        it("should show message to move Mu tag closer to mobile device, check Mu tag battery level, and try again", async () => {
+        it("Should show 'failed to find Mu tag' error message.", async () => {
             expect.assertions(3);
-            /*await expect(showErrorPromise).resolves.toBe(
+            await expect(showErrorPromise).resolves.toStrictEqual(
                 UserError.create(FailedToConnectToMuTag, originatingError)
             );
-            expect(executionOrder[3]).toBe(3);*/
-    /*await expect(removePromise).resolves.toBeUndefined();
+            expect(executionOrder[3]).toBe(3);
+            await expect(removePromise).resolves.toBeUndefined();
+        });*/
+    });
+
+    describe("Scenario 3: Mu tag connection fails.", (): void => {
+        // Given that the account connected to the current Mu tag is logged in.
+        //
+        getMock.mockResolvedValueOnce(account);
+        getByUidMock.mockResolvedValueOnce(muTag);
+
+        // Given that Mu tag connection fails.
+        //
+        const originatingError = Error("Failed to connect to device");
+
+        let removePromise: Promise<void>;
+        const executionOrder: number[] = [];
+        let activityIndicatorPromise01: Promise<boolean>;
+        let connectPromise: Promise<[PeripheralId, (Millisecond | undefined)?]>;
+        let activityIndicatorPromise02: Promise<boolean>;
+        let showErrorPromise: Promise<UserError>;
+
+        // When
+        //
+        beforeAll(async () => {
+            activityIndicatorPromise01 = removeMuTagInteractor.showActivityIndicator
+                .pipe(skip(1), take(1))
+                .toPromise()
+                .finally(() => {
+                    executionOrder.push(0);
+                });
+            connectPromise = onConnectMock
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => {
+                    executionOrder.push(1);
+                });
+            activityIndicatorPromise02 = removeMuTagInteractor.showActivityIndicator
+                .pipe(skip(2), take(1))
+                .toPromise()
+                .finally(() => {
+                    executionOrder.push(2);
+                });
+            showErrorPromise = removeMuTagInteractor.showError
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => {
+                    executionOrder.push(3);
+                });
+            onConnectMock
+                .pipe(take(1))
+                .subscribe(([peripheralId]) =>
+                    connections.get(peripheralId)?.error(originatingError)
+                );
+            // user removes Mu tag
+            removePromise = removeMuTagInteractor.remove(muTagUid);
+            const startScanSbscrbr = await onStartScanMock
+                .pipe(take(1))
+                .toPromise();
+            startScanSbscrbr.next(discoveredPeripheral);
         });
-    });*/
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it("Should show busy indicator.", async () => {
+            expect.assertions(2);
+            await expect(activityIndicatorPromise01).resolves.toBe(true);
+            expect(executionOrder[0]).toBe(0);
+        });
+
+        // Then
+        //
+        it("Should connect to the Mu tag.", async () => {
+            expect.assertions(2);
+            await expect(connectPromise).resolves.toStrictEqual([
+                discoveredPeripheral.id,
+                undefined
+            ]);
+            expect(executionOrder[1]).toBe(1);
+        });
+
+        // Then
+        //
+        it("Should hide busy indicator.", async () => {
+            expect.assertions(2);
+            await expect(activityIndicatorPromise02).resolves.toBe(false);
+            expect(executionOrder[2]).toBe(2);
+        });
+
+        // Then
+        //
+        it("Should show 'failed to connect' error message.", async () => {
+            expect.assertions(3);
+            await expect(showErrorPromise).resolves.toStrictEqual(
+                UserError.create(FailedToConnectToMuTag, originatingError)
+            );
+            expect(executionOrder[3]).toBe(3);
+            await expect(removePromise).resolves.toBeUndefined();
+        });
+    });
 
     describe("Mu tag hardware fails to unprovision", (): void => {
         // There is currently no way to know if unprovision failed

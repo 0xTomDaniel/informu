@@ -1,12 +1,19 @@
-import MuTagDevicesPortAddMuTag from "../../useCases/addMuTag/MuTagDevicesPort";
-import MuTagDevicesPortRemoveMuTag from "../../useCases/removeMuTag/MuTagDevicesPort";
 import Bluetooth, {
     Peripheral,
     PeripheralId,
     ScanMode
 } from "../bluetooth/Bluetooth";
 import { Observable, from } from "rxjs";
-import { switchMap, filter, map, take, share } from "rxjs/operators";
+import {
+    switchMap,
+    filter,
+    map,
+    take,
+    share,
+    tap,
+    catchError,
+    first
+} from "rxjs/operators";
 import Percent from "../metaLanguage/Percent";
 import { Rssi, Millisecond } from "../metaLanguage/Types";
 import Characteristic, {
@@ -15,52 +22,23 @@ import Characteristic, {
 } from "../bluetooth/Characteristic";
 import { MuTagBleGatt } from "./MuTagBleGatt/MuTagBleGatt";
 import Hexadecimal from "../metaLanguage/Hexadecimal";
-import MuTagDevicesPortBatteryUpdates from "../../useCases/updateMuTagBatteries/MuTagDevicesPort";
 import Logger from "../metaLanguage/Logger";
-
-//export type ConnectionId = string & { readonly _: unique symbol };
-
-export class Connection {
-    readonly uid = Symbol("uid");
-}
-
-export interface UnprovisionedMuTag {
-    batteryLevel: Percent | undefined;
-    macAddress: string;
-    rssi: Rssi;
-}
-
-export enum TxPowerSetting {
-    "+6 dBm" = 1,
-    "0 dBm",
-    "-8 dBm",
-    "-15 dBm",
-    "-20 dBm"
-}
-
-export enum AdvertisingIntervalSetting {
-    "1,285 ms" = 1,
-    "1,022 ms",
-    "852 ms",
-    "760 ms",
-    "546 ms",
-    "417 ms",
-    "318 ms",
-    "211 ms",
-    "152 ms",
-    "100 ms",
-    "200 ms"
-}
+import MuTagDevicesPort, {
+    Connection,
+    UnprovisionedMuTag,
+    TxPowerSetting,
+    AdvertisingIntervalSetting,
+    MuTagCommunicationFailure,
+    FailedToConnectToMuTag,
+    FailedToFindMuTag
+} from "./MuTagDevicesPort";
+import UserError from "../metaLanguage/UserError";
 
 type MuTagPeripheral = { [K in keyof Peripheral]: NonNullable<Peripheral[K]> };
 
 type MuTagProvisionId = string & { readonly _: unique symbol };
 
-export default class MuTagDevices
-    implements
-        MuTagDevicesPortAddMuTag,
-        MuTagDevicesPortRemoveMuTag,
-        MuTagDevicesPortBatteryUpdates {
+export default class MuTagDevices implements MuTagDevicesPort {
     //
     // Public instance interface
 
@@ -209,7 +187,7 @@ export default class MuTagDevices
     private activeScan: Observable<MuTagPeripheral> | undefined;
     private activeScanCount = 0;
     private readonly bluetooth: Bluetooth;
-    private readonly defaultTimeout = 10000 as Millisecond;
+    private readonly defaultTimeout = 5000 as Millisecond;
     private readonly logger = Logger.instance;
     private readonly openConnections = new WeakMap<Connection, PeripheralId>();
     private readonly provisionedMuTagProximityThreshold = -90 as Rssi;
@@ -239,6 +217,9 @@ export default class MuTagDevices
                 connection = new Connection();
                 this.openConnections.set(connection, peripheralId);
                 return connection;
+            }),
+            catchError(e => {
+                throw UserError.create(FailedToConnectToMuTag, e);
             })
         );
     }
@@ -289,16 +270,23 @@ export default class MuTagDevices
                         peripheral.rssi >=
                         this.provisionedMuTagProximityThreshold
                 ),
-                filter(
+                first(
                     peripheral =>
                         This.getProvisionId(
                             peripheral.advertising.manufacturerData
                         ) === muTagProvisionId
                 ),
                 map(peripheral => peripheral.id),
-                take(1)
+                catchError(e => {
+                    debugger;
+                    throw UserError.create(FailedToFindMuTag, e);
+                })
             )
-            .toPromise();
+            .toPromise()
+            .catch(e => {
+                debugger;
+                throw e;
+            });
         await this.stopFindingProvisionedMuTags();
         return foundMuTag;
     }
@@ -315,7 +303,9 @@ export default class MuTagDevices
         peripheralId: PeripheralId,
         characteristic: Characteristic<T> & ReadableCharacteristic<T>
     ): Promise<T> {
-        return this.bluetooth.read(peripheralId, characteristic);
+        return this.bluetooth.read(peripheralId, characteristic).catch(e => {
+            throw UserError.create(MuTagCommunicationFailure, e);
+        });
     }
 
     private async stopFindingProvisionedMuTags(): Promise<void> {
@@ -334,7 +324,11 @@ export default class MuTagDevices
         characteristic: Characteristic<T> & WritableCharacteristic<T>,
         value: T
     ): Promise<void> {
-        await this.bluetooth.write(peripheralId, characteristic, value);
+        await this.bluetooth
+            .write(peripheralId, characteristic, value)
+            .catch(e => {
+                throw UserError.create(MuTagCommunicationFailure, e);
+            });
     }
 
     // Public static interface
