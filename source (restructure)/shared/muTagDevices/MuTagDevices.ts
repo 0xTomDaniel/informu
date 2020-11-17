@@ -1,16 +1,14 @@
-import Bluetooth, {
+import BluetoothPort, {
     Peripheral,
     PeripheralId,
     ScanMode
-} from "../bluetooth/Bluetooth";
+} from "../bluetooth/BluetoothPort";
 import { Observable, from } from "rxjs";
 import {
     switchMap,
     filter,
     map,
-    take,
     share,
-    tap,
     catchError,
     first
 } from "rxjs/operators";
@@ -42,7 +40,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
     //
     // Public instance interface
 
-    constructor(bluetooth: Bluetooth) {
+    constructor(bluetooth: BluetoothPort) {
         this.bluetooth = bluetooth;
     }
 
@@ -166,8 +164,8 @@ export default class MuTagDevices implements MuTagDevicesPort {
         );
     }
 
-    stopFindingUnprovisionedMuTags(): void {
-        this.stopScanIfNotInUse();
+    async stopFindingUnprovisionedMuTags(): Promise<void> {
+        await this.stopScanIfNotInUse();
     }
 
     async unprovisionMuTag(connection: Connection): Promise<void> {
@@ -186,7 +184,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
 
     private activeScan: Observable<MuTagPeripheral> | undefined;
     private activeScanCount = 0;
-    private readonly bluetooth: Bluetooth;
+    private readonly bluetooth: BluetoothPort;
     private readonly defaultTimeout = 5000 as Millisecond;
     private readonly logger = Logger.instance;
     private readonly openConnections = new WeakMap<Connection, PeripheralId>();
@@ -278,15 +276,10 @@ export default class MuTagDevices implements MuTagDevicesPort {
                 ),
                 map(peripheral => peripheral.id),
                 catchError(e => {
-                    debugger;
                     throw UserError.create(FailedToFindMuTag, e);
                 })
             )
-            .toPromise()
-            .catch(e => {
-                debugger;
-                throw e;
-            });
+            .toPromise();
         await this.stopFindingProvisionedMuTags();
         return foundMuTag;
     }
