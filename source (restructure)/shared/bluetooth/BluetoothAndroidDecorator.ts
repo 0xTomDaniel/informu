@@ -1,115 +1,89 @@
-import {
-    Observable,
-    Subject,
-    BehaviorSubject,
-    concat,
-    from,
-    merge,
-    timer,
-    of,
-    throwError
-} from "rxjs";
-import Bluetooth, {
+import { Observable, throwError } from "rxjs";
+import BluetoothPort, {
     ScanMode,
     PeripheralId,
     Peripheral,
-    BluetoothError
-} from "./Bluetooth";
+    BluetoothError,
+    BluetoothErrorType
+} from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
 import {
     ReadableCharacteristic,
     WritableCharacteristic
 } from "./Characteristic";
-import {
-    mergeAll,
-    share,
-    filter,
-    take,
-    finalize,
-    ignoreElements,
-    bufferToggle,
-    windowToggle,
-    mapTo,
-    switchMap,
-    startWith,
-    map,
-    tap,
-    distinct,
-    takeUntil,
-    catchError
-} from "rxjs/operators";
-import { v4 as uuidV4 } from "uuid";
+import { catchError } from "rxjs/operators";
 
-enum ScanState {
-    Stopped,
-    Stopping,
-    Started,
-    Starting,
-    Paused,
-    Pausing
+export enum BluetoothAndroidDecoratorErrorType {
+    OpenConnections,
+    ScanInProgress
 }
 
-export default class BluetoothAndroidDecorator implements Bluetooth {
+export class BluetoothAndroidDecoratorError extends Error {
+    originatingError: any;
+    type: BluetoothAndroidDecoratorErrorType;
+
+    constructor(
+        type: BluetoothAndroidDecoratorErrorType,
+        message: string,
+        originatingError?: unknown
+    ) {
+        super(message);
+        this.name = BluetoothAndroidDecoratorErrorType[type];
+        this.originatingError = originatingError;
+        this.type = type;
+    }
+
+    static get OpenConnections(): BluetoothAndroidDecoratorError {
+        return new BluetoothAndroidDecoratorError(
+            BluetoothAndroidDecoratorErrorType.OpenConnections,
+            "Cannot start Bluetooth device scanning because there are open connections."
+        );
+    }
+
+    static get ScanInProgress(): BluetoothAndroidDecoratorError {
+        return new BluetoothAndroidDecoratorError(
+            BluetoothAndroidDecoratorErrorType.ScanInProgress,
+            "Cannot connect to Bluetooth device because scan is in progress."
+        );
+    }
+}
+
+enum SequentialTaskState {
+    Connect,
+    Idle,
+    Scan
+}
+
+export default class BluetoothAndroidDecorator implements BluetoothPort {
     //
     // Public instance interface
 
-    constructor(bluetooth: Bluetooth) {
+    constructor(bluetooth: BluetoothPort) {
         this.bluetooth = bluetooth;
-        const onScanActive = this.scanState.pipe(
-            filter(state => This.isScanActive(state)),
-            distinct()
-        );
-        const onScanInactive = this.scanState.pipe(
-            filter(state => !This.isScanActive(state)),
-            distinct()
-        );
-        this.connectQueue = merge(
-            this.pushToConnectQueue.pipe(
-                tap(() =>
-                    this.openConnectionCount.next(
-                        this.openConnectionCount.value + 1
-                    )
-                ),
-                bufferToggle(onScanActive, () => onScanInactive)
-            ),
-            this.pushToConnectQueue.pipe(
-                windowToggle(onScanInactive, () => onScanActive)
-            )
-        ).pipe(mergeAll(), share());
     }
 
     connect(
         peripheralId: PeripheralId,
         timeout?: Millisecond
     ): Observable<void> {
-        const onConnect = new Promise<void>((resolve, reject) => {
-            const connectTaskId = uuidV4();
-            this.connectQueue
-                .pipe(
-                    filter(taskId => taskId === connectTaskId),
-                    take(1)
-                )
-                .toPromise()
-                .then(() => resolve())
-                .catch(e => reject(e));
-            this.pushToConnectQueue.next(connectTaskId);
-        });
-        return concat(
-            from(onConnect).pipe(ignoreElements()),
-            this.bluetooth
-                .connect(peripheralId, timeout)
-                .pipe(
-                    finalize(() =>
-                        this.openConnectionCount.next(
-                            this.openConnectionCount.value - 1
-                        )
-                    )
-                )
+        if (this.sequentialTaskState === SequentialTaskState.Scan) {
+            return throwError(BluetoothAndroidDecoratorError.ScanInProgress);
+        }
+        this.openConnections.add(peripheralId);
+        if (this.sequentialTaskState !== SequentialTaskState.Connect) {
+            this.sequentialTaskState = SequentialTaskState.Connect;
+        }
+        return this.bluetooth.connect(peripheralId, timeout).pipe(
+            catchError(e => {
+                this.removeConnection(peripheralId);
+                throw e;
+            })
         );
     }
 
     async disconnect(peripheralId: PeripheralId): Promise<void> {
         await this.bluetooth.disconnect(peripheralId);
+        this.removeConnection(peripheralId);
     }
 
     async read<T>(
@@ -124,164 +98,27 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
         timeout?: Millisecond,
         scanMode?: ScanMode
     ): Observable<Peripheral> {
-        if (this.scanState.value !== ScanState.Stopped) {
-            const error = BluetoothError.ScanAlreadyStarted;
-            return throwError(error);
+        if (this.sequentialTaskState === SequentialTaskState.Connect) {
+            return throwError(BluetoothAndroidDecoratorError.OpenConnections);
         }
-        this.scanState.next(ScanState.Starting);
-        const isReadyToPause = timer(This.minimumScanTime).pipe(
-            mapTo(true),
-            startWith(false)
-        );
-        const shouldPauseScan = isReadyToPause.pipe(
-            switchMap(readyToPause => {
-                return readyToPause
-                    ? this.openConnectionCount.pipe(
-                          map(connections => (connections > 0 ? true : false))
-                      )
-                    : of(false);
-            }),
-            distinct()
-        );
-        const onStartScan = this.openConnectionCount.pipe(
-            filter(connections => connections === 0),
-            mapTo<number, void>(undefined)
-        );
-        const onStopScan = this.scanState.pipe(
-            tap(
-                v => {
-                    switch (v) {
-                        case ScanState.Stopped:
-                            debugger;
-                            break;
-                        case ScanState.Stopping:
-                            debugger;
-                            break;
-                        case ScanState.Started:
-                            debugger;
-                            break;
-                        case ScanState.Starting:
-                            debugger;
-                            break;
-                        case ScanState.Paused:
-                            debugger;
-                            break;
-                        case ScanState.Pausing:
-                            debugger;
-                            break;
-                    }
-                },
-                e => {
-                    debugger;
-                },
-                () => {
-                    debugger;
+        this.sequentialTaskState = SequentialTaskState.Scan;
+        return this.bluetooth.startScan(serviceUuids, timeout, scanMode).pipe(
+            catchError(e => {
+                if (
+                    e instanceof BluetoothError &&
+                    e.type === BluetoothErrorType.ScanAlreadyStarted
+                ) {
+                    throw e;
                 }
-            ),
-            filter(state => state === ScanState.Stopping),
-            mapTo<number, void>(undefined),
-            tap(
-                v => {
-                    debugger;
-                },
-                e => {
-                    debugger;
-                },
-                () => {
-                    debugger;
-                }
-            )
-        );
-        const scanTask = shouldPauseScan.pipe(
-            switchMap(shouldPause => {
-                if (shouldPause) {
-                    debugger;
-                    return from(this.pauseScan()).pipe(ignoreElements());
-                } else {
-                    debugger;
-                    this.scanState.next(ScanState.Started);
-                    return this.bluetooth
-                        .startScan(serviceUuids, timeout, scanMode)
-                        .pipe(
-                            /*catchError(error => {
-                                this.scanState.next(ScanState.Stopped);
-                                throw error;
-                            })*/
-                            finalize(() => {
-                                this.scanState.next(ScanState.Stopped);
-                            })
-                        );
-                }
+                this.sequentialTaskState = SequentialTaskState.Idle;
+                throw e;
             })
-        );
-        return onStartScan.pipe(
-            switchMap(() => scanTask),
-            takeUntil(onStopScan),
-            tap(
-                v => {
-                    debugger;
-                },
-                e => {
-                    debugger;
-                },
-                () => {
-                    debugger;
-                }
-            )
         );
     }
 
     async stopScan(): Promise<void> {
-        if (
-            this.scanState.value === ScanState.Stopped ||
-            this.scanState.value === ScanState.Stopping
-        ) {
-            return;
-        }
-        const onScanStopping = this.scanState
-            .pipe(
-                tap(
-                    v => {
-                        switch (v) {
-                            case ScanState.Stopped:
-                                debugger;
-                                break;
-                            case ScanState.Stopping:
-                                debugger;
-                                break;
-                            case ScanState.Started:
-                                debugger;
-                                break;
-                            case ScanState.Starting:
-                                debugger;
-                                break;
-                            case ScanState.Paused:
-                                debugger;
-                                break;
-                            case ScanState.Pausing:
-                                debugger;
-                                break;
-                        }
-                    },
-                    e => {
-                        debugger;
-                    },
-                    () => {
-                        debugger;
-                    }
-                ),
-                filter(state => state === ScanState.Stopping),
-                mapTo<number, void>(undefined),
-                take(1)
-            )
-            .toPromise();
-        this.scanState.next(ScanState.Stopping);
-        debugger;
-        await onScanStopping;
-        debugger;
         await this.bluetooth.stopScan();
-        debugger;
-        this.scanState.next(ScanState.Stopped);
+        this.sequentialTaskState = SequentialTaskState.Idle;
     }
 
     async write<T>(
@@ -296,19 +133,15 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
 
     // Private instance interface
 
-    private readonly bluetooth: Bluetooth;
-    private readonly connectQueue: Observable<string>;
-    private readonly openConnectionCount = new BehaviorSubject<number>(0);
-    private readonly pushToConnectQueue = new Subject<string>();
-    private readonly scanState = new BehaviorSubject<ScanState>(
-        ScanState.Stopped
-    );
+    private readonly openConnections = new Set<PeripheralId>();
+    private readonly bluetooth: BluetoothPort;
+    private sequentialTaskState = SequentialTaskState.Idle;
 
-    private async pauseScan(): Promise<void> {
-        debugger;
-        this.scanState.next(ScanState.Pausing);
-        await this.bluetooth.stopScan();
-        this.scanState.next(ScanState.Paused);
+    private removeConnection(peripheralId: PeripheralId): void {
+        this.openConnections.delete(peripheralId);
+        if (this.openConnections.size === 0) {
+            this.sequentialTaskState = SequentialTaskState.Idle;
+        }
     }
 
     // Public static interface
@@ -316,16 +149,6 @@ export default class BluetoothAndroidDecorator implements Bluetooth {
     // Protected static interface
 
     // Private static interface
-
-    private static readonly minimumScanTime = 500 as Millisecond;
-
-    private static isScanActive(state: ScanState): boolean {
-        return (
-            state === ScanState.Pausing ||
-            state === ScanState.Started ||
-            state === ScanState.Stopping
-        );
-    }
 }
 
-const This = BluetoothAndroidDecorator;
+//const This = BluetoothAndroidDecorator;

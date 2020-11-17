@@ -1,19 +1,21 @@
-import Bluetooth, {
+import BluetoothPort, {
     PeripheralId,
     Peripheral,
     ScanMode,
     BluetoothError
-} from "./Bluetooth";
+} from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
-import { Observable, Subject, BehaviorSubject, Subscriber } from "rxjs";
+import { Observable, Subject, Subscriber, throwError } from "rxjs";
 import {
     ReadableCharacteristic,
     WritableCharacteristic,
     UTF8Characteristic
 } from "./Characteristic";
-import BluetoothAndroidDecorator from "./BluetoothAndroidDecorator";
+import BluetoothAndroidDecorator, {
+    BluetoothAndroidDecoratorError
+} from "./BluetoothAndroidDecorator";
 import { v4 as uuidV4 } from "uuid";
-import { take, filter } from "rxjs/operators";
+import { take } from "rxjs/operators";
 import { Buffer } from "buffer";
 import { fakeSchedulers } from "rxjs-marbles/jest";
 
@@ -36,7 +38,7 @@ const writeMock = jest.fn<
     [PeripheralId, WritableCharacteristic<any>, any]
 >();
 const BluetoothMock = jest.fn(
-    (): Bluetooth => ({
+    (): BluetoothPort => ({
         connect: connectMock,
         disconnect: disconnectMock,
         read: readMock,
@@ -58,300 +60,103 @@ const peripheralId = uuidV4() as PeripheralId;
 
 // Decorated functionality
 
-test("Queue connect requests while scan is running then execute all connect requests after scan is stopped.", async () => {
+test("Fail to start Bluetooth scan while there are open connections.", async () => {
     expect.assertions(1);
-    startScanMock.mockImplementationOnce(() => {
-        return new Observable();
-    });
-    stopScanMock.mockImplementationOnce(() => {
-        return Promise.resolve();
-    });
-    const executionOrder: number[] = [];
-    const onStartScanComplete = bluetoothAndroidDecorator
-        .startScan([])
-        .toPromise()
-        .then(() => executionOrder.push(1));
-    connectMock.mockReturnValue(
-        new Observable<void>(subscriber => {
-            subscriber.next();
-            subscriber.complete();
-        })
+    connectMock.mockReturnValueOnce(
+        new Observable(subscriber => subscriber.next())
     );
-    const connectionEstablishedSubject01 = new Subject<void>();
-    const connectionCompleteSubject01 = new Subject<void>();
-    bluetoothAndroidDecorator.connect(peripheralId).subscribe(
-        () => {
-            connectionEstablishedSubject01.next();
-        },
-        undefined,
-        () => {
-            connectionCompleteSubject01.next();
-        }
-    );
-    const connectionEstablishedSubject02 = new Subject<void>();
-    const connectionCompleteSubject02 = new Subject<void>();
-    bluetoothAndroidDecorator.connect(peripheralId).subscribe(
-        () => {
-            connectionEstablishedSubject02.next();
-        },
-        undefined,
-        () => {
-            connectionCompleteSubject02.next();
-        }
-    );
-    const connectionEstablishedSubject03 = new Subject<void>();
-    const connectionCompleteSubject03 = new Subject<void>();
-    bluetoothAndroidDecorator.connect(peripheralId).subscribe(
-        () => {
-            connectionEstablishedSubject03.next();
-        },
-        undefined,
-        () => {
-            connectionCompleteSubject03.next();
-        }
-    );
-    const onConnectionEstablished01 = connectionEstablishedSubject01
-        .pipe(take(1))
-        .toPromise()
-        .then(() => executionOrder.push(2));
-    const onConnectionComplete01 = connectionCompleteSubject01
-        .pipe(take(1))
-        .toPromise()
-        .then(() => executionOrder.push(3));
-    const onConnectionEstablished02 = connectionEstablishedSubject02
-        .pipe(take(1))
-        .toPromise()
-        .then(() => executionOrder.push(4));
-    const onConnectionComplete02 = connectionCompleteSubject02
-        .pipe(take(1))
-        .toPromise()
-        .then(() => executionOrder.push(5));
-    const onConnectionEstablished03 = connectionEstablishedSubject03
-        .pipe(take(1))
-        .toPromise()
-        .then(() => executionOrder.push(6));
-    const onConnectionComplete03 = connectionCompleteSubject03
-        .pipe(take(1))
-        .toPromise()
-        .then(() => executionOrder.push(7));
-    await new Promise(setImmediate);
-    await bluetoothAndroidDecorator.stopScan();
-    await Promise.all([
-        onStartScanComplete,
-        onConnectionEstablished01,
-        onConnectionComplete01,
-        onConnectionEstablished02,
-        onConnectionComplete02,
-        onConnectionEstablished03,
-        onConnectionComplete03
-    ]);
-    expect(executionOrder).toStrictEqual([1, 2, 3, 4, 5, 6, 7]);
-});
-
-test(
-    "Run scan for a minimum of 500ms since starting and then pause (stop) scan when at least one connect request is received, and repeat.",
-    fakeSchedulers(async advance => {
-        expect.assertions(6);
-        jest.useFakeTimers("modern");
-        const scanStoppedSubject = new BehaviorSubject<boolean>(false);
-        let startScanSubscriber01: Subscriber<Peripheral> | undefined;
-        startScanMock.mockReturnValueOnce(
-            new Observable(subscriber => {
-                startScanSubscriber01 = subscriber;
-                const teardown = () => scanStoppedSubject.next(true);
-                return teardown;
-            })
-        );
-        stopScanMock.mockImplementationOnce(() => {
-            startScanSubscriber01?.complete();
-            return Promise.resolve();
-        });
-        let startScanSubscriber02: Subscriber<Peripheral> | undefined;
-        startScanMock.mockReturnValueOnce(
-            new Observable(subscriber => {
-                scanStoppedSubject.next(false);
-                startScanSubscriber02 = subscriber;
-                const teardown = () => scanStoppedSubject.next(true);
-                return teardown;
-            })
-        );
-        stopScanMock.mockImplementationOnce(() => {
-            startScanSubscriber02?.complete();
-            return Promise.resolve();
-        });
-        const executionOrder: number[] = [];
-        let didScanComplete = false;
-        const startScanSubscription = bluetoothAndroidDecorator
-            .startScan([])
-            .subscribe(undefined, undefined, () => (didScanComplete = true));
-        connectMock.mockReturnValue(
-            new Observable<void>(subscriber => {
-                subscriber.next();
-                subscriber.complete();
-            })
-        );
-        const connectionEstablishedSubject01 = new Subject<void>();
-        const connectionCompleteSubject01 = new Subject<void>();
-        bluetoothAndroidDecorator.connect(peripheralId).subscribe(
-            () => {
-                connectionEstablishedSubject01.next();
-            },
-            undefined,
-            () => {
-                connectionCompleteSubject01.next();
-            }
-        );
-        const onScanPaused01 = scanStoppedSubject
-            .pipe(
-                filter(isStopped => isStopped),
-                take(1)
-            )
-            .toPromise()
-            .then(() => executionOrder.push(1));
-        const onConnectionEstablished01 = connectionEstablishedSubject01
-            .pipe(take(1))
-            .toPromise()
-            .then(() => executionOrder.push(2));
-        const onConnectionComplete01 = connectionCompleteSubject01
-            .pipe(take(1))
-            .toPromise()
-            .then(() => executionOrder.push(3));
-        advance(499);
-        expect(scanStoppedSubject.value).toBeFalsy();
-        advance(1);
-        expect(scanStoppedSubject.value).toBeTruthy();
-        await Promise.all([
-            onScanPaused01,
-            onConnectionEstablished01,
-            onConnectionComplete01
-        ]);
-        const connectionEstablishedSubject02 = new Subject<void>();
-        const connectionCompleteSubject02 = new Subject<void>();
-        bluetoothAndroidDecorator.connect(peripheralId).subscribe(
-            () => {
-                connectionEstablishedSubject02.next();
-            },
-            undefined,
-            () => {
-                connectionCompleteSubject02.next();
-            }
-        );
-        const onScanPaused02 = scanStoppedSubject
-            .pipe(
-                filter(isStopped => isStopped),
-                take(1)
-            )
-            .toPromise()
-            .then(() => executionOrder.push(4));
-        const onConnectionEstablished02 = connectionEstablishedSubject02
-            .pipe(take(1))
-            .toPromise()
-            .then(() => executionOrder.push(5));
-        const onConnectionComplete02 = connectionCompleteSubject02
-            .pipe(take(1))
-            .toPromise()
-            .then(() => executionOrder.push(6));
-        advance(499);
-        expect(scanStoppedSubject.value).toBeFalsy();
-        advance(1);
-        expect(scanStoppedSubject.value).toBeTruthy();
-        await Promise.all([
-            onScanPaused02,
-            onConnectionEstablished02,
-            onConnectionComplete02
-        ]);
-        expect(executionOrder).toStrictEqual([1, 2, 3, 4, 5, 6]);
-        expect(didScanComplete).toBeFalsy();
-        startScanSubscription.unsubscribe();
-    })
-);
-
-test("Queue scan request while connection is open then start scanning after connection has closed.", async () => {
-    expect.assertions(1);
-    const connectionEstablishedSubject01 = new Subject<void>();
-    const connectionCompleteSubject01 = new Subject<void>();
-    bluetoothAndroidDecorator.connect(peripheralId).subscribe(
-        () => {
-            connectionEstablishedSubject01.next();
-        },
-        undefined,
-        () => {
-            connectionCompleteSubject01.next();
-        }
-    );
-    const executionOrder: number[] = [];
-    const onConnectionEstablished01 = connectionEstablishedSubject01
-        .pipe(take(1))
-        .toPromise()
-        .then(() => executionOrder.push(1));
-    const onConnectionComplete01 = connectionCompleteSubject01
-        .pipe(take(1))
-        .toPromise()
-        .then(() => executionOrder.push(2));
-    startScanMock.mockReturnValueOnce(
-        new Observable(subscriber => {
-            subscriber.next();
-        })
-    );
-    const onScanStarted = bluetoothAndroidDecorator
-        .startScan([])
-        .pipe(take(1))
-        .toPromise()
-        .then(() => executionOrder.push(3));
-    connectMock.mockReturnValue(
-        new Observable<void>(subscriber => {
-            subscriber.next();
-            subscriber.complete();
-        })
-    );
-    await Promise.all([
-        onConnectionEstablished01,
-        onConnectionComplete01,
-        onScanStarted
-    ]);
-    expect(executionOrder).toStrictEqual([1, 2, 3]);
-});
-
-test("New connection executes after startScan throws.", async () => {
-    expect.assertions(2);
-    const error = Error("Failed to start Bluetooth scan.");
-    startScanMock.mockReturnValueOnce(
-        new Observable(subscriber => subscriber.error(error))
-    );
+    bluetoothAndroidDecorator.connect(peripheralId);
     const startScanPromise = bluetoothAndroidDecorator
         .startScan(serviceUuids)
         .toPromise();
-    await expect(startScanPromise).rejects.toThrow(error);
-    connectMock.mockReturnValue(
-        new Observable<void>(subscriber => {
-            subscriber.next();
-            subscriber.complete();
-        })
+    await expect(startScanPromise).rejects.toStrictEqual(
+        BluetoothAndroidDecoratorError.OpenConnections
     );
-    const connectPromise = bluetoothAndroidDecorator
-        .connect(peripheralId)
-        .toPromise();
-    await expect(connectPromise).resolves.toBeUndefined();
 });
 
-test("StartScan successfully starts after startScan has previously thrown.", async () => {
-    expect.assertions(2);
-    const error = Error("Failed to start Bluetooth scan.");
-    startScanMock.mockReturnValueOnce(
-        new Observable(subscriber => subscriber.error(error))
-    );
-    const startScanPromise01 = bluetoothAndroidDecorator
-        .startScan(serviceUuids)
+test("Successfully start Bluetooth scan after all connections have completed.", async () => {
+    expect.assertions(1);
+    const connections = new Map<PeripheralId, Subscriber<void>>();
+    const connectMockImplementation = (id: PeripheralId) =>
+        new Observable<void>(subscriber => {
+            connections.set(id, subscriber);
+            subscriber.next();
+        });
+    connectMock.mockImplementationOnce(connectMockImplementation);
+    connectMock.mockImplementationOnce(connectMockImplementation);
+    const connectComplete01 = bluetoothAndroidDecorator
+        .connect(peripheralId)
         .toPromise();
-    await expect(startScanPromise01).rejects.toThrow(error);
+    const peripheralId02 = uuidV4() as PeripheralId;
+    const connectComplete02 = bluetoothAndroidDecorator
+        .connect(peripheralId02)
+        .toPromise();
+    const disconnectMockImplementation = (id: PeripheralId) =>
+        new Promise<void>(resolve => {
+            connections.get(id)?.complete();
+            resolve();
+        });
+    disconnectMock.mockImplementationOnce(disconnectMockImplementation);
+    disconnectMock.mockImplementationOnce(disconnectMockImplementation);
+    bluetoothAndroidDecorator.disconnect(peripheralId);
+    bluetoothAndroidDecorator.disconnect(peripheralId02);
+    await connectComplete01;
+    await connectComplete02;
     startScanMock.mockReturnValueOnce(
         new Observable(subscriber => subscriber.next())
     );
-    const startScanPromise02 = bluetoothAndroidDecorator
+    const startScanPromise = bluetoothAndroidDecorator
         .startScan(serviceUuids)
         .pipe(take(1))
         .toPromise();
-    await expect(startScanPromise02).resolves.toBeUndefined();
+    await expect(startScanPromise).resolves.toBeUndefined();
+});
+
+test("Fail to connect to Bluetooth device while scanning.", async () => {
+    expect.assertions(1);
+    startScanMock.mockReturnValueOnce(new Observable());
+    bluetoothAndroidDecorator.startScan([]);
+    const connectPromise = bluetoothAndroidDecorator
+        .connect(peripheralId)
+        .toPromise();
+    await expect(connectPromise).rejects.toStrictEqual(
+        BluetoothAndroidDecoratorError.ScanInProgress
+    );
+});
+
+test("Successfully connect to Bluetooth device after scanning has completed.", async () => {
+    expect.assertions(1);
+    const startScanSubject = new Subject<void>();
+    let scanSubscriber: Subscriber<Peripheral> | undefined;
+    startScanMock.mockImplementationOnce(
+        () =>
+            new Observable(subscriber => {
+                scanSubscriber = subscriber;
+                startScanSubject.next();
+            })
+    );
+    stopScanMock.mockImplementationOnce(
+        () =>
+            new Promise(resolve => {
+                scanSubscriber?.complete();
+                resolve();
+            })
+    );
+    const onScanStarted = startScanSubject.pipe(take(1)).toPromise();
+    const startScanComplete = bluetoothAndroidDecorator
+        .startScan([])
+        .toPromise();
+    await onScanStarted;
+    await bluetoothAndroidDecorator.stopScan();
+    await startScanComplete;
+    connectMock.mockReturnValueOnce(
+        new Observable(subscriber => subscriber.next())
+    );
+    const onConnect = bluetoothAndroidDecorator
+        .connect(peripheralId)
+        .pipe(take(1))
+        .toPromise();
+    await expect(onConnect).resolves.toBeUndefined();
 });
 
 // Default functionality
@@ -374,11 +179,48 @@ test("Successfully start Bluetooth scan.", async () => {
     expect(startScanMock).toBeCalledWith(serviceUuids, timeout, scanMode);
 });
 
+test(
+    "Successfully stop Bluetooth scan after timeout.",
+    fakeSchedulers(async advance => {
+        expect.assertions(3);
+        jest.useFakeTimers("modern");
+        startScanMock.mockImplementationOnce(
+            (uuids, scanTimeout) =>
+                new Observable(subscriber => {
+                    const timeout = scanTimeout ?? 10000;
+                    const timeoutId = setTimeout(
+                        () => subscriber.complete(),
+                        timeout
+                    );
+                    advance(timeout);
+                    const teardown = () => clearTimeout(timeoutId);
+                    return teardown;
+                })
+        );
+        const timeout = 5000 as Millisecond;
+        const startScanPromise = bluetoothAndroidDecorator
+            .startScan(serviceUuids, timeout)
+            .toPromise();
+        await expect(startScanPromise).resolves.toBeUndefined();
+        expect(startScanMock).toBeCalledTimes(1);
+        expect(startScanMock).toBeCalledWith(serviceUuids, timeout, undefined);
+    })
+);
+
 test("Fail to start Bluetooth scan again before first completes.", async () => {
     expect.assertions(2);
-    startScanMock.mockReturnValue(
-        new Observable(subscriber => subscriber.next())
-    );
+    let didScanStart = false;
+    const error = BluetoothError.ScanAlreadyStarted;
+    const startScanImplementation = () => {
+        if (didScanStart) {
+            return throwError(error);
+        } else {
+            didScanStart = true;
+            return new Observable<Peripheral>(subscriber => subscriber.next());
+        }
+    };
+    startScanMock.mockImplementationOnce(startScanImplementation);
+    startScanMock.mockImplementationOnce(startScanImplementation);
     const startScanPromise01 = bluetoothAndroidDecorator
         .startScan([])
         .pipe(take(1))
@@ -386,8 +228,7 @@ test("Fail to start Bluetooth scan again before first completes.", async () => {
     const startScanPromise02 = bluetoothAndroidDecorator
         .startScan([])
         .toPromise();
-    const error = BluetoothError.ScanAlreadyStarted;
-    await expect(startScanPromise02).rejects.toThrow(error);
+    await expect(startScanPromise02).rejects.toStrictEqual(error);
     bluetoothAndroidDecorator.stopScan();
     await expect(startScanPromise01).resolves.toBeUndefined();
 });
@@ -402,7 +243,7 @@ test("Fail to start Bluetooth scan.", async () => {
         .startScan(serviceUuids)
         .pipe(take(1))
         .toPromise();
-    await expect(startScanPromise).rejects.toThrow(error);
+    await expect(startScanPromise).rejects.toStrictEqual(error);
     expect(startScanMock).toBeCalledTimes(1);
     expect(startScanMock).toBeCalledWith(serviceUuids, undefined, undefined);
 });
@@ -435,17 +276,29 @@ test("Successfully receive detected device.", async () => {
 
 test("Successfully stop Bluetooth scan.", async () => {
     expect.assertions(3);
-    startScanMock.mockImplementationOnce(() => {
-        return new Observable();
-    });
-    stopScanMock.mockImplementationOnce(() => {
-        return Promise.resolve();
-    });
-    const onStartScanComplete = bluetoothAndroidDecorator
+    const startScanSubject = new Subject<void>();
+    let scanSubscriber: Subscriber<Peripheral> | undefined;
+    startScanMock.mockImplementationOnce(
+        () =>
+            new Observable(subscriber => {
+                scanSubscriber = subscriber;
+                startScanSubject.next();
+            })
+    );
+    stopScanMock.mockImplementationOnce(
+        () =>
+            new Promise(resolve => {
+                scanSubscriber?.complete();
+                resolve();
+            })
+    );
+    const onScanStarted = startScanSubject.pipe(take(1)).toPromise();
+    const startScanComplete = bluetoothAndroidDecorator
         .startScan([])
         .toPromise();
+    await onScanStarted;
     await expect(bluetoothAndroidDecorator.stopScan()).resolves.toBeUndefined();
-    await expect(onStartScanComplete).resolves.toBeUndefined();
+    await expect(startScanComplete).resolves.toBeUndefined();
     expect(stopScanMock).toBeCalledTimes(1);
 });
 
@@ -476,12 +329,15 @@ test("Successfully stop Bluetooth scan after unsubscribing from startScan.", asy
 
 test("Fail to stop Bluetooth scan.", async () => {
     expect.assertions(2);
+    startScanMock.mockReturnValueOnce(new Observable());
     const startSubscription = bluetoothAndroidDecorator
         .startScan([])
         .subscribe();
-    const error = Error("Failed to stop Bluetooth scan.");
+    const error = BluetoothError.FailedToStopScan;
     stopScanMock.mockRejectedValueOnce(error);
-    await expect(bluetoothAndroidDecorator.stopScan()).rejects.toThrow(error);
+    await expect(bluetoothAndroidDecorator.stopScan()).rejects.toStrictEqual(
+        error
+    );
     startSubscription.unsubscribe();
     expect(stopScanMock).toBeCalledTimes(1);
 });
@@ -511,7 +367,7 @@ test("Fail to connect to Bluetooth device.", async () => {
         .connect(peripheralId)
         .pipe(take(1))
         .toPromise();
-    await expect(connectPromise).rejects.toThrow(error);
+    await expect(connectPromise).rejects.toStrictEqual(error);
     expect(connectMock).toBeCalledTimes(1);
     expect(connectMock).toBeCalledWith(peripheralId, undefined);
 });
@@ -532,7 +388,7 @@ test("Fail to disconnect from Bluetooth device.", async () => {
     disconnectMock.mockRejectedValueOnce(error);
     await expect(
         bluetoothAndroidDecorator.disconnect(peripheralId)
-    ).rejects.toThrow(error);
+    ).rejects.toStrictEqual(error);
     expect(disconnectMock).toBeCalledTimes(1);
     expect(disconnectMock).toBeCalledWith(peripheralId);
 });
@@ -564,7 +420,7 @@ test("Fail to read string from Bluetooth device.", async () => {
     const characteristic = new ManufacturerName();
     await expect(
         bluetoothAndroidDecorator.read(peripheralId, characteristic)
-    ).rejects.toThrow(error);
+    ).rejects.toStrictEqual(error);
     expect(readMock).toBeCalledTimes(1);
     expect(readMock).toBeCalledWith(peripheralId, characteristic);
 });
@@ -597,7 +453,7 @@ test("Fails to write string to Bluetooth device.", async () => {
             characteristic,
             writeValue
         )
-    ).rejects.toThrow(error);
+    ).rejects.toStrictEqual(error);
     expect(writeMock).toBeCalledTimes(1);
     expect(writeMock).toBeCalledWith(peripheralId, characteristic, writeValue);
 });
