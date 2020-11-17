@@ -59,7 +59,7 @@ import NewAccountFactoryImpl from "./source/Core/Domain/NewAccountFactoryImpl";
 import MuTagDevices from "./source (restructure)/shared/muTagDevices/MuTagDevices";
 import MuTagDevicesPortAddMuTag from "./source (restructure)/useCases/addMuTag/MuTagDevicesPort";
 import MuTagDevicesPortRemoveMuTag from "./source (restructure)/useCases/removeMuTag/MuTagDevicesPort";
-import Bluetooth from "./source (restructure)/shared/bluetooth/Bluetooth";
+import BluetoothPort from "./source (restructure)/shared/bluetooth/BluetoothPort";
 import Logger from "./source (restructure)/shared/metaLanguage/Logger";
 import EventTracker, {
     EventTrackerImpl
@@ -140,7 +140,7 @@ export class Dependencies {
     nameMuTagViewModel: NameMuTagViewModel;
     muTagAddingViewModel: MuTagAddingViewModel;
     addMuTagPresenter: AddMuTagPresenter;
-    bluetooth: Bluetooth;
+    bluetooth: BluetoothPort;
     muTagDevices: MuTagDevicesPortAddMuTag & MuTagDevicesPortRemoveMuTag;
     addMuTagInteractor: AddMuTagInteractor;
     removeMuTagBatteryThreshold: Percent;

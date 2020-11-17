@@ -1,4 +1,8 @@
-import Bluetooth, { Peripheral, PeripheralId, ScanMode } from "./Bluetooth";
+import BluetoothPort, {
+    Peripheral,
+    PeripheralId,
+    ScanMode
+} from "./BluetoothPort";
 import BleManager from "react-native-ble-manager";
 import {
     fromEvent,
@@ -43,7 +47,7 @@ enum ScanState {
     Paused
 }
 
-export default class ReactNativeBleManagerAdapter implements Bluetooth {
+export default class ReactNativeBleManagerAdapter implements BluetoothPort {
     private readonly bleManagerEmitter = new NativeEventEmitter(
         NativeModules.BleManager
     );

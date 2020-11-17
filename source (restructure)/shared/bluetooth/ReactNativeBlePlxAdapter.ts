@@ -1,9 +1,9 @@
-import Bluetooth, {
+import BluetoothPort, {
     Peripheral,
     ScanMode,
     PeripheralId,
     BluetoothError
-} from "./Bluetooth";
+} from "./BluetoothPort";
 import {
     Observable,
     BehaviorSubject,
@@ -25,7 +25,7 @@ import {
 } from "react-native-ble-plx";
 import { Millisecond, Rssi } from "../metaLanguage/Types";
 import { Buffer } from "buffer";
-import { switchMap, filter } from "rxjs/operators";
+import { switchMap, filter, catchError } from "rxjs/operators";
 import { Platform } from "react-native";
 
 enum ScanState {
@@ -33,7 +33,7 @@ enum ScanState {
     Stopped
 }
 
-export default class ReactNativeBlePlxAdapter implements Bluetooth {
+export default class ReactNativeBlePlxAdapter implements BluetoothPort {
     //
     // Public instance interface
 
@@ -49,16 +49,21 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
 
     connect(
         peripheralId: PeripheralId,
-        timeout = 30000 as Millisecond
+        timeout = 10000 as Millisecond
     ): Observable<void> {
         const observable = concat(
             from(this.enableBluetooth()).pipe(switchMap(() => EMPTY)),
             new Observable<void>(subscriber => {
                 const subscription = this.bleManager.onDeviceDisconnected(
                     peripheralId,
-                    error => {
-                        if (error != null) {
-                            subscriber.error(error);
+                    bleError => {
+                        if (bleError != null) {
+                            subscriber.error(
+                                BluetoothError.ConnectionLostUnexpectedly(
+                                    peripheralId,
+                                    bleError
+                                )
+                            );
                         } else {
                             subscriber.complete();
                         }
@@ -73,7 +78,11 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
                         device.discoverAllServicesAndCharacteristics()
                     )
                     .then(() => subscriber.next())
-                    .catch(e => subscriber.error(e));
+                    .catch(e =>
+                        subscriber.error(
+                            BluetoothError.FailedToConnect(peripheralId, e)
+                        )
+                    );
                 const teardown = () => subscription.remove();
                 return teardown;
             })
@@ -82,7 +91,9 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
     }
 
     async disconnect(peripheralId: PeripheralId): Promise<void> {
-        await this.bleManager.cancelDeviceConnection(peripheralId);
+        await this.bleManager.cancelDeviceConnection(peripheralId).catch(e => {
+            throw BluetoothError.FailedToDisconnect(peripheralId, e);
+        });
     }
 
     async read<T>(
@@ -90,11 +101,19 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
         characteristic: ReadableCharacteristic<T>
     ): Promise<T> {
         await this.enableBluetooth();
-        const deviceCharacteristic = await this.bleManager.readCharacteristicForDevice(
-            peripheralId,
-            this.fullUuid(characteristic.serviceUuid),
-            this.fullUuid(characteristic.uuid)
-        );
+        const deviceCharacteristic = await this.bleManager
+            .readCharacteristicForDevice(
+                peripheralId,
+                this.fullUuid(characteristic.serviceUuid),
+                this.fullUuid(characteristic.uuid)
+            )
+            .catch(e => {
+                throw BluetoothError.FailedToRead(
+                    characteristic.uuid,
+                    peripheralId,
+                    e
+                );
+            });
         const value =
             deviceCharacteristic.value == null ||
             deviceCharacteristic.value.length === 0
@@ -125,9 +144,11 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
                 this.bleManager.startDeviceScan(
                     serviceUuids,
                     options,
-                    (error, device) => {
-                        if (error != null) {
-                            subscriber.error(error);
+                    (bleError, device) => {
+                        if (bleError != null) {
+                            subscriber.error(
+                                BluetoothError.FailedToStartScan(bleError)
+                            );
                         } else if (device != null) {
                             const peripheral = This.toPeripheral(device);
                             subscriber.next(peripheral);
@@ -145,11 +166,13 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
                         clearTimeout(timeoutId);
                     }
                     subscription.unsubscribe();
-                    if (this.scanState.value === ScanState.Started) {
-                        this.scanState.next(ScanState.Stopped);
-                    }
                 };
                 return teardown;
+            })
+        ).pipe(
+            catchError(e => {
+                this.scanState.next(ScanState.Stopped);
+                throw e;
             })
         );
         return observable;
@@ -159,7 +182,11 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
         if (this.scanState.value === ScanState.Stopped) {
             return;
         }
-        this.bleManager.stopDeviceScan();
+        try {
+            this.bleManager.stopDeviceScan();
+        } catch (e) {
+            throw BluetoothError.FailedToStopScan(e);
+        }
         this.scanState.next(ScanState.Stopped);
     }
 
@@ -172,19 +199,36 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
         const base64Value = characteristic.toBase64(value);
         const serviceUuid = this.fullUuid(characteristic.serviceUuid);
         const characteristicUuid = this.fullUuid(characteristic.uuid);
-        if (characteristic.withResponse) {
-            await this.bleManager.writeCharacteristicWithResponseForDevice(
+        try {
+            if (characteristic.withResponse) {
+                await this.bleManager.writeCharacteristicWithResponseForDevice(
+                    peripheralId,
+                    serviceUuid,
+                    characteristicUuid,
+                    base64Value
+                );
+            } else {
+                await this.bleManager.writeCharacteristicWithoutResponseForDevice(
+                    peripheralId,
+                    serviceUuid,
+                    characteristicUuid,
+                    base64Value
+                );
+            }
+        } catch (e) {
+            let stringValue: string;
+            if (typeof value === "string") {
+                stringValue = value;
+            } else {
+                stringValue = Buffer.from(base64Value, "base64").toString(
+                    "hex"
+                );
+            }
+            throw BluetoothError.FailedToWrite(
+                stringValue,
+                characteristic.uuid,
                 peripheralId,
-                serviceUuid,
-                characteristicUuid,
-                base64Value
-            );
-        } else {
-            await this.bleManager.writeCharacteristicWithoutResponseForDevice(
-                peripheralId,
-                serviceUuid,
-                characteristicUuid,
-                base64Value
+                e
             );
         }
     }
@@ -204,15 +248,22 @@ export default class ReactNativeBlePlxAdapter implements Bluetooth {
     private readonly platform: typeof Platform;
 
     private async enableBluetooth(): Promise<void> {
-        if (this.platform.OS !== "android") {
-            return;
-        }
         const state = await this.bleManager.state();
         switch (state) {
             // TODO: Refactor switch to use State enum directly.
             // 'warnOnce' Jest bug preventing test from running when using State enum directly.
             case "PoweredOff":
-                await this.bleManager.enable();
+                if (this.platform.OS === "ios") {
+                    throw BluetoothError.BluetoothPoweredOff;
+                }
+                await this.bleManager.enable().catch(e => {
+                    throw BluetoothError.FailedToEnableBluetooth(e);
+                });
+                break;
+            case "Unauthorized":
+                if (this.platform.OS === "ios") {
+                    throw BluetoothError.BluetoothUnauthorized;
+                }
                 break;
             default:
                 return;

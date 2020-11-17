@@ -20,7 +20,7 @@ import {
     Peripheral,
     PeripheralId,
     BluetoothError
-} from "./Bluetooth";
+} from "./BluetoothPort";
 import { take, tap } from "rxjs/operators";
 import { Buffer } from "buffer";
 import {
@@ -76,7 +76,6 @@ const startDeviceScanMock = jest.fn(
         options: ScanOptions | null,
         listener: (error: BleError | null, scannedDevice: Device | null) => void
     ) => {
-        onStartDeviceScan.next();
         const scanErrorSubscription = deviceScanErrorSubject.subscribe(e =>
             listener(e, null)
         );
@@ -87,6 +86,7 @@ const startDeviceScanMock = jest.fn(
             scanErrorSubscription.unsubscribe();
             scanFoundSubscription.unsubscribe();
         });
+        onStartDeviceScan.next();
     }
 );
 const stateMock = jest.fn(() => Promise.resolve(state));
@@ -235,13 +235,13 @@ test(
     fakeSchedulers(async advance => {
         expect.assertions(4);
         jest.useFakeTimers("modern");
+        const timeout = 5000 as Millisecond;
         onStartDeviceScan
             .pipe(take(1))
             .toPromise()
             .then(() => {
                 advance(timeout);
             });
-        const timeout = 500 as Millisecond;
         const startScanPromise = reactNativeBlePlxAdapter
             .startScan(deviceUuids, timeout)
             .toPromise();
@@ -275,17 +275,20 @@ test("Fail to start Bluetooth scan again before first completes.", async () => {
 
 test("Fail to start Bluetooth scan.", async () => {
     expect.assertions(2);
+    const blePlxError = Error(
+        "Failed to start Bluetooth device scanning."
+    ) as BleError;
     onStartDeviceScan
         .pipe(take(1))
         .toPromise()
         .then(() => {
-            deviceScanErrorSubject.next(error);
+            deviceScanErrorSubject.next(blePlxError);
         });
-    const error = Error("Failed to start Bluetooth scan.") as BleError;
     const startScanPromise = reactNativeBlePlxAdapter
         .startScan(deviceUuids)
         .toPromise();
-    await expect(startScanPromise).rejects.toThrow(error);
+    const bluetoothError = BluetoothError.FailedToStartScan(blePlxError);
+    await expect(startScanPromise).rejects.toStrictEqual(bluetoothError);
     expect(bleManagerMock.startDeviceScan).toBeCalledTimes(1);
 });
 
@@ -343,9 +346,12 @@ test("Successfully stop Bluetooth scan.", async () => {
 test("Fail to stop Bluetooth scan.", async () => {
     expect.assertions(2);
     reactNativeBlePlxAdapter.startScan(deviceUuids);
-    const error = Error("Failed to stop Bluetooth scan.") as BleError;
-    stopDeviceScanError = error;
-    await expect(reactNativeBlePlxAdapter.stopScan()).rejects.toBe(error);
+    const blePlxError = Error("Failed to stop Bluetooth scan.") as BleError;
+    stopDeviceScanError = blePlxError;
+    const bluetoothError = BluetoothError.FailedToStopScan(blePlxError);
+    await expect(reactNativeBlePlxAdapter.stopScan()).rejects.toStrictEqual(
+        bluetoothError
+    );
     expect(bleManagerMock.stopDeviceScan).toBeCalledTimes(1);
     stopDeviceScanError = undefined;
 });
@@ -365,7 +371,7 @@ test("Successfully connect to Bluetooth device.", async () => {
     await expect(connectPromise).resolves.toBeUndefined();
     expect(connectToDeviceMock).toBeCalledTimes(1);
     const options: ConnectionOptions = {
-        timeout: 30000
+        timeout: 10000
     };
     expect(connectToDeviceMock).toBeCalledWith(peripheralId, options);
     expect(foundDevice.discoverAllServicesAndCharacteristics).toBeCalledTimes(
@@ -375,15 +381,19 @@ test("Successfully connect to Bluetooth device.", async () => {
 
 test("Fail to connect to Bluetooth device.", async () => {
     expect.assertions(3);
-    const error = Error("Failed to connect to device.") as BleError;
-    connectToDeviceMock.mockRejectedValueOnce(error);
+    const blePlxError = Error("Failed to connect to device.") as BleError;
+    connectToDeviceMock.mockRejectedValueOnce(blePlxError);
     const connectPromise = reactNativeBlePlxAdapter
         .connect(peripheralId)
         .toPromise();
-    await expect(connectPromise).rejects.toThrow(error);
+    const bluetoothError = BluetoothError.FailedToConnect(
+        peripheralId,
+        blePlxError
+    );
+    await expect(connectPromise).rejects.toStrictEqual(bluetoothError);
     expect(connectToDeviceMock).toBeCalledTimes(1);
     const options: ConnectionOptions = {
-        timeout: 30000
+        timeout: 10000
     };
     expect(connectToDeviceMock).toBeCalledWith(peripheralId, options);
 });
@@ -393,13 +403,13 @@ test(
     fakeSchedulers(async advance => {
         jest.useFakeTimers("modern");
         expect.assertions(3);
-        const error = Error(
+        const bleError = Error(
             "Failed to connect to device before timeout."
         ) as BleError;
         connectToDeviceMock.mockImplementationOnce((_, options) => {
             return new Promise((resolve, reject) => {
                 setTimeout(() => {
-                    reject(error);
+                    reject(bleError);
                 }, options?.timeout);
                 advance(60000);
             });
@@ -408,7 +418,11 @@ test(
         const connectPromise = reactNativeBlePlxAdapter
             .connect(peripheralId, timeout)
             .toPromise();
-        await expect(connectPromise).rejects.toThrow(error);
+        const bluetoothError = BluetoothError.FailedToConnect(
+            peripheralId,
+            bleError
+        );
+        await expect(connectPromise).rejects.toStrictEqual(bluetoothError);
         expect(connectToDeviceMock).toBeCalledTimes(1);
         const options: ConnectionOptions = {
             timeout: timeout
@@ -448,15 +462,19 @@ onDeviceDisconnectedMock.mockImplementation(
 
 test("Bluetooth device disconnects from error.", async () => {
     expect.assertions(4);
-    const error = Error("Connection lost unexpectedly.") as BleError;
+    const blePlxError = Error("Connection lost unexpectedly.") as BleError;
     connectToDeviceMock.mockImplementationOnce(() => {
-        deviceDisconnectedErrorSubject.next(error);
+        deviceDisconnectedErrorSubject.next(blePlxError);
         return Promise.resolve(foundDevice);
     });
     const connectPromise = reactNativeBlePlxAdapter
         .connect(peripheralId)
         .toPromise();
-    await expect(connectPromise).rejects.toBe(error);
+    const bluetoothError = BluetoothError.ConnectionLostUnexpectedly(
+        peripheralId,
+        blePlxError
+    );
+    await expect(connectPromise).rejects.toStrictEqual(bluetoothError);
     expect(connectToDeviceMock).toBeCalledTimes(1);
     expect(foundDevice.discoverAllServicesAndCharacteristics).toBeCalledTimes(
         1
@@ -498,8 +516,10 @@ test("Successfully disconnect from Bluetooth device.", async () => {
 
 test("Fail to disconnect from Bluetooth device.", async () => {
     expect.assertions(6);
-    const error = new Error("Failed to disconnect from device.") as BleError;
-    cancelDeviceConnectionMock.mockRejectedValueOnce(error);
+    const blePlxError = new Error(
+        "Failed to disconnect from device."
+    ) as BleError;
+    cancelDeviceConnectionMock.mockRejectedValueOnce(blePlxError);
     const disconnectSubject = new Subject<void>();
     const disconnectPromise = disconnectSubject.toPromise();
     const connectSubscription = reactNativeBlePlxAdapter
@@ -513,7 +533,11 @@ test("Fail to disconnect from Bluetooth device.", async () => {
             )
         )
         .subscribe();
-    await expect(disconnectPromise).rejects.toBe(error);
+    const bluetoothError = BluetoothError.FailedToDisconnect(
+        peripheralId,
+        blePlxError
+    );
+    await expect(disconnectPromise).rejects.toStrictEqual(bluetoothError);
     expect(connectSubscription.closed).toBeFalsy();
     connectSubscription.unsubscribe();
     expect(connectToDeviceMock).toBeCalledTimes(1);
@@ -613,12 +637,17 @@ test("Successfully read string from Bluetooth device.", async () => {
 
 test("Fail to read string from Bluetooth device.", async () => {
     expect.assertions(4);
-    const readError = Error("Failed to read characteristic.") as BleError;
-    readCharacteristicForDeviceMock.mockRejectedValueOnce(readError);
+    const blePlxError = Error("Failed to read characteristic.") as BleError;
+    readCharacteristicForDeviceMock.mockRejectedValueOnce(blePlxError);
     const characteristic = new ManufacturerName();
+    const bluetoothError = BluetoothError.FailedToRead(
+        characteristic.uuid,
+        peripheralId,
+        blePlxError
+    );
     await expect(
         reactNativeBlePlxAdapter.read(peripheralId, characteristic)
-    ).rejects.toBe(readError);
+    ).rejects.toStrictEqual(bluetoothError);
     expect(readCharacteristicForDeviceMock).toBeCalledTimes(1);
     expect(readCharacteristicForDeviceMock).toBeCalledWith(
         bluetoothDeviceId,
@@ -682,18 +711,24 @@ test("Successfully write string (without response) to Bluetooth device.", async 
     expect(fullUuidMock).toBeCalledTimes(2);
 });
 
-const writeError = Error("Failed to write to characteristic.") as BleError;
+const blePlxError = Error("Failed to write to characteristic.") as BleError;
 
 test("Fails to write hex (with response) to Bluetooth device.", async () => {
     expect.assertions(4);
     (bleManagerMock.writeCharacteristicWithResponseForDevice as jest.Mock).mockRejectedValueOnce(
-        writeError
+        blePlxError
     );
     const characteristic = new TxPower();
     const writeValue = Hexadecimal.fromString("01");
+    const bluetoothError = BluetoothError.FailedToWrite(
+        writeValue.toString(),
+        characteristic.uuid,
+        peripheralId,
+        blePlxError
+    );
     await expect(
         reactNativeBlePlxAdapter.write(peripheralId, characteristic, writeValue)
-    ).rejects.toBe(writeError);
+    ).rejects.toStrictEqual(bluetoothError);
     expect(
         bleManagerMock.writeCharacteristicWithResponseForDevice
     ).toBeCalledTimes(1);
@@ -712,13 +747,19 @@ test("Fails to write hex (with response) to Bluetooth device.", async () => {
 test("Fails to write string (without response) to Bluetooth device.", async () => {
     expect.assertions(4);
     (bleManagerMock.writeCharacteristicWithoutResponseForDevice as jest.Mock).mockRejectedValueOnce(
-        writeError
+        blePlxError
     );
     const characteristic = new ManufacturerName();
     const writeValue = "informu";
+    const bluetoothError = BluetoothError.FailedToWrite(
+        writeValue.toString(),
+        characteristic.uuid,
+        peripheralId,
+        blePlxError
+    );
     await expect(
         reactNativeBlePlxAdapter.write(peripheralId, characteristic, writeValue)
-    ).rejects.toBe(writeError);
+    ).rejects.toStrictEqual(bluetoothError);
     expect(
         bleManagerMock.writeCharacteristicWithoutResponseForDevice
     ).toBeCalledTimes(1);
@@ -787,8 +828,39 @@ test("Given that bluetooth is disabled and the device is Android, then successfu
     expect(state).toBe(State.PoweredOn);
 });
 
-test("Given that the device is iOS, then do not execute 'enable' when any public method is called (excluding 'disconnect' and 'stopScan').", async () => {
-    expect.assertions(12);
+test("Given that bluetooth is disabled and the device is Android, then fail to enable Bluetooth when any public method is called (excluding 'disconnect' and 'stopScan').", async () => {
+    expect.assertions(4);
+    const bleError = Error("Failed to enable Bluetooth.");
+    state = State.PoweredOff;
+    enableMock.mockRejectedValueOnce(bleError);
+    const connectPromise = reactNativeBlePlxAdapter
+        .connect(uuidV4() as PeripheralId)
+        .toPromise();
+    const bluetoothError = BluetoothError.FailedToEnableBluetooth(bleError);
+    await expect(connectPromise).rejects.toStrictEqual(bluetoothError);
+    const characteristic01 = new BatteryLevel();
+    enableMock.mockRejectedValueOnce(bleError);
+    const readPromise = reactNativeBlePlxAdapter.read(
+        peripheralId,
+        characteristic01
+    );
+    await expect(readPromise).rejects.toStrictEqual(bluetoothError);
+    enableMock.mockRejectedValueOnce(bleError);
+    const startScanPromise = reactNativeBlePlxAdapter.startScan([]).toPromise();
+    await expect(startScanPromise).rejects.toStrictEqual(bluetoothError);
+    const characteristic02 = new ManufacturerName();
+    const writeValue = "informu";
+    enableMock.mockRejectedValueOnce(bleError);
+    const writePromise = reactNativeBlePlxAdapter.write(
+        peripheralId,
+        characteristic02,
+        writeValue
+    );
+    await expect(writePromise).rejects.toStrictEqual(bluetoothError);
+});
+
+test("Given that bluetooth is powered off and the device is iOS, then do not execute 'enable' and fail to execute any public method (excluding 'disconnect' and 'stopScan').", async () => {
+    expect.assertions(5);
     const PlatformMockIOS: typeof Platform = {
         OS: "ios",
         isTV: false,
@@ -802,50 +874,77 @@ test("Given that the device is iOS, then do not execute 'enable' when any public
         fullUuidMock,
         PlatformMockIOS
     );
-    connectToDeviceMock.mockResolvedValueOnce(foundDevice);
-    onDeviceDisconnectedMock.mockImplementation(
-        (
-            _: DeviceId,
-            listener: (error: BleError | null, device: Device | null) => void
-        ) => {
-            listener(null, foundDevice);
-            return {
-                remove: jest.fn()
-            };
-        }
-    );
+    const bleError = Error("Bluetooth is powered off.");
     state = State.PoweredOff;
+    enableMock.mockRejectedValueOnce(bleError);
     const connectPromise = reactNativeBlePlxAdapter
         .connect(uuidV4() as PeripheralId)
         .toPromise();
-    await expect(connectPromise).resolves.toBeUndefined();
-    expect(enableMock).toBeCalledTimes(0);
-    expect(state).toBe(State.PoweredOff);
-    const readCharacteristic = new RnBlePlxCharacteristicMock(
-        nativeCharacteristic
-    );
-    readCharacteristicForDeviceMock.mockResolvedValueOnce(readCharacteristic);
+    const bluetoothError = BluetoothError.BluetoothPoweredOff;
+    await expect(connectPromise).rejects.toStrictEqual(bluetoothError);
     const characteristic01 = new BatteryLevel();
+    enableMock.mockRejectedValueOnce(bleError);
     const readPromise = reactNativeBlePlxAdapter.read(
         peripheralId,
         characteristic01
     );
-    await expect(readPromise).resolves.toBeDefined();
-    expect(enableMock).toBeCalledTimes(0);
-    expect(state).toBe(State.PoweredOff);
+    await expect(readPromise).rejects.toStrictEqual(bluetoothError);
+    enableMock.mockRejectedValueOnce(bleError);
     const startScanPromise = reactNativeBlePlxAdapter.startScan([]).toPromise();
-    await reactNativeBlePlxAdapter.stopScan();
-    await expect(startScanPromise).resolves.toBeUndefined();
-    expect(enableMock).toBeCalledTimes(0);
-    expect(state).toBe(State.PoweredOff);
+    await expect(startScanPromise).rejects.toStrictEqual(bluetoothError);
     const characteristic02 = new ManufacturerName();
     const writeValue = "informu";
+    enableMock.mockRejectedValueOnce(bleError);
     const writePromise = reactNativeBlePlxAdapter.write(
         peripheralId,
         characteristic02,
         writeValue
     );
-    await expect(writePromise).resolves.toBeUndefined();
+    await expect(writePromise).rejects.toStrictEqual(bluetoothError);
     expect(enableMock).toBeCalledTimes(0);
-    expect(state).toBe(State.PoweredOff);
+});
+
+test("Given that bluetooth is unauthorized and the device is iOS, then fail to execute any public method (excluding 'disconnect' and 'stopScan').", async () => {
+    expect.assertions(5);
+    const PlatformMockIOS: typeof Platform = {
+        OS: "ios",
+        isTV: false,
+        isPad: false,
+        isTVOS: false,
+        Version: 0,
+        select: jest.fn()
+    };
+    reactNativeBlePlxAdapter = new ReactNativeBlePlxAdapter(
+        bleManagerMock,
+        fullUuidMock,
+        PlatformMockIOS
+    );
+    const bleError = Error("Bluetooth is powered off.");
+    state = State.Unauthorized;
+    enableMock.mockRejectedValueOnce(bleError);
+    const connectPromise = reactNativeBlePlxAdapter
+        .connect(uuidV4() as PeripheralId)
+        .toPromise();
+    const bluetoothError = BluetoothError.BluetoothUnauthorized;
+    await expect(connectPromise).rejects.toStrictEqual(bluetoothError);
+    const characteristic01 = new BatteryLevel();
+    enableMock.mockRejectedValueOnce(bleError);
+    const readPromise = reactNativeBlePlxAdapter.read(
+        peripheralId,
+        characteristic01
+    );
+    await expect(readPromise).rejects.toStrictEqual(bluetoothError);
+    enableMock.mockRejectedValueOnce(bleError);
+    const startScanPromise = reactNativeBlePlxAdapter.startScan([]).toPromise();
+    await expect(startScanPromise).rejects.toStrictEqual(bluetoothError);
+    const characteristic02 = new ManufacturerName();
+    const writeValue = "informu";
+    enableMock.mockRejectedValueOnce(bleError);
+    const writePromise = reactNativeBlePlxAdapter.write(
+        peripheralId,
+        characteristic02,
+        writeValue
+    );
+    await expect(writePromise).rejects.toStrictEqual(bluetoothError);
+    expect(enableMock).toBeCalledTimes(0);
 });
