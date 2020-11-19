@@ -72,7 +72,7 @@ export default interface MuTagDevicesPort {
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
     ): Observable<Connection>;
-    disconnectFromMuTag(connection: Connection): void;
+    disconnectFromMuTag(connection: Connection): Promise<void>;
     provisionMuTag(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal,
@@ -84,6 +84,6 @@ export default interface MuTagDevicesPort {
         proximityThreshold: Rssi,
         timeout: number
     ): Observable<UnprovisionedMuTag>;
-    stopFindingUnprovisionedMuTags(): void;
+    stopFindingUnprovisionedMuTags(): Promise<void>;
     unprovisionMuTag(connection: Connection): Promise<void>;
 }
