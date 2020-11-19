@@ -6,7 +6,7 @@ import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
-import { switchMap, take } from "rxjs/operators";
+import { switchMap, take, filter } from "rxjs/operators";
 import { Observable, Subject, BehaviorSubject } from "rxjs";
 import Logger from "../../shared/metaLanguage/Logger";
 import MuTagDevicesPort, {
@@ -79,19 +79,24 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
                         connection = cnnctn;
                         return this.muTagDevices.readBatteryLevel(cnnctn);
                     }),
-                    switchMap(batteryLevel => {
-                        if (batteryLevel < this.removeMuTagBatteryThreshold) {
+                    filter(batteryLevel => {
+                        const doesPassThreshold =
+                            batteryLevel >= this.removeMuTagBatteryThreshold;
+                        if (!doesPassThreshold) {
+                            this.muTagDevices
+                                .disconnectFromMuTag(connection)
+                                .catch(e => this.logger.warn(e, true));
                             throw UserError.create(
                                 LowMuTagBattery(
                                     this.removeMuTagBatteryThreshold.valueOf()
                                 )
                             );
-                        } else {
-                            return this.muTagDevices.unprovisionMuTag(
-                                connection
-                            );
                         }
+                        return doesPassThreshold;
                     }),
+                    switchMap(() =>
+                        this.muTagDevices.unprovisionMuTag(connection)
+                    ),
                     // The connection will error out after being unprovisioned
                     // so we should go ahead and complete observable.
                     take(1)
