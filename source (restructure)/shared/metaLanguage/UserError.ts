@@ -15,15 +15,22 @@ export default class UserError extends Error {
         return Logger.instance;
     }
     readonly name: string;
-    readonly originatingError?: unknown;
+    readonly originatingError: unknown;
     readonly userFriendlyMessage: string;
 
     private constructor(
         name: string,
         userFriendlyMessage: string,
-        originatingError?: unknown
+        originatingError: unknown
     ) {
-        super(userFriendlyMessage);
+        // Concatenating to *message* so that Jest knows the inequality when
+        // *originatingError* is different between *UserError* objects.
+        const message =
+            originatingError == null
+                ? userFriendlyMessage
+                : `${userFriendlyMessage} (${String(originatingError)})`;
+        super(message);
+        //this.name = this.constructor.name;
         this.name = name;
         this.userFriendlyMessage = userFriendlyMessage;
         this.originatingError = originatingError;

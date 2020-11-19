@@ -107,7 +107,7 @@ export default class ReactNativeBleManagerAdapter implements BluetoothPort {
     async startScan(
         serviceUuids: string[],
         timeout: Millisecond,
-        scanMode: ScanMode = ScanMode.balanced
+        scanMode: ScanMode = ScanMode.Balanced
     ): Promise<void> {
         if (this.scanState.value !== ScanState.Stopped) {
             throw Error("Scan already started.");

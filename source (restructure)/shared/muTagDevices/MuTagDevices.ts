@@ -4,14 +4,7 @@ import BluetoothPort, {
     ScanMode
 } from "../bluetooth/BluetoothPort";
 import { Observable, from } from "rxjs";
-import {
-    switchMap,
-    filter,
-    map,
-    share,
-    catchError,
-    first
-} from "rxjs/operators";
+import { switchMap, filter, map, catchError, first } from "rxjs/operators";
 import Percent from "../metaLanguage/Percent";
 import { Rssi, Millisecond } from "../metaLanguage/Types";
 import Characteristic, {
@@ -165,7 +158,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
     }
 
     async stopFindingUnprovisionedMuTags(): Promise<void> {
-        await this.stopScanIfNotInUse();
+        await this.bluetooth.stopScan();
     }
 
     async unprovisionMuTag(connection: Connection): Promise<void> {
@@ -176,14 +169,13 @@ export default class MuTagDevices implements MuTagDevicesPort {
             MuTagBleGatt.MuTagConfiguration.Provision,
             MuTagBleGatt.MuTagConfiguration.Provision.unprovisionCode
         ).catch(e => this.logger.warn(e));
+        this.bluetooth.disconnect(peripheralId).catch(e => this.logger.warn(e));
     }
 
     // Protected instance interface
 
     // Private instance interface
 
-    private activeScan: Observable<MuTagPeripheral> | undefined;
-    private activeScanCount = 0;
     private readonly bluetooth: BluetoothPort;
     private readonly defaultTimeout = 5000 as Millisecond;
     private readonly logger = Logger.instance;
@@ -238,23 +230,15 @@ export default class MuTagDevices implements MuTagDevicesPort {
     private findMuTagPeripheral(
         timeout: Millisecond
     ): Observable<MuTagPeripheral> {
-        this.activeScanCount += 1;
-        if (this.activeScan != null) {
-            return this.activeScan;
-        }
-        this.activeScan = this.bluetooth
-            .startScan([], timeout, ScanMode.LowLatency)
-            .pipe(
-                filter(peripheral =>
-                    This.isMuTag(peripheral.advertising.manufacturerData)
-                ),
-                filter(
-                    (peripheral): peripheral is MuTagPeripheral =>
-                        peripheral.rssi != null
-                ),
-                share()
-            );
-        return this.activeScan;
+        return this.bluetooth.startScan([], timeout, ScanMode.LowLatency).pipe(
+            filter(peripheral =>
+                This.isMuTag(peripheral.advertising.manufacturerData)
+            ),
+            filter(
+                (peripheral): peripheral is MuTagPeripheral =>
+                    peripheral.rssi != null
+            )
+        );
     }
 
     private async findProvisionedMuTag(
@@ -280,7 +264,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
                 })
             )
             .toPromise();
-        await this.stopFindingProvisionedMuTags();
+        await this.bluetooth.stopScan();
         return foundMuTag;
     }
 
@@ -299,17 +283,6 @@ export default class MuTagDevices implements MuTagDevicesPort {
         return this.bluetooth.read(peripheralId, characteristic).catch(e => {
             throw UserError.create(MuTagCommunicationFailure, e);
         });
-    }
-
-    private async stopFindingProvisionedMuTags(): Promise<void> {
-        await this.stopScanIfNotInUse();
-    }
-
-    private async stopScanIfNotInUse(): Promise<void> {
-        this.activeScanCount -= 1;
-        if (this.activeScanCount === 0) {
-            await this.bluetooth.stopScan().catch(e => this.logger.warn(e));
-        }
     }
 
     private async writeCharacteristic<T>(
