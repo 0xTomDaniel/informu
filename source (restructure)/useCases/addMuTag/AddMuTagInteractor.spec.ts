@@ -6,11 +6,12 @@ import { AddMuTagViewModel } from "./presentation/AddMuTagViewModel";
 import { NameMuTagViewModel } from "./presentation/NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./presentation/MuTagAddingViewModel";
 import MuTagDevices from "../../shared/muTagDevices/MuTagDevices";
-import Bluetooth, {
+import BluetoothPort, {
     Peripheral,
-    PeripheralId
-} from "../../shared/bluetooth/Bluetooth";
-import { Observable, Subscriber, Subject } from "rxjs";
+    PeripheralId,
+    ScanMode
+} from "../../shared/bluetooth/BluetoothPort";
+import { Observable, Subscriber, Subject, BehaviorSubject } from "rxjs";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
@@ -28,7 +29,13 @@ import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
-import { take } from "rxjs/operators";
+import { Buffer } from "buffer";
+import { take, skip, filter } from "rxjs/operators";
+import BluetoothAndroidDecorator from "../../shared/bluetooth/BluetoothAndroidDecorator";
+import {
+    WritableCharacteristic,
+    ReadableCharacteristic
+} from "../../shared/bluetooth/Characteristic";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -42,44 +49,6 @@ const EventTrackerMock = jest.fn<EventTracker, any>(
 const eventTrackerMock = new EventTrackerMock();
 Logger.createInstance(eventTrackerMock);
 
-/*const bdiShowErrorSubject = new Subject<UserError>();
-const showOnDashboardSubject = new Subject<
-    ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
->();
-const BelongingDashboardInteractorMock = jest.fn<
-    BelongingDashboardInteractor,
-    any
->(
-    (): BelongingDashboardInteractor => ({
-        showError: bdiShowErrorSubject,
-        showOnDashboard: showOnDashboardSubject
-    })
-);
-const belongingDashboardInteractor = new BelongingDashboardInteractorMock();
-const showActivityIndicatorSubject = new Subject<boolean>();
-const soiShowErrorSubject = new Subject<UserError>();
-const showSignInSubject = new Subject<void>();
-const RemoveMuTagInteractorMock = jest.fn<RemoveMuTagInteractor, any>(
-    (): RemoveMuTagInteractor => ({
-        showActivityIndicator: new Observable<boolean>(),
-        showError: new Observable<UserError>(),
-        remove: jest.fn()
-    })
-);
-const removeMuTagInteractorMock = RemoveMuTagInteractorMock();
-const SignOutInteractorMock = jest.fn<SignOutInteractor, any>(
-    (): SignOutInteractor => ({
-        showActivityIndicator: showActivityIndicatorSubject,
-        showError: soiShowErrorSubject,
-        showSignIn: showSignInSubject,
-        signOut: jest.fn()
-    })
-);
-const signOutInteractor = SignOutInteractorMock();
-const homeViewModel = new BelongingDashboardViewModel(
-    belongingDashboardInteractor,
-    signOutInteractor
-);*/
 const addMuTagViewModel = new AddMuTagViewModel();
 const nameMuTagViewModel = new NameMuTagViewModel();
 const muTagAddingViewModel = new MuTagAddingViewModel();
@@ -88,57 +57,225 @@ const addMuTagPresenter = new AddMuTagPresenter(
     nameMuTagViewModel,
     muTagAddingViewModel
 );
-let discoveredPeripheralSubscriber: Subscriber<Peripheral>;
-const discoveredPeripheralObservable = new Observable<Peripheral>(
-    subscriber => {
-        discoveredPeripheralSubscriber = subscriber;
-    }
+
+const connections = new Map<PeripheralId, Subscriber<void>>();
+const startScanSubscriber = new BehaviorSubject<
+    Subscriber<Peripheral> | undefined
+>(undefined);
+const onStartScanSubscriber = startScanSubscriber.pipe(
+    skip(1),
+    filter((s): s is Subscriber<Peripheral> => s != null)
 );
-const BluetoothMock = jest.fn<Bluetooth, any>(
-    (): Bluetooth => ({
-        discoveredPeripheral: discoveredPeripheralObservable,
-        startScan: jest.fn(),
-        stopScan: jest.fn(),
-        retrieveServices: jest.fn(),
-        connect: jest.fn(),
-        disconnect: jest.fn(),
-        read: jest.fn(),
-        write: jest.fn(),
-        enableBluetooth: jest.fn()
+let bluetoothReadReturnValue: any;
+const bluetoothMocks = {
+    onConnect: new Subject<[PeripheralId, Millisecond?]>(),
+    onDisconnect: new Subject<PeripheralId>(),
+    onRead: new Subject<[PeripheralId, ReadableCharacteristic<any>]>(),
+    onStartScan: new Subject<[string[], Millisecond?, ScanMode?]>(),
+    onStopScan: new Subject<void>(),
+    onWrite: new Subject<[PeripheralId, WritableCharacteristic<any>, any]>(),
+    connect: jest.fn(
+        (peripheralId: PeripheralId, timeout?: Millisecond) =>
+            new Observable<void>(subscriber => {
+                connections.set(peripheralId, subscriber);
+                bluetoothMocks.onConnect.next([peripheralId, timeout]);
+            })
+    ),
+    disconnect: jest.fn((peripheralId: PeripheralId) => {
+        const subscriber = connections.get(peripheralId);
+        subscriber?.complete();
+        connections.delete(peripheralId);
+        bluetoothMocks.onDisconnect.next(peripheralId);
+        return Promise.resolve();
+    }),
+    read: jest.fn(
+        (
+            peripheralId: PeripheralId,
+            characteristic: ReadableCharacteristic<any>
+        ) => {
+            bluetoothMocks.onRead.next([peripheralId, characteristic]);
+            return bluetoothReadReturnValue;
+        }
+    ),
+    startScan: jest.fn(
+        (serviceUuids: string[], timeout?: Millisecond, scanMode?: ScanMode) =>
+            new Observable<Peripheral>(subscriber => {
+                let timeoutId: NodeJS.Timeout | undefined;
+                if (timeout != null) {
+                    timeoutId = setTimeout(() => {
+                        subscriber.complete();
+                    }, timeout);
+                }
+                bluetoothMocks.onStartScan.next([
+                    serviceUuids,
+                    timeout,
+                    scanMode
+                ]);
+                startScanSubscriber.next(subscriber);
+                const teardown = () => {
+                    if (timeoutId != null) {
+                        clearTimeout(timeoutId);
+                    }
+                };
+                return teardown;
+            })
+    ),
+    stopScan: jest.fn(() => {
+        startScanSubscriber.value?.complete();
+        startScanSubscriber.next(undefined);
+        bluetoothMocks.onStopScan.next();
+        return Promise.resolve();
+    }),
+    write: jest.fn(
+        (
+            peripheralId: PeripheralId,
+            characteristic: WritableCharacteristic<any>,
+            value: any
+        ) => {
+            bluetoothMocks.onWrite.next([peripheralId, characteristic, value]);
+            return Promise.resolve();
+        }
+    )
+};
+const BluetoothMock = jest.fn<BluetoothPort, any>(
+    (): BluetoothPort => ({
+        connect: bluetoothMocks.connect,
+        disconnect: bluetoothMocks.disconnect,
+        read: bluetoothMocks.read,
+        startScan: bluetoothMocks.startScan,
+        stopScan: bluetoothMocks.stopScan,
+        write: bluetoothMocks.write
     })
 );
 const bluetoothMock = new BluetoothMock();
-const muTagDevices = new MuTagDevices(bluetoothMock);
+const bluetoothAndroidDecorator = new BluetoothAndroidDecorator(bluetoothMock);
+const muTagDevices = new MuTagDevices(bluetoothAndroidDecorator);
+
+const muTagRepoLocalMocks = {
+    onAdd: new Subject<ProvisionedMuTag>(),
+    onRemoveByUid: new Subject<string>(),
+    onUpdate: new Subject<ProvisionedMuTag>(),
+    add: jest.fn((muTag: ProvisionedMuTag) => {
+        muTagRepoLocalMocks.onAdd.next(muTag);
+        return Promise.resolve();
+    }),
+    removeByUid: jest.fn((uid: string) => {
+        muTagRepoLocalMocks.onRemoveByUid.next(uid);
+        return Promise.resolve();
+    }),
+    update: jest.fn<Promise<void>, [ProvisionedMuTag]>(
+        (muTag: ProvisionedMuTag) => {
+            muTagRepoLocalMocks.onUpdate.next(muTag);
+            return Promise.resolve();
+        }
+    )
+};
 const MuTagRepoLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
     (): MuTagRepositoryLocalPort => ({
-        add: jest.fn(),
-        update: jest.fn(),
-        removeByUid: jest.fn()
-    })
-);
-const MuTagRepoRemoteMock = jest.fn<MuTagRepositoryRemotePort, any>(
-    (): MuTagRepositoryRemotePort => ({
-        add: jest.fn(),
-        update: jest.fn(),
-        createNewUid: jest.fn(),
-        removeByUid: jest.fn()
-    })
-);
-const AccountRepoLocalMock = jest.fn<AccountRepositoryLocalPort, any>(
-    (): AccountRepositoryLocalPort => ({
-        get: jest.fn(),
-        update: jest.fn()
-    })
-);
-const AccountRepoRemoteMock = jest.fn<AccountRepositoryRemotePort, any>(
-    (): AccountRepositoryRemotePort => ({
-        update: jest.fn()
+        add: muTagRepoLocalMocks.add,
+        update: muTagRepoLocalMocks.update,
+        removeByUid: muTagRepoLocalMocks.removeByUid
     })
 );
 const muTagRepoLocalMock = new MuTagRepoLocalMock();
+
+const muTagRepoRemoteMocks = {
+    onAdd: new Subject<[ProvisionedMuTag, string, AccountNumber]>(),
+    onCreateNewUid: new Subject<string>(),
+    onRemoveByUid: new Subject<[string, string]>(),
+    onUpdate: new Subject<[ProvisionedMuTag, string, AccountNumber]>(),
+    add: jest.fn(
+        (
+            muTag: ProvisionedMuTag,
+            accountUid: string,
+            accountNumber: AccountNumber
+        ) => {
+            muTagRepoRemoteMocks.onAdd.next([muTag, accountUid, accountNumber]);
+            return Promise.resolve();
+        }
+    ),
+    createNewUid: jest.fn((accountUid: string) => {
+        muTagRepoRemoteMocks.onCreateNewUid.next(accountUid);
+        return uuidV4();
+    }),
+    removeByUid: jest.fn((uid: string, accountUid: string) => {
+        muTagRepoRemoteMocks.onRemoveByUid.next([uid, accountUid]);
+        return Promise.resolve();
+    }),
+    update: jest.fn(
+        (
+            muTag: ProvisionedMuTag,
+            accountUid: string,
+            accountNumber: AccountNumber
+        ) => {
+            muTagRepoRemoteMocks.onUpdate.next([
+                muTag,
+                accountUid,
+                accountNumber
+            ]);
+            return Promise.resolve();
+        }
+    )
+};
+const MuTagRepoRemoteMock = jest.fn<MuTagRepositoryRemotePort, any>(
+    (): MuTagRepositoryRemotePort => ({
+        add: muTagRepoRemoteMocks.add,
+        update: muTagRepoRemoteMocks.update,
+        createNewUid: muTagRepoRemoteMocks.createNewUid,
+        removeByUid: muTagRepoRemoteMocks.removeByUid
+    })
+);
 const muTagRepoRemoteMock = new MuTagRepoRemoteMock();
+
+const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
+const validAccountData: AccountData = {
+    _uid: uuidV4(),
+    _accountNumber: AccountNumber.fromString("0000000"),
+    _emailAddress: "support+test@informu.io",
+    _name: "Taylor Black",
+    _nextBeaconId: BeaconId.create("A"),
+    _nextSafeZoneNumber: 1,
+    _recycledBeaconIds: new Set(recycledBeaconIds),
+    _nextMuTagNumber: 10,
+    _onboarding: false,
+    _muTags: new Set([uuidV4()])
+};
+const account = new Account(validAccountData);
+
+const accountRepoLocalMocks = {
+    onGet: new Subject<void>(),
+    onUpdate: new Subject<Account>(),
+    get: jest.fn(() => {
+        accountRepoLocalMocks.onGet.next();
+        return Promise.resolve(account);
+    }),
+    update: jest.fn((accnt: Account) => {
+        accountRepoLocalMocks.onUpdate.next(accnt);
+        return Promise.resolve();
+    })
+};
+const AccountRepoLocalMock = jest.fn<AccountRepositoryLocalPort, any>(
+    (): AccountRepositoryLocalPort => ({
+        get: accountRepoLocalMocks.get,
+        update: accountRepoLocalMocks.update
+    })
+);
 const accountRepoLocalMock = new AccountRepoLocalMock();
+
+const accountRepoRemoteMocks = {
+    onUpdate: new Subject<Account>(),
+    update: jest.fn((accnt: Account) => {
+        accountRepoRemoteMocks.onUpdate.next(accnt);
+        return Promise.resolve();
+    })
+};
+const AccountRepoRemoteMock = jest.fn<AccountRepositoryRemotePort, any>(
+    (): AccountRepositoryRemotePort => ({
+        update: accountRepoRemoteMocks.update
+    })
+);
 const accountRepoRemoteMock = new AccountRepoRemoteMock();
+
 const addMuTagConnectThreshold = -72 as Rssi;
 const addMuTagBatteryThreshold = new Percent(15);
 const addMuTagInteractor = new AddMuTagInteractor(
@@ -152,118 +289,81 @@ const addMuTagInteractor = new AddMuTagInteractor(
     accountRepoRemoteMock
 );
 
-describe("Mu tag user adds Mu tag", (): void => {
-    (bluetoothMock.retrieveServices as jest.Mock).mockResolvedValue({});
-    (bluetoothMock.stopScan as jest.Mock).mockResolvedValue(undefined);
-    const connections = new Map<PeripheralId, Subscriber<void>>();
-    (bluetoothMock.connect as jest.Mock).mockImplementation(
-        (peripheralId: PeripheralId) =>
-            new Observable<void>(subscriber => {
-                connections.set(peripheralId, subscriber);
-                subscriber.next();
-            })
-    );
-    (bluetoothMock.disconnect as jest.Mock).mockImplementation(
-        (peripheralId: PeripheralId) =>
-            new Promise(resolve => {
-                const subscriber = connections.get(peripheralId);
-                subscriber?.complete();
-                connections.delete(peripheralId);
-                resolve();
-            })
-    );
-    (bluetoothMock.write as jest.Mock).mockResolvedValue(undefined);
-    (bluetoothMock.enableBluetooth as jest.Mock).mockResolvedValue(undefined);
-    const recycledBeaconIds = [BeaconId.create("2"), BeaconId.create("5")];
-    const validAccountData: AccountData = {
-        _uid: "AZeloSR9jCOUxOWnf5RYN14r2632",
-        _accountNumber: AccountNumber.fromString("0000000"),
-        _emailAddress: "support+test@informu.io",
-        _name: "Taylor Black",
-        _nextBeaconId: BeaconId.create("A"),
-        _nextSafeZoneNumber: 1,
-        _recycledBeaconIds: new Set(recycledBeaconIds),
-        _nextMuTagNumber: 10,
-        _onboarding: false,
-        _muTags: new Set(["randomUUID01"])
-    };
-    const account = new Account(validAccountData);
-    (accountRepoLocalMock.get as jest.Mock).mockResolvedValue(account);
-    (accountRepoLocalMock.update as jest.Mock).mockResolvedValue(undefined);
-    (accountRepoRemoteMock.update as jest.Mock).mockResolvedValue(undefined);
-    (muTagRepoLocalMock.add as jest.Mock).mockResolvedValue(undefined);
-    (muTagRepoLocalMock.update as jest.Mock).mockResolvedValue(undefined);
-    (muTagRepoRemoteMock.add as jest.Mock).mockResolvedValue(undefined);
-    (muTagRepoRemoteMock.update as jest.Mock).mockResolvedValue(undefined);
+//const manufacturerDataJson =
+//"[2,1,6,26,255,76,0,2,21,222,126,199,237,16,85,176,85,192,222,222,254,167,237,250,126,255,255,255,255,182,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
+const manufacturerDataJson =
+    "[2, 1, 6, 26, 255, 76, 0, 2, 21, 222, 126, 199, 237, 16, 85, 176, 85, 192, 222, 222, 254, 167, 237, 250, 126, 255, 255, 255, 255, 182, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]";
+const manufacturerData = Buffer.from(JSON.parse(manufacturerDataJson));
+const discoveredPeripheral: Peripheral = {
+    id: uuidV4() as PeripheralId,
+    name: "informu beacon",
+    rssi: -55 as Rssi,
+    advertising: {
+        isConnectable: true,
+        serviceUuids: [],
+        manufacturerData: manufacturerData,
+        serviceData: {},
+        txPowerLevel: 6
+    }
+};
+const newMuTagName = "Keys";
 
-    const manufacturerDataJson =
-        "[2,1,6,26,255,76,0,2,21,222,126,199,237,16,85,176,85,192,222,222,254,167,237,250,126,255,255,255,255,182,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
-    const manufacturerDataBytes = new Uint8Array(
-        JSON.parse(manufacturerDataJson)
-    );
-    const manufacturerDataBase64 =
-        "AgEGGv9MAAIV3n7H7RBVsFXA3t7+p+36fv////+2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
-    const manufacturerData: ManufacturerData = {
-        bytes: manufacturerDataBytes,
-        data: manufacturerDataBase64,
-        cdvType: "ArrayBuffer"
-    };
-    const discoveredPeripheral: Peripheral = {
-        id: uuidV4() as PeripheralId,
-        name: "informu beacon",
-        rssi: -55 as Rssi,
-        advertising: {
-            isConnectable: true,
-            serviceUuids: [],
-            manufacturerData: manufacturerData,
-            serviceData: {},
-            txPowerLevel: 6
-        }
-    };
-    const newMuTagName = "Keys";
-
-    describe("Mu tag adds successfully", (): void => {
+describe("User adds Mu tag.", (): void => {
+    describe("Scenario 1: Mu tag adds successfully.", (): void => {
         // Given that an account is logged in
 
         // Given unprovisioned Mu tag is connected before user completes Mu tag naming
-        //
-        (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
-            (serviceUUIDs: string[], timeout: Millisecond) => {
-                discoveredPeripheralSubscriber.next(discoveredPeripheral);
-                return new Promise(resolve => {
-                    setTimeout(() => resolve(), timeout);
-                });
-            }
-        );
 
         // Given the Mu tag battery is above threshold
         //
-        const muTagBatteryLevel = new Percent(45);
+        bluetoothReadReturnValue = new Percent(45);
 
         // Given Mu tag hardware provisions successfully
-        //
-        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
-        (accountRepoLocalMock.update as jest.Mock).mockResolvedValueOnce(
-            undefined
-        );
 
-        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(undefined);
-        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
-            muTagBatteryLevel
-        );
-        let didNavigateToNameMuTag = false;
-        let didShowMuTagFinalSetupScreen = false;
         let newMuTag: ProvisionedMuTag;
-        let muTagUpdateColorSpy: jest.SpyInstance<void, [MuTagColor]>;
+
+        const onAccountAddNewMuTag = new Subject<[string, BeaconId]>();
+        const removeMuTagOriginal = account.removeMuTag.bind(account);
+        const accountAddNewMuTagSpy = jest.spyOn(account, "addNewMuTag");
+        accountAddNewMuTagSpy.mockImplementation((uid, beaconId) => {
+            onAccountAddNewMuTag.next([uid, beaconId]);
+            removeMuTagOriginal(uid, beaconId);
+        });
+
+        /*let muTagUpdateColorSpy: jest.SpyInstance<void, [MuTagColor]>;
         (muTagRepoLocalMock.add as jest.Mock).mockImplementationOnce(
             (addedMuTag: ProvisionedMuTag) => {
                 newMuTag = addedMuTag;
                 muTagUpdateColorSpy = jest.spyOn(newMuTag, "changeColor");
             }
         );
-        const muTagColorSetting = MuTagColor.MuOrange;
-        let didShowActivityIndicatorTimes = 0;
-        let didNavigateToHomeScreen = false;
+        const muTagColorSetting = MuTagColor.MuOrange;*/
+        const muTagAddNewMuTagSpy = jest.spyOn(account, "addNewMuTag");
+
+        const executionOrder: number[] = [];
+
+        let onShowActivity;
+        let onFindUnprovisioned;
+        let onConnectUnprovisioned;
+        let onVerifyBatteryLevel;
+        let onAddMuTagRemotePersistence;
+        let onAddMuTagLocalPersistence;
+        let onAddMuTagToAccount;
+        let onUpdateAccountRemotePersistence;
+        let onUpdateAccountLocalPersistence;
+        let onProvisionMuTag;
+        let onSetTxPower;
+        let onSetAdvertisingInterval;
+        let onHideActivity;
+        let onRequestName;
+        let onShowActivity2;
+        let onUpdateMuTagEntity;
+        let onUpdateMuTagLocalPersistence;
+        let onUpdateMuTagRemotePersistence;
+        let onHideActivity2;
+        let onShowSuccess;
+
+        let startAddingNewMuTagPromise;
 
         // When
         //
@@ -287,8 +387,65 @@ describe("Mu tag user adds Mu tag", (): void => {
                     () => (didNavigateToHomeScreen = true)
                 );
 
+                onShowActivity;
+                onStartScanSubscriber
+                    .pipe(take(1))
+                    .toPromise()
+                    .then(subscriber => subscriber.next(discoveredPeripheral));
+                onFindUnprovisioned = bluetoothMocks.onStartScan
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(1));
+                onConnectUnprovisioned = bluetoothMocks.onConnect
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(2));
+                onVerifyBatteryLevel = bluetoothMocks.onRead
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(3));
+                onAddMuTagRemotePersistence = muTagRepoRemoteMocks.onAdd
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(4));
+                onAddMuTagLocalPersistence = muTagRepoLocalMocks.onAdd
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(5));
+                onAddMuTagToAccount = onAccountAddNewMuTag
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(6));
+                onUpdateAccountRemotePersistence = accountRepoRemoteMocks.onUpdate
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(7));
+                onUpdateAccountLocalPersistence = accountRepoLocalMocks.onUpdate
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(8));
+                onProvisionMuTag = bluetoothMocks.onWrite
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(9));
+                onSetTxPower = bluetoothMocks.onWrite
+                    .pipe(skip(1), take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(10));
+                onSetAdvertisingInterval = bluetoothMocks.onWrite
+                    .pipe(skip(2), take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(11));
+                onHideActivity;
+                onRequestName;
+                onShowActivity2;
+                onUpdateMuTagEntity;
+                onUpdateMuTagLocalPersistence;
+                onUpdateMuTagRemotePersistence;
+                onHideActivity2;
+                onShowSuccess;
                 // user requests to add unprovisioned Mu tag
-                await addMuTagInteractor.startAddingNewMuTag();
+                startAddingNewMuTagPromise = addMuTagInteractor.startAddingNewMuTag();
             }
         );
 
@@ -298,22 +455,27 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // Then
         //
-        // "should show instructions for adding Mu tag"
+        it("Should show activity indicator.", async (): Promise<void> => {
+            await addMuTagInteractor.setMuTagName(newMuTagName);
+            expect(nameMuTagViewModel.showActivityIndicator).toBe(true);
+        });
 
         // Then
         //
-        it("should attempt connection to unprovisioned Mu tag", (): void => {
+        it("Should find unprovisioned Mu tag.", (): void => {});
+
+        // Then
+        //
+        it("Should connect to unprovisioned Mu tag.", (): void => {
             expect(bluetoothMock.connect).toHaveBeenCalledWith(
                 discoveredPeripheral.id
             );
             expect(bluetoothMock.connect).toHaveBeenCalledTimes(1);
         });
 
-        // When unprovisioned Mu tag is connected
-        //
         // Then
         //
-        it("should check the Mu tag battery level", (): void => {
+        it("Should verify Mu tag battery level.", (): void => {
             expect(bluetoothMock.read).toHaveBeenNthCalledWith(
                 2,
                 discoveredPeripheral.id,
@@ -322,39 +484,39 @@ describe("Mu tag user adds Mu tag", (): void => {
             expect(bluetoothMock.read).toHaveBeenCalledTimes(2);
         });
 
-        // When user completes instructions for adding Mu tag
-        //
         // Then
         //
-        it("should show Mu tag naming screen", (): void => {
-            addMuTagInteractor.instructionsComplete();
-            expect(didNavigateToNameMuTag).toBe(true);
-        });
-
-        // When user enters Mu tag name
-        //
-        // Then
-        //
-        it("should show activity indicator", async (): Promise<void> => {
-            await addMuTagInteractor.setMuTagName(newMuTagName);
-            expect(nameMuTagViewModel.showActivityIndicator).toBe(true);
-        });
-
-        // Then
-        //
-        it("should add Mu tag to remote persistence", (): void => {
+        it("Should add Mu tag to remote persistence.", (): void => {
             expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it("should add Mu tag to local persistence", (): void => {
+        it("Should add Mu tag to local persistence.", (): void => {
             expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it("should provision the Mu tag hardware", (): void => {
+        it("Should add Mu tag to account.", (): void => {
+            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("Should update account to remote persistence.", (): void => {
+            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("Should update account to local persistence.", (): void => {
+            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("Should provision Mu tag hardware.", (): void => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
 
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
@@ -390,7 +552,7 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // Then
         //
-        it("should set TX power to highest option (+6; 0x01)", (): void => {
+        it("Should set TX power to highest option 0x01 (+6dBm).", (): void => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 7,
                 discoveredPeripheral.id,
@@ -401,7 +563,7 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // Then
         //
-        it("should set advertising interval to 0x03 (852ms)", (): void => {
+        it("Should set advertising interval to 0x03 (852ms).", (): void => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 8,
                 discoveredPeripheral.id,
@@ -412,34 +574,44 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // Then
         //
-        it("should show the remaining Mu tag setup screens", (): void => {
-            expect(didShowMuTagFinalSetupScreen).toBe(true);
-        });
-
-        // When user completes Mu tag setup
-        //
-        // Then
-        //
-        it("should show activity indicator #2", async (): Promise<void> => {
-            await addMuTagInteractor.completeMuTagSetup(muTagColorSetting);
-            expect(didShowActivityIndicatorTimes).toBe(2);
+        it("Should hide activity indicator.", async (): Promise<void> => {
+            await addMuTagInteractor.setMuTagName(newMuTagName);
+            expect(nameMuTagViewModel.showActivityIndicator).toBe(true);
         });
 
         // Then
         //
-        it("should update Mu tag with new settings", (): void => {
+        it("Should request Mu tag name.", (): void => {
+            addMuTagInteractor.instructionsComplete();
+            expect(didNavigateToNameMuTag).toBe(true);
+        });
+
+        // When user enters Mu tag name
+        //
+        // Then
+        //
+        it("Should show activity indicator a second time.", async () => {
+            await addMuTagInteractor.setMuTagName(newMuTagName);
+            expect(nameMuTagViewModel.showActivityIndicator).toBe(true);
+        });
+
+        // Then
+        //
+        it("Should update Mu tag with new settings.", (): void => {
             expect(muTagUpdateColorSpy).toHaveBeenCalledWith(muTagColorSetting);
             expect(muTagUpdateColorSpy).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it("should update Mu tag to local persistence", (): void => {
+        it("Should update Mu tag to local persistence.", (): void => {
             expect(muTagRepoLocalMock.update).toHaveBeenCalledWith(newMuTag);
             expect(muTagRepoLocalMock.update).toHaveBeenCalledTimes(1);
         });
 
-        it("should update Mu tag to remote persistence", (): void => {
+        // Then
+        //
+        it("Should update Mu tag to remote persistence.", (): void => {
             expect(muTagRepoRemoteMock.update).toHaveBeenLastCalledWith(
                 newMuTag,
                 validAccountData._uid,
@@ -450,12 +622,19 @@ describe("Mu tag user adds Mu tag", (): void => {
 
         // Then
         //
-        it("should show the home screen", (): void => {
+        it("Should hide activity indicator a second time.", async () => {
+            await addMuTagInteractor.setMuTagName(newMuTagName);
+            expect(nameMuTagViewModel.showActivityIndicator).toBe(true);
+        });
+
+        // Then
+        //
+        it("Should show success.", (): void => {
             expect(didNavigateToHomeScreen).toBe(true);
         });
     });
 
-    describe("Mu tag adds successfully after connection delay", (): void => {
+    /*describe("Scenario 2: Mu tag adds successfully after connection delay.", (): void => {
         // Given that an account is logged in
 
         // Given unprovisioned Mu tag is connected after user completes Mu tag naming
@@ -686,7 +865,7 @@ describe("Mu tag user adds Mu tag", (): void => {
         });
     });
 
-    describe("user cancels add Mu tag", (): void => {
+    describe("Scenario 3: User cancels add Mu tag.", (): void => {
         (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
             (serviceUUIDs: string[], timeout: Millisecond) => {
                 return new Promise(resolve => {
@@ -732,7 +911,7 @@ describe("Mu tag user adds Mu tag", (): void => {
         });
     });
 
-    describe("Mu tag battery is below threshold", (): void => {
+    describe("Scenario 4: Mu tag battery is below threshold.", (): void => {
         // Given that an account is logged in
 
         // Given the Mu tag battery is below threshold
@@ -791,5 +970,5 @@ describe("Mu tag user adds Mu tag", (): void => {
             await addMuTagInteractor.stopAddingNewMuTag();
             expect(didNavigateToHomeScreen).toBe(true);
         });
-    });
+    });*/
 });
