@@ -1,4 +1,4 @@
-import AddMuTagInteractor from "./AddMuTagInteractor";
+import AddMuTagInteractorImpl from "./AddMuTagInteractor";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import AddMuTagPresenter from "./presentation/AddMuTagPresenter";
@@ -278,7 +278,7 @@ const accountRepoRemoteMock = new AccountRepoRemoteMock();
 
 const addMuTagConnectThreshold = -72 as Rssi;
 const addMuTagBatteryThreshold = new Percent(15);
-const addMuTagInteractor = new AddMuTagInteractor(
+const addMuTagInteractor = new AddMuTagInteractorImpl(
     addMuTagConnectThreshold,
     addMuTagBatteryThreshold,
     addMuTagPresenter,

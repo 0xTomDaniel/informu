@@ -30,10 +30,10 @@ import AppViewModel, {
 import AppPresenter from "./source/Primary Adapters/Presentation/AppPresenter";
 import SessionService from "./source/Core/Application/SessionService";
 import { AppStateController } from "./source/Primary Adapters/Device/AppStateController";
-import AddMuTagViewController from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewController";
+import AddMuTagView from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagView";
 import { Rssi } from "./source (restructure)/shared/metaLanguage/Types";
 import Percent from "./source (restructure)/shared/metaLanguage/Percent";
-import AddMuTagInteractor from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
+import AddMuTagInteractorImpl from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
 import AddMuTagPresenter from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagPresenter";
 import { AddMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewModel";
 import MuTagRepoLocalImpl from "./source/Secondary Adapters/Persistence/MuTagRepoLocalImpl";
@@ -142,7 +142,7 @@ export class Dependencies {
     addMuTagPresenter: AddMuTagPresenter;
     bluetooth: BluetoothPort;
     muTagDevices: MuTagDevicesPortAddMuTag & MuTagDevicesPortRemoveMuTag;
-    addMuTagInteractor: AddMuTagInteractor;
+    addMuTagInteractor: AddMuTagInteractorImpl;
     removeMuTagBatteryThreshold: Percent;
     removeMuTagInteractor: RemoveMuTagInteractor;
     signOutInteractor: SignOutInteractor;
@@ -215,7 +215,7 @@ export class Dependencies {
                 this.bluetooth = bluetooth;
         }
         this.muTagDevices = new MuTagDevices(this.bluetooth);
-        this.addMuTagInteractor = new AddMuTagInteractor(
+        this.addMuTagInteractor = new AddMuTagInteractorImpl(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,
             this.addMuTagPresenter,
@@ -348,7 +348,7 @@ export class Dependencies {
             this.muTagAddingViewModel
         );
         this.muTagDevices = new MuTagDevices(this.bluetooth);
-        this.addMuTagInteractor = new AddMuTagInteractor(
+        this.addMuTagInteractor = new AddMuTagInteractorImpl(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,
             this.addMuTagPresenter,
@@ -485,9 +485,8 @@ const HomeStack = createStackNavigator(
         },
         AddMuTag: {
             screen: (props: NavigationScreenProps): ReactElement => (
-                <AddMuTagViewController
+                <AddMuTagView
                     viewModel={dependencies.addMuTagViewModel}
-                    addMuTagService={dependencies.addMuTagInteractor}
                     {...props}
                 />
             )

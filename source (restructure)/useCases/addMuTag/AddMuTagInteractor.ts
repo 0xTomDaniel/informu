@@ -3,7 +3,7 @@ import MuTagDevicesPort, {
     TxPowerSetting,
     UnprovisionedMuTag,
     AdvertisingIntervalSetting
-} from "./MuTagDevicesPort";
+} from "../../shared/muTagDevices/MuTagDevicesPort";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import Percent from "../../shared/metaLanguage/Percent";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
@@ -42,22 +42,14 @@ const FailedToSaveSettings: UserWarningType = {
         "Your Mu tag added successfully but some settings failed to save."
 };
 
-export default class AddMuTagInteractor {
-    private readonly connectThreshold: Rssi;
-    private readonly addMuTagBatteryThreshold: Percent;
-    private readonly addMuTagOutput: AddMuTagOutputPort;
-    private readonly muTagDevices: MuTagDevicesPort;
-    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
-    private readonly muTagRepoRemote: MuTagRepositoryRemotePort;
-    private readonly accountRepoLocal: AccountRepositoryLocalPort;
-    private readonly accountRepoRemote: AccountRepositoryRemotePort;
+export interface AddMuTagInteractor {
+    addFoundMuTag(): Promise<void>;
+    findNewMuTag(): Promise<void>;
+    setMuTagName(name: string): Promise<void>;
+    stopFindingNewMuTag(): void;
+}
 
-    private unprovisionedMuTag: UnprovisionedMuTag | undefined;
-    private provisionedMuTag: ProvisionedMuTag | undefined;
-    private muTagName: string | undefined;
-    private accountUid: string | undefined;
-    private accountNumber: AccountNumber | undefined;
-
+export default class AddMuTagInteractorImpl implements AddMuTagInteractor {
     constructor(
         connectThreshold: Rssi,
         addMuTagBatteryThreshold: Percent,
@@ -78,7 +70,9 @@ export default class AddMuTagInteractor {
         this.accountRepoRemote = accountRepoRemote;
     }
 
-    async startAddingNewMuTag(): Promise<void> {
+    async addFoundMuTag(): Promise<void> {}
+
+    async findNewMuTag(): Promise<void> {
         const findTimeout = 120000 as Millisecond;
         try {
             this.unprovisionedMuTag = await this.findFirstUnprovisionedMuTag(
@@ -107,16 +101,6 @@ export default class AddMuTagInteractor {
         }
     }
 
-    stopAddingNewMuTag(): void {
-        this.addMuTagOutput.showHomeScreen();
-        this.muTagDevices.stopFindingUnprovisionedMuTags();
-        this.resetAddNewMuTagState();
-    }
-
-    instructionsComplete(): void {
-        this.addMuTagOutput.showMuTagNamingScreen();
-    }
-
     async setMuTagName(name: string): Promise<void> {
         this.addMuTagOutput.showActivityIndicator();
 
@@ -130,7 +114,13 @@ export default class AddMuTagInteractor {
         }
     }
 
-    async completeMuTagSetup(color: MuTagColor): Promise<void> {
+    stopFindingNewMuTag(): void {
+        this.addMuTagOutput.showHomeScreen();
+        this.muTagDevices.stopFindingUnprovisionedMuTags();
+        this.resetAddNewMuTagState();
+    }
+
+    /*async completeMuTagSetup(color: MuTagColor): Promise<void> {
         try {
             if (this.provisionedMuTag == null) {
                 throw Error("Newly provisioned Mu tag not found.");
@@ -154,7 +144,22 @@ export default class AddMuTagInteractor {
             this.resetAddNewMuTagState();
             this.addMuTagOutput.showHomeScreen();
         }
-    }
+    }*/
+
+    private readonly connectThreshold: Rssi;
+    private readonly addMuTagBatteryThreshold: Percent;
+    private readonly addMuTagOutput: AddMuTagOutputPort;
+    private readonly muTagDevices: MuTagDevicesPort;
+    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
+    private readonly muTagRepoRemote: MuTagRepositoryRemotePort;
+    private readonly accountRepoLocal: AccountRepositoryLocalPort;
+    private readonly accountRepoRemote: AccountRepositoryRemotePort;
+
+    private unprovisionedMuTag: UnprovisionedMuTag | undefined;
+    private provisionedMuTag: ProvisionedMuTag | undefined;
+    private muTagName: string | undefined;
+    private accountUid: string | undefined;
+    private accountNumber: AccountNumber | undefined;
 
     private async findFirstUnprovisionedMuTag(
         timeout: Millisecond

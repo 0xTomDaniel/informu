@@ -4,16 +4,22 @@ import {
     Platform,
     StatusBar,
     View,
-    Dimensions
+    Dimensions,
+    ScaledSize
 } from "react-native";
 import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { SafeAreaView, NavigationScreenProps } from "react-navigation";
-import React, { Component, ReactElement } from "react";
+import React, {
+    Component,
+    ReactElement,
+    FunctionComponent,
+    useEffect,
+    useState
+} from "react";
 import DeviceInfo from "react-native-device-info";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ImageBackgrounds } from "../../../../source/Primary Adapters/Presentation/Images";
 import { AddMuTagViewModel, AddMuTagState } from "./AddMuTagViewModel";
-import AddMuTagInteractor from "../AddMuTagInteractor";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
 
@@ -97,12 +103,147 @@ const styles = StyleSheet.create({
     }
 });
 
-interface AddMuTagVCProps extends NavigationScreenProps {
+interface AddMuTagViewProps extends NavigationScreenProps {
     viewModel: AddMuTagViewModel;
-    addMuTagService: AddMuTagInteractor;
 }
 
-export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
+const BelongingDashboardView: FunctionComponent<AddMuTagViewProps> = (
+    props
+): ReactElement => {
+    //const [belongings, setBelongings] = useState<BelongingViewData[]>([]);
+    //const [showActivityIndicator, setShowActivityIndicator] = useState(true);
+    //const [showEmptyDashboard, setShowEmptyDashboard] = useState(true);
+    //const [showError, setShowError] = useState<UserErrorViewData | undefined>();
+    //const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+    const getWindow = (): ScaledSize => Dimensions.get("window");
+    const [window, setWindow] = useState<ScaledSize>(getWindow());
+
+    useEffect(() => {
+        /*this.props.viewModel.onDidUpdate((change): void =>
+            this.setState(change)
+        );
+        this.props.viewModel.onNavigateToNameMuTag((): boolean =>
+            this.props.navigation.navigate("NameMuTag")
+        );
+        this.props.viewModel.onNavigateToHomeScreen(
+            this.props.navigation.goBack
+        );
+        this.props.addMuTagService.startAddingNewMuTag();*/
+        //this.props.viewModel.onDidUpdate(undefined);
+        //this.props.viewModel.onNavigateToNameMuTag(undefined);
+        //this.props.viewModel.onNavigateToHomeScreen(undefined);
+    });
+
+    useEffect(() => {
+        setWindow(getWindow());
+    }, [window]);
+
+    return (
+        <ImageBackgrounds.AddMuTag
+            imageStyle={[styles.mainImage, { top: -window.height / Scale(6) }]}
+            style={styles.mainImageView}
+        >
+            <SafeAreaView style={[styles.safeAreaView]}>
+                <View style={styles.topContainer}>
+                    <Appbar.Header style={styles.appBar}>
+                        <Appbar.BackAction
+                            onPress={(): void =>
+                                props.viewModel.stopAddingNewMuTag()
+                            }
+                        />
+                    </Appbar.Header>
+                </View>
+                <View style={styles.bottomContainer}>
+                    <View style={styles.instructions}>
+                        <View style={styles.instructionsRow}>
+                            <Icon
+                                name="numeric-1-circle"
+                                color="black"
+                                style={[
+                                    styles.instructionsIconCol,
+                                    styles.instructionsIcon
+                                ]}
+                            />
+                            <Text
+                                style={[
+                                    styles.instructionsTextCol,
+                                    styles.instructionsText
+                                ]}
+                            >
+                                Keep the Mu tag close to the app during this
+                                setup.
+                            </Text>
+                        </View>
+                        <View>
+                            <View style={styles.instructionsRow}>
+                                <Icon
+                                    name="numeric-2-circle"
+                                    style={[
+                                        styles.instructionsIconCol,
+                                        styles.instructionsIcon
+                                    ]}
+                                />
+                                <Text
+                                    numberOfLines={2}
+                                    style={[
+                                        styles.instructionsTextCol,
+                                        styles.instructionsText
+                                    ]}
+                                >
+                                    Press the Mu tag button now to wake it up.
+                                </Text>
+                            </View>
+                            <View
+                                style={[
+                                    styles.instructionsRow,
+                                    styles.instructionsInfoRow
+                                ]}
+                            >
+                                <Icon
+                                    name="information-outline"
+                                    style={[
+                                        styles.instructionsIconCol,
+                                        styles.instructionsInfoIcon
+                                    ]}
+                                />
+                                <Text
+                                    style={[
+                                        styles.instructionsTextCol,
+                                        styles.instructionsInfoText
+                                    ]}
+                                >
+                                    Once the dot on the Mu tag logo starts
+                                    flashing green, press 'Continue' below.
+                                </Text>
+                            </View>
+                        </View>
+                    </View>
+                </View>
+                <Button
+                    mode="contained"
+                    onPress={(): void =>
+                        this.props.addMuTagService.instructionsComplete()
+                    }
+                    style={styles.button}
+                >
+                    Continue
+                </Button>
+                <ErrorDialog
+                    message={this.state.userErrorDescription}
+                    detailMessage={this.state.detailedErrorDescription}
+                    visible={this.state.showError}
+                    onDismiss={(): void =>
+                        this.props.addMuTagService.stopAddingNewMuTag()
+                    }
+                />
+            </SafeAreaView>
+        </ImageBackgrounds.AddMuTag>
+    );
+};
+
+export default BelongingDashboardView;
+
+/*export default class AddMuTagView extends Component<AddMuTagVcProps> {
     state: Readonly<AddMuTagState> = this.props.viewModel;
 
     componentDidMount(): void {
@@ -233,4 +374,4 @@ export default class AddMuTagViewController extends Component<AddMuTagVCProps> {
             </ImageBackgrounds.AddMuTag>
         );
     }
-}
+}*/

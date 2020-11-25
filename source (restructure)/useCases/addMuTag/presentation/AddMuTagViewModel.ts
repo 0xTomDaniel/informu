@@ -1,70 +1,28 @@
-export interface AddMuTagState {
-    userErrorDescription: string;
-    detailedErrorDescription: string;
-    showError: boolean;
+import { Observable } from "rxjs";
+import { AddMuTagInteractor } from "../AddMuTagInteractor";
+
+// TODO: This should be part of a view model base class file.
+interface ViewModelUserMessage {
+    message: string;
+    details?: string;
 }
 
 export class AddMuTagViewModel {
-    private _userErrorDescription = "";
-    private _detailedErrorDescription = "";
-    private _showError = false;
+    showActivity: Observable<boolean>;
+    showError: Observable<ViewModelUserMessage | undefined>;
+    showMessage: Observable<ViewModelUserMessage | undefined>;
 
-    get userErrorDescription(): string {
-        return this._userErrorDescription;
+    constructor(addMuTagInteractor: AddMuTagInteractor) {
+        this.addMuTagInteractor = addMuTagInteractor;
     }
 
-    set userErrorDescription(newValue: string) {
-        this._userErrorDescription = newValue;
-        this.triggerDidUpdate({ userErrorDescription: newValue });
-    }
+    cancel(): void {}
 
-    get detailedErrorDescription(): string {
-        return this._detailedErrorDescription;
-    }
+    goToFindMuTag(): void {}
 
-    set detailedErrorDescription(newValue: string) {
-        this._detailedErrorDescription = newValue;
-        this.triggerDidUpdate({ detailedErrorDescription: newValue });
-    }
+    setMuTagName(name: string): void {}
 
-    get showError(): boolean {
-        return this._showError;
-    }
+    startAddingMuTag(): void {}
 
-    set showError(newValue: boolean) {
-        this._showError = newValue;
-        this.triggerDidUpdate({ showError: newValue });
-    }
-
-    private onDidUpdateCallback?: (change: object) => void;
-    private onNavigateToNameMuTagCallback?: () => void;
-    private onNavigateToHomeScreenCallback?: () => void;
-
-    onDidUpdate(callback?: (change: object) => void): void {
-        this.onDidUpdateCallback = callback;
-    }
-
-    onNavigateToNameMuTag(callback?: () => void): void {
-        this.onNavigateToNameMuTagCallback = callback;
-    }
-
-    navigateToNameMuTag(): void {
-        this.onNavigateToNameMuTagCallback &&
-            this.onNavigateToNameMuTagCallback();
-    }
-
-    onNavigateToHomeScreen(callback?: () => void): void {
-        this.onNavigateToHomeScreenCallback = callback;
-    }
-
-    navigateToHomeScreen(): void {
-        this.onNavigateToHomeScreenCallback &&
-            this.onNavigateToHomeScreenCallback();
-    }
-
-    private triggerDidUpdate(change: object): void {
-        if (this.onDidUpdateCallback != null) {
-            this.onDidUpdateCallback(change);
-        }
-    }
+    private addMuTagInteractor: AddMuTagInteractor;
 }
