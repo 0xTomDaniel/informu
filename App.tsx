@@ -691,7 +691,7 @@ const App: FunctionComponent = (): ReactElement => {
     return (
         <PaperProvider theme={paperTheme}>
             <AppContainer
-                ref={(navigationContainerComponent): void => {
+                ref={navigationContainerComponent => {
                     navigator = navigationContainerComponent;
                 }}
             />
