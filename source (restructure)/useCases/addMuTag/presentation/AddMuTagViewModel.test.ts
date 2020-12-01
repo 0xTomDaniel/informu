@@ -1,14 +1,12 @@
 import { AddMuTagViewModel } from "./AddMuTagViewModel";
 import { AddMuTagInteractor } from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
+import { take } from "rxjs/operators";
 
-/*const addMuTagRoutes = ["FindMuTag"] as const;
-const foobar = ["Foo", "Bar"] as const;
-const routes = [...addMuTagRoutes, ...foobar];
-type Routes = typeof routes[number];*/
-
-const routes = ["FindMuTag"] as const;
+const otherRoutes = ["Home", "Settings"] as const;
+const routes = [...AddMuTagViewModel.routes, ...otherRoutes];
 type Routes = typeof routes[number];
+
 const navigationPortMocks = {
     navigateTo: jest.fn<void, [Routes]>(),
     popToTop: jest.fn<void, []>()
@@ -52,6 +50,14 @@ test("Navigate to Find Mu Tag screen.", async () => {
     );
 });
 
-test("Start adding Mu tag.", async () => {
+test("Successfully start adding Mu tag.", async () => {
     expect.assertions(2);
+    const showActivityPromise01 = viewModel.showActivity
+        .pipe(take(1))
+        .toPromise();
+    const showActivityPromise02 = viewModel.showActivity
+        .pipe(take(1))
+        .toPromise();
+    viewModel.startAddingMuTag();
+    expect(addMuTagInteractorMocks.findNewMuTag).toHaveBeenCalledTimes(1);
 });

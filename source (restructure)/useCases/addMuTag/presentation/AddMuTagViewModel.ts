@@ -8,21 +8,27 @@ interface ViewModelUserMessage {
     details?: string;
 }
 
-export const addMuTagViewModelRoutes = ["FindMuTag"] as const;
+abstract class ViewModel<T extends string> {
+    constructor(navigation: NavigationPort<T>) {
+        this.navigation = navigation;
+    }
 
-type Routes = typeof addMuTagViewModelRoutes[number];
+    protected navigation: NavigationPort<T>;
+}
 
-export class AddMuTagViewModel<T extends string = never> {
+type Routes = typeof AddMuTagViewModel.routes[number];
+
+export class AddMuTagViewModel extends ViewModel<Routes> {
     showActivity: Observable<boolean>;
     showError: Observable<ViewModelUserMessage | undefined>;
     showMessage: Observable<ViewModelUserMessage | undefined>;
 
     constructor(
-        navigation: NavigationPort<Routes | T>,
+        navigation: NavigationPort<Routes>,
         addMuTagInteractor: AddMuTagInteractor
     ) {
+        super(navigation);
         this.addMuTagInteractor = addMuTagInteractor;
-        this.navigation = navigation;
     }
 
     cancel(): void {}
@@ -36,5 +42,6 @@ export class AddMuTagViewModel<T extends string = never> {
     startAddingMuTag(): void {}
 
     private addMuTagInteractor: AddMuTagInteractor;
-    private navigation: NavigationPort<Routes | T>;
+
+    static readonly routes = ["FindMuTag"] as const;
 }
