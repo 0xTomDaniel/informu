@@ -24,7 +24,7 @@ const LowMuTagBattery = (lowBatteryThreshold: number): UserErrorType => ({
     userFriendlyMessage: `Unable to add Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.`
 });
 
-const NewMuTagNotFound: UserErrorType = {
+export const NewMuTagNotFound: UserErrorType = {
     name: "NewMuTagNotFound",
     userFriendlyMessage:
         "Could not find a new Mu tag. Be sure the Mu tag light is flashing and keep it close to the app."
@@ -36,7 +36,7 @@ const FailedToAddMuTag: UserErrorType = {
         "There was problem adding the Mu tag. Please keep Mu tag close to the app and try again."
 };
 
-const FailedToSaveSettings: UserWarningType = {
+export const FailedToSaveSettings: UserWarningType = {
     name: "FailedToSaveSettings",
     userFriendlyMessage:
         "Your Mu tag added successfully but some settings failed to save."
