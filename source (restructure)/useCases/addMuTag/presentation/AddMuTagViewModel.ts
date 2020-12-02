@@ -2,48 +2,15 @@ import { BehaviorSubject } from "rxjs";
 import { AddMuTagInteractor } from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import UserError from "../../../shared/metaLanguage/UserError";
-
-// TODO: This should be part of a view model base class file.
-interface ViewModelUserMessage {
-    message: string;
-    details?: string;
-}
-
-export abstract class ViewModel<T extends string> {
-    readonly showActivity = new BehaviorSubject<boolean>(false);
-    readonly showFailure = new BehaviorSubject<
-        ViewModelUserMessage | undefined
-    >(undefined);
-    readonly showSuccess = new BehaviorSubject<
-        ViewModelUserMessage | undefined
-    >(undefined);
-
-    constructor(navigation: NavigationPort<T>) {
-        this.navigation = navigation;
-    }
-
-    protected navigation: NavigationPort<T>;
-
-    static createUserMessage(
-        message: string,
-        details?: unknown
-    ): ViewModelUserMessage {
-        const userMessage: ViewModelUserMessage = {
-            message: message
-        };
-        if (details != null) {
-            userMessage.details = JSON.stringify(
-                details,
-                Object.getOwnPropertyNames(details)
-            );
-        }
-        return userMessage;
-    }
-}
+import UserWarning from "../../../shared/metaLanguage/UserWarning";
+import { ViewModel } from "../../../shared/viewModel/ViewModel";
 
 type Routes = typeof AddMuTagViewModel.routes[number];
 
 export class AddMuTagViewModel extends ViewModel<Routes> {
+    readonly showCancel = new BehaviorSubject<boolean>(true);
+    readonly showCancelActivity = new BehaviorSubject<boolean>(false);
+
     constructor(
         navigation: NavigationPort<Routes>,
         addMuTagInteractor: AddMuTagInteractor
@@ -52,17 +19,34 @@ export class AddMuTagViewModel extends ViewModel<Routes> {
         this.addMuTagInteractor = addMuTagInteractor;
     }
 
-    cancel(): void {}
+    cancel(): void {
+        this.showCancelActivity.next(true);
+        if (this.isFindingNewMuTag) {
+            this.addMuTagInteractor.stopFindingNewMuTag();
+        }
+        this.navigation.popToTop();
+        this.showCancelActivity.next(false);
+    }
 
     goToFindMuTag(): void {
         this.navigation.navigateTo("FindMuTag");
     }
 
-    setMuTagName(name: string): void {
+    setMuTagName(name: string, retry = false): void {
+        if (retry) {
+            this.showFailure.next(undefined);
+        }
         this.showActivity.next(true);
         this.addMuTagInteractor
             .setMuTagName(name)
             .then(() => this.navigation.popToTop())
+            .catch(e => {
+                if (e instanceof UserWarning) {
+                    this.showFailure.next(
+                        This.createUserMessage(e.message, e.originatingError)
+                    );
+                }
+            })
             .finally(() => this.showActivity.next(false));
     }
 
@@ -71,11 +55,17 @@ export class AddMuTagViewModel extends ViewModel<Routes> {
             this.showFailure.next(undefined);
         }
         this.showActivity.next(true);
+        this.isFindingNewMuTag = true;
         this.addMuTagInteractor
             .findNewMuTag()
-            .then(() => this.addMuTagInteractor.addFoundMuTag())
+            .then(() => {
+                this.isFindingNewMuTag = false;
+                this.showCancel.next(false);
+                this.addMuTagInteractor.addFoundMuTag();
+            })
             .then(() => this.navigation.navigateTo("NameMuTag"))
             .catch(e => {
+                this.isFindingNewMuTag = false;
                 if (e instanceof UserError) {
                     this.showFailure.next(
                         This.createUserMessage(e.message, e.originatingError)
@@ -86,6 +76,7 @@ export class AddMuTagViewModel extends ViewModel<Routes> {
     }
 
     private readonly addMuTagInteractor: AddMuTagInteractor;
+    private isFindingNewMuTag = false;
 
     static readonly routes = ["FindMuTag", "NameMuTag"] as const;
 }
