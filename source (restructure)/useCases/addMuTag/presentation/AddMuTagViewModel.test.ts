@@ -1,6 +1,5 @@
-import { AddMuTagViewModel } from "./AddMuTagViewModel";
-import {
-    AddMuTagInteractor,
+import AddMuTagViewModel from "./AddMuTagViewModel";
+import AddMuTagInteractor, {
     NewMuTagNotFound,
     FailedToSaveSettings
 } from "../AddMuTagInteractor";

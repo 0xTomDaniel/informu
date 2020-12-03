@@ -42,18 +42,17 @@ export const FailedToSaveSettings: UserWarningType = {
         "Your Mu tag added successfully but some settings failed to save."
 };
 
-export interface AddMuTagInteractor {
+export default interface AddMuTagInteractor {
     addFoundMuTag(): Promise<void>;
     findNewMuTag(): Promise<void>;
     setMuTagName(name: string): Promise<void>;
     stopFindingNewMuTag(): void;
 }
 
-export default class AddMuTagInteractorImpl implements AddMuTagInteractor {
+export class AddMuTagInteractorImpl implements AddMuTagInteractor {
     constructor(
         connectThreshold: Rssi,
         addMuTagBatteryThreshold: Percent,
-        addMuTagOutput: AddMuTagOutputPort,
         muTagDevices: MuTagDevicesPort,
         muTagRepoLocal: MuTagRepositoryLocalPort,
         muTagRepoRemote: MuTagRepositoryRemotePort,
@@ -62,7 +61,6 @@ export default class AddMuTagInteractorImpl implements AddMuTagInteractor {
     ) {
         this.connectThreshold = connectThreshold;
         this.addMuTagBatteryThreshold = addMuTagBatteryThreshold;
-        this.addMuTagOutput = addMuTagOutput;
         this.muTagDevices = muTagDevices;
         this.muTagRepoLocal = muTagRepoLocal;
         this.muTagRepoRemote = muTagRepoRemote;

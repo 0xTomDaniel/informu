@@ -1,10 +1,6 @@
-import AddMuTagInteractorImpl from "./AddMuTagInteractor";
+import { AddMuTagInteractorImpl } from "./AddMuTagInteractor";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
-import AddMuTagPresenter from "./presentation/AddMuTagPresenter";
-import { AddMuTagViewModel } from "./presentation/AddMuTagViewModel";
-import { NameMuTagViewModel } from "./presentation/NameMuTagViewModel";
-import { MuTagAddingViewModel } from "./presentation/MuTagAddingViewModel";
 import MuTagDevices from "../../shared/muTagDevices/MuTagDevices";
 import BluetoothPort, {
     Peripheral,
@@ -48,15 +44,6 @@ const EventTrackerMock = jest.fn<EventTracker, any>(
 );
 const eventTrackerMock = new EventTrackerMock();
 Logger.createInstance(eventTrackerMock);
-
-const addMuTagViewModel = new AddMuTagViewModel();
-const nameMuTagViewModel = new NameMuTagViewModel();
-const muTagAddingViewModel = new MuTagAddingViewModel();
-const addMuTagPresenter = new AddMuTagPresenter(
-    addMuTagViewModel,
-    nameMuTagViewModel,
-    muTagAddingViewModel
-);
 
 const connections = new Map<PeripheralId, Subscriber<void>>();
 const startScanSubscriber = new BehaviorSubject<
@@ -281,7 +268,6 @@ const addMuTagBatteryThreshold = new Percent(15);
 const addMuTagInteractor = new AddMuTagInteractorImpl(
     addMuTagConnectThreshold,
     addMuTagBatteryThreshold,
-    addMuTagPresenter,
     muTagDevices,
     muTagRepoLocalMock,
     muTagRepoRemoteMock,
@@ -312,15 +298,11 @@ describe("User adds Mu tag.", (): void => {
     describe("Scenario 1: Mu tag adds successfully.", (): void => {
         // Given that an account is logged in
 
-        // Given unprovisioned Mu tag is connected before user completes Mu tag naming
-
         // Given the Mu tag battery is above threshold
         //
         bluetoothReadReturnValue = new Percent(45);
 
         // Given Mu tag hardware provisions successfully
-
-        let newMuTag: ProvisionedMuTag;
 
         const onAccountAddNewMuTag = new Subject<[string, BeaconId]>();
         const removeMuTagOriginal = account.removeMuTag.bind(account);
@@ -338,13 +320,30 @@ describe("User adds Mu tag.", (): void => {
             }
         );
         const muTagColorSetting = MuTagColor.MuOrange;*/
-        const muTagAddNewMuTagSpy = jest.spyOn(account, "addNewMuTag");
+
+        let newMuTag: ProvisionedMuTag;
+        let muTagSetNameSpy: jest.SpyInstance<void, [string]>;
+        const onMuTagSetName = new Subject<string>();
+        muTagRepoLocalMocks.add.mockImplementationOnce(
+            (addedMuTag: ProvisionedMuTag) => {
+                newMuTag = addedMuTag;
+                const muTagSetNameOriginal = newMuTag.setName.bind(newMuTag);
+                muTagSetNameSpy = jest.spyOn(newMuTag, "setName");
+                muTagSetNameSpy.mockImplementation(name => {
+                    onMuTagSetName.next(name);
+                    muTagSetNameOriginal(name);
+                });
+                return Promise.resolve();
+            }
+        );
 
         const executionOrder: number[] = [];
 
-        let onShowActivity;
-        let onFindUnprovisioned;
-        let onConnectUnprovisioned;
+        let onFindUnprovisioned: Promise<[string[], Millisecond?, ScanMode?]>;
+        let onConnectUnprovisioned: Promise<[
+            PeripheralId,
+            (Millisecond | undefined)?
+        ]>;
         let onVerifyBatteryLevel;
         let onAddMuTagRemotePersistence;
         let onAddMuTagLocalPersistence;
@@ -354,40 +353,17 @@ describe("User adds Mu tag.", (): void => {
         let onProvisionMuTag;
         let onSetTxPower;
         let onSetAdvertisingInterval;
-        let onHideActivity;
-        let onRequestName;
-        let onShowActivity2;
-        let onUpdateMuTagEntity;
+        let onSetMuTagEntityName;
         let onUpdateMuTagLocalPersistence;
         let onUpdateMuTagRemotePersistence;
-        let onHideActivity2;
-        let onShowSuccess;
 
-        let startAddingNewMuTagPromise;
+        let findNewMuTagPromise;
+        let addFoundMuTagPromise;
 
         // When
         //
         beforeAll(
             async (): Promise<void> => {
-                addMuTagViewModel.onNavigateToNameMuTag(
-                    () => (didNavigateToNameMuTag = true)
-                );
-                nameMuTagViewModel.onNavigateToMuTagSettings(
-                    () => (didShowMuTagFinalSetupScreen = true)
-                );
-                nameMuTagViewModel.onDidUpdate(change => {
-                    if (
-                        "showActivityIndicator" in change &&
-                        change.showActivityIndicator
-                    ) {
-                        didShowActivityIndicatorTimes += 1;
-                    }
-                });
-                nameMuTagViewModel.onNavigateToHomeScreen(
-                    () => (didNavigateToHomeScreen = true)
-                );
-
-                onShowActivity;
                 onStartScanSubscriber
                     .pipe(take(1))
                     .toPromise()
@@ -395,23 +371,23 @@ describe("User adds Mu tag.", (): void => {
                 onFindUnprovisioned = bluetoothMocks.onStartScan
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(1));
+                    .finally(() => executionOrder.push(0));
                 onConnectUnprovisioned = bluetoothMocks.onConnect
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(2));
+                    .finally(() => executionOrder.push(1));
                 onVerifyBatteryLevel = bluetoothMocks.onRead
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(3));
+                    .finally(() => executionOrder.push(2));
                 onAddMuTagRemotePersistence = muTagRepoRemoteMocks.onAdd
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(4));
+                    .finally(() => executionOrder.push(3));
                 onAddMuTagLocalPersistence = muTagRepoLocalMocks.onAdd
                     .pipe(take(1))
                     .toPromise()
-                    .finally(() => executionOrder.push(5));
+                    .finally(() => executionOrder.push(4));
                 onAddMuTagToAccount = onAccountAddNewMuTag
                     .pipe(take(1))
                     .toPromise()
@@ -436,16 +412,21 @@ describe("User adds Mu tag.", (): void => {
                     .pipe(skip(2), take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(11));
-                onHideActivity;
-                onRequestName;
-                onShowActivity2;
-                onUpdateMuTagEntity;
-                onUpdateMuTagLocalPersistence;
-                onUpdateMuTagRemotePersistence;
-                onHideActivity2;
-                onShowSuccess;
+                onSetMuTagEntityName = onMuTagSetName
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(12));
+                onUpdateMuTagLocalPersistence = muTagRepoLocalMocks.onUpdate
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(13));
+                onUpdateMuTagRemotePersistence = muTagRepoRemoteMocks.onUpdate
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(14));
                 // user requests to add unprovisioned Mu tag
-                startAddingNewMuTagPromise = addMuTagInteractor.startAddingNewMuTag();
+                findNewMuTagPromise = addMuTagInteractor.findNewMuTag();
+                addFoundMuTagPromise = addMuTagInteractor.addFoundMuTag();
             }
         );
 
@@ -455,27 +436,29 @@ describe("User adds Mu tag.", (): void => {
 
         // Then
         //
-        it("Should show activity indicator.", async (): Promise<void> => {
-            await addMuTagInteractor.setMuTagName(newMuTagName);
-            expect(nameMuTagViewModel.showActivityIndicator).toBe(true);
+        it("Should find unprovisioned Mu tag.", async () => {
+            expect.assertions(2);
+            await expect(onFindUnprovisioned).resolves.toStrictEqual([
+                [],
+                120000,
+                ScanMode.LowLatency
+            ]);
+            expect(executionOrder[0]).toBe(0);
         });
 
         // Then
         //
-        it("Should find unprovisioned Mu tag.", (): void => {});
-
-        // Then
-        //
-        it("Should connect to unprovisioned Mu tag.", (): void => {
-            expect(bluetoothMock.connect).toHaveBeenCalledWith(
+        it("Should connect to unprovisioned Mu tag.", async () => {
+            expect.assertions(2);
+            await expect(onConnectUnprovisioned).resolves.toBe(
                 discoveredPeripheral.id
             );
-            expect(bluetoothMock.connect).toHaveBeenCalledTimes(1);
+            expect(executionOrder[0]).toBe(0);
         });
 
         // Then
         //
-        it("Should verify Mu tag battery level.", (): void => {
+        /*it("Should verify Mu tag battery level.", () => {
             expect(bluetoothMock.read).toHaveBeenNthCalledWith(
                 2,
                 discoveredPeripheral.id,
@@ -486,39 +469,45 @@ describe("User adds Mu tag.", (): void => {
 
         // Then
         //
-        it("Should add Mu tag to remote persistence.", (): void => {
+        /*it("Should add Mu tag to remote persistence.", async () => {
+            await addMuTagInteractor.addFoundMuTag();
             expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it("Should add Mu tag to local persistence.", (): void => {
+        /*it("Should add Mu tag to local persistence.", () => {
             expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it("Should add Mu tag to account.", (): void => {
-            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("Should update account to remote persistence.", (): void => {
-            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("Should update account to local persistence.", (): void => {
-            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("Should provision Mu tag hardware.", (): void => {
+        /*it("Should add Mu tag to account.", () => {
             expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
+            expect(account.muTags.size).toBe(2);
+            expect(account.newBeaconId).toEqual(recycledBeaconIds[1]);
+            expect(account.newMuTagNumber).toEqual(
+                validAccountData._nextMuTagNumber + 1
+            );
+        });
 
+        // Then
+        //
+        /*it("Should update account to remote persistence.", () => {
+            expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
+            expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        /*it("Should update account to local persistence.", () => {
+            expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
+            expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        /*it("Should provision Mu tag hardware.", () => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 3,
                 discoveredPeripheral.id,
@@ -537,22 +526,11 @@ describe("User adds Mu tag.", (): void => {
                 MuTagBleGatt.MuTagConfiguration.Provision,
                 MuTagBleGatt.MuTagConfiguration.Provision.provisionCode
             );
-
-            expect(account.muTags.size).toBe(2);
-            expect(account.newBeaconId).toEqual(recycledBeaconIds[1]);
-            expect(account.newMuTagNumber).toEqual(
-                validAccountData._nextMuTagNumber + 1
-            );
-
-            expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
-            expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
-            expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
-            expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it("Should set TX power to highest option 0x01 (+6dBm).", (): void => {
+        /*it("Should set TX power to highest option 0x01 (+6dBm).", () => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 7,
                 discoveredPeripheral.id,
@@ -563,7 +541,7 @@ describe("User adds Mu tag.", (): void => {
 
         // Then
         //
-        it("Should set advertising interval to 0x03 (852ms).", (): void => {
+        /*it("Should set advertising interval to 0x03 (852ms).", () => {
             expect(bluetoothMock.write).toHaveBeenNthCalledWith(
                 8,
                 discoveredPeripheral.id,
@@ -572,66 +550,29 @@ describe("User adds Mu tag.", (): void => {
             );
         });
 
-        // Then
-        //
-        it("Should hide activity indicator.", async (): Promise<void> => {
-            await addMuTagInteractor.setMuTagName(newMuTagName);
-            expect(nameMuTagViewModel.showActivityIndicator).toBe(true);
-        });
-
-        // Then
-        //
-        it("Should request Mu tag name.", (): void => {
-            addMuTagInteractor.instructionsComplete();
-            expect(didNavigateToNameMuTag).toBe(true);
-        });
-
         // When user enters Mu tag name
         //
         // Then
         //
-        it("Should show activity indicator a second time.", async () => {
-            await addMuTagInteractor.setMuTagName(newMuTagName);
-            expect(nameMuTagViewModel.showActivityIndicator).toBe(true);
-        });
+        /*it("Should update Mu tag name.", () => {});
 
         // Then
         //
-        it("Should update Mu tag with new settings.", (): void => {
-            expect(muTagUpdateColorSpy).toHaveBeenCalledWith(muTagColorSetting);
-            expect(muTagUpdateColorSpy).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("Should update Mu tag to local persistence.", (): void => {
+        /*it("Should update Mu tag to local persistence.", () => {
             expect(muTagRepoLocalMock.update).toHaveBeenCalledWith(newMuTag);
             expect(muTagRepoLocalMock.update).toHaveBeenCalledTimes(1);
         });
 
         // Then
         //
-        it("Should update Mu tag to remote persistence.", (): void => {
+        /*it("Should update Mu tag to remote persistence.", () => {
             expect(muTagRepoRemoteMock.update).toHaveBeenLastCalledWith(
                 newMuTag,
                 validAccountData._uid,
                 validAccountData._accountNumber
             );
             expect(muTagRepoRemoteMock.update).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("Should hide activity indicator a second time.", async () => {
-            await addMuTagInteractor.setMuTagName(newMuTagName);
-            expect(nameMuTagViewModel.showActivityIndicator).toBe(true);
-        });
-
-        // Then
-        //
-        it("Should show success.", (): void => {
-            expect(didNavigateToHomeScreen).toBe(true);
-        });
+        });*/
     });
 
     /*describe("Scenario 2: Mu tag adds successfully after connection delay.", (): void => {

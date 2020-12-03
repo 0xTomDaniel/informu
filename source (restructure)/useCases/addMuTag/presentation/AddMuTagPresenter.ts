@@ -1,4 +1,4 @@
-import AddMuTagOutputPort from "../AddMuTagOutputPort";
+/*import AddMuTagOutputPort from "../AddMuTagOutputPort";
 import { AddMuTagViewModel } from "./AddMuTagViewModel";
 import { NameMuTagViewModel } from "./NameMuTagViewModel";
 import { MuTagAddingViewModel } from "./MuTagAddingViewModel";
@@ -35,7 +35,7 @@ export default class AddMuTagPresenter implements AddMuTagOutputPort {
         this.currentViewModel = this.addMuTagViewModel;
     }*/
 
-    showMuTagNamingScreen(): void {
+/*showMuTagNamingScreen(): void {
         this.addMuTagViewModel.navigateToNameMuTag();
         this.currentViewModel = this.nameMuTagViewModel;
     }
@@ -110,4 +110,4 @@ export default class AddMuTagPresenter implements AddMuTagOutputPort {
         this.nameMuTagViewModel.showActivityIndicator = false;
         this.nameMuTagViewModel.attachedToInput = "";
     }
-}
+}*/

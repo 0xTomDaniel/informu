@@ -7,7 +7,7 @@ import { ViewModel } from "../../../shared/viewModel/ViewModel";
 
 type Routes = typeof AddMuTagViewModel.routes[number];
 
-export class AddMuTagViewModel extends ViewModel<Routes> {
+export default class AddMuTagViewModel extends ViewModel<Routes> {
     readonly showCancel = new BehaviorSubject<boolean>(true);
     readonly showCancelActivity = new BehaviorSubject<boolean>(false);
 
