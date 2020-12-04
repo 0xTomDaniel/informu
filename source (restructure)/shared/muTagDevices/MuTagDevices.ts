@@ -103,14 +103,17 @@ export default class MuTagDevices implements MuTagDevicesPort {
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal,
         connection: Connection,
-        minimumBatteryLevel: Percent
+        minimumBatteryLevel?: Percent
     ): Promise<void> {
         const peripheralId = this.getPeripheralId(connection);
         const batteryLevel = await this.readCharacteristic(
             peripheralId,
             MuTagBleGatt.DeviceInformation.BatteryLevel
         );
-        if (batteryLevel.valueOf() < minimumBatteryLevel.valueOf()) {
+        if (
+            minimumBatteryLevel != null &&
+            batteryLevel.valueOf() < minimumBatteryLevel.valueOf()
+        ) {
             throw Error(
                 `Unprovisioned Mu tag battery level of %${batteryLevel} is below the %${minimumBatteryLevel} threshold.`
             );

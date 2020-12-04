@@ -26,7 +26,7 @@ import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
 import { Buffer } from "buffer";
-import { take, skip, filter } from "rxjs/operators";
+import { take, skip, filter, takeLast, toArray, tap } from "rxjs/operators";
 import BluetoothAndroidDecorator from "../../shared/bluetooth/BluetoothAndroidDecorator";
 import {
     WritableCharacteristic,
@@ -65,6 +65,7 @@ const bluetoothMocks = {
         (peripheralId: PeripheralId, timeout?: Millisecond) =>
             new Observable<void>(subscriber => {
                 connections.set(peripheralId, subscriber);
+                subscriber.next();
                 bluetoothMocks.onConnect.next([peripheralId, timeout]);
             })
     ),
@@ -119,6 +120,7 @@ const bluetoothMocks = {
             characteristic: WritableCharacteristic<any>,
             value: any
         ) => {
+            debugger;
             bluetoothMocks.onWrite.next([peripheralId, characteristic, value]);
             return Promise.resolve();
         }
@@ -305,60 +307,78 @@ describe("User adds Mu tag.", (): void => {
         // Given Mu tag hardware provisions successfully
 
         const onAccountAddNewMuTag = new Subject<[string, BeaconId]>();
-        const removeMuTagOriginal = account.removeMuTag.bind(account);
+        const addNewMuTagOriginal = account.addNewMuTag.bind(account);
         const accountAddNewMuTagSpy = jest.spyOn(account, "addNewMuTag");
         accountAddNewMuTagSpy.mockImplementation((uid, beaconId) => {
+            addNewMuTagOriginal(uid, beaconId);
             onAccountAddNewMuTag.next([uid, beaconId]);
-            removeMuTagOriginal(uid, beaconId);
         });
-
-        /*let muTagUpdateColorSpy: jest.SpyInstance<void, [MuTagColor]>;
-        (muTagRepoLocalMock.add as jest.Mock).mockImplementationOnce(
-            (addedMuTag: ProvisionedMuTag) => {
-                newMuTag = addedMuTag;
-                muTagUpdateColorSpy = jest.spyOn(newMuTag, "changeColor");
-            }
-        );
-        const muTagColorSetting = MuTagColor.MuOrange;*/
 
         let newMuTag: ProvisionedMuTag;
         let muTagSetNameSpy: jest.SpyInstance<void, [string]>;
         const onMuTagSetName = new Subject<string>();
+        const originalAddMock = muTagRepoLocalMocks.add;
         muTagRepoLocalMocks.add.mockImplementationOnce(
-            (addedMuTag: ProvisionedMuTag) => {
+            async (addedMuTag: ProvisionedMuTag) => {
                 newMuTag = addedMuTag;
                 const muTagSetNameOriginal = newMuTag.setName.bind(newMuTag);
                 muTagSetNameSpy = jest.spyOn(newMuTag, "setName");
                 muTagSetNameSpy.mockImplementation(name => {
-                    onMuTagSetName.next(name);
                     muTagSetNameOriginal(name);
+                    onMuTagSetName.next(name);
                 });
-                return Promise.resolve();
+                await originalAddMock(newMuTag);
             }
         );
 
         const executionOrder: number[] = [];
 
         let onFindUnprovisioned: Promise<[string[], Millisecond?, ScanMode?]>;
+        let onStopFindUnprovisioned: Promise<void>;
         let onConnectUnprovisioned: Promise<[
             PeripheralId,
             (Millisecond | undefined)?
         ]>;
-        let onVerifyBatteryLevel;
-        let onAddMuTagRemotePersistence;
-        let onAddMuTagLocalPersistence;
-        let onAddMuTagToAccount;
-        let onUpdateAccountRemotePersistence;
-        let onUpdateAccountLocalPersistence;
-        let onProvisionMuTag;
-        let onSetTxPower;
-        let onSetAdvertisingInterval;
-        let onSetMuTagEntityName;
-        let onUpdateMuTagLocalPersistence;
-        let onUpdateMuTagRemotePersistence;
+        let onVerifyBatteryLevel: Promise<[
+            PeripheralId,
+            ReadableCharacteristic<any>
+        ]>;
+        let onAddMuTagRemotePersistence: Promise<[
+            ProvisionedMuTag,
+            string,
+            AccountNumber
+        ]>;
+        let onAddMuTagLocalPersistence: Promise<ProvisionedMuTag>;
+        let onAddMuTagToAccount: Promise<[string, BeaconId]>;
+        let onUpdateAccountRemotePersistence: Promise<Account>;
+        let onUpdateAccountLocalPersistence: Promise<Account>;
+        let onProvisionMuTag: Promise<[
+            PeripheralId,
+            WritableCharacteristic<any>,
+            any
+        ][]>;
+        let onSetTxPower: Promise<[
+            PeripheralId,
+            WritableCharacteristic<any>,
+            any
+        ]>;
+        let onSetAdvertisingInterval: Promise<[
+            PeripheralId,
+            WritableCharacteristic<any>,
+            any
+        ]>;
+        let onDisconnect: Promise<PeripheralId>;
+        let onSetMuTagEntityName: Promise<string>;
+        let onUpdateMuTagLocalPersistence: Promise<ProvisionedMuTag>;
+        let onUpdateMuTagRemotePersistence: Promise<[
+            ProvisionedMuTag,
+            string,
+            AccountNumber
+        ]>;
 
-        let findNewMuTagPromise;
-        let addFoundMuTagPromise;
+        let findNewMuTagPromise: Promise<void>;
+        let addFoundMuTagPromise: Promise<void>;
+        let setMuTagName: Promise<void>;
 
         // When
         //
@@ -372,22 +392,26 @@ describe("User adds Mu tag.", (): void => {
                     .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(0));
-                onConnectUnprovisioned = bluetoothMocks.onConnect
+                onStopFindUnprovisioned = bluetoothMocks.onStopScan
                     .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(1));
-                onVerifyBatteryLevel = bluetoothMocks.onRead
+                onConnectUnprovisioned = bluetoothMocks.onConnect
                     .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(2));
-                onAddMuTagRemotePersistence = muTagRepoRemoteMocks.onAdd
+                onVerifyBatteryLevel = bluetoothMocks.onRead
                     .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(3));
-                onAddMuTagLocalPersistence = muTagRepoLocalMocks.onAdd
+                onAddMuTagRemotePersistence = muTagRepoRemoteMocks.onAdd
                     .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(4));
+                onAddMuTagLocalPersistence = muTagRepoLocalMocks.onAdd
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(5));
                 onAddMuTagToAccount = onAccountAddNewMuTag
                     .pipe(take(1))
                     .toPromise()
@@ -401,32 +425,35 @@ describe("User adds Mu tag.", (): void => {
                     .toPromise()
                     .finally(() => executionOrder.push(8));
                 onProvisionMuTag = bluetoothMocks.onWrite
-                    .pipe(take(1))
+                    .pipe(skip(1), take(3), takeLast(3), toArray())
                     .toPromise()
                     .finally(() => executionOrder.push(9));
                 onSetTxPower = bluetoothMocks.onWrite
-                    .pipe(skip(1), take(1))
+                    .pipe(skip(4), take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(10));
                 onSetAdvertisingInterval = bluetoothMocks.onWrite
-                    .pipe(skip(2), take(1))
+                    .pipe(skip(5), take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(11));
-                onSetMuTagEntityName = onMuTagSetName
+                onDisconnect = bluetoothMocks.onDisconnect
                     .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(12));
-                onUpdateMuTagLocalPersistence = muTagRepoLocalMocks.onUpdate
+                onSetMuTagEntityName = onMuTagSetName
                     .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(13));
-                onUpdateMuTagRemotePersistence = muTagRepoRemoteMocks.onUpdate
+                onUpdateMuTagLocalPersistence = muTagRepoLocalMocks.onUpdate
                     .pipe(take(1))
                     .toPromise()
                     .finally(() => executionOrder.push(14));
+                onUpdateMuTagRemotePersistence = muTagRepoRemoteMocks.onUpdate
+                    .pipe(take(1))
+                    .toPromise()
+                    .finally(() => executionOrder.push(15));
                 // user requests to add unprovisioned Mu tag
                 findNewMuTagPromise = addMuTagInteractor.findNewMuTag();
-                addFoundMuTagPromise = addMuTagInteractor.addFoundMuTag();
             }
         );
 
@@ -437,53 +464,72 @@ describe("User adds Mu tag.", (): void => {
         // Then
         //
         it("Should find unprovisioned Mu tag.", async () => {
-            expect.assertions(2);
+            expect.assertions(5);
             await expect(onFindUnprovisioned).resolves.toStrictEqual([
                 [],
-                120000,
+                30000,
                 ScanMode.LowLatency
             ]);
             expect(executionOrder[0]).toBe(0);
+            await expect(onStopFindUnprovisioned).resolves.toBeUndefined();
+            expect(executionOrder[1]).toBe(1);
+            await expect(findNewMuTagPromise).resolves.toBeUndefined();
         });
 
         // Then
         //
         it("Should connect to unprovisioned Mu tag.", async () => {
             expect.assertions(2);
-            await expect(onConnectUnprovisioned).resolves.toBe(
-                discoveredPeripheral.id
-            );
-            expect(executionOrder[0]).toBe(0);
+            addFoundMuTagPromise = addMuTagInteractor.addFoundMuTag();
+            await expect(onConnectUnprovisioned).resolves.toStrictEqual([
+                discoveredPeripheral.id,
+                undefined
+            ]);
+            expect(executionOrder[2]).toBe(2);
         });
 
         // Then
         //
-        /*it("Should verify Mu tag battery level.", () => {
-            expect(bluetoothMock.read).toHaveBeenNthCalledWith(
-                2,
+        it("Should verify Mu tag battery level.", async () => {
+            expect.assertions(2);
+            await expect(onVerifyBatteryLevel).resolves.toStrictEqual([
                 discoveredPeripheral.id,
                 MuTagBleGatt.DeviceInformation.BatteryLevel
+            ]);
+            expect(executionOrder[3]).toBe(3);
+        });
+
+        // Then
+        //
+        it("Should add Mu tag to remote persistence.", async () => {
+            expect.assertions(2);
+            await expect(onAddMuTagRemotePersistence).resolves.toStrictEqual([
+                newMuTag,
+                account.uid,
+                account.accountNumber
+            ]);
+            expect(executionOrder[4]).toBe(4);
+        });
+
+        // Then
+        //
+        it("Should add Mu tag to local persistence.", async () => {
+            expect.assertions(2);
+            await expect(onAddMuTagLocalPersistence).resolves.toStrictEqual(
+                newMuTag
             );
-            expect(bluetoothMock.read).toHaveBeenCalledTimes(2);
+            expect(executionOrder[5]).toBe(5);
         });
 
         // Then
         //
-        /*it("Should add Mu tag to remote persistence.", async () => {
-            await addMuTagInteractor.addFoundMuTag();
-            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        /*it("Should add Mu tag to local persistence.", () => {
-            expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        /*it("Should add Mu tag to account.", () => {
-            expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
+        it("Should add Mu tag to account.", async () => {
+            expect.assertions(5);
+            await expect(onAddMuTagToAccount).resolves.toStrictEqual([
+                newMuTag.uid,
+                newMuTag.beaconId
+            ]);
+            expect(executionOrder[6]).toBe(6);
             expect(account.muTags.size).toBe(2);
             expect(account.newBeaconId).toEqual(recycledBeaconIds[1]);
             expect(account.newMuTagNumber).toEqual(
@@ -493,86 +539,120 @@ describe("User adds Mu tag.", (): void => {
 
         // Then
         //
-        /*it("Should update account to remote persistence.", () => {
-            expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
-            expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
+        it("Should update account to remote persistence.", async () => {
+            expect.assertions(2);
+            await expect(
+                onUpdateAccountRemotePersistence
+            ).resolves.toStrictEqual(account);
+            expect(executionOrder[7]).toBe(7);
         });
 
         // Then
         //
-        /*it("Should update account to local persistence.", () => {
-            expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
-            expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
+        it("Should update account to local persistence.", async () => {
+            expect.assertions(2);
+            await expect(
+                onUpdateAccountLocalPersistence
+            ).resolves.toStrictEqual(account);
+            expect(executionOrder[8]).toBe(8);
         });
 
         // Then
         //
-        /*it("Should provision Mu tag hardware.", () => {
-            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
-                3,
-                discoveredPeripheral.id,
-                MuTagBleGatt.MuTagConfiguration.Major,
-                Hexadecimal.fromString("0000")
-            );
-            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
-                4,
-                discoveredPeripheral.id,
-                MuTagBleGatt.MuTagConfiguration.Minor,
-                Hexadecimal.fromString("0002")
-            );
-            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
-                5,
-                discoveredPeripheral.id,
-                MuTagBleGatt.MuTagConfiguration.Provision,
-                MuTagBleGatt.MuTagConfiguration.Provision.provisionCode
-            );
+        it("Should provision Mu tag hardware.", async () => {
+            expect.assertions(2);
+            await expect(onProvisionMuTag).resolves.toStrictEqual([
+                [
+                    discoveredPeripheral.id,
+                    MuTagBleGatt.MuTagConfiguration.Major,
+                    Hexadecimal.fromString("0000")
+                ],
+                [
+                    discoveredPeripheral.id,
+                    MuTagBleGatt.MuTagConfiguration.Minor,
+                    Hexadecimal.fromString("0002")
+                ],
+                [
+                    discoveredPeripheral.id,
+                    MuTagBleGatt.MuTagConfiguration.Provision,
+                    MuTagBleGatt.MuTagConfiguration.Provision.provisionCode
+                ]
+            ]);
+            expect(executionOrder[9]).toBe(9);
         });
 
         // Then
         //
-        /*it("Should set TX power to highest option 0x01 (+6dBm).", () => {
-            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
-                7,
+        it("Should set TX power to highest option 0x01 (+6dBm).", async () => {
+            expect.assertions(2);
+            await expect(onSetTxPower).resolves.toStrictEqual([
                 discoveredPeripheral.id,
                 MuTagBleGatt.MuTagConfiguration.TxPower,
                 Hexadecimal.fromString("01")
-            );
+            ]);
+
+            // TODO: ensure Mu tag entity updated.
+
+            expect(executionOrder[10]).toBe(10);
         });
 
         // Then
         //
-        /*it("Should set advertising interval to 0x03 (852ms).", () => {
-            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
-                8,
+        it("Should set advertising interval to 0x03 (852ms).", async () => {
+            expect.assertions(2);
+            await expect(onSetAdvertisingInterval).resolves.toStrictEqual([
                 discoveredPeripheral.id,
                 MuTagBleGatt.MuTagConfiguration.AdvertisingInterval,
                 Hexadecimal.fromString("03")
-            );
+            ]);
+
+            // TODO: ensure Mu tag entity updated.
+
+            expect(executionOrder[11]).toBe(11);
+        });
+
+        // Then
+        //
+        it("Should disconnect from Mu tag.", async () => {
+            expect.assertions(3);
+            await expect(onDisconnect).resolves.toBe(discoveredPeripheral.id);
+            expect(executionOrder[12]).toBe(12);
+            await expect(addFoundMuTagPromise).resolves.toBeUndefined();
         });
 
         // When user enters Mu tag name
         //
         // Then
         //
-        /*it("Should update Mu tag name.", () => {});
-
-        // Then
-        //
-        /*it("Should update Mu tag to local persistence.", () => {
-            expect(muTagRepoLocalMock.update).toHaveBeenCalledWith(newMuTag);
-            expect(muTagRepoLocalMock.update).toHaveBeenCalledTimes(1);
+        it("Should update Mu tag name.", async () => {
+            setMuTagName = addMuTagInteractor.setMuTagName(newMuTagName);
+            expect.assertions(2);
+            await expect(onSetMuTagEntityName).resolves.toBe(newMuTagName);
+            expect(executionOrder[13]).toBe(13);
         });
 
         // Then
         //
-        /*it("Should update Mu tag to remote persistence.", () => {
-            expect(muTagRepoRemoteMock.update).toHaveBeenLastCalledWith(
+        it("Should update Mu tag to local persistence.", async () => {
+            expect.assertions(2);
+            await expect(onUpdateMuTagLocalPersistence).resolves.toBe(newMuTag);
+            expect(executionOrder[14]).toBe(14);
+        });
+
+        // Then
+        //
+        it("Should update Mu tag to remote persistence.", async () => {
+            expect.assertions(3);
+            await expect(
+                onUpdateMuTagRemotePersistence
+            ).resolves.toStrictEqual([
                 newMuTag,
                 validAccountData._uid,
                 validAccountData._accountNumber
-            );
-            expect(muTagRepoRemoteMock.update).toHaveBeenCalledTimes(1);
-        });*/
+            ]);
+            expect(executionOrder[15]).toBe(15);
+            await expect(setMuTagName).resolves.toBeUndefined();
+        });
     });
 
     /*describe("Scenario 2: Mu tag adds successfully after connection delay.", (): void => {

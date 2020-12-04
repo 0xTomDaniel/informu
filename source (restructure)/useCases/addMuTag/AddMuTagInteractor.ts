@@ -1,12 +1,14 @@
-import AddMuTagOutputPort from "./AddMuTagOutputPort";
 import MuTagDevicesPort, {
     TxPowerSetting,
     UnprovisionedMuTag,
-    AdvertisingIntervalSetting
+    AdvertisingIntervalSetting,
+    Connection
 } from "../../shared/muTagDevices/MuTagDevicesPort";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import Percent from "../../shared/metaLanguage/Percent";
-import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
+import ProvisionedMuTag, {
+    BeaconId
+} from "../../../source/Core/Domain/ProvisionedMuTag";
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
@@ -17,7 +19,9 @@ import UserWarning, {
     UserWarningType
 } from "../../shared/metaLanguage/UserWarning";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
-import { take, switchMap } from "rxjs/operators";
+import { take, switchMap, tap, filter } from "rxjs/operators";
+import { Subject, EMPTY } from "rxjs";
+import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 
 const LowMuTagBattery = (lowBatteryThreshold: number): UserErrorType => ({
     name: "LowMuTagBattery",
@@ -68,10 +72,63 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
         this.accountRepoRemote = accountRepoRemote;
     }
 
-    async addFoundMuTag(): Promise<void> {}
+    async addFoundMuTag(): Promise<void> {
+        if (this.unprovisionedMuTag == null) {
+            throw Error("No Mu tag has been found to add.");
+        }
+        let connection: Connection;
+        await this.muTagDevices
+            .connectToUnprovisionedMuTag(this.unprovisionedMuTag)
+            .pipe(
+                switchMap(async cnnctn => {
+                    connection = cnnctn;
+                    return this.verifyBatteryLevel(cnnctn);
+                }),
+                switchMap(batteryLevel =>
+                    this.addMuTagToPersistence(
+                        batteryLevel,
+                        this.unprovisionedMuTag?.macAddress
+                    )
+                ),
+                switchMap(() =>
+                    this.muTagDevices.provisionMuTag(
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        this.accountNumber!,
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        this.provisionedMuTag!.beaconId,
+                        connection
+                    )
+                ),
+                switchMap(() =>
+                    this.muTagDevices.changeTxPower(
+                        TxPowerSetting["+6 dBm"],
+                        connection
+                    )
+                ),
+                switchMap(() =>
+                    this.muTagDevices.changeAdvertisingInterval(
+                        AdvertisingIntervalSetting["852 ms"],
+                        connection
+                    )
+                ),
+                switchMap(() =>
+                    this.muTagDevices.disconnectFromMuTag(connection)
+                )
+            )
+            .toPromise();
+    }
 
     async findNewMuTag(): Promise<void> {
-        const findTimeout = 120000 as Millisecond;
+        this.unprovisionedMuTag = await this.muTagDevices
+            .startFindingUnprovisionedMuTags(
+                this.connectThreshold,
+                This.findMuTagTimeout
+            )
+            .pipe(take(1))
+            .toPromise();
+        await this.muTagDevices.stopFindingUnprovisionedMuTags();
+
+        /*const findTimeout = 120000 as Millisecond;
         try {
             this.unprovisionedMuTag = await this.findFirstUnprovisionedMuTag(
                 findTimeout
@@ -96,11 +153,27 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
                 this.unprovisionedMuTag,
                 this.muTagName
             ).catch(e => this.showError(UserError.create(FailedToAddMuTag, e)));
-        }
+        }*/
     }
 
     async setMuTagName(name: string): Promise<void> {
-        this.addMuTagOutput.showActivityIndicator();
+        if (this.provisionedMuTag == null) {
+            throw Error("Provisioned Mu tag does not exist.");
+        }
+        if (this.accountUid == null) {
+            throw Error("Account UID not found.");
+        }
+        if (this.accountNumber == null) {
+            throw Error("Account number not found.");
+        }
+        this.provisionedMuTag.setName(name);
+        await this.muTagRepoLocal.update(this.provisionedMuTag);
+        await this.muTagRepoRemote.update(
+            this.provisionedMuTag,
+            this.accountUid,
+            this.accountNumber
+        );
+        /*this.addMuTagOutput.showActivityIndicator();
 
         if (this.unprovisionedMuTag != null) {
             await this.addNewMuTag(this.unprovisionedMuTag, name).catch(e =>
@@ -109,13 +182,13 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
         } else {
             this.muTagName = name;
             this.addMuTagOutput.showMuTagConnectingScreen();
-        }
+        }*/
     }
 
     stopFindingNewMuTag(): void {
-        this.addMuTagOutput.showHomeScreen();
+        /*this.addMuTagOutput.showHomeScreen();
         this.muTagDevices.stopFindingUnprovisionedMuTags();
-        this.resetAddNewMuTagState();
+        this.resetAddNewMuTagState();*/
     }
 
     /*async completeMuTagSetup(color: MuTagColor): Promise<void> {
@@ -146,7 +219,6 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
 
     private readonly connectThreshold: Rssi;
     private readonly addMuTagBatteryThreshold: Percent;
-    private readonly addMuTagOutput: AddMuTagOutputPort;
     private readonly muTagDevices: MuTagDevicesPort;
     private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
     private readonly muTagRepoRemote: MuTagRepositoryRemotePort;
@@ -159,7 +231,89 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
     private accountUid: string | undefined;
     private accountNumber: AccountNumber | undefined;
 
-    private async findFirstUnprovisionedMuTag(
+    private async addMuTagToPersistence(
+        batteryLevel: Percent,
+        macAddress?: string
+    ): Promise<void> {
+        const account = await this.accountRepoLocal.get();
+        this.accountUid = account.uid;
+        const beaconId = account.newBeaconId;
+        const uid = this.muTagRepoRemote.createNewUid(account.uid);
+        const dateNow = new Date();
+        this.provisionedMuTag = new ProvisionedMuTag({
+            _advertisingInterval: 1,
+            _batteryLevel: batteryLevel,
+            _beaconId: beaconId,
+            _color: MuTagColor.MuOrange,
+            _dateAdded: dateNow,
+            _didExitRegion: true,
+            _firmwareVersion: "1.6.1",
+            _isSafe: false,
+            _lastSeen: dateNow,
+            _macAddress: macAddress ?? "unknown",
+            _modelNumber: "REV8",
+            _muTagNumber: account.newMuTagNumber,
+            _name: "unnamed",
+            _recentLatitude: 0,
+            _recentLongitude: 0,
+            _txPower: 1,
+            _uid: uid
+        });
+
+        const undoCommands: (() => Promise<void>)[] = [];
+
+        this.accountNumber = account.accountNumber;
+        await this.muTagRepoRemote.add(
+            this.provisionedMuTag,
+            account.uid,
+            this.accountNumber
+        );
+        undoCommands.push(() =>
+            this.muTagRepoRemote.removeByUid(uid, account.uid)
+        );
+
+        const executeUndoCommands = async () => {
+            const execute = undoCommands.map(command => command());
+            await Promise.all(execute);
+        };
+        const onError = async (error: any) => {
+            await executeUndoCommands();
+            throw error;
+        };
+
+        // Mu tag must be added to local persistence before being added to
+        // account. It's probably best to refactor so that Mu tags don't need to
+        // be added to the account object. That's probably better domain driven
+        // design.
+        await this.muTagRepoLocal.add(this.provisionedMuTag).catch(onError);
+        undoCommands.push(() => this.muTagRepoLocal.removeByUid(uid));
+
+        try {
+            account.addNewMuTag(this.provisionedMuTag.uid, beaconId);
+            undoCommands.push(async () => account.removeMuTag(uid, beaconId));
+        } catch (e) {
+            await onError(e);
+        }
+
+        await this.accountRepoRemote.update(account).catch(onError);
+        undoCommands.push(() => this.accountRepoRemote.update(account));
+
+        await this.accountRepoLocal.update(account).catch(onError);
+    }
+
+    private async verifyBatteryLevel(connection: Connection): Promise<Percent> {
+        const batteryLevel = await this.muTagDevices.readBatteryLevel(
+            connection
+        );
+        if (batteryLevel.valueOf() < this.addMuTagBatteryThreshold.valueOf()) {
+            throw UserError.create(
+                LowMuTagBattery(this.addMuTagBatteryThreshold.valueOf())
+            );
+        }
+        return batteryLevel;
+    }
+
+    /*private async findFirstUnprovisionedMuTag(
         timeout: Millisecond
     ): Promise<UnprovisionedMuTag> {
         const unprovisionedMuTag = await this.muTagDevices
@@ -168,35 +322,9 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
             .toPromise();
         this.muTagDevices.stopFindingUnprovisionedMuTags();
         return unprovisionedMuTag;
-        /*let didPromiseComplete = false;
-        return new Promise((resolve, reject) => {
-            const subscription = this.muTagDevices.unprovisionedMuTag
-                .pipe(take(1))
-                .subscribe(unprovisionedMuTag => {
-                    if (!didPromiseComplete) {
-                        didPromiseComplete = true;
-                        this.muTagDevices.stopFindingUnprovisionedMuTags();
-                        resolve(unprovisionedMuTag);
-                    }
-                });
-            this.muTagDevices
-                .startFindingUnprovisionedMuTags(this.connectThreshold, timeout)
-                .then(() => {
-                    if (!didPromiseComplete) {
-                        didPromiseComplete = true;
-                        subscription.unsubscribe();
-                        reject(
-                            new Error(
-                                "Could not find any unprovisioned Mu tags."
-                            )
-                        );
-                    }
-                })
-                .catch(e => reject(e));
-        });*/
-    }
+    }*/
 
-    private async addNewMuTag(
+    /*private async addNewMuTag(
         unprovisionedMuTag: UnprovisionedMuTag,
         name: string
     ): Promise<void> {
@@ -310,20 +438,20 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
         }
 
         this.addMuTagOutput.showMuTagFinalSetupScreen();
-    }
+    }*/
 
-    private showError(error: UserError): void {
+    /*private showError(error: UserError): void {
         this.resetAddNewMuTagState();
         this.addMuTagOutput.showError(error);
-    }
+    }*/
 
-    private resetAddNewMuTagState(): void {
+    /*private resetAddNewMuTagState(): void {
         this.unprovisionedMuTag = undefined;
         this.provisionedMuTag = undefined;
         this.muTagName = undefined;
-    }
+    }*/
 
-    private async getAccountIds(): Promise<{
+    /*private async getAccountIds(): Promise<{
         accountUid: string;
         accountNumber: AccountNumber;
     }> {
@@ -337,5 +465,9 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
             accountUid: this.accountUid,
             accountNumber: this.accountNumber
         };
-    }
+    }*/
+
+    private static findMuTagTimeout = 30000 as Millisecond;
 }
+
+const This = AddMuTagInteractorImpl;

@@ -72,12 +72,15 @@ export default interface MuTagDevicesPort {
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
     ): Observable<Connection>;
+    connectToUnprovisionedMuTag(
+        unprovisionedMuTag: UnprovisionedMuTag
+    ): Observable<Connection>;
     disconnectFromMuTag(connection: Connection): Promise<void>;
     provisionMuTag(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal,
         connection: Connection,
-        minimumBatteryLevel: Percent
+        minimumBatteryLevel?: Percent
     ): Promise<void>;
     readBatteryLevel(connection: Connection): Promise<Percent>;
     startFindingUnprovisionedMuTags(
