@@ -16,6 +16,11 @@ export const FailedToConnectToMuTag: UserErrorType = {
         "Could not connect to Mu tag. Please ensure that Mu tag is charged and move it closer to the app."
 };
 
+export const FindUnprovisionedMuTagTimeout: UserErrorType = {
+    name: "FindUnprovisionedMuTagTimeout",
+    userFriendlyMessage: "Finding unprovisioned Mu tags has timed out."
+};
+
 export const MuTagCommunicationFailure: UserErrorType = {
     name: "MuTagCommunicationFailure",
     userFriendlyMessage:

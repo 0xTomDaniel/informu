@@ -16,12 +16,13 @@ export enum BluetoothErrorType {
     FailedToWrite,
     FailedToStartScan,
     FailedToStopScan,
-    ScanAlreadyStarted
+    ScanAlreadyStarted,
+    ScanTimeout
 }
 
 export class BluetoothError extends Error {
-    originatingError: any;
-    type: BluetoothErrorType;
+    readonly originatingError: any;
+    readonly type: BluetoothErrorType;
 
     constructor(
         type: BluetoothErrorType,
@@ -134,6 +135,13 @@ export class BluetoothError extends Error {
         return new BluetoothError(
             BluetoothErrorType.ScanAlreadyStarted,
             "Bluetooth device scanning has already started."
+        );
+    }
+
+    static get ScanTimeout(): BluetoothError {
+        return new BluetoothError(
+            BluetoothErrorType.ScanTimeout,
+            "Bluetooth device scanning has timed out."
         );
     }
 }

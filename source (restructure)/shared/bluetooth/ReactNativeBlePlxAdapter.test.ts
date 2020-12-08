@@ -245,7 +245,9 @@ test(
         const startScanPromise = reactNativeBlePlxAdapter
             .startScan(deviceUuids, timeout)
             .toPromise();
-        await expect(startScanPromise).resolves.toBeUndefined();
+        await expect(startScanPromise).rejects.toStrictEqual(
+            BluetoothError.ScanTimeout
+        );
         expect(bleManagerMock.startDeviceScan).toBeCalledTimes(1);
         const options: ScanOptions = {
             scanMode: 1

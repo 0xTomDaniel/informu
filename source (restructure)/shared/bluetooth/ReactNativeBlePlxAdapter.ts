@@ -138,8 +138,13 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
         const observable = concat(
             from(this.enableBluetooth()).pipe(switchMap(() => EMPTY)),
             new Observable<Peripheral>(subscriber => {
+                let didTimeout = false;
                 const subscription = this.onScanStateStopped.subscribe(() => {
-                    subscriber.complete();
+                    if (didTimeout) {
+                        subscriber.error(BluetoothError.ScanTimeout);
+                    } else {
+                        subscriber.complete();
+                    }
                 });
                 this.bleManager.startDeviceScan(
                     serviceUuids,
@@ -158,6 +163,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
                 let timeoutId: NodeJS.Timeout | undefined;
                 if (timeout != null) {
                     timeoutId = setTimeout(() => {
+                        didTimeout = true;
                         this.stopScan();
                     }, timeout);
                 }

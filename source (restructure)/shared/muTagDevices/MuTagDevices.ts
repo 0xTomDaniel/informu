@@ -1,7 +1,9 @@
 import BluetoothPort, {
     Peripheral,
     PeripheralId,
-    ScanMode
+    ScanMode,
+    BluetoothError,
+    BluetoothErrorType
 } from "../bluetooth/BluetoothPort";
 import { Observable, from } from "rxjs";
 import { switchMap, filter, map, catchError, first } from "rxjs/operators";
@@ -21,7 +23,8 @@ import MuTagDevicesPort, {
     AdvertisingIntervalSetting,
     MuTagCommunicationFailure,
     FailedToConnectToMuTag,
-    FailedToFindMuTag
+    FailedToFindMuTag,
+    FindUnprovisionedMuTagTimeout
 } from "./MuTagDevicesPort";
 import UserError from "../metaLanguage/UserError";
 
@@ -156,7 +159,17 @@ export default class MuTagDevices implements MuTagDevicesPort {
                 peripheral =>
                     !This.isProvisioned(peripheral.advertising.manufacturerData)
             ),
-            map(peripheral => this.createUnprovisionedMuTag(peripheral))
+            map(peripheral => this.createUnprovisionedMuTag(peripheral)),
+            catchError(e => {
+                if (
+                    e instanceof BluetoothError &&
+                    e.type === BluetoothErrorType.ScanTimeout
+                ) {
+                    throw UserError.create(FindUnprovisionedMuTagTimeout, e);
+                } else {
+                    throw e;
+                }
+            })
         );
     }
 

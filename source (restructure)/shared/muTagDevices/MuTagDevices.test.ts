@@ -7,14 +7,7 @@ import BluetoothPort, {
 } from "../bluetooth/BluetoothPort";
 import { v4 as uuidV4 } from "uuid";
 import Percent from "../metaLanguage/Percent";
-import {
-    Observable,
-    Subscriber,
-    Subject,
-    EMPTY,
-    BehaviorSubject,
-    EmptyError
-} from "rxjs";
+import { Observable, Subscriber, Subject, EMPTY, BehaviorSubject } from "rxjs";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
 import { BeaconId } from "../../../source/Core/Domain/ProvisionedMuTag";
 import { MuTagBleGatt } from "./MuTagBleGatt/MuTagBleGatt";
@@ -35,7 +28,8 @@ import {
     Connection,
     AdvertisingIntervalSetting,
     FailedToConnectToMuTag,
-    FailedToFindMuTag
+    FailedToFindMuTag,
+    FindUnprovisionedMuTagTimeout
 } from "./MuTagDevicesPort";
 import UserError from "../metaLanguage/UserError";
 
@@ -91,7 +85,7 @@ const startScanMock = jest.fn<
             let timeoutId: NodeJS.Timeout | undefined;
             if (timeout != null) {
                 timeoutId = setTimeout(() => {
-                    subscriber.complete();
+                    subscriber.error(BluetoothError.ScanTimeout);
                 }, timeout);
             }
             const teardown = () => {
@@ -150,6 +144,25 @@ beforeEach(() => {
 });
 
 let unprovisionedMuTag: UnprovisionedMuTag;
+
+test(
+    "Finding unprovisioned Mu tags times out.",
+    fakeSchedulers(async advance => {
+        expect.assertions(1);
+        jest.useFakeTimers("modern");
+        const proximityThreshold = -72 as Rssi;
+        const timeout = 5000 as Millisecond;
+        const startFindingPromise = muTagDevices
+            .startFindingUnprovisionedMuTags(proximityThreshold, timeout)
+            .toPromise();
+        advance(5000);
+        const error = UserError.create(
+            FindUnprovisionedMuTagTimeout,
+            BluetoothError.ScanTimeout
+        );
+        await expect(startFindingPromise).rejects.toEqual(error);
+    })
+);
 
 test("Successfully finds two unprovisioned Mu tags.", async () => {
     expect.assertions(1);
@@ -285,8 +298,10 @@ test(
             .connectToProvisionedMuTag(accountNumber, beaconId)
             .toPromise();
         advance(5000);
-        const originatingError = new EmptyError();
-        const error = UserError.create(FailedToFindMuTag, originatingError);
+        const error = UserError.create(
+            FailedToFindMuTag,
+            BluetoothError.ScanTimeout
+        );
         await expect(connectPromise).rejects.toEqual(error);
     })
 );

@@ -28,7 +28,7 @@ export default class UserError extends Error {
         const message =
             originatingError == null
                 ? userFriendlyMessage
-                : `${userFriendlyMessage} (${String(originatingError)})`;
+                : `${userFriendlyMessage} <- ${String(originatingError)}`;
         super(message);
         //this.name = this.constructor.name;
         this.name = name;
