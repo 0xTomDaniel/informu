@@ -1,11 +1,18 @@
-import { AddMuTagInteractorImpl } from "./AddMuTagInteractor";
+import {
+    AddMuTagInteractorImpl,
+    LowMuTagBattery,
+    NewMuTagNotFound,
+    FailedToNameMuTag,
+    FailedToAddMuTag
+} from "./AddMuTagInteractor";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import MuTagDevices from "../../shared/muTagDevices/MuTagDevices";
 import BluetoothPort, {
     Peripheral,
     PeripheralId,
-    ScanMode
+    ScanMode,
+    BluetoothError
 } from "../../shared/bluetooth/BluetoothPort";
 import { Observable, Subscriber, Subject, BehaviorSubject } from "rxjs";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
@@ -22,16 +29,18 @@ import Account, {
 } from "../../../source/Core/Domain/Account";
 import { MuTagBleGatt } from "../../shared/muTagDevices/MuTagBleGatt/MuTagBleGatt";
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
-import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
 import { Buffer } from "buffer";
-import { take, skip, filter, takeLast, toArray, tap } from "rxjs/operators";
+import { take, skip, filter, takeLast, toArray } from "rxjs/operators";
 import BluetoothAndroidDecorator from "../../shared/bluetooth/BluetoothAndroidDecorator";
 import {
     WritableCharacteristic,
     ReadableCharacteristic
 } from "../../shared/bluetooth/Characteristic";
+import UserError from "../../shared/metaLanguage/UserError";
+import { fakeSchedulers } from "rxjs-marbles/jest";
+import { FindUnprovisionedMuTagTimeout } from "../../shared/muTagDevices/MuTagDevicesPort";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -90,9 +99,10 @@ const bluetoothMocks = {
             new Observable<Peripheral>(subscriber => {
                 let timeoutId: NodeJS.Timeout | undefined;
                 if (timeout != null) {
-                    timeoutId = setTimeout(() => {
-                        subscriber.complete();
-                    }, timeout);
+                    timeoutId = setTimeout(
+                        () => subscriber.error(BluetoothError.ScanTimeout),
+                        timeout
+                    );
                 }
                 bluetoothMocks.onStartScan.next([
                     serviceUuids,
@@ -120,7 +130,6 @@ const bluetoothMocks = {
             characteristic: WritableCharacteristic<any>,
             value: any
         ) => {
-            debugger;
             bluetoothMocks.onWrite.next([peripheralId, characteristic, value]);
             return Promise.resolve();
         }
@@ -168,6 +177,8 @@ const MuTagRepoLocalMock = jest.fn<MuTagRepositoryLocalPort, any>(
 );
 const muTagRepoLocalMock = new MuTagRepoLocalMock();
 
+let muTagRepoRemoteAddError: Error | undefined;
+let muTagRepoRemoteUpdateError: Error | undefined;
 const muTagRepoRemoteMocks = {
     onAdd: new Subject<[ProvisionedMuTag, string, AccountNumber]>(),
     onCreateNewUid: new Subject<string>(),
@@ -180,7 +191,9 @@ const muTagRepoRemoteMocks = {
             accountNumber: AccountNumber
         ) => {
             muTagRepoRemoteMocks.onAdd.next([muTag, accountUid, accountNumber]);
-            return Promise.resolve();
+            return muTagRepoRemoteAddError == null
+                ? Promise.resolve()
+                : Promise.reject(muTagRepoRemoteAddError);
         }
     ),
     createNewUid: jest.fn((accountUid: string) => {
@@ -202,7 +215,9 @@ const muTagRepoRemoteMocks = {
                 accountUid,
                 accountNumber
             ]);
-            return Promise.resolve();
+            return muTagRepoRemoteUpdateError == null
+                ? Promise.resolve()
+                : Promise.reject(muTagRepoRemoteUpdateError);
         }
     )
 };
@@ -277,8 +292,6 @@ const addMuTagInteractor = new AddMuTagInteractorImpl(
     accountRepoRemoteMock
 );
 
-//const manufacturerDataJson =
-//"[2,1,6,26,255,76,0,2,21,222,126,199,237,16,85,176,85,192,222,222,254,167,237,250,126,255,255,255,255,182,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]";
 const manufacturerDataJson =
     "[2, 1, 6, 26, 255, 76, 0, 2, 21, 222, 126, 199, 237, 16, 85, 176, 85, 192, 222, 222, 254, 167, 237, 250, 126, 255, 255, 255, 255, 182, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]";
 const manufacturerData = Buffer.from(JSON.parse(manufacturerDataJson));
@@ -296,13 +309,11 @@ const discoveredPeripheral: Peripheral = {
 };
 const newMuTagName = "Keys";
 
-describe("User adds Mu tag.", (): void => {
-    describe("Scenario 1: Mu tag adds successfully.", (): void => {
+describe("User adds Mu tag.", () => {
+    describe("Scenario 1: Mu tag adds successfully.", () => {
         // Given that an account is logged in
 
         // Given the Mu tag battery is above threshold
-        //
-        bluetoothReadReturnValue = new Percent(45);
 
         // Given Mu tag hardware provisions successfully
 
@@ -382,82 +393,81 @@ describe("User adds Mu tag.", (): void => {
 
         // When
         //
-        beforeAll(
-            async (): Promise<void> => {
-                onStartScanSubscriber
-                    .pipe(take(1))
-                    .toPromise()
-                    .then(subscriber => subscriber.next(discoveredPeripheral));
-                onFindUnprovisioned = bluetoothMocks.onStartScan
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(0));
-                onStopFindUnprovisioned = bluetoothMocks.onStopScan
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(1));
-                onConnectUnprovisioned = bluetoothMocks.onConnect
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(2));
-                onVerifyBatteryLevel = bluetoothMocks.onRead
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(3));
-                onAddMuTagRemotePersistence = muTagRepoRemoteMocks.onAdd
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(4));
-                onAddMuTagLocalPersistence = muTagRepoLocalMocks.onAdd
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(5));
-                onAddMuTagToAccount = onAccountAddNewMuTag
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(6));
-                onUpdateAccountRemotePersistence = accountRepoRemoteMocks.onUpdate
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(7));
-                onUpdateAccountLocalPersistence = accountRepoLocalMocks.onUpdate
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(8));
-                onProvisionMuTag = bluetoothMocks.onWrite
-                    .pipe(skip(1), take(3), takeLast(3), toArray())
-                    .toPromise()
-                    .finally(() => executionOrder.push(9));
-                onSetTxPower = bluetoothMocks.onWrite
-                    .pipe(skip(4), take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(10));
-                onSetAdvertisingInterval = bluetoothMocks.onWrite
-                    .pipe(skip(5), take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(11));
-                onDisconnect = bluetoothMocks.onDisconnect
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(12));
-                onSetMuTagEntityName = onMuTagSetName
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(13));
-                onUpdateMuTagLocalPersistence = muTagRepoLocalMocks.onUpdate
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(14));
-                onUpdateMuTagRemotePersistence = muTagRepoRemoteMocks.onUpdate
-                    .pipe(take(1))
-                    .toPromise()
-                    .finally(() => executionOrder.push(15));
-                // user requests to add unprovisioned Mu tag
-                findNewMuTagPromise = addMuTagInteractor.findNewMuTag();
-            }
-        );
+        beforeAll(async () => {
+            onStartScanSubscriber
+                .pipe(take(1))
+                .toPromise()
+                .then(subscriber => subscriber.next(discoveredPeripheral));
+            onFindUnprovisioned = bluetoothMocks.onStartScan
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(0));
+            onStopFindUnprovisioned = bluetoothMocks.onStopScan
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(1));
+            onConnectUnprovisioned = bluetoothMocks.onConnect
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(2));
+            onVerifyBatteryLevel = bluetoothMocks.onRead
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(3));
+            onAddMuTagRemotePersistence = muTagRepoRemoteMocks.onAdd
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(4));
+            onAddMuTagLocalPersistence = muTagRepoLocalMocks.onAdd
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(5));
+            onAddMuTagToAccount = onAccountAddNewMuTag
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(6));
+            onUpdateAccountRemotePersistence = accountRepoRemoteMocks.onUpdate
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(7));
+            onUpdateAccountLocalPersistence = accountRepoLocalMocks.onUpdate
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(8));
+            onProvisionMuTag = bluetoothMocks.onWrite
+                .pipe(skip(1), take(3), takeLast(3), toArray())
+                .toPromise()
+                .finally(() => executionOrder.push(9));
+            onSetTxPower = bluetoothMocks.onWrite
+                .pipe(skip(4), take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(10));
+            onSetAdvertisingInterval = bluetoothMocks.onWrite
+                .pipe(skip(5), take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(11));
+            onDisconnect = bluetoothMocks.onDisconnect
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(12));
+            onSetMuTagEntityName = onMuTagSetName
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(13));
+            onUpdateMuTagLocalPersistence = muTagRepoLocalMocks.onUpdate
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(14));
+            onUpdateMuTagRemotePersistence = muTagRepoRemoteMocks.onUpdate
+                .pipe(take(1))
+                .toPromise()
+                .finally(() => executionOrder.push(15));
+            bluetoothReadReturnValue = new Percent(45);
+            // user requests to find unprovisioned Mu tag
+            findNewMuTagPromise = addMuTagInteractor.findNewMuTag();
+        });
 
-        afterAll((): void => {
+        afterAll(() => {
             jest.clearAllMocks();
         });
 
@@ -584,30 +594,26 @@ describe("User adds Mu tag.", (): void => {
         // Then
         //
         it("Should set TX power to highest option 0x01 (+6dBm).", async () => {
-            expect.assertions(2);
+            expect.assertions(3);
             await expect(onSetTxPower).resolves.toStrictEqual([
                 discoveredPeripheral.id,
                 MuTagBleGatt.MuTagConfiguration.TxPower,
                 Hexadecimal.fromString("01")
             ]);
-
-            // TODO: ensure Mu tag entity updated.
-
+            expect(newMuTag.json._txPower).toBe(1);
             expect(executionOrder[10]).toBe(10);
         });
 
         // Then
         //
         it("Should set advertising interval to 0x03 (852ms).", async () => {
-            expect.assertions(2);
+            expect.assertions(3);
             await expect(onSetAdvertisingInterval).resolves.toStrictEqual([
                 discoveredPeripheral.id,
                 MuTagBleGatt.MuTagConfiguration.AdvertisingInterval,
                 Hexadecimal.fromString("03")
             ]);
-
-            // TODO: ensure Mu tag entity updated.
-
+            expect(newMuTag.json._advertisingInterval).toBe(3);
             expect(executionOrder[11]).toBe(11);
         });
 
@@ -655,341 +661,209 @@ describe("User adds Mu tag.", (): void => {
         });
     });
 
-    /*describe("Scenario 2: Mu tag adds successfully after connection delay.", (): void => {
+    describe("Scenario 2: User cancels finding Mu tag.", () => {
         // Given that an account is logged in
 
-        // Given unprovisioned Mu tag is connected after user completes Mu tag naming
-        //
-        //const userEntersMuTagNameAfter = 1000 as Millisecond;
-        //const muTagConnectsAfter = 2000 as Millisecond;
-        const discoveredPeripheralNotifier = new Subject<void>();
-        const startScanCompleteNotifier = new Subject<void>();
-        (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
-            async () => {
-                await discoveredPeripheralNotifier.pipe(take(1)).toPromise();
-                discoveredPeripheralSubscriber.next(discoveredPeripheral);
-                await startScanCompleteNotifier.pipe(take(1)).toPromise();
-            }
-        );
+        // Given that user has requested to find unprovisioned Mu tag
 
-        // Given the Mu tag battery is above threshold
-        //
-        const muTagBatteryLevel = new Percent(45);
+        let onStopFindUnprovisioned: Promise<void>;
 
-        // Given Mu tag hardware provisions successfully
-        //
-        (accountRepoLocalMock.get as jest.Mock).mockResolvedValueOnce(account);
-        (accountRepoLocalMock.update as jest.Mock).mockResolvedValueOnce(
-            undefined
-        );
-
-        let didNavigateToNameMuTag = false;
-        let didNavigateToMuTagConnecting = false;
-        let startAddingNewMuTagPromise: Promise<void>;
-        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(undefined);
-        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
-            muTagBatteryLevel
-        );
-        let didShowMuTagFinalSetupScreen = false;
-        let newMuTag: ProvisionedMuTag;
-        let muTagUpdateColorSpy: jest.SpyInstance<void, [MuTagColor]>;
-        (muTagRepoLocalMock.add as jest.Mock).mockImplementationOnce(
-            (addedMuTag: ProvisionedMuTag) => {
-                newMuTag = addedMuTag;
-                muTagUpdateColorSpy = jest.spyOn(newMuTag, "changeColor");
-            }
-        );
-        const muTagColorSetting = MuTagColor.MuOrange;
-        let didShowActivityIndicatorTimes = 0;
-        let didNavigateToHomeScreen = false;
+        let findNewMuTagPromise: Promise<void>;
+        let stopFindingNewMuTagPromise: Promise<void>;
 
         // When
         //
-        beforeAll(
-            async (): Promise<void> => {
-                addMuTagViewModel.onNavigateToNameMuTag(
-                    () => (didNavigateToNameMuTag = true)
-                );
-                nameMuTagViewModel.onNavigateToMuTagAdding(
-                    () => (didNavigateToMuTagConnecting = true)
-                );
-                nameMuTagViewModel.onNavigateToMuTagSettings(
-                    () => (didShowMuTagFinalSetupScreen = true)
-                );
-                nameMuTagViewModel.onDidUpdate(change => {
-                    if (
-                        "showActivityIndicator" in change &&
-                        change.showActivityIndicator
-                    ) {
-                        didShowActivityIndicatorTimes += 1;
-                    }
-                });
-                nameMuTagViewModel.onNavigateToHomeScreen(
-                    () => (didNavigateToHomeScreen = true)
-                );
-                // user requests to add unprovisioned Mu tag
-                startAddingNewMuTagPromise = addMuTagInteractor.startAddingNewMuTag();
-            }
-        );
+        beforeAll(async () => {
+            onStopFindUnprovisioned = bluetoothMocks.onStopScan
+                .pipe(take(1))
+                .toPromise();
 
-        afterAll((): void => {
+            const onFindUnprovisioned = bluetoothMocks.onStartScan
+                .pipe(take(1))
+                .toPromise();
+            findNewMuTagPromise = addMuTagInteractor.findNewMuTag();
+            await onFindUnprovisioned;
+            // the user cancels finding Mu tag
+            stopFindingNewMuTagPromise = addMuTagInteractor.stopFindingNewMuTag();
+        });
+
+        afterAll(() => {
             jest.clearAllMocks();
         });
 
         // Then
         //
-        // "should show instructions for adding Mu tag"
-
-        // Then
-        //
-        it("should attempt connection to unprovisioned Mu tag", (): void => {
-            expect(bluetoothMock.startScan).toHaveBeenCalledWith([], 120000, 2);
-            expect(bluetoothMock.startScan).toHaveBeenCalledTimes(1);
-        });
-
-        // When user completes instructions for adding Mu tag
-        //
-        // Then
-        //
-        it("should show Mu tag naming screen", (): void => {
-            addMuTagInteractor.instructionsComplete();
-            expect(didNavigateToNameMuTag).toBe(true);
-        });
-
-        // When user enters Mu tag name
-        //
-        // Then
-        //
-        it("should show Mu tag connecting screen", async (): Promise<void> => {
-            await addMuTagInteractor.setMuTagName(newMuTagName);
-            expect(didNavigateToMuTagConnecting).toBe(true);
-        });
-
-        // When unprovisioned Mu tag is connected
-        //
-        // Then
-        //
-        it("should check the Mu tag battery level", async (): Promise<void> => {
-            discoveredPeripheralNotifier.next();
-            await startAddingNewMuTagPromise;
-            startScanCompleteNotifier.next();
-
-            expect(bluetoothMock.read).toHaveBeenNthCalledWith(
-                2,
-                discoveredPeripheral.id,
-                MuTagBleGatt.DeviceInformation.BatteryLevel
-            );
-            expect(bluetoothMock.read).toHaveBeenCalledTimes(2);
-        });
-
-        // Then
-        //
-        it("should add Mu tag to remote persistence", (): void => {
-            expect(muTagRepoRemoteMock.add).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should add Mu tag to local persistence", (): void => {
-            expect(muTagRepoLocalMock.add).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should provision the Mu tag hardware", (): void => {
-            expect(accountRepoLocalMock.get).toHaveBeenCalledTimes(1);
-
-            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
-                3,
-                discoveredPeripheral.id,
-                MuTagBleGatt.MuTagConfiguration.Major,
-                Hexadecimal.fromString("0000")
-            );
-            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
-                4,
-                discoveredPeripheral.id,
-                MuTagBleGatt.MuTagConfiguration.Minor,
-                Hexadecimal.fromString("0005")
-            );
-            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
-                5,
-                discoveredPeripheral.id,
-                MuTagBleGatt.MuTagConfiguration.Provision,
-                MuTagBleGatt.MuTagConfiguration.Provision.provisionCode
-            );
-
-            expect(account.muTags.size).toBe(2);
-            expect(account.newBeaconId).toEqual(BeaconId.create("A"));
-            expect(account.newMuTagNumber).toEqual(
-                validAccountData._nextMuTagNumber + 2
-            );
-
-            expect(accountRepoLocalMock.update).toHaveBeenCalledWith(account);
-            expect(accountRepoLocalMock.update).toHaveBeenCalledTimes(1);
-            expect(accountRepoRemoteMock.update).toHaveBeenCalledWith(account);
-            expect(accountRepoRemoteMock.update).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should set TX power to highest option (+6; 0x01)", (): void => {
-            expect(bluetoothMock.write).toHaveBeenNthCalledWith(
-                7,
-                discoveredPeripheral.id,
-                MuTagBleGatt.MuTagConfiguration.TxPower,
-                Hexadecimal.fromString("01")
-            );
-        });
-
-        // Then
-        //
-        it("should show the remaining Mu tag setup screens", (): void => {
-            expect(didShowMuTagFinalSetupScreen).toBe(true);
-        });
-
-        // When user completes Mu tag setup
-        //
-        // Then
-        //
-        it("should show activity indicator #2", async (): Promise<void> => {
-            await addMuTagInteractor.completeMuTagSetup(muTagColorSetting);
-            expect(didShowActivityIndicatorTimes).toBe(2);
-        });
-
-        // Then
-        //
-        it("should update Mu tag with new settings", (): void => {
-            expect(muTagUpdateColorSpy).toHaveBeenCalledWith(muTagColorSetting);
-            expect(muTagUpdateColorSpy).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should update Mu tag to local persistence", (): void => {
-            expect(muTagRepoLocalMock.update).toHaveBeenCalledWith(newMuTag);
-            expect(muTagRepoLocalMock.update).toHaveBeenCalledTimes(1);
-        });
-
-        it("should update Mu tag to remote persistence", (): void => {
-            expect(muTagRepoRemoteMock.update).toHaveBeenLastCalledWith(
-                newMuTag,
-                validAccountData._uid,
-                validAccountData._accountNumber
-            );
-            expect(muTagRepoRemoteMock.update).toHaveBeenCalledTimes(1);
-        });
-
-        // Then
-        //
-        it("should show the home screen", (): void => {
-            expect(didNavigateToHomeScreen).toBe(true);
+        it("Should stop finding new Mu tag.", async () => {
+            expect.assertions(3);
+            await expect(onStopFindUnprovisioned).resolves.toBeUndefined();
+            await expect(stopFindingNewMuTagPromise).resolves.toBeUndefined();
+            await expect(findNewMuTagPromise).resolves.toBeUndefined();
         });
     });
 
-    describe("Scenario 3: User cancels add Mu tag.", (): void => {
-        (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
-            (serviceUUIDs: string[], timeout: Millisecond) => {
-                return new Promise(resolve => {
-                    setTimeout(() => resolve(), timeout);
-                });
-            }
-        );
-
+    describe("Scenario 3: Mu tag battery is below threshold.", () => {
         // Given that an account is logged in
 
-        // Given that user has requested to add unprovisioned Mu tag
+        // Given that the unprovisioned Mu tag is found
 
-        let didNavigateToHomeScreen = false;
+        // Given that the Mu tag battery is below threshold
+
+        let onDisconnect: Promise<PeripheralId>;
+
+        let addFoundMuTagPromise: Promise<void>;
 
         // When
         //
-        beforeAll(
-            async (): Promise<void> => {
-                addMuTagViewModel.onNavigateToHomeScreen(
-                    () => (didNavigateToHomeScreen = true)
-                );
-                // user requests to add unprovisioned Mu tag
-                addMuTagInteractor.startAddingNewMuTag();
-                // the user cancels add Mu tag
-                await addMuTagInteractor.stopAddingNewMuTag();
-            }
-        );
+        beforeAll(async () => {
+            onStartScanSubscriber
+                .pipe(take(1))
+                .toPromise()
+                .then(subscriber => subscriber.next(discoveredPeripheral));
 
-        afterAll((): void => {
+            onDisconnect = bluetoothMocks.onDisconnect
+                .pipe(take(1))
+                .toPromise();
+
+            bluetoothReadReturnValue = new Percent(14);
+            await addMuTagInteractor.findNewMuTag();
+            // user requests to add Mu tag
+            addFoundMuTagPromise = addMuTagInteractor.addFoundMuTag();
+        });
+
+        afterAll(() => {
             jest.clearAllMocks();
         });
 
         // Then
         //
-        it("should show home screen", (): void => {
-            expect(didNavigateToHomeScreen).toBe(true);
+        it("Should close Bluetooth connection.", async () => {
+            expect.assertions(1);
+            await expect(onDisconnect).resolves.toBe(discoveredPeripheral.id);
         });
 
         // Then
         //
-        it("should cancel connecting to new Mu tag", (): void => {
-            expect(bluetoothMock.stopScan).toHaveBeenCalledTimes(1);
+        it("Should produce low Mu tag battery error.", async () => {
+            expect.assertions(1);
+            await expect(addFoundMuTagPromise).rejects.toStrictEqual(
+                UserError.create(
+                    LowMuTagBattery(addMuTagBatteryThreshold.valueOf())
+                )
+            );
         });
     });
 
-    describe("Scenario 4: Mu tag battery is below threshold.", (): void => {
-        // Given that an account is logged in
+    describe("Scenario 4: Mu tag not found before timeout.", () => {
+        // Given that the unprovisioned Mu tag is not found
 
-        // Given the Mu tag battery is below threshold
-        //
-        const muTagBatteryLevelLow = new Percent(14);
-        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(undefined);
-        (bluetoothMock.read as jest.Mock).mockResolvedValueOnce(
-            muTagBatteryLevelLow
-        );
-
-        // Given unprovisioned Mu tag is connected
-        //
-        (bluetoothMock.startScan as jest.Mock).mockImplementationOnce(
-            (serviceUUIDs: string[], timeout: Millisecond) => {
-                discoveredPeripheralSubscriber.next(discoveredPeripheral);
-                return new Promise(resolve => {
-                    setTimeout(() => resolve(), timeout);
-                });
-            }
-        );
-
-        let didNavigateToHomeScreen = false;
+        let findNewMuTagPromise: Promise<void>;
 
         // When
         //
-        beforeAll(
-            async (): Promise<void> => {
-                addMuTagViewModel.onNavigateToHomeScreen(
-                    () => (didNavigateToHomeScreen = true)
-                );
-                // user requests to add unprovisioned Mu tag
-                await addMuTagInteractor.startAddingNewMuTag();
-                // Mu tag battery level is checked
-            }
-        );
+        beforeAll(async () => {
+            jest.useFakeTimers("modern");
+            findNewMuTagPromise = addMuTagInteractor.findNewMuTag();
+        });
 
-        afterAll((): void => {
+        afterAll(() => {
+            jest.clearAllMocks();
+            jest.useRealTimers();
+        });
+
+        // Then
+        //
+        it(
+            "Should produce Mu tag not found error.",
+            fakeSchedulers(async advance => {
+                expect.assertions(1);
+                advance(30000);
+                const originatingError01 = BluetoothError.ScanTimeout;
+                const originatingError02 = UserError.create(
+                    FindUnprovisionedMuTagTimeout,
+                    originatingError01
+                );
+                await expect(findNewMuTagPromise).rejects.toStrictEqual(
+                    UserError.create(NewMuTagNotFound, originatingError02)
+                );
+            })
+        );
+    });
+
+    describe("Scenario 5: Fails to add Mu tag.", () => {
+        // Given that the unprovisioned Mu tag is found
+
+        // Given that the Mu tag battery is above threshold
+
+        let addFoundMuTagPromise: Promise<void>;
+
+        // When
+        //
+        beforeAll(async () => {
+            onStartScanSubscriber
+                .pipe(take(1))
+                .toPromise()
+                .then(subscriber => subscriber.next(discoveredPeripheral));
+
+            bluetoothReadReturnValue = new Percent(15);
+            await addMuTagInteractor.findNewMuTag();
+            muTagRepoRemoteAddError = Error(
+                "Failed to add Mu tag on remote repo."
+            );
+            // user requests to add Mu tag
+            addFoundMuTagPromise = addMuTagInteractor.addFoundMuTag();
+        });
+
+        afterAll(() => {
+            jest.clearAllMocks();
+            muTagRepoRemoteAddError = undefined;
+        });
+
+        // Then
+        //
+        it("Should produce failed to add Mu tag error.", async () => {
+            expect.assertions(1);
+            await expect(addFoundMuTagPromise).rejects.toStrictEqual(
+                UserError.create(FailedToAddMuTag, muTagRepoRemoteAddError)
+            );
+        });
+    });
+
+    describe("Scenario 6: Fails to name Mu tag.", () => {
+        // Given that the unprovisioned Mu tag is found
+
+        // Given that the Mu tag battery is above threshold
+
+        let setMuTagNamePromise: Promise<void>;
+
+        // When
+        //
+        beforeAll(async () => {
+            onStartScanSubscriber
+                .pipe(take(1))
+                .toPromise()
+                .then(subscriber => subscriber.next(discoveredPeripheral));
+
+            bluetoothReadReturnValue = new Percent(15);
+            await addMuTagInteractor.findNewMuTag();
+            await addMuTagInteractor.addFoundMuTag();
+            muTagRepoRemoteUpdateError = Error(
+                "Failed to update Mu tag on remote repo."
+            );
+            // user requests to name Mu tag
+            setMuTagNamePromise = addMuTagInteractor.setMuTagName(newMuTagName);
+        });
+
+        afterAll(() => {
             jest.clearAllMocks();
         });
 
         // Then
         //
-        it("should show message that the Mu tag battery is below threshold and needs to be charged before adding", (): void => {
-            expect(addMuTagViewModel.userErrorDescription).toBe(
-                "Unable to add Mu tag because its battery is below 15%. Please charge Mu tag and try again."
+        it("Should produce failed to name Mu tag error.", async () => {
+            expect.assertions(1);
+            await expect(setMuTagNamePromise).rejects.toStrictEqual(
+                UserError.create(FailedToNameMuTag, muTagRepoRemoteUpdateError)
             );
-            expect(addMuTagViewModel.showError).toBe(true);
         });
-
-        // When user dismisses error message
-        //
-        // Then
-        //
-        it("should show the home screen", async (): Promise<void> => {
-            // the user cancels add Mu tag
-            await addMuTagInteractor.stopAddingNewMuTag();
-            expect(didNavigateToHomeScreen).toBe(true);
-        });
-    });*/
+    });
 });

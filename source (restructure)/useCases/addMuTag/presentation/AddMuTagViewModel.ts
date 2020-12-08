@@ -1,5 +1,5 @@
 import { BehaviorSubject } from "rxjs";
-import { AddMuTagInteractor } from "../AddMuTagInteractor";
+import AddMuTagInteractor from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import UserError from "../../../shared/metaLanguage/UserError";
 import UserWarning from "../../../shared/metaLanguage/UserWarning";
