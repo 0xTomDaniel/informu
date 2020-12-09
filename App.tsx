@@ -30,18 +30,12 @@ import AppViewModel, {
 import AppPresenter from "./source/Primary Adapters/Presentation/AppPresenter";
 import SessionService from "./source/Core/Application/SessionService";
 import { AppStateController } from "./source/Primary Adapters/Device/AppStateController";
-import AddMuTagView from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagView";
 import { Rssi } from "./source (restructure)/shared/metaLanguage/Types";
 import Percent from "./source (restructure)/shared/metaLanguage/Percent";
-import AddMuTagInteractorImpl from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
-import AddMuTagPresenter from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagPresenter";
-import { AddMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewModel";
+import { AddMuTagInteractorImpl } from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
+import AddMuTagViewModel from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagViewModel";
 import MuTagRepoLocalImpl from "./source/Secondary Adapters/Persistence/MuTagRepoLocalImpl";
 import { MuTagRepoRNFirebase } from "./source/Secondary Adapters/Persistence/MuTagRepoRNFirebase";
-import NameMuTagViewController from "./source (restructure)/useCases/addMuTag/presentation/NameMuTagViewController";
-import { NameMuTagViewModel } from "./source (restructure)/useCases/addMuTag/presentation/NameMuTagViewModel";
-import { MuTagAddingViewModel } from "./source (restructure)/useCases/addMuTag/presentation/MuTagAddingViewModel";
-import MuTagAddingViewController from "./source (restructure)/useCases/addMuTag/presentation/MuTagAddingViewController";
 import BelongingDashboardInteractor, {
     BelongingDashboardInteractorImpl
 } from "./source (restructure)/useCases/viewBelongingDashboard/BelongingDashboardInteractor";
@@ -57,8 +51,6 @@ import { LoginService } from "./source/Core/Application/LoginService";
 import AccountRegistrationService from "./source/Core/Application/AccountRegistrationService";
 import NewAccountFactoryImpl from "./source/Core/Domain/NewAccountFactoryImpl";
 import MuTagDevices from "./source (restructure)/shared/muTagDevices/MuTagDevices";
-import MuTagDevicesPortAddMuTag from "./source (restructure)/useCases/addMuTag/MuTagDevicesPort";
-import MuTagDevicesPortRemoveMuTag from "./source (restructure)/useCases/removeMuTag/MuTagDevicesPort";
 import BluetoothPort from "./source (restructure)/shared/bluetooth/BluetoothPort";
 import Logger from "./source (restructure)/shared/metaLanguage/Logger";
 import EventTracker, {
@@ -95,6 +87,12 @@ import { Platform } from "react-native";
 import BluetoothAndroidDecorator from "./source (restructure)/shared/bluetooth/BluetoothAndroidDecorator";
 import ReactNativeBlePlxAdapter from "./source (restructure)/shared/bluetooth/ReactNativeBlePlxAdapter";
 import { BleManager, fullUUID } from "react-native-ble-plx";
+import MuTagDevicesPort from "./source (restructure)/shared/muTagDevices/MuTagDevicesPort";
+import AddMuTagInteractor from "./source (restructure)/useCases/addMuTag/AddMuTagInteractor";
+import ReactNavigationAdapter from "./source (restructure)/shared/navigation/ReactNavigationAdapter";
+import FindAddMuTagView from "./source (restructure)/useCases/addMuTag/presentation/FindAddMuTagView";
+import AddMuTagIntroView from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagIntroView";
+import NameMuTagView from "./source (restructure)/useCases/addMuTag/presentation/NameMuTagView";
 
 // DEBUG
 /*import MessageQueue from "react-native/Libraries/BatchedBridge/MessageQueue.js";
@@ -122,6 +120,10 @@ MessageQueue.spy(spyFunction);*/
 const appViewModel = new AppViewModel();
 const sessionPresenter = new AppPresenter(appViewModel);
 
+const otherRoutes = ["Home"] as const;
+const routes = [...AddMuTagViewModel.routes, ...otherRoutes];
+const navigationAdapter = new ReactNavigationAdapter(routes);
+
 export class Dependencies {
     eventTracker: EventTracker;
     webClientId: string;
@@ -137,12 +139,9 @@ export class Dependencies {
     addMuTagBatteryThreshold: Percent;
     belongingDashboardViewModel: BelongingDashboardViewModel;
     addMuTagViewModel: AddMuTagViewModel;
-    nameMuTagViewModel: NameMuTagViewModel;
-    muTagAddingViewModel: MuTagAddingViewModel;
-    addMuTagPresenter: AddMuTagPresenter;
     bluetooth: BluetoothPort;
-    muTagDevices: MuTagDevicesPortAddMuTag & MuTagDevicesPortRemoveMuTag;
-    addMuTagInteractor: AddMuTagInteractorImpl;
+    muTagDevices: MuTagDevicesPort;
+    addMuTagInteractor: AddMuTagInteractor;
     removeMuTagBatteryThreshold: Percent;
     removeMuTagInteractor: RemoveMuTagInteractor;
     signOutInteractor: SignOutInteractor;
@@ -192,16 +191,6 @@ export class Dependencies {
         this.belongingMapViewModel = new BelongingMapViewModel(
             this.belongingMapInteractor
         );
-        this.connectThreshold = -80 as Rssi;
-        this.addMuTagBatteryThreshold = new Percent(20);
-        this.addMuTagViewModel = new AddMuTagViewModel();
-        this.nameMuTagViewModel = new NameMuTagViewModel();
-        this.muTagAddingViewModel = new MuTagAddingViewModel();
-        this.addMuTagPresenter = new AddMuTagPresenter(
-            this.addMuTagViewModel,
-            this.nameMuTagViewModel,
-            this.muTagAddingViewModel
-        );
         const bluetooth = new ReactNativeBlePlxAdapter(
             new BleManager(),
             fullUUID,
@@ -214,16 +203,21 @@ export class Dependencies {
             default:
                 this.bluetooth = bluetooth;
         }
+        this.connectThreshold = -80 as Rssi;
+        this.addMuTagBatteryThreshold = new Percent(20);
         this.muTagDevices = new MuTagDevices(this.bluetooth);
         this.addMuTagInteractor = new AddMuTagInteractorImpl(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,
-            this.addMuTagPresenter,
             this.muTagDevices,
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.accountRepoLocal,
             this.accountRepoRemote
+        );
+        this.addMuTagViewModel = new AddMuTagViewModel(
+            navigationAdapter,
+            this.addMuTagInteractor
         );
         this.removeMuTagBatteryThreshold = new Percent(20);
         this.removeMuTagInteractor = new RemoveMuTagInteractorImpl(
@@ -339,24 +333,19 @@ export class Dependencies {
         );
         this.connectThreshold = -80 as Rssi;
         this.addMuTagBatteryThreshold = new Percent(20);
-        this.addMuTagViewModel = new AddMuTagViewModel();
-        this.nameMuTagViewModel = new NameMuTagViewModel();
-        this.muTagAddingViewModel = new MuTagAddingViewModel();
-        this.addMuTagPresenter = new AddMuTagPresenter(
-            this.addMuTagViewModel,
-            this.nameMuTagViewModel,
-            this.muTagAddingViewModel
-        );
         this.muTagDevices = new MuTagDevices(this.bluetooth);
         this.addMuTagInteractor = new AddMuTagInteractorImpl(
             this.connectThreshold,
             this.addMuTagBatteryThreshold,
-            this.addMuTagPresenter,
             this.muTagDevices,
             this.muTagRepoLocal,
             this.muTagRepoRemote,
             this.accountRepoLocal,
             this.accountRepoRemote
+        );
+        this.addMuTagViewModel = new AddMuTagViewModel(
+            navigationAdapter,
+            this.addMuTagInteractor
         );
         this.removeMuTagBatteryThreshold = new Percent(20);
         this.removeMuTagInteractor = new RemoveMuTagInteractorImpl(
@@ -473,7 +462,7 @@ const dependencies = new Dependencies(webClientId, geocodingApiKey);
 
 const HomeStack = createStackNavigator(
     {
-        Home: {
+        [navigationAdapter.routes.Home]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <BelongingDashboardView
                     belongingDashboardViewModel={
@@ -483,28 +472,26 @@ const HomeStack = createStackNavigator(
                 />
             )
         },
-        AddMuTag: {
+        [navigationAdapter.routes.AddMuTagIntro]: {
             screen: (props: NavigationScreenProps): ReactElement => (
-                <AddMuTagView
+                <AddMuTagIntroView
                     viewModel={dependencies.addMuTagViewModel}
                     {...props}
                 />
             )
         },
-        NameMuTag: {
+        [navigationAdapter.routes.FindAddMuTag]: {
             screen: (props: NavigationScreenProps): ReactElement => (
-                <NameMuTagViewController
-                    viewModel={dependencies.nameMuTagViewModel}
-                    addMuTagService={dependencies.addMuTagInteractor}
+                <FindAddMuTagView
+                    viewModel={dependencies.addMuTagViewModel}
                     {...props}
                 />
             )
         },
-        MuTagAdding: {
+        [navigationAdapter.routes.NameMuTag]: {
             screen: (props: NavigationScreenProps): ReactElement => (
-                <MuTagAddingViewController
-                    viewModel={dependencies.muTagAddingViewModel}
-                    addMuTagService={dependencies.addMuTagInteractor}
+                <NameMuTagView
+                    viewModel={dependencies.addMuTagViewModel}
                     {...props}
                 />
             )

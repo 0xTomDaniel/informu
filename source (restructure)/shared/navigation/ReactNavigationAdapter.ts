@@ -9,13 +9,12 @@ export default class ReactNavigationAdapter<R extends string>
     implements NavigationPort<R> {
     routes: { [K in R]: K };
 
-    constructor(routes: readonly R[], navigator: NavigationContainerComponent) {
-        this.navigator = navigator;
+    constructor(routes: readonly R[]) {
         this.routes = Object.assign({}, ...routes.map(v => ({ [v]: v })));
     }
 
     navigateTo(route: R): void {
-        this.navigator.dispatch(
+        this.navigator?.dispatch(
             NavigationActions.navigate({
                 routeName: route
             })
@@ -23,8 +22,12 @@ export default class ReactNavigationAdapter<R extends string>
     }
 
     popToTop(): void {
-        this.navigator.dispatch(StackActions.popToTop());
+        this.navigator?.dispatch(StackActions.popToTop());
     }
 
-    private navigator: NavigationContainerComponent;
+    setNavigator(navigator: NavigationContainerComponent): void {
+        this.navigator = navigator;
+    }
+
+    private navigator: NavigationContainerComponent | undefined;
 }

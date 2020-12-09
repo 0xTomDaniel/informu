@@ -1,12 +1,12 @@
 import { BehaviorSubject } from "rxjs";
 import NavigationPort from "../navigation/NavigationPort";
 
-interface ViewModelUserMessage {
+export interface ViewModelUserMessage {
     message: string;
     details?: string;
 }
 
-export abstract class ViewModel<T extends string> {
+export default abstract class ViewModel<T extends string> {
     readonly showActivity = new BehaviorSubject<boolean>(false);
     readonly showFailure = new BehaviorSubject<
         ViewModelUserMessage | undefined

@@ -6,6 +6,9 @@ import {
     StackActions
 } from "react-navigation";
 
+const routes = ["Home", "Map", "Settings"] as const;
+const reactNavigationAdapter = new ReactNavigationAdapter(routes);
+
 const navContainerComponentMocks = {
     dispatch: jest.fn<boolean, [NavigationAction]>()
 };
@@ -26,11 +29,7 @@ const NavigationContainerComponentMock = jest.fn<
 );
 const navigationContainerComponentMock = new NavigationContainerComponentMock();
 
-const routes = ["Home", "Map", "Settings"] as const;
-const reactNavigationAdapter = new ReactNavigationAdapter(
-    routes,
-    navigationContainerComponentMock
-);
+reactNavigationAdapter.setNavigator(navigationContainerComponentMock);
 
 afterEach(() => {
     jest.resetAllMocks();

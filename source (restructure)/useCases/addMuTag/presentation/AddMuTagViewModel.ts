@@ -3,13 +3,14 @@ import AddMuTagInteractor from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import UserError from "../../../shared/metaLanguage/UserError";
 import UserWarning from "../../../shared/metaLanguage/UserWarning";
-import { ViewModel } from "../../../shared/viewModel/ViewModel";
+import ViewModel from "../../../shared/viewModel/ViewModel";
 
 type Routes = typeof AddMuTagViewModel.routes[number];
 
 export default class AddMuTagViewModel extends ViewModel<Routes> {
     readonly showCancel = new BehaviorSubject<boolean>(true);
     readonly showCancelActivity = new BehaviorSubject<boolean>(false);
+    readonly showRetry = new BehaviorSubject<boolean>(false);
 
     constructor(
         navigation: NavigationPort<Routes>,
@@ -29,7 +30,7 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
     }
 
     goToFindMuTag(): void {
-        this.navigation.navigateTo("FindMuTag");
+        this.navigation.navigateTo("FindAddMuTag");
     }
 
     setMuTagName(name: string, retry = false): void {
@@ -41,13 +42,19 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
             .setMuTagName(name)
             .then(() => this.navigation.popToTop())
             .catch(e => {
-                if (e instanceof UserWarning) {
-                    this.showFailure.next(
-                        This.createUserMessage(e.message, e.originatingError)
-                    );
-                }
+                const message =
+                    e instanceof UserWarning
+                        ? e.message
+                        : JSON.stringify(e, Object.getOwnPropertyNames(e));
+                this.showFailure.next(
+                    This.createUserMessage(message, e.originatingError)
+                );
+                this.showRetry.next(true);
             })
-            .finally(() => this.showActivity.next(false));
+            .finally(() => {
+                this.showRetry.next(false);
+                this.showActivity.next(false);
+            });
     }
 
     startAddingMuTag(retry = false): void {
@@ -66,19 +73,29 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
             .then(() => this.navigation.navigateTo("NameMuTag"))
             .catch(e => {
                 this.isFindingNewMuTag = false;
-                if (e instanceof UserError) {
-                    this.showFailure.next(
-                        This.createUserMessage(e.message, e.originatingError)
-                    );
-                }
+                const message =
+                    e instanceof UserError
+                        ? e.message
+                        : JSON.stringify(e, Object.getOwnPropertyNames(e));
+                this.showFailure.next(
+                    This.createUserMessage(message, e.originatingError)
+                );
+                this.showRetry.next(true);
             })
-            .finally(() => this.showActivity.next(false));
+            .finally(() => {
+                this.showRetry.next(false);
+                this.showActivity.next(false);
+            });
     }
 
     private readonly addMuTagInteractor: AddMuTagInteractor;
     private isFindingNewMuTag = false;
 
-    static readonly routes = ["FindMuTag", "NameMuTag"] as const;
+    static readonly routes = [
+        "AddMuTagIntro",
+        "FindAddMuTag",
+        "NameMuTag"
+    ] as const;
 }
 
 const This = AddMuTagViewModel;

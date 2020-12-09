@@ -10,6 +10,7 @@ import Logger from "../../../shared/metaLanguage/Logger";
 import UserError from "../../../shared/metaLanguage/UserError";
 import UserWarning from "../../../shared/metaLanguage/UserWarning";
 import { Subject } from "rxjs";
+import { NavigationContainerComponent } from "react-navigation";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -29,13 +30,15 @@ type Routes = typeof routes[number];
 
 const navigationPortMocks = {
     navigateTo: jest.fn<void, [Routes]>(),
-    popToTop: jest.fn<void, []>()
+    popToTop: jest.fn<void, []>(),
+    setNavigator: jest.fn<void, [NavigationContainerComponent]>()
 };
 const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
     (): NavigationPort<Routes> => ({
         routes: Object.assign({}, ...routes.map(v => ({ [v]: v }))),
         navigateTo: navigationPortMocks.navigateTo,
-        popToTop: navigationPortMocks.popToTop
+        popToTop: navigationPortMocks.popToTop,
+        setNavigator: navigationPortMocks.setNavigator
     })
 );
 const navigationPortMock = new NavigationPortMock();
@@ -55,7 +58,10 @@ const addMuTagInteractorMocks = {
             ? Promise.resolve()
             : Promise.reject(setMuTagNameFailure)
     ),
-    stopFindingNewMuTag: jest.fn(() => resolveFindNewMuTag.next())
+    stopFindingNewMuTag: jest.fn(() => {
+        resolveFindNewMuTag.next();
+        return Promise.resolve();
+    })
 };
 const AddMuTagInteractorMock = jest.fn<AddMuTagInteractor, any>(
     (): AddMuTagInteractor => ({
@@ -82,11 +88,19 @@ afterEach(() => {
 });
 
 test("Cancel add Mu tag flow.", async () => {
-    expect.assertions(3);
+    expect.assertions(5);
     expect(viewModel.showCancel.value).toBe(true);
     expect(viewModel.showCancelActivity.value).toBe(false);
+    const onShowCancelActivity01 = viewModel.showCancelActivity
+        .pipe(skip(1), take(1))
+        .toPromise();
+    const onShowCancelActivity02 = viewModel.showCancelActivity
+        .pipe(skip(2), take(1))
+        .toPromise();
     viewModel.cancel();
+    await expect(onShowCancelActivity01).resolves.toBe(true);
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
+    await expect(onShowCancelActivity02).resolves.toBe(false);
 });
 
 test("Successfully navigate to Find Mu Tag screen.", async () => {
@@ -94,12 +108,15 @@ test("Successfully navigate to Find Mu Tag screen.", async () => {
     viewModel.goToFindMuTag();
     expect(navigationPortMocks.navigateTo).toHaveBeenCalledTimes(1);
     expect(navigationPortMocks.navigateTo).toHaveBeenCalledWith(
-        navigationPortMock.routes.FindMuTag
+        navigationPortMock.routes.FindAddMuTag
     );
 });
 
 test("Successfully start adding Mu tag.", async () => {
     expect.assertions(12);
+    expect(viewModel.showActivity.value).toBe(false);
+    expect(viewModel.showCancel.value).toBe(true);
+    expect(viewModel.showFailure.value).toBeUndefined();
     const executionOrder: number[] = [];
     const showActivityPromise01 = viewModel.showActivity
         .pipe(skip(1), take(1))
@@ -113,9 +130,6 @@ test("Successfully start adding Mu tag.", async () => {
         .pipe(skip(2), take(1))
         .toPromise()
         .finally(() => executionOrder.push(2));
-    expect(viewModel.showActivity.value).toBe(false);
-    expect(viewModel.showCancel.value).toBe(true);
-    expect(viewModel.showFailure.value).toBeUndefined();
     viewModel.startAddingMuTag();
     await expect(showActivityPromise01).resolves.toBe(true);
     expect(addMuTagInteractorMocks.findNewMuTag).toHaveBeenCalledTimes(1);
@@ -169,7 +183,10 @@ test("Cancel start adding Mu tag.", async () => {
 });
 
 test("Fails to start adding Mu tag.", async () => {
-    expect.assertions(7);
+    expect.assertions(9);
+    expect(viewModel.showActivity.value).toBe(false);
+    expect(viewModel.showFailure.value).toBeUndefined();
+    expect(viewModel.showRetry.value).toBe(false);
     const executionOrder: number[] = [];
     const showActivityPromise01 = viewModel.showActivity
         .pipe(skip(1), take(1))
@@ -179,12 +196,14 @@ test("Fails to start adding Mu tag.", async () => {
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(1));
+    const showRetryPromise = viewModel.showRetry
+        .pipe(skip(1), take(1))
+        .toPromise()
+        .finally(() => executionOrder.push(2));
     const showActivityPromise02 = viewModel.showActivity
         .pipe(skip(2), take(1))
         .toPromise()
-        .finally(() => executionOrder.push(2));
-    expect(viewModel.showActivity.value).toBe(false);
-    expect(viewModel.showFailure.value).toBeUndefined();
+        .finally(() => executionOrder.push(3));
     findNewMuTagFailure = UserError.create(NewMuTagNotFound);
     viewModel.startAddingMuTag();
     await expect(showActivityPromise01).resolves.toBe(true);
@@ -196,12 +215,13 @@ test("Fails to start adding Mu tag.", async () => {
     await expect(showFailurePromise).resolves.toStrictEqual(
         findNewMuTagFailureMessage
     );
+    await expect(showRetryPromise).resolves.toBe(true);
     await expect(showActivityPromise02).resolves.toBe(false);
-    expect(executionOrder).toStrictEqual([0, 1, 2]);
+    expect(executionOrder).toStrictEqual([0, 1, 2, 3]);
 });
 
 test("Successfully retry start adding Mu tag.", async () => {
-    expect.assertions(8);
+    expect.assertions(9);
     const executionOrder: number[] = [];
     const showFailurePromise01 = viewModel.showFailure
         .pipe(skip(1), take(1))
@@ -225,18 +245,23 @@ test("Successfully retry start adding Mu tag.", async () => {
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(2));
+    const showRetryPromise = viewModel.showRetry
+        .pipe(skip(1), take(1))
+        .toPromise()
+        .finally(() => executionOrder.push(3));
     const showActivityPromise02 = viewModel.showActivity
         .pipe(skip(2), take(1))
         .toPromise()
-        .finally(() => executionOrder.push(3));
+        .finally(() => executionOrder.push(4));
     viewModel.startAddingMuTag(true);
     resolveFindNewMuTag.next();
     await expect(showFailurePromise02).resolves.toBeUndefined();
     await expect(showActivityPromise01).resolves.toBe(true);
     expect(addMuTagInteractorMocks.findNewMuTag).toHaveBeenCalledTimes(2);
     expect(addMuTagInteractorMocks.addFoundMuTag).toHaveBeenCalledTimes(1);
+    await expect(showRetryPromise).resolves.toBe(false);
     await expect(showActivityPromise02).resolves.toBe(false);
-    expect(executionOrder).toStrictEqual([0, 1, 2, 3]);
+    expect(executionOrder).toStrictEqual([0, 1, 2, 3, 4]);
     expect(viewModel.showFailure.value).toBeUndefined();
 });
 
@@ -270,7 +295,10 @@ test("Successfully name Mu tag.", async () => {
 });
 
 test("Fails to name Mu tag.", async () => {
-    expect.assertions(9);
+    expect.assertions(11);
+    expect(viewModel.showActivity.value).toBe(false);
+    expect(viewModel.showFailure.value).toBeUndefined();
+    expect(viewModel.showRetry.value).toBe(false);
     const executionOrder: number[] = [];
     const showActivityPromise01 = viewModel.showActivity
         .pipe(skip(1), take(1))
@@ -280,12 +308,14 @@ test("Fails to name Mu tag.", async () => {
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(1));
+    const showRetryPromise = viewModel.showRetry
+        .pipe(skip(1), take(1))
+        .toPromise()
+        .finally(() => executionOrder.push(2));
     const showActivityPromise02 = viewModel.showActivity
         .pipe(skip(2), take(1))
         .toPromise()
-        .finally(() => executionOrder.push(2));
-    expect(viewModel.showActivity.value).toBe(false);
-    expect(viewModel.showFailure.value).toBeUndefined();
+        .finally(() => executionOrder.push(3));
     setMuTagNameFailure = UserWarning.create(FailedToSaveSettings);
     const muTagName = "Keys";
     viewModel.setMuTagName(muTagName);
@@ -301,13 +331,14 @@ test("Fails to name Mu tag.", async () => {
     await expect(showFailurePromise).resolves.toStrictEqual(
         setMuTagNameFailureMessage
     );
+    await expect(showRetryPromise).resolves.toBe(true);
     await expect(showActivityPromise02).resolves.toBe(false);
-    expect(executionOrder).toStrictEqual([0, 1, 2]);
+    expect(executionOrder).toStrictEqual([0, 1, 2, 3]);
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(0);
 });
 
 test("Successfully retry to name Mu tag.", async () => {
-    expect.assertions(9);
+    expect.assertions(10);
     const executionOrder: number[] = [];
     const showFailurePromise01 = viewModel.showFailure
         .pipe(skip(1), take(1))
@@ -336,15 +367,20 @@ test("Successfully retry to name Mu tag.", async () => {
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(2));
+    const showRetryPromise = viewModel.showRetry
+        .pipe(skip(1), take(1))
+        .toPromise()
+        .finally(() => executionOrder.push(3));
     const showActivityPromise02 = viewModel.showActivity
         .pipe(skip(2), take(1))
         .toPromise()
-        .finally(() => executionOrder.push(3));
+        .finally(() => executionOrder.push(4));
     viewModel.setMuTagName(muTagName, true);
     await expect(showFailurePromise02).resolves.toBeUndefined();
     await expect(showActivityPromise01).resolves.toBe(true);
     expect(addMuTagInteractorMocks.setMuTagName).toHaveBeenCalledTimes(2);
+    await expect(showRetryPromise).resolves.toBe(false);
     await expect(showActivityPromise02).resolves.toBe(false);
-    expect(executionOrder).toStrictEqual([0, 1, 2, 3]);
+    expect(executionOrder).toStrictEqual([0, 1, 2, 3, 4]);
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
 });
