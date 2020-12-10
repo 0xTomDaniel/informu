@@ -72,6 +72,10 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: "center"
     },
+    instructionsIcon: {
+        fontSize: Scale(40),
+        color: Theme.Color.PrimaryBlue
+    },
     instructionsInfoIcon: {
         fontSize: Scale(22, 19),
         color: Theme.Color.Error
@@ -80,12 +84,15 @@ const styles = StyleSheet.create({
         flex: 6,
         marginHorizontal: 12
     },
+    instructionsText: {
+        fontSize: Scale(22) // Default 24
+    },
     instructionsInfoText: {
         fontSize: Scale(15, 13),
         color: Theme.Color.Error
     },
     button: {
-        alignSelf: "center",
+        //alignSelf: "center",
         marginVertical: 16
     },
     errorDialogTitle: {
@@ -157,60 +164,68 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
 
     return (
         <SafeAreaView style={[styles.safeAreaView, styles.base]}>
-            {showActivity ? (
-                <View style={styles.mainContainer}>
-                    <Headline style={styles.headline}>
-                        {showCancel
-                            ? "Searching for new Mu tag..."
-                            : "Setting up new Mu tag..."}
-                    </Headline>
-                    <ActivityIndicator
-                        animating={true}
-                        color={Theme.Color.PrimaryBlue}
-                        size="large"
-                    />
-                </View>
-            ) : null}
-            {showFailure == null ? null : (
-                <View
-                    style={[styles.instructionsRow, styles.instructionsInfoRow]}
-                >
-                    <Icon
-                        name="alert-circle-outline"
-                        style={[
-                            styles.instructionsIconCol,
-                            styles.instructionsInfoIcon
-                        ]}
-                    />
-                    <Text
-                        style={[
-                            styles.instructionsTextCol,
-                            styles.instructionsInfoText
-                        ]}
-                    >
-                        {showFailure.message}
-                    </Text>
-                </View>
-            )}
-            <Button
-                mode="contained"
-                onPress={() => props.viewModel.cancel()}
-                style={styles.button}
-                disabled={!showCancel}
-                loading={showCancelActivity}
+            <View style={styles.mainContainer}>
+                {showActivity ? (
+                    <View>
+                        <Headline style={styles.headline}>
+                            {showCancel
+                                ? "Searching for new Mu tag..."
+                                : "Setting up new Mu tag..."}
+                        </Headline>
+                        <ActivityIndicator
+                            animating={true}
+                            color={Theme.Color.PrimaryBlue}
+                            size="large"
+                        />
+                    </View>
+                ) : null}
+                {showFailure == null ? null : (
+                    <View style={styles.instructionsRow}>
+                        <Icon
+                            name="alert-circle"
+                            //color="black"
+                            style={[
+                                styles.instructionsIconCol,
+                                styles.instructionsIcon
+                            ]}
+                        />
+                        <Text
+                            style={[
+                                styles.instructionsTextCol,
+                                styles.instructionsText
+                            ]}
+                        >
+                            {showFailure.message}
+                        </Text>
+                    </View>
+                )}
+            </View>
+            <View
+                style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between"
+                }}
             >
-                Cancel
-            </Button>
-            {showRetry ? (
                 <Button
-                    mode="contained"
-                    onPress={() => props.viewModel.startAddingMuTag(true)}
+                    mode="text"
+                    onPress={() => props.viewModel.cancel()}
                     style={styles.button}
-                    disabled={showActivity}
+                    disabled={!showCancel}
+                    loading={showCancelActivity}
                 >
-                    Try again
+                    Cancel
                 </Button>
-            ) : null}
+                {showRetry ? (
+                    <Button
+                        mode="contained"
+                        onPress={() => props.viewModel.startAddingMuTag(true)}
+                        style={styles.button}
+                        disabled={showActivity}
+                    >
+                        Try again
+                    </Button>
+                ) : null}
+            </View>
             {/*<ErrorDialog
                 message={showFailure?.message ?? ""}
                 detailMessage={showFailure?.details ?? ""}
