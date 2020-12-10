@@ -20,10 +20,10 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
         this.addMuTagInteractor = addMuTagInteractor;
     }
 
-    cancel(): void {
+    async cancel(): Promise<void> {
         this.showCancelActivity.next(true);
         if (this.isFindingNewMuTag) {
-            this.addMuTagInteractor.stopFindingNewMuTag();
+            await this.addMuTagInteractor.stopFindingNewMuTag();
         }
         this.navigation.popToTop();
         this.showCancelActivity.next(false);
@@ -33,59 +33,59 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
         this.navigation.navigateTo("FindAddMuTag");
     }
 
-    setMuTagName(name: string, retry = false): void {
+    async setMuTagName(name: string, retry = false): Promise<void> {
         if (retry) {
             this.showFailure.next(undefined);
         }
         this.showActivity.next(true);
-        this.addMuTagInteractor
+        await this.addMuTagInteractor
             .setMuTagName(name)
-            .then(() => this.navigation.popToTop())
+            .then(() => {
+                this.showRetry.next(false);
+                this.navigation.popToTop();
+            })
             .catch(e => {
                 const message =
                     e instanceof UserWarning
-                        ? e.message
+                        ? e.userFriendlyMessage
                         : JSON.stringify(e, Object.getOwnPropertyNames(e));
                 this.showFailure.next(
-                    This.createUserMessage(message, e.originatingError)
+                    This.createUserMessage(message, e.message)
                 );
                 this.showRetry.next(true);
             })
-            .finally(() => {
-                this.showRetry.next(false);
-                this.showActivity.next(false);
-            });
+            .finally(() => this.showActivity.next(false));
     }
 
-    startAddingMuTag(retry = false): void {
+    async startAddingMuTag(retry = false): Promise<void> {
         if (retry) {
             this.showFailure.next(undefined);
         }
         this.showActivity.next(true);
         this.isFindingNewMuTag = true;
-        this.addMuTagInteractor
+        await this.addMuTagInteractor
             .findNewMuTag()
             .then(() => {
                 this.isFindingNewMuTag = false;
                 this.showCancel.next(false);
                 this.addMuTagInteractor.addFoundMuTag();
             })
-            .then(() => this.navigation.navigateTo("NameMuTag"))
+            .then(() => {
+                this.showRetry.next(false);
+                this.navigation.navigateTo("NameMuTag");
+            })
             .catch(e => {
                 this.isFindingNewMuTag = false;
                 const message =
                     e instanceof UserError
-                        ? e.message
+                        ? e.userFriendlyMessage
                         : JSON.stringify(e, Object.getOwnPropertyNames(e));
                 this.showFailure.next(
-                    This.createUserMessage(message, e.originatingError)
+                    This.createUserMessage(message, e.message)
                 );
                 this.showRetry.next(true);
             })
-            .finally(() => {
-                this.showRetry.next(false);
-                this.showActivity.next(false);
-            });
+            .finally(() => this.showActivity.next(false));
     }
 
     private readonly addMuTagInteractor: AddMuTagInteractor;
