@@ -81,6 +81,10 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: "center"
     },
+    instructionsIcon: {
+        fontSize: Scale(40),
+        color: Theme.Color.PrimaryBlue
+    },
     instructionsInfoIcon: {
         fontSize: Scale(22, 19),
         color: Theme.Color.Error
@@ -88,6 +92,9 @@ const styles = StyleSheet.create({
     instructionsTextCol: {
         flex: 6,
         marginHorizontal: 12
+    },
+    instructionsText: {
+        fontSize: Scale(22) // Default 24
     },
     instructionsInfoText: {
         fontSize: Scale(15, 13),
@@ -168,31 +175,26 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                         }}
                         style={styles.attachedToInput}
                     />
+                    {showFailure == null ? null : (
+                        <View style={styles.instructionsRow}>
+                            <Icon
+                                name="alert-circle"
+                                style={[
+                                    styles.instructionsIconCol,
+                                    styles.instructionsIcon
+                                ]}
+                            />
+                            <Text
+                                style={[
+                                    styles.instructionsTextCol,
+                                    styles.instructionsText
+                                ]}
+                            >
+                                {showFailure.message}
+                            </Text>
+                        </View>
+                    )}
                 </View>
-                {showFailure == null ? null : (
-                    <View
-                        style={[
-                            styles.instructionsRow,
-                            styles.instructionsInfoRow
-                        ]}
-                    >
-                        <Icon
-                            name="alert-circle-outline"
-                            style={[
-                                styles.instructionsIconCol,
-                                styles.instructionsInfoIcon
-                            ]}
-                        />
-                        <Text
-                            style={[
-                                styles.instructionsTextCol,
-                                styles.instructionsInfoText
-                            ]}
-                        >
-                            {showFailure.message}
-                        </Text>
-                    </View>
-                )}
                 <Button
                     mode="contained"
                     onPress={() => props.viewModel.setMuTagName(muTagName)}
@@ -200,18 +202,8 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                     style={styles.button}
                     disabled={showActivity}
                 >
-                    {showActivity ? "Saving" : "Save"}
+                    {showActivity ? "Saving" : showRetry ? "Try again" : "Save"}
                 </Button>
-                {showRetry ? (
-                    <Button
-                        mode="contained"
-                        onPress={() => props.viewModel.startAddingMuTag(true)}
-                        style={styles.button}
-                        disabled={showActivity}
-                    >
-                        Try again
-                    </Button>
-                ) : null}
             </SafeAreaView>
         </TouchableWithoutFeedback>
     );

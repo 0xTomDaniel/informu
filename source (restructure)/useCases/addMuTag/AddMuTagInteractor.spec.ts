@@ -3,7 +3,8 @@ import {
     LowMuTagBattery,
     NewMuTagNotFound,
     FailedToNameMuTag,
-    FailedToAddMuTag
+    FailedToAddMuTag,
+    FindNewMuTagCanceled
 } from "./AddMuTagInteractor";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
@@ -14,7 +15,13 @@ import BluetoothPort, {
     ScanMode,
     BluetoothError
 } from "../../shared/bluetooth/BluetoothPort";
-import { Observable, Subscriber, Subject, BehaviorSubject } from "rxjs";
+import {
+    Observable,
+    Subscriber,
+    Subject,
+    BehaviorSubject,
+    EmptyError
+} from "rxjs";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
@@ -477,7 +484,7 @@ describe("User adds Mu tag.", () => {
             expect.assertions(5);
             await expect(onFindUnprovisioned).resolves.toStrictEqual([
                 [],
-                30000,
+                5000,
                 ScanMode.LowLatency
             ]);
             expect(executionOrder[0]).toBe(0);
@@ -697,7 +704,14 @@ describe("User adds Mu tag.", () => {
             expect.assertions(3);
             await expect(onStopFindUnprovisioned).resolves.toBeUndefined();
             await expect(stopFindingNewMuTagPromise).resolves.toBeUndefined();
-            await expect(findNewMuTagPromise).resolves.toBeUndefined();
+            const originatingError = new EmptyError();
+            const canceledError = UserError.create(
+                FindNewMuTagCanceled,
+                originatingError
+            );
+            await expect(findNewMuTagPromise).rejects.toStrictEqual(
+                canceledError
+            );
         });
     });
 

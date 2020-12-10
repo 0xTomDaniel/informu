@@ -25,8 +25,12 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
         if (this.isFindingNewMuTag) {
             await this.addMuTagInteractor.stopFindingNewMuTag();
         }
-        this.navigation.popToTop();
+        this.showActivity.next(false);
+        this.showCancel.next(true);
+        this.showFailure.next(undefined);
+        this.showRetry.next(false);
         this.showCancelActivity.next(false);
+        this.navigation.popToTop();
     }
 
     goToFindMuTag(): void {
@@ -41,7 +45,9 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
         await this.addMuTagInteractor
             .setMuTagName(name)
             .then(() => {
+                this.showFailure.next(undefined);
                 this.showRetry.next(false);
+                this.showActivity.next(false);
                 this.navigation.popToTop();
             })
             .catch(e => {
@@ -53,8 +59,12 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
                     This.createUserMessage(message, e.message)
                 );
                 this.showRetry.next(true);
-            })
-            .finally(() => this.showActivity.next(false));
+                this.showActivity.next(false);
+            });
+        // Cannot use 'finally' function of promise because navigation executes
+        // before 'finally' does. This may cause a race condition where the view
+        // that's being navigated to misses the observable being emitted from
+        // 'finally' function.
     }
 
     async startAddingMuTag(retry = false): Promise<void> {
@@ -72,6 +82,7 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
             })
             .then(() => {
                 this.showRetry.next(false);
+                this.showActivity.next(false);
                 this.navigation.navigateTo("NameMuTag");
             })
             .catch(e => {
@@ -84,8 +95,12 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
                     This.createUserMessage(message, e.message)
                 );
                 this.showRetry.next(true);
-            })
-            .finally(() => this.showActivity.next(false));
+                this.showActivity.next(false);
+            });
+        // Cannot use 'finally' function of promise because navigation executes
+        // before 'finally' does. This may cause a race condition where the view
+        // that's being navigated to misses the observable being emitted from
+        // 'finally' function.
     }
 
     private readonly addMuTagInteractor: AddMuTagInteractor;

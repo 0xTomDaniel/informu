@@ -15,7 +15,8 @@ import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import UserError, { UserErrorType } from "../../shared/metaLanguage/UserError";
 import { UserWarningType } from "../../shared/metaLanguage/UserWarning";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
-import { take, switchMap, catchError } from "rxjs/operators";
+import { switchMap, catchError, first } from "rxjs/operators";
+import { EmptyError } from "rxjs";
 
 export const LowMuTagBattery = (
     lowBatteryThreshold: number
@@ -46,6 +47,11 @@ export const FailedToSaveSettings: UserWarningType = {
     name: "FailedToSaveSettings",
     userFriendlyMessage:
         "Your Mu tag added successfully but some settings failed to save."
+};
+
+export const FindNewMuTagCanceled: UserErrorType = {
+    name: "FindNewMuTagCanceled",
+    userFriendlyMessage: "Finding new Mu tag has been canceled."
 };
 
 export default interface AddMuTagInteractor {
@@ -135,9 +141,13 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
                 This.findMuTagTimeout
             )
             .pipe(
-                take(1),
+                first(),
                 catchError(e => {
-                    throw UserError.create(NewMuTagNotFound, e);
+                    if (e instanceof EmptyError) {
+                        throw UserError.create(FindNewMuTagCanceled, e);
+                    } else {
+                        throw UserError.create(NewMuTagNotFound, e);
+                    }
                 })
             )
             .toPromise();

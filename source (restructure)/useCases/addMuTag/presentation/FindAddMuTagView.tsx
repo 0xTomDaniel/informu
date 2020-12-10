@@ -183,7 +183,6 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
                     <View style={styles.instructionsRow}>
                         <Icon
                             name="alert-circle"
-                            //color="black"
                             style={[
                                 styles.instructionsIconCol,
                                 styles.instructionsIcon
