@@ -678,8 +678,11 @@ const App: FunctionComponent = (): ReactElement => {
     return (
         <PaperProvider theme={paperTheme}>
             <AppContainer
-                ref={navigationContainerComponent => {
-                    navigator = navigationContainerComponent;
+                ref={nvgtr => {
+                    if (nvgtr != null) {
+                        navigator = nvgtr;
+                        navigationAdapter.setNavigator(nvgtr);
+                    }
                 }}
             />
         </PaperProvider>
