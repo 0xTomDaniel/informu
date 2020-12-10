@@ -266,7 +266,7 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
         return batteryLevel;
     }
 
-    private static findMuTagTimeout = 30000 as Millisecond;
+    private static findMuTagTimeout = 5000 as Millisecond;
 }
 
 const This = AddMuTagInteractorImpl;
