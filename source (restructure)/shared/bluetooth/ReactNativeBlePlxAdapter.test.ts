@@ -686,7 +686,8 @@ test("Successfully write hex (with response) to Bluetooth device.", async () => 
         bluetoothDeviceId,
         characteristic.serviceUuid,
         characteristic.uuid,
-        base64WriteValue
+        base64WriteValue,
+        undefined
     );
     expect(fullUuidMock).toBeCalledTimes(2);
 });
@@ -741,7 +742,8 @@ test("Fails to write hex (with response) to Bluetooth device.", async () => {
         bluetoothDeviceId,
         characteristic.serviceUuid,
         characteristic.uuid,
-        base64WriteValue
+        base64WriteValue,
+        undefined
     );
     expect(fullUuidMock).toBeCalledTimes(2);
 });

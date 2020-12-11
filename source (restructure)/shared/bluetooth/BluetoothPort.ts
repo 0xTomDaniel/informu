@@ -163,6 +163,8 @@ export interface Advertising {
 
 export type PeripheralId = string & { readonly _: unique symbol };
 
+export type TaskId = string & { readonly _: unique symbol };
+
 export interface Peripheral {
     readonly advertising: Advertising;
     readonly id: PeripheralId;
@@ -171,6 +173,7 @@ export interface Peripheral {
 }
 
 export default interface BluetoothPort {
+    cancelTask(taskId: TaskId): void;
     connect(
         peripheralId: PeripheralId,
         timeout?: Millisecond
@@ -189,6 +192,7 @@ export default interface BluetoothPort {
     write<T>(
         peripheralId: PeripheralId,
         characteristic: WritableCharacteristic<T>,
-        value: T
+        value: T,
+        taskId?: TaskId
     ): Promise<void>;
 }

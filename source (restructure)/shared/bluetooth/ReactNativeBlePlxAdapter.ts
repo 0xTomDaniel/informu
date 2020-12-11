@@ -2,7 +2,8 @@ import BluetoothPort, {
     Peripheral,
     ScanMode,
     PeripheralId,
-    BluetoothError
+    BluetoothError,
+    TaskId
 } from "./BluetoothPort";
 import {
     Observable,
@@ -45,6 +46,10 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
         this.bleManager = reactNativeBlePlx;
         this.fullUuid = fullUuid;
         this.platform = platform;
+    }
+
+    cancelTask(taskId: TaskId): void {
+        this.bleManager.cancelTransaction(taskId);
     }
 
     connect(
@@ -199,19 +204,21 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
     async write<T>(
         peripheralId: PeripheralId,
         characteristic: WritableCharacteristic<T>,
-        value: T
+        value: T,
+        taskId?: TaskId
     ): Promise<void> {
         await this.enableBluetooth();
-        const base64Value = characteristic.toBase64(value);
         const serviceUuid = this.fullUuid(characteristic.serviceUuid);
         const characteristicUuid = this.fullUuid(characteristic.uuid);
+        const base64Value = characteristic.toBase64(value);
         try {
             if (characteristic.withResponse) {
                 await this.bleManager.writeCharacteristicWithResponseForDevice(
                     peripheralId,
                     serviceUuid,
                     characteristicUuid,
-                    base64Value
+                    base64Value,
+                    taskId
                 );
             } else {
                 await this.bleManager.writeCharacteristicWithoutResponseForDevice(
