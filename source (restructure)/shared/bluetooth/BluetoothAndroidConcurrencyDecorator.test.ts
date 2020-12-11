@@ -37,6 +37,7 @@ const writeMock = jest.fn<
 >();
 const BluetoothMock = jest.fn(
     (): BluetoothPort => ({
+        cancelTask: jest.fn(),
         connect: connectMock,
         disconnect: disconnectMock,
         read: readMock,

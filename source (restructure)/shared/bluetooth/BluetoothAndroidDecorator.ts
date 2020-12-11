@@ -4,7 +4,8 @@ import BluetoothPort, {
     PeripheralId,
     Peripheral,
     BluetoothError,
-    BluetoothErrorType
+    BluetoothErrorType,
+    TaskId
 } from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
 import {
@@ -60,6 +61,10 @@ export default class BluetoothAndroidDecorator implements BluetoothPort {
 
     constructor(bluetooth: BluetoothPort) {
         this.bluetooth = bluetooth;
+    }
+
+    cancelTask(taskId: TaskId): void {
+        this.bluetooth.cancelTask(taskId);
     }
 
     connect(

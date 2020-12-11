@@ -13,7 +13,8 @@ import BluetoothPort, {
     ScanMode,
     PeripheralId,
     Peripheral,
-    BluetoothError
+    BluetoothError,
+    TaskId
 } from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
 import {
@@ -77,6 +78,10 @@ export default class BluetoothAndroidConcurrencyDecorator
                 windowToggle(onScanInactive, () => onScanActive)
             )
         ).pipe(mergeAll(), share());
+    }
+
+    cancelTask(taskId: TaskId): void {
+        this.bluetooth.cancelTask(taskId);
     }
 
     connect(

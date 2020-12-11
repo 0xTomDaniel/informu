@@ -225,7 +225,8 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
                     peripheralId,
                     serviceUuid,
                     characteristicUuid,
-                    base64Value
+                    base64Value,
+                    taskId
                 );
             }
         } catch (e) {

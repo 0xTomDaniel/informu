@@ -144,6 +144,7 @@ const bluetoothMocks = {
 };
 const BluetoothMock = jest.fn<BluetoothPort, any>(
     (): BluetoothPort => ({
+        cancelTask: jest.fn(),
         connect: bluetoothMocks.connect,
         disconnect: bluetoothMocks.disconnect,
         read: bluetoothMocks.read,

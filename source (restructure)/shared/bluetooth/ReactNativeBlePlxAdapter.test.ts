@@ -709,7 +709,8 @@ test("Successfully write string (without response) to Bluetooth device.", async 
         bluetoothDeviceId,
         characteristic.serviceUuid.toLowerCase(),
         characteristic.uuid.toLowerCase(),
-        base64WriteValue
+        base64WriteValue,
+        undefined
     );
     expect(fullUuidMock).toBeCalledTimes(2);
 });
@@ -774,7 +775,8 @@ test("Fails to write string (without response) to Bluetooth device.", async () =
         bluetoothDeviceId,
         characteristic.serviceUuid.toLowerCase(),
         characteristic.uuid.toLowerCase(),
-        base64WriteValue
+        base64WriteValue,
+        undefined
     );
     expect(fullUuidMock).toBeCalledTimes(2);
 });
