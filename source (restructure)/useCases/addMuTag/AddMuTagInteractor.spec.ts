@@ -462,11 +462,11 @@ describe("User adds Mu tag.", () => {
                 .pipe(take(1))
                 .toPromise()
                 .finally(() => executionOrder.push(13));
-            onUpdateMuTagLocalPersistence = muTagRepoLocalMocks.onUpdate
+            onUpdateMuTagRemotePersistence = muTagRepoRemoteMocks.onUpdate
                 .pipe(take(1))
                 .toPromise()
                 .finally(() => executionOrder.push(14));
-            onUpdateMuTagRemotePersistence = muTagRepoRemoteMocks.onUpdate
+            onUpdateMuTagLocalPersistence = muTagRepoLocalMocks.onUpdate
                 .pipe(take(1))
                 .toPromise()
                 .finally(() => executionOrder.push(15));
@@ -870,6 +870,7 @@ describe("User adds Mu tag.", () => {
 
         afterAll(() => {
             jest.clearAllMocks();
+            muTagRepoRemoteUpdateError = undefined;
         });
 
         // Then

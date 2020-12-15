@@ -166,12 +166,12 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
         }
         try {
             this.provisionedMuTag.setName(name);
-            await this.muTagRepoLocal.update(this.provisionedMuTag);
             await this.muTagRepoRemote.update(
                 this.provisionedMuTag,
                 this.accountUid,
                 this.accountNumber
             );
+            await this.muTagRepoLocal.update(this.provisionedMuTag);
         } catch (e) {
             throw UserError.create(FailedToNameMuTag, e);
         }
