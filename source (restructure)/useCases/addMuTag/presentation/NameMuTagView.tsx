@@ -33,40 +33,22 @@ const styles = StyleSheet.create({
     base: {
         backgroundColor: Theme.Color.AlmostWhite
     },
-    mainImage: {
-        width: "100%",
-        resizeMode: "contain",
-        backgroundColor: Theme.Color.AlmostWhite,
-        position: "absolute"
-    },
-    mainImageView: {
-        width: "100%",
-        height: "100%",
-        backgroundColor: Theme.Color.AlmostWhite
-    },
-    appBar: {
-        backgroundColor: "transparent",
-        ...Platform.select({
-            ios: {},
-            android: {
-                elevation: 0
-            }
-        })
-    },
     mainContainer: {
         flex: 1,
-        justifyContent: "center",
         paddingHorizontal: 32
     },
     headline: {
-        position: "absolute",
-        top: 0,
-        left: 32,
+        flex: 1,
         textAlign: "center",
+        textAlignVertical: "center",
         fontSize: Scale(28, 24)
     },
     attachedToInput: {
         backgroundColor: "white"
+    },
+    bottomContent: {
+        flex: 1,
+        justifyContent: "center"
     },
     instructionsRow: {
         flexDirection: "row",
@@ -81,10 +63,6 @@ const styles = StyleSheet.create({
         flex: 1,
         textAlign: "center"
     },
-    instructionsIcon: {
-        fontSize: Scale(40),
-        color: Theme.Color.PrimaryBlue
-    },
     instructionsInfoIcon: {
         fontSize: Scale(22, 19),
         color: Theme.Color.Error
@@ -93,9 +71,6 @@ const styles = StyleSheet.create({
         flex: 6,
         marginHorizontal: 12
     },
-    instructionsText: {
-        fontSize: Scale(22) // Default 24
-    },
     instructionsInfoText: {
         fontSize: Scale(15, 13),
         color: Theme.Color.Error
@@ -103,9 +78,6 @@ const styles = StyleSheet.create({
     button: {
         alignSelf: "center",
         marginVertical: 16
-    },
-    errorDialogTitle: {
-        fontSize: Scale(20, 19)
     }
 });
 
@@ -151,13 +123,6 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <SafeAreaView style={[styles.safeAreaView, styles.base]}>
-                {/*<Appbar.Header style={styles.appBar}>
-                    <Appbar.BackAction
-                        onPress={(): void =>
-                            this.props.addMuTagService.stopAddingNewMuTag()
-                        }
-                    />
-                    </Appbar.Header>*/}
                 <View style={styles.mainContainer}>
                     <Headline style={styles.headline}>
                         What is the name of this Mu tag?
@@ -175,25 +140,27 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                         }}
                         style={styles.attachedToInput}
                     />
-                    {showFailure == null ? null : (
-                        <View style={styles.instructionsRow}>
-                            <Icon
-                                name="alert-circle"
-                                style={[
-                                    styles.instructionsIconCol,
-                                    styles.instructionsIcon
-                                ]}
-                            />
-                            <Text
-                                style={[
-                                    styles.instructionsTextCol,
-                                    styles.instructionsText
-                                ]}
-                            >
-                                {showFailure.message}
-                            </Text>
-                        </View>
-                    )}
+                    <View style={styles.bottomContent}>
+                        {showFailure == null ? null : (
+                            <View style={styles.instructionsRow}>
+                                <Icon
+                                    name="alert-circle"
+                                    style={[
+                                        styles.instructionsIconCol,
+                                        styles.instructionsInfoIcon
+                                    ]}
+                                />
+                                <Text
+                                    style={[
+                                        styles.instructionsTextCol,
+                                        styles.instructionsInfoText
+                                    ]}
+                                >
+                                    {showFailure?.message}
+                                </Text>
+                            </View>
+                        )}
+                    </View>
                 </View>
                 <Button
                     mode="contained"
