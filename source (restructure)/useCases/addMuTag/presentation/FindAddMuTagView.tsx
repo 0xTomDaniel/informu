@@ -27,26 +27,6 @@ const styles = StyleSheet.create({
         backgroundColor: Theme.Color.AlmostWhite,
         paddingHorizontal: 16
     },
-    mainImage: {
-        width: "100%",
-        resizeMode: "contain",
-        backgroundColor: Theme.Color.AlmostWhite,
-        position: "absolute"
-    },
-    mainImageView: {
-        width: "100%",
-        height: "100%",
-        backgroundColor: Theme.Color.AlmostWhite
-    },
-    appBar: {
-        backgroundColor: "transparent",
-        ...Platform.select({
-            ios: {},
-            android: {
-                elevation: 0
-            }
-        })
-    },
     mainContainer: {
         flex: 1,
         justifyContent: "center"
@@ -76,10 +56,6 @@ const styles = StyleSheet.create({
         fontSize: Scale(40),
         color: Theme.Color.PrimaryBlue
     },
-    instructionsInfoIcon: {
-        fontSize: Scale(22, 19),
-        color: Theme.Color.Error
-    },
     instructionsTextCol: {
         flex: 6,
         marginHorizontal: 12
@@ -87,12 +63,11 @@ const styles = StyleSheet.create({
     instructionsText: {
         fontSize: Scale(22) // Default 24
     },
-    instructionsInfoText: {
-        fontSize: Scale(15, 13),
-        color: Theme.Color.Error
+    buttonContainer: {
+        flexDirection: "row",
+        justifyContent: "space-between"
     },
     button: {
-        //alignSelf: "center",
         marginVertical: 16
     },
     errorDialogTitle: {
@@ -199,12 +174,7 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
                     </View>
                 )}
             </View>
-            <View
-                style={{
-                    flexDirection: "row",
-                    justifyContent: "space-between"
-                }}
-            >
+            <View style={styles.buttonContainer}>
                 <Button
                     mode="text"
                     onPress={() => props.viewModel.cancel()}
@@ -225,14 +195,6 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
                     </Button>
                 ) : null}
             </View>
-            {/*<ErrorDialog
-                message={showFailure?.message ?? ""}
-                detailMessage={showFailure?.details ?? ""}
-                visible={showFailure != null}
-                onDismiss={(): void =>
-                    this.props.addMuTagService.stopAddingNewMuTag()
-                }
-            />*/}
         </SafeAreaView>
     );
 };

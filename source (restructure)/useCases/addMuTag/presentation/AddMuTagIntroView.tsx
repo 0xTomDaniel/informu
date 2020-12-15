@@ -125,7 +125,9 @@ const AddMuTagIntroView: FunctionComponent<AddMuTagIntroViewProps> = (
                 <View style={styles.topContainer}>
                     <Appbar.Header style={styles.appBar}>
                         <Appbar.BackAction
-                            onPress={(): void => props.viewModel.cancel()}
+                            onPress={() => {
+                                props.viewModel.cancel();
+                            }}
                         />
                     </Appbar.Header>
                 </View>
