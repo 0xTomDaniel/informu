@@ -54,7 +54,7 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
                 const message =
                     e instanceof UserWarning
                         ? e.userFriendlyMessage
-                        : JSON.stringify(e, Object.getOwnPropertyNames(e));
+                        : String(e);
                 this.showFailure.next(
                     This.createUserMessage(message, e.message)
                 );
@@ -88,9 +88,7 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
             .catch(e => {
                 this.isFindingNewMuTag = false;
                 const message =
-                    e instanceof UserError
-                        ? e.userFriendlyMessage
-                        : JSON.stringify(e, Object.getOwnPropertyNames(e));
+                    e instanceof UserError ? e.userFriendlyMessage : String(e);
                 this.showFailure.next(
                     This.createUserMessage(message, e.message)
                 );
