@@ -21,6 +21,11 @@ export const FindUnprovisionedMuTagTimeout: UserErrorType = {
     userFriendlyMessage: "Finding unprovisioned Mu tags has timed out."
 };
 
+export const MuTagDisconnectedUnexpectedly: UserErrorType = {
+    name: "MuTagDisconnectedUnexpectedly",
+    userFriendlyMessage: "Mu tag has disconnected unexpectedly."
+};
+
 export const MuTagCommunicationFailure: UserErrorType = {
     name: "MuTagCommunicationFailure",
     userFriendlyMessage:

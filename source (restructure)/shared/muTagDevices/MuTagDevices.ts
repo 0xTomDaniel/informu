@@ -3,7 +3,8 @@ import BluetoothPort, {
     PeripheralId,
     ScanMode,
     BluetoothError,
-    BluetoothErrorType
+    BluetoothErrorType,
+    TaskId
 } from "../bluetooth/BluetoothPort";
 import { Observable, from } from "rxjs";
 import { switchMap, filter, map, catchError, first } from "rxjs/operators";
@@ -24,7 +25,8 @@ import MuTagDevicesPort, {
     MuTagCommunicationFailure,
     FailedToConnectToMuTag,
     FailedToFindMuTag,
-    FindUnprovisionedMuTagTimeout
+    FindUnprovisionedMuTagTimeout,
+    MuTagDisconnectedUnexpectedly
 } from "./MuTagDevicesPort";
 import UserError from "../metaLanguage/UserError";
 
@@ -179,13 +181,26 @@ export default class MuTagDevices implements MuTagDevicesPort {
 
     async unprovisionMuTag(connection: Connection): Promise<void> {
         const peripheralId = this.getPeripheralId(connection);
-        // Write fails because Mu tag restarts as soon as it is unprovisioned
-        this.writeCharacteristic(
+        // Write fails because Mu tag restarts as soon as it is unprovisioned.
+        const writePromise = this.writeCharacteristic(
             peripheralId,
             MuTagBleGatt.MuTagConfiguration.Provision,
             MuTagBleGatt.MuTagConfiguration.Provision.unprovisionCode
         ).catch(e => this.logger.warn(e));
-        this.bluetooth.disconnect(peripheralId).catch(e => this.logger.warn(e));
+        // Through manually testing, 500ms seems to be plenty of time for the
+        // Bluetooth write to complete. Even 100ms is probably okay.
+        //
+        // Trying to cancel the write on react-native-ble-plx causes a long 20s
+        // delay before the promise rejects. However, performing a disconnect of
+        // the device causes an immediate promise rejection which is ideal.
+        setTimeout(
+            () =>
+                this.bluetooth
+                    .disconnect(peripheralId)
+                    .catch(e => this.logger.warn(e)),
+            500
+        );
+        await writePromise;
     }
 
     // Protected instance interface
@@ -225,6 +240,12 @@ export default class MuTagDevices implements MuTagDevicesPort {
                 return connection;
             }),
             catchError(e => {
+                if (
+                    e instanceof BluetoothError &&
+                    e.type === BluetoothErrorType.ConnectionLostUnexpectedly
+                ) {
+                    throw UserError.create(MuTagDisconnectedUnexpectedly, e);
+                }
                 throw UserError.create(FailedToConnectToMuTag, e);
             })
         );
@@ -304,16 +325,31 @@ export default class MuTagDevices implements MuTagDevicesPort {
     private async writeCharacteristic<T>(
         peripheralId: PeripheralId,
         characteristic: Characteristic<T> & WritableCharacteristic<T>,
-        value: T
+        value: T,
+        taskId?: TaskId
     ): Promise<void> {
         await this.bluetooth
-            .write(peripheralId, characteristic, value)
+            .write(peripheralId, characteristic, value, taskId)
             .catch(e => {
                 throw UserError.create(MuTagCommunicationFailure, e);
             });
     }
 
     // Public static interface
+
+    static getMajor(accountNumber: Hexadecimal): Hexadecimal {
+        const majorHexString = accountNumber.toString().substr(0, 4);
+        return Hexadecimal.fromString(majorHexString);
+    }
+
+    static getMinor(
+        accountNumber: Hexadecimal,
+        beaconId: Hexadecimal
+    ): Hexadecimal {
+        const majorMinorHex = accountNumber.toString() + beaconId.toString();
+        const minorHex = majorMinorHex.toString().substr(4, 4);
+        return Hexadecimal.fromString(minorHex);
+    }
 
     // Protected static interface
 
@@ -331,20 +367,6 @@ export default class MuTagDevices implements MuTagDevicesPort {
         return manufacturerData
             .toString("hex")
             .substring(50, 58) as MuTagProvisionId;
-    }
-
-    private static getMajor(accountNumber: Hexadecimal): Hexadecimal {
-        const majorHexString = accountNumber.toString().substr(0, 4);
-        return Hexadecimal.fromString(majorHexString);
-    }
-
-    private static getMinor(
-        accountNumber: Hexadecimal,
-        beaconId: Hexadecimal
-    ): Hexadecimal {
-        const majorMinorHex = accountNumber.toString() + beaconId.toString();
-        const minorHex = majorMinorHex.toString().substr(4, 4);
-        return Hexadecimal.fromString(minorHex);
     }
 
     private static getMuTagProvisionIdFrom(
