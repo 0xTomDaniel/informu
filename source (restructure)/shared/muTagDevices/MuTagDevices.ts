@@ -193,13 +193,14 @@ export default class MuTagDevices implements MuTagDevicesPort {
         // Trying to cancel the write on react-native-ble-plx causes a long 20s
         // delay before the promise rejects. However, performing a disconnect of
         // the device causes an immediate promise rejection which is ideal.
-        setTimeout(
-            () =>
+        await new Promise(resolve => {
+            setTimeout(() => {
                 this.bluetooth
                     .disconnect(peripheralId)
-                    .catch(e => this.logger.warn(e)),
-            500
-        );
+                    .catch(e => this.logger.warn(e))
+                    .finally(resolve);
+            }, 500);
+        });
         await writePromise;
     }
 

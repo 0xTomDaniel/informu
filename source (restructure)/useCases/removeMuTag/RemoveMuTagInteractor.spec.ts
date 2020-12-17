@@ -137,6 +137,7 @@ const writeMock = jest.fn(
 );
 const BluetoothMock = jest.fn<BluetoothPort, any>(
     (): BluetoothPort => ({
+        cancelTask: jest.fn(),
         connect: connectMock,
         disconnect: disconnectMock,
         read: readMock,
@@ -410,9 +411,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should unprovision the Mu tag hardware.", async (): Promise<
-            void
-        > => {
+        it("Should unprovision the Mu tag hardware.", async () => {
             expect.assertions(2);
             await expect(writePromise).resolves.toStrictEqual([
                 discoveredPeripheral.id,

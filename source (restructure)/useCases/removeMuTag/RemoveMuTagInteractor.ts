@@ -63,8 +63,8 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
 
     async remove(uid: string): Promise<void> {
         this.showActivityIndicatorSubject.next(true);
-        let account: Account | undefined;
-        let muTag: ProvisionedMuTag | undefined;
+        let account: Account;
+        let muTag: ProvisionedMuTag;
         try {
             account = await this.accountRepoLocal.get();
             muTag = await this.muTagRepoLocal.getByUid(uid);
@@ -97,17 +97,17 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
                     switchMap(() =>
                         this.muTagDevices.unprovisionMuTag(connection)
                     ),
-                    // The connection will error out after being unprovisioned
-                    // so we should go ahead and complete observable.
+                    // The connection will error out 20s after being
+                    // unprovisioned so we should go ahead and complete
+                    // observable before it errors.
                     take(1)
                 )
                 .toPromise();
+            await this.removeMuTagFromPersistence(account, muTag);
         } catch (e) {
             this.showActivityIndicatorSubject.next(false);
             this.showErrorSubject.next(e);
-            return;
         }
-        await this.removeMuTagFromPersistence(account, muTag);
     }
 
     private async removeMuTagFromPersistence(

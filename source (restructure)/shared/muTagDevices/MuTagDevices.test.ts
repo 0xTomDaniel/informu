@@ -108,6 +108,7 @@ const writeMock = jest.fn<
 >(() => Promise.resolve());
 const BluetoothMock = jest.fn(
     (): BluetoothPort => ({
+        cancelTask: jest.fn(),
         connect: connectMock,
         disconnect: disconnectMock,
         read: readMock,
@@ -327,9 +328,7 @@ test("Fails to connect to provisioned Mu tag.", async () => {
     connectionError = undefined;
 });
 
-test("Successfully disconnects from provisioned Mu tag.", async (): Promise<
-    void
-> => {
+test("Successfully disconnects from provisioned Mu tag.", async () => {
     expect.assertions(2);
     startScanSubscriber
         .pipe(skip(1), take(1))
@@ -357,9 +356,7 @@ test("Successfully disconnects from provisioned Mu tag.", async (): Promise<
     await connectPromise;
 });
 
-test("Successfully changes advertising interval of provisioned Mu tag.", async (): Promise<
-    void
-> => {
+test("Successfully changes advertising interval of provisioned Mu tag.", async () => {
     expect.assertions(3);
     startScanSubscriber
         .pipe(skip(1), take(1))
@@ -387,35 +384,38 @@ test("Successfully changes advertising interval of provisioned Mu tag.", async (
     ).resolves.toBeUndefined();
 });
 
-test("Successfully unprovisions a provisioned Mu tag.", async (): Promise<
-    void
-> => {
-    expect.assertions(4);
-    startScanSubscriber
-        .pipe(skip(1), take(1))
-        .subscribe(subscriber =>
-            subscriber?.next(discoveredProvisionedPeripheral)
+test(
+    "Successfully unprovisions a provisioned Mu tag.",
+    fakeSchedulers(async advance => {
+        expect.assertions(4);
+        jest.useFakeTimers("modern");
+        startScanSubscriber
+            .pipe(skip(1), take(1))
+            .subscribe(subscriber =>
+                subscriber?.next(discoveredProvisionedPeripheral)
+            );
+        const connectPromise = muTagDevices
+            .connectToProvisionedMuTag(accountNumber, beaconId)
+            .pipe(take(1))
+            .toPromise();
+        const connection = await connectPromise;
+        const unprovisionPromise = muTagDevices.unprovisionMuTag(connection);
+        // Wait for disconnect to complete.
+        advance(500);
+        await expect(unprovisionPromise).resolves.toBeUndefined();
+        expect(writeMock).toHaveBeenNthCalledWith(
+            2,
+            discoveredProvisionedPeripheral.id,
+            MuTagBleGatt.MuTagConfiguration.Provision,
+            MuTagBleGatt.MuTagConfiguration.Provision.unprovisionCode
         );
-    const connectPromise = muTagDevices
-        .connectToProvisionedMuTag(accountNumber, beaconId)
-        .pipe(take(1))
-        .toPromise();
-    const connection = await connectPromise;
-    await expect(
-        muTagDevices.unprovisionMuTag(connection)
-    ).resolves.toBeUndefined();
-    expect(writeMock).toHaveBeenNthCalledWith(
-        2,
-        discoveredProvisionedPeripheral.id,
-        MuTagBleGatt.MuTagConfiguration.Provision,
-        MuTagBleGatt.MuTagConfiguration.Provision.unprovisionCode
-    );
-    // Must ensure connection is closed and that scan executes successfully.
-    const findUnprovisionedMuTagsPromise = muTagDevices
-        .startFindingUnprovisionedMuTags(-72 as Rssi, 15000 as Millisecond)
-        .toPromise();
-    await expect(
-        muTagDevices.stopFindingUnprovisionedMuTags()
-    ).resolves.toBeUndefined();
-    await expect(findUnprovisionedMuTagsPromise).resolves.toBeUndefined();
-});
+        // Must ensure connection is closed and that scan executes successfully.
+        const findUnprovisionedMuTagsPromise = muTagDevices
+            .startFindingUnprovisionedMuTags(-72 as Rssi, 15000 as Millisecond)
+            .toPromise();
+        await expect(
+            muTagDevices.stopFindingUnprovisionedMuTags()
+        ).resolves.toBeUndefined();
+        await expect(findUnprovisionedMuTagsPromise).resolves.toBeUndefined();
+    })
+);
