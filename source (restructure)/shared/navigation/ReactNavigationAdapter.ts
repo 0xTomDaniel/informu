@@ -4,12 +4,15 @@ import {
     NavigationActions,
     StackActions
 } from "react-navigation";
+import { BackHandler } from "react-native";
+import { Observable } from "rxjs";
 
 export default class ReactNavigationAdapter<R extends string>
     implements NavigationPort<R> {
-    routes: { [K in R]: K };
+    readonly routes: { [K in R]: K };
 
-    constructor(routes: readonly R[]) {
+    constructor(routes: readonly R[], backHandler: BackHandler) {
+        this.backHandler = backHandler;
         this.routes = Object.assign({}, ...routes.map(v => ({ [v]: v })));
     }
 
@@ -21,6 +24,20 @@ export default class ReactNavigationAdapter<R extends string>
         );
     }
 
+    onHardwareBackPress(override: boolean): Observable<void> {
+        return new Observable(subscriber => {
+            const subscription = this.backHandler.addEventListener(
+                "hardwareBackPress",
+                () => {
+                    subscriber.next();
+                    return override;
+                }
+            );
+            const teardown = () => subscription.remove();
+            return teardown;
+        });
+    }
+
     popToTop(): void {
         this.navigator?.dispatch(StackActions.popToTop());
     }
@@ -29,5 +46,6 @@ export default class ReactNavigationAdapter<R extends string>
         this.navigator = navigator;
     }
 
+    private readonly backHandler: BackHandler;
     private navigator: NavigationContainerComponent | undefined;
 }

@@ -1,4 +1,4 @@
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Subscription } from "rxjs";
 import AddMuTagInteractor from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import UserError from "../../../shared/metaLanguage/UserError";
@@ -30,11 +30,20 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
         this.showFailure.next(undefined);
         this.showRetry.next(false);
         this.showCancelActivity.next(false);
+        this.hardwareBackPressSubscription?.unsubscribe();
         this.navigation.popToTop();
     }
 
     goToFindMuTag(): void {
+        this.hardwareBackPressSubscription = this.navigation
+            .onHardwareBackPress(true)
+            .subscribe(() => {
+                if (this.showCancel.value) {
+                    this.cancel();
+                }
+            });
         this.navigation.navigateTo("FindAddMuTag");
+        this.navigation;
     }
 
     async setMuTagName(name: string, retry = false): Promise<void> {
@@ -48,6 +57,7 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
                 this.showFailure.next(undefined);
                 this.showRetry.next(false);
                 this.showActivity.next(false);
+                this.hardwareBackPressSubscription?.unsubscribe();
                 this.navigation.popToTop();
             })
             .catch(e => {
@@ -102,6 +112,7 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
     }
 
     private readonly addMuTagInteractor: AddMuTagInteractor;
+    private hardwareBackPressSubscription: Subscription | undefined;
     private isFindingNewMuTag = false;
 
     static readonly routes = [

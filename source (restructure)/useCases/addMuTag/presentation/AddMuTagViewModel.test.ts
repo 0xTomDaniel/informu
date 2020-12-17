@@ -9,7 +9,14 @@ import EventTracker from "../../../shared/metaLanguage/EventTracker";
 import Logger from "../../../shared/metaLanguage/Logger";
 import UserError from "../../../shared/metaLanguage/UserError";
 import UserWarning from "../../../shared/metaLanguage/UserWarning";
-import { Subscription, Subscriber, Observable, EmptyError } from "rxjs";
+import {
+    Subscription,
+    Subscriber,
+    Observable,
+    EmptyError,
+    BehaviorSubject,
+    Subject
+} from "rxjs";
 import { NavigationContainerComponent } from "react-navigation";
 import { ViewModelUserMessage } from "../../../shared/viewModel/ViewModel";
 
@@ -29,8 +36,20 @@ const otherRoutes = ["Home", "Settings"] as const;
 const routes = [...AddMuTagViewModel.routes, ...otherRoutes];
 type Routes = typeof routes[number];
 
+const backPressSubscriber = new BehaviorSubject<Subscriber<void> | undefined>(
+    undefined
+);
+const onBackPressUnsubscribe = new Subject<void>();
 const navigationPortMocks = {
     navigateTo: jest.fn<void, [Routes]>(),
+    onHardwareBackPress: jest.fn<Observable<void>, [boolean]>(
+        () =>
+            new Observable(subscriber => {
+                backPressSubscriber.next(subscriber);
+                const teardown = () => onBackPressUnsubscribe.next();
+                return teardown;
+            })
+    ),
     popToTop: jest.fn<void, []>(),
     setNavigator: jest.fn<void, [NavigationContainerComponent]>()
 };
@@ -38,6 +57,7 @@ const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
     (): NavigationPort<Routes> => ({
         routes: Object.assign({}, ...routes.map(v => ({ [v]: v }))),
         navigateTo: navigationPortMocks.navigateTo,
+        onHardwareBackPress: navigationPortMocks.onHardwareBackPress,
         popToTop: navigationPortMocks.popToTop,
         setNavigator: navigationPortMocks.setNavigator
     })
@@ -163,8 +183,11 @@ test("Cancel add Mu tag flow.", async () => {
 });
 
 test("Successfully navigate to Find Mu Tag screen.", async () => {
-    expect.assertions(2);
+    expect.assertions(5);
+    expect(navigationPortMocks.onHardwareBackPress).toHaveBeenCalledTimes(0);
     viewModel.goToFindMuTag();
+    expect(navigationPortMocks.onHardwareBackPress).toHaveBeenCalledTimes(1);
+    expect(navigationPortMocks.onHardwareBackPress).toBeCalledWith(true);
     expect(navigationPortMocks.navigateTo).toHaveBeenCalledTimes(1);
     expect(navigationPortMocks.navigateTo).toHaveBeenCalledWith(
         navigationPortMock.routes.FindAddMuTag
@@ -214,6 +237,77 @@ test("Cancel start adding Mu tag.", async () => {
     );
     expect(addMuTagInteractorMocks.addFoundMuTag).toHaveBeenCalledTimes(0);
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
+});
+
+test("Hardware back press cancels on find & add Mu tag screen.", async () => {
+    expect.assertions(2);
+    const stateSequence = {
+        onUnsubscribe: new Set<number>(),
+        showActivity: new Map<number, boolean>(),
+        showCancel: new Map<number, boolean>(),
+        showCancelActivity: new Map<number, boolean>(),
+        showFailure: new Map<number, ViewModelUserMessage | undefined>(),
+        showRetry: new Map<number, boolean>()
+    };
+    const subscriptions: Subscription[] = [];
+    subscriptions.push(
+        onBackPressUnsubscribe.subscribe(() =>
+            stateSequence.onUnsubscribe.add(getEmitCount())
+        )
+    );
+    subscriptions.push(
+        viewModel.showActivity.subscribe(show =>
+            stateSequence.showActivity.set(getEmitCount(), show)
+        )
+    );
+    subscriptions.push(
+        viewModel.showCancel.subscribe(show =>
+            stateSequence.showCancel.set(getEmitCount(), show)
+        )
+    );
+    subscriptions.push(
+        viewModel.showCancelActivity.subscribe(show =>
+            stateSequence.showCancelActivity.set(getEmitCount(), show)
+        )
+    );
+    subscriptions.push(
+        viewModel.showFailure.subscribe(failure =>
+            stateSequence.showFailure.set(getEmitCount(), failure)
+        )
+    );
+    subscriptions.push(
+        viewModel.showRetry.subscribe(show =>
+            stateSequence.showRetry.set(getEmitCount(), show)
+        )
+    );
+    viewModel.goToFindMuTag();
+    backPressSubscriber.value?.next();
+    subscriptions.forEach(s => s.unsubscribe());
+    expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
+    expect(stateSequence).toStrictEqual({
+        onUnsubscribe: new Set([11]),
+        showActivity: new Map([
+            [0, false],
+            [6, false]
+        ]),
+        showCancel: new Map([
+            [1, true],
+            [7, true]
+        ]),
+        showCancelActivity: new Map([
+            [2, false],
+            [5, true],
+            [10, false]
+        ]),
+        showFailure: new Map([
+            [3, undefined],
+            [8, undefined]
+        ]),
+        showRetry: new Map([
+            [4, false],
+            [9, false]
+        ])
+    });
 });
 
 test("Fails to start adding Mu tag.", async () => {
@@ -322,10 +416,12 @@ test("Successfully retry start adding Mu tag.", async () => {
 
 test("Successfully name Mu tag.", async () => {
     expect.assertions(4);
+    viewModel.goToFindMuTag();
     const addMuTagPromise = viewModel.startAddingMuTag();
     findNewMuTagSubscriber.complete();
     await addMuTagPromise;
     const stateSequence = {
+        onUnsubscribe: new Set<number>(),
         showActivity: new Map<number, boolean>(),
         showCancel: new Map<number, boolean>(),
         showCancelActivity: new Map<number, boolean>(),
@@ -333,6 +429,11 @@ test("Successfully name Mu tag.", async () => {
         showRetry: new Map<number, boolean>()
     };
     const subscriptions: Subscription[] = [];
+    subscriptions.push(
+        onBackPressUnsubscribe.subscribe(() =>
+            stateSequence.onUnsubscribe.add(getEmitCount())
+        )
+    );
     subscriptions.push(
         viewModel.showActivity.subscribe(show =>
             stateSequence.showActivity.set(getEmitCount(), show)
@@ -367,6 +468,7 @@ test("Successfully name Mu tag.", async () => {
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
     subscriptions.forEach(s => s.unsubscribe());
     expect(stateSequence).toStrictEqual({
+        onUnsubscribe: new Set([9]),
         showActivity: new Map([
             [0, false],
             [5, true],
@@ -484,4 +586,15 @@ test("Successfully retry to name Mu tag.", async () => {
     await expect(showActivityPromise02).resolves.toBe(false);
     expect(executionOrder).toStrictEqual([0, 1, 2, 3, 4]);
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
+});
+
+test("Disable hardware back press on name Mu tag screen.", async () => {
+    expect.assertions(2);
+    viewModel.goToFindMuTag();
+    const addMuTagPromise = viewModel.startAddingMuTag();
+    findNewMuTagSubscriber.complete();
+    await addMuTagPromise;
+    expect(backPressSubscriber.value).toBeDefined();
+    backPressSubscriber.value?.next();
+    expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(0);
 });

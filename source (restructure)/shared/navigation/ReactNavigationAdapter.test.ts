@@ -5,9 +5,38 @@ import {
     NavigationActions,
     StackActions
 } from "react-navigation";
+import { BackHandler, NativeEventSubscription } from "react-native";
+import { Subject } from "rxjs";
+import { take } from "rxjs/operators";
 
 const routes = ["Home", "Map", "Settings"] as const;
-const reactNavigationAdapter = new ReactNavigationAdapter(routes);
+const eventListenerHandler = new Subject<() => void>();
+const onRemove = new Subject<void>();
+const backHandlerMocks = {
+    exitApp: jest.fn(),
+    addEventListener: (eventName: "hardwareBackPress", handler: () => void) => {
+        eventListenerHandler.next(handler);
+        const subscription: NativeEventSubscription = {
+            remove: () => {
+                onRemove.next();
+            }
+        };
+        return subscription;
+    },
+    removeEventListener: jest.fn<void, ["hardwareBackPress", () => void]>()
+};
+const BackHandlerMock = jest.fn<BackHandler, any>(
+    (): BackHandler => ({
+        exitApp: backHandlerMocks.exitApp,
+        addEventListener: backHandlerMocks.addEventListener,
+        removeEventListener: backHandlerMocks.removeEventListener
+    })
+);
+const backHandlerMock = new BackHandlerMock();
+const reactNavigationAdapter = new ReactNavigationAdapter(
+    routes,
+    backHandlerMock
+);
 
 const navContainerComponentMocks = {
     dispatch: jest.fn<boolean, [NavigationAction]>()
@@ -54,4 +83,21 @@ test("Pop to the top route of the stack.", () => {
     expect(navContainerComponentMocks.dispatch).toHaveBeenCalledWith(
         StackActions.popToTop()
     );
+});
+
+test("Override hardware back press.", async () => {
+    expect.assertions(3);
+    const override = true;
+    const backPressSubject = new Subject<void>();
+    const backPressPromise = backPressSubject.pipe(take(1)).toPromise();
+    const handlerPromise = eventListenerHandler.pipe(take(1)).toPromise();
+    const subscription = reactNavigationAdapter
+        .onHardwareBackPress(override)
+        .subscribe(backPressSubject);
+    const handler = await handlerPromise;
+    expect(handler()).toBe(override);
+    await expect(backPressPromise).resolves.toBeUndefined();
+    const removePromise = onRemove.pipe(take(1)).toPromise();
+    subscription.unsubscribe();
+    await expect(removePromise).resolves.toBeUndefined();
 });

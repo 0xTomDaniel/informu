@@ -83,7 +83,7 @@ import MuTagBatteriesInteractor, {
 } from "./source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 import BackgroundTask from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundTask";
 import BackgroundFetchProxyImpl from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundFetchProxy";
-import { Platform } from "react-native";
+import { Platform, BackHandler } from "react-native";
 import BluetoothAndroidDecorator from "./source (restructure)/shared/bluetooth/BluetoothAndroidDecorator";
 import ReactNativeBlePlxAdapter from "./source (restructure)/shared/bluetooth/ReactNativeBlePlxAdapter";
 import { BleManager, fullUUID } from "react-native-ble-plx";
@@ -122,7 +122,7 @@ const sessionPresenter = new AppPresenter(appViewModel);
 
 const otherRoutes = ["Home"] as const;
 const routes = [...AddMuTagViewModel.routes, ...otherRoutes];
-const navigationAdapter = new ReactNavigationAdapter(routes);
+const navigationAdapter = new ReactNavigationAdapter(routes, BackHandler);
 
 export class Dependencies {
     eventTracker: EventTracker;
