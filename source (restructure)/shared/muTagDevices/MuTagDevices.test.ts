@@ -269,6 +269,8 @@ const discoveredProvisionedPeripheral: Peripheral = {
     }
 };
 
+const timeout = 5000 as Millisecond;
+
 test(
     "Successfully connects to provisioned Mu tag.",
     fakeSchedulers(async advance => {
@@ -280,7 +282,7 @@ test(
                 subscriber?.next(discoveredProvisionedPeripheral)
             );
         const connection = await muTagDevices
-            .connectToProvisionedMuTag(accountNumber, beaconId)
+            .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
             .pipe(take(1))
             .toPromise();
         advance(500);
@@ -296,7 +298,7 @@ test(
         expect.assertions(1);
         jest.useFakeTimers("modern");
         const connectPromise = muTagDevices
-            .connectToProvisionedMuTag(accountNumber, beaconId)
+            .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
             .toPromise();
         advance(5000);
         const error = UserError.create(
@@ -318,7 +320,7 @@ test("Fails to connect to provisioned Mu tag.", async () => {
             subscriber?.next(discoveredProvisionedPeripheral)
         );
     const connectPromise = muTagDevices
-        .connectToProvisionedMuTag(accountNumber, beaconId)
+        .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
         .toPromise();
     const originatingError = BluetoothError.FailedToConnect(
         discoveredProvisionedPeripheral.id
@@ -339,7 +341,7 @@ test("Successfully disconnects from provisioned Mu tag.", async () => {
     const connectedPromise = connectedSubject.pipe(take(1)).toPromise();
     let didConnectionComplete = false;
     const connectPromise = muTagDevices
-        .connectToProvisionedMuTag(accountNumber, beaconId)
+        .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
         .pipe(
             switchMap(connection => {
                 connectedSubject.next(connection);
@@ -364,7 +366,7 @@ test("Successfully changes advertising interval of provisioned Mu tag.", async (
             subscriber?.next(discoveredProvisionedPeripheral)
         );
     const connection = await muTagDevices
-        .connectToProvisionedMuTag(accountNumber, beaconId)
+        .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
         .pipe(take(1))
         .toPromise();
     await expect(
@@ -395,7 +397,7 @@ test(
                 subscriber?.next(discoveredProvisionedPeripheral)
             );
         const connectPromise = muTagDevices
-            .connectToProvisionedMuTag(accountNumber, beaconId)
+            .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
             .pipe(take(1))
             .toPromise();
         const connection = await connectPromise;

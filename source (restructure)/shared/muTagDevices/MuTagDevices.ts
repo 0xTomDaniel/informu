@@ -70,15 +70,14 @@ export default class MuTagDevices implements MuTagDevicesPort {
 
     connectToProvisionedMuTag(
         accountNumber: Hexadecimal,
-        beaconId: Hexadecimal
+        beaconId: Hexadecimal,
+        timeout: Millisecond
     ): Observable<Connection> {
         const muTagProvisionId = This.getMuTagProvisionIdFrom(
             accountNumber,
             beaconId
         );
-        return from(
-            this.findProvisionedMuTag(muTagProvisionId, this.defaultTimeout)
-        ).pipe(
+        return from(this.findProvisionedMuTag(muTagProvisionId, timeout)).pipe(
             switchMap(peripheralId =>
                 this.connectAndAuthenticateToMuTag(peripheralId)
             )
@@ -209,7 +208,6 @@ export default class MuTagDevices implements MuTagDevicesPort {
     // Private instance interface
 
     private readonly bluetooth: BluetoothPort;
-    private readonly defaultTimeout = 5000 as Millisecond;
     private readonly logger = Logger.instance;
     private readonly openConnections = new WeakMap<Connection, PeripheralId>();
     private readonly provisionedMuTagProximityThreshold = -90 as Rssi;
@@ -365,17 +363,19 @@ export default class MuTagDevices implements MuTagDevicesPort {
     }
 
     private static getProvisionId(manufacturerData: Buffer): MuTagProvisionId {
-        return manufacturerData
+        const provisionId = manufacturerData
             .toString("hex")
             .substring(50, 58) as MuTagProvisionId;
+        return provisionId;
     }
 
     private static getMuTagProvisionIdFrom(
         accountNumber: Hexadecimal,
         beaconId: Hexadecimal
     ): MuTagProvisionId {
-        return (accountNumber.toString() +
-            beaconId.toString()) as MuTagProvisionId;
+        return (
+            accountNumber.toString() + beaconId.toString()
+        ).toLowerCase() as MuTagProvisionId;
     }
 
     private static isMuTag(manufacturerData: Buffer): boolean {

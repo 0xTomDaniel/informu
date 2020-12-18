@@ -1,4 +1,4 @@
-import { Rssi } from "../../shared/metaLanguage/Types";
+import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import { Observable } from "rxjs";
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import Percent from "../../shared/metaLanguage/Percent";
@@ -80,7 +80,8 @@ export default interface MuTagDevicesPort {
     ): Promise<void>;
     connectToProvisionedMuTag(
         accountNumber: Hexadecimal,
-        beaconId: Hexadecimal
+        beaconId: Hexadecimal,
+        timeout: Millisecond
     ): Observable<Connection>;
     connectToUnprovisionedMuTag(
         unprovisionedMuTag: UnprovisionedMuTag

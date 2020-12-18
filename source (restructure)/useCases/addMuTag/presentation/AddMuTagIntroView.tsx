@@ -113,7 +113,6 @@ const AddMuTagIntroView: FunctionComponent<AddMuTagIntroViewProps> = (
 
     useEffect(() => {
         setWindow(getWindow());
-        console.log(`Effect executed! - window: ${window}`);
     }, [window]);
 
     return (
