@@ -3,10 +3,10 @@ import Characteristic, {
     WritableCharacteristic,
     HexCharacteristic,
     UTF8Characteristic
-} from "./Characteristic";
-import Service from "./Service";
+} from "../../bluetooth/Characteristic";
 import Hexadecimal from "../../metaLanguage/Hexadecimal";
 import { Buffer } from "buffer";
+import Service from "../../bluetooth/Service";
 
 abstract class MuTagConfigurationCharacteristic<T> extends Characteristic<T> {
     readonly serviceUuid = "A173424A-9708-4C4C-AEED-0AB1AF539797";

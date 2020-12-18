@@ -10,13 +10,13 @@ export default class UserWarning extends Error {
         return Logger.instance;
     }
     readonly name: string;
-    readonly originatingError?: any;
+    readonly originatingError?: unknown;
     readonly userFriendlyMessage: string;
 
     private constructor(
         name: string,
         userFriendlyMessage: string,
-        originatingError?: any
+        originatingError?: unknown
     ) {
         super(userFriendlyMessage);
         this.name = name;
@@ -26,7 +26,7 @@ export default class UserWarning extends Error {
 
     static create(
         type: UserWarningType,
-        originatingError?: any,
+        originatingError?: unknown,
         logEvent = true
     ): UserWarning {
         const userWarning = new this(

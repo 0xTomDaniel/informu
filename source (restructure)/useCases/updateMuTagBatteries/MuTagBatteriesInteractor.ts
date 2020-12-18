@@ -1,5 +1,4 @@
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
-import MuTagDevicesPort from "./MuTagDevicesPort";
 import BackgroundTaskPort from "./BackgroundTaskPort";
 import { Millisecond } from "../../shared/metaLanguage/Types";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
@@ -9,6 +8,7 @@ import { switchMap } from "rxjs/operators";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Subscription } from "rxjs";
+import MuTagDevicesPort from "../../shared/muTagDevices/MuTagDevicesPort";
 
 export default interface MuTagBatteriesInteractor {
     start(): Promise<void>;
@@ -175,14 +175,11 @@ export class MuTagBatteriesInteractorImpl {
         const batteryLevel = await this.muTagDevices
             .connectToProvisionedMuTag(accountNumber, muTag.beaconId)
             .pipe(
-                switchMap(() =>
+                switchMap(connection =>
                     this.muTagDevices
-                        .readBatteryLevel(accountNumber, muTag.beaconId)
+                        .readBatteryLevel(connection)
                         .finally(() =>
-                            this.muTagDevices.disconnectFromProvisionedMuTag(
-                                accountNumber,
-                                muTag.beaconId
-                            )
+                            this.muTagDevices.disconnectFromMuTag(connection)
                         )
                 )
             )

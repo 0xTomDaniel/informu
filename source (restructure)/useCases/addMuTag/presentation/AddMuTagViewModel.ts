@@ -1,70 +1,124 @@
-export interface AddMuTagState {
-    userErrorDescription: string;
-    detailedErrorDescription: string;
-    showError: boolean;
-}
+import { BehaviorSubject, Subscription } from "rxjs";
+import AddMuTagInteractor from "../AddMuTagInteractor";
+import NavigationPort from "../../../shared/navigation/NavigationPort";
+import UserError from "../../../shared/metaLanguage/UserError";
+import UserWarning from "../../../shared/metaLanguage/UserWarning";
+import ViewModel from "../../../shared/viewModel/ViewModel";
 
-export class AddMuTagViewModel {
-    private _userErrorDescription = "";
-    private _detailedErrorDescription = "";
-    private _showError = false;
+type Routes = typeof AddMuTagViewModel.routes[number];
 
-    get userErrorDescription(): string {
-        return this._userErrorDescription;
+export default class AddMuTagViewModel extends ViewModel<Routes> {
+    readonly showCancel = new BehaviorSubject<boolean>(true);
+    readonly showCancelActivity = new BehaviorSubject<boolean>(false);
+    readonly showRetry = new BehaviorSubject<boolean>(false);
+
+    constructor(
+        navigation: NavigationPort<Routes>,
+        addMuTagInteractor: AddMuTagInteractor
+    ) {
+        super(navigation);
+        this.addMuTagInteractor = addMuTagInteractor;
     }
 
-    set userErrorDescription(newValue: string) {
-        this._userErrorDescription = newValue;
-        this.triggerDidUpdate({ userErrorDescription: newValue });
-    }
-
-    get detailedErrorDescription(): string {
-        return this._detailedErrorDescription;
-    }
-
-    set detailedErrorDescription(newValue: string) {
-        this._detailedErrorDescription = newValue;
-        this.triggerDidUpdate({ detailedErrorDescription: newValue });
-    }
-
-    get showError(): boolean {
-        return this._showError;
-    }
-
-    set showError(newValue: boolean) {
-        this._showError = newValue;
-        this.triggerDidUpdate({ showError: newValue });
-    }
-
-    private onDidUpdateCallback?: (change: object) => void;
-    private onNavigateToNameMuTagCallback?: () => void;
-    private onNavigateToHomeScreenCallback?: () => void;
-
-    onDidUpdate(callback?: (change: object) => void): void {
-        this.onDidUpdateCallback = callback;
-    }
-
-    onNavigateToNameMuTag(callback?: () => void): void {
-        this.onNavigateToNameMuTagCallback = callback;
-    }
-
-    navigateToNameMuTag(): void {
-        this.onNavigateToNameMuTagCallback &&
-            this.onNavigateToNameMuTagCallback();
-    }
-
-    onNavigateToHomeScreen(callback?: () => void): void {
-        this.onNavigateToHomeScreenCallback = callback;
-    }
-
-    navigateToHomeScreen(): void {
-        this.onNavigateToHomeScreenCallback &&
-            this.onNavigateToHomeScreenCallback();
-    }
-
-    private triggerDidUpdate(change: object): void {
-        if (this.onDidUpdateCallback != null) {
-            this.onDidUpdateCallback(change);
+    async cancel(): Promise<void> {
+        this.showCancelActivity.next(true);
+        if (this.isFindingNewMuTag) {
+            await this.addMuTagInteractor.stopFindingNewMuTag();
         }
+        this.showActivity.next(false);
+        this.showCancel.next(true);
+        this.showFailure.next(undefined);
+        this.showRetry.next(false);
+        this.showCancelActivity.next(false);
+        this.hardwareBackPressSubscription?.unsubscribe();
+        this.navigation.popToTop();
     }
+
+    goToFindMuTag(): void {
+        this.hardwareBackPressSubscription = this.navigation
+            .onHardwareBackPress(true)
+            .subscribe(() => {
+                if (this.showCancel.value) {
+                    this.cancel();
+                }
+            });
+        this.navigation.navigateTo("FindAddMuTag");
+    }
+
+    async setMuTagName(name: string, retry = false): Promise<void> {
+        if (retry) {
+            this.showFailure.next(undefined);
+        }
+        this.showActivity.next(true);
+        await this.addMuTagInteractor
+            .setMuTagName(name)
+            .then(() => {
+                this.showFailure.next(undefined);
+                this.showRetry.next(false);
+                this.showActivity.next(false);
+                this.hardwareBackPressSubscription?.unsubscribe();
+                this.navigation.popToTop();
+            })
+            .catch(e => {
+                const message =
+                    e instanceof UserWarning
+                        ? e.userFriendlyMessage
+                        : String(e);
+                this.showFailure.next(
+                    This.createUserMessage(message, e.message)
+                );
+                this.showRetry.next(true);
+                this.showActivity.next(false);
+            });
+        // Cannot use 'finally' function of promise because navigation executes
+        // before 'finally' does. This may cause a race condition where the view
+        // that's being navigated to misses the observable being emitted from
+        // 'finally' function.
+    }
+
+    async startAddingMuTag(retry = false): Promise<void> {
+        if (retry) {
+            this.showFailure.next(undefined);
+        }
+        this.showActivity.next(true);
+        this.isFindingNewMuTag = true;
+        await this.addMuTagInteractor
+            .findNewMuTag()
+            .then(() => {
+                this.isFindingNewMuTag = false;
+                this.showCancel.next(false);
+                return this.addMuTagInteractor.addFoundMuTag();
+            })
+            .then(() => {
+                this.showRetry.next(false);
+                this.showActivity.next(false);
+                this.navigation.navigateTo("NameMuTag");
+            })
+            .catch(e => {
+                this.isFindingNewMuTag = false;
+                const message =
+                    e instanceof UserError ? e.userFriendlyMessage : String(e);
+                this.showFailure.next(
+                    This.createUserMessage(message, e.message)
+                );
+                this.showRetry.next(true);
+                this.showActivity.next(false);
+            });
+        // Cannot use 'finally' function of promise because navigation executes
+        // before 'finally' does. This may cause a race condition where the view
+        // that's being navigated to misses the observable being emitted from
+        // 'finally' function.
+    }
+
+    private readonly addMuTagInteractor: AddMuTagInteractor;
+    private hardwareBackPressSubscription: Subscription | undefined;
+    private isFindingNewMuTag = false;
+
+    static readonly routes = [
+        "AddMuTagIntro",
+        "FindAddMuTag",
+        "NameMuTag"
+    ] as const;
 }
+
+const This = AddMuTagViewModel;
