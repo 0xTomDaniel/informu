@@ -11,7 +11,6 @@ import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
-import MuTagDevicesPort from "./MuTagDevicesPort";
 import Account, {
     AccountData,
     AccountNumber
@@ -21,6 +20,9 @@ import { fakeSchedulers } from "rxjs-marbles/jest";
 import { BackgroundFetchProxy } from "./device/BackgroundFetchProxy";
 import BackgroundTask from "./device/BackgroundTask";
 import { BackgroundFetchConfig } from "react-native-background-fetch";
+import MuTagDevicesPort, {
+    Connection
+} from "../../shared/muTagDevices/MuTagDevicesPort";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -159,18 +161,28 @@ const BackgroundFetchProxyMock = jest.fn<BackgroundFetchProxy, any>(
 );
 const backgroundFetchProxyMock = new BackgroundFetchProxyMock();
 const backgroundTask = new BackgroundTask(backgroundFetchProxyMock);
-let connectToProvisionedMuTagSubscriber: Subscriber<void>;
-const connectToProvisionedMuTagObservable = new Observable<void>(subscriber => {
-    connectToProvisionedMuTagSubscriber = subscriber;
-    subscriber.next();
-});
+let connectToProvisionedMuTagSubscriber: Subscriber<Connection>;
+const connectToProvisionedMuTagObservable = new Observable<Connection>(
+    subscriber => {
+        connectToProvisionedMuTagSubscriber = subscriber;
+        subscriber.next();
+    }
+);
+
 const MuTagDevicesMock = jest.fn<MuTagDevicesPort, any>(
     (): MuTagDevicesPort => ({
-        connectToProvisionedMuTag: (): Observable<void> =>
+        changeAdvertisingInterval: jest.fn(),
+        changeTxPower: jest.fn(),
+        connectToProvisionedMuTag: (): Observable<Connection> =>
             connectToProvisionedMuTagObservable,
-        disconnectFromProvisionedMuTag: (): void =>
+        connectToUnprovisionedMuTag: jest.fn(),
+        disconnectFromMuTag: async (): Promise<void> =>
             connectToProvisionedMuTagSubscriber.complete(),
-        readBatteryLevel: jest.fn()
+        provisionMuTag: jest.fn(),
+        readBatteryLevel: jest.fn(),
+        startFindingUnprovisionedMuTags: jest.fn(),
+        stopFindingUnprovisionedMuTags: jest.fn(),
+        unprovisionMuTag: jest.fn()
     })
 );
 const muTagDevicesMock = new MuTagDevicesMock();
