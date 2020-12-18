@@ -43,7 +43,6 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
                 }
             });
         this.navigation.navigateTo("FindAddMuTag");
-        this.navigation;
     }
 
     async setMuTagName(name: string, retry = false): Promise<void> {
@@ -88,7 +87,7 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
             .then(() => {
                 this.isFindingNewMuTag = false;
                 this.showCancel.next(false);
-                this.addMuTagInteractor.addFoundMuTag();
+                return this.addMuTagInteractor.addFoundMuTag();
             })
             .then(() => {
                 this.showRetry.next(false);

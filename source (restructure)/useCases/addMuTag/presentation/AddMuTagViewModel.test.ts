@@ -1,7 +1,8 @@
 import AddMuTagViewModel from "./AddMuTagViewModel";
 import AddMuTagInteractor, {
     NewMuTagNotFound,
-    FailedToSaveSettings
+    FailedToSaveSettings,
+    FailedToAddMuTag
 } from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import { take, skip } from "rxjs/operators";
@@ -66,9 +67,14 @@ const navigationPortMock = new NavigationPortMock();
 
 let findNewMuTagSubscriber: Subscriber<void>;
 let findNewMuTagFailure: UserError | undefined;
+let addNewMuTagFailure: UserError | undefined;
 let setMuTagNameFailure: UserWarning | undefined;
 const addMuTagInteractorMocks = {
-    addFoundMuTag: jest.fn(() => Promise.resolve()),
+    addFoundMuTag: jest.fn(() =>
+        addNewMuTagFailure == null
+            ? Promise.resolve()
+            : Promise.reject(addNewMuTagFailure)
+    ),
     findNewMuTag: jest.fn(() =>
         findNewMuTagFailure == null
             ? new Observable<void>(
@@ -111,6 +117,7 @@ const getEmitCount = (): number => {
 afterEach(() => {
     jest.clearAllMocks();
     findNewMuTagFailure = undefined;
+    addNewMuTagFailure = undefined;
     setMuTagNameFailure = undefined;
     emitCount = 0;
     viewModel = new AddMuTagViewModel(
@@ -310,7 +317,7 @@ test("Hardware back press cancels on find & add Mu tag screen.", async () => {
     });
 });
 
-test("Fails to start adding Mu tag.", async () => {
+test("Fails to find new Mu tag.", async () => {
     expect.assertions(1);
     const stateSequence = {
         showActivity: new Map<number, boolean>(),
@@ -339,6 +346,55 @@ test("Fails to start adding Mu tag.", async () => {
     const findNewMuTagFailureMessage = AddMuTagViewModel.createUserMessage(
         findNewMuTagFailure.userFriendlyMessage,
         findNewMuTagFailure.message
+    );
+    expect(stateSequence).toStrictEqual({
+        showActivity: new Map([
+            [0, false],
+            [3, true],
+            [6, false]
+        ]),
+        showFailure: new Map([
+            [1, undefined],
+            [4, findNewMuTagFailureMessage]
+        ]),
+        showRetry: new Map([
+            [2, false],
+            [5, true]
+        ])
+    });
+});
+
+test("Fails to add new Mu tag.", async () => {
+    expect.assertions(1);
+    const stateSequence = {
+        showActivity: new Map<number, boolean>(),
+        showFailure: new Map<number, ViewModelUserMessage | undefined>(),
+        showRetry: new Map<number, boolean>()
+    };
+    const subscriptions: Subscription[] = [];
+    subscriptions.push(
+        viewModel.showActivity.subscribe(show =>
+            stateSequence.showActivity.set(getEmitCount(), show)
+        )
+    );
+    subscriptions.push(
+        viewModel.showFailure.subscribe(failure =>
+            stateSequence.showFailure.set(getEmitCount(), failure)
+        )
+    );
+    subscriptions.push(
+        viewModel.showRetry.subscribe(show =>
+            stateSequence.showRetry.set(getEmitCount(), show)
+        )
+    );
+    addNewMuTagFailure = UserError.create(FailedToAddMuTag);
+    const startAddingPromise = viewModel.startAddingMuTag();
+    findNewMuTagSubscriber.complete();
+    await startAddingPromise;
+    subscriptions.forEach(s => s.unsubscribe());
+    const findNewMuTagFailureMessage = AddMuTagViewModel.createUserMessage(
+        addNewMuTagFailure.userFriendlyMessage,
+        addNewMuTagFailure.message
     );
     expect(stateSequence).toStrictEqual({
         showActivity: new Map([
