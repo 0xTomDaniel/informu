@@ -218,7 +218,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
             view => {
                 switch (view) {
                     case AppView.AddMuTag:
-                        props.navigation.navigate("AddMuTag");
+                        props.navigation.navigate("AddMuTagIntro");
                         break;
                     case AppView.SignIn:
                         props.navigation.navigate("Login");

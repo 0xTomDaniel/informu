@@ -1,4 +1,8 @@
-import Bluetooth, { Peripheral, PeripheralId, ScanMode } from "./Bluetooth";
+import BluetoothPort, {
+    Peripheral,
+    PeripheralId,
+    ScanMode
+} from "./BluetoothPort";
 import BleManager from "react-native-ble-manager";
 import {
     fromEvent,
@@ -14,7 +18,7 @@ import { NativeModules, NativeEventEmitter } from "react-native";
 import Characteristic, {
     ReadableCharacteristic,
     WritableCharacteristic
-} from "./MuTagBLEGATT/Characteristic";
+} from "./Characteristic";
 import { Buffer } from "buffer";
 import { Millisecond } from "../metaLanguage/Types";
 import {
@@ -43,7 +47,7 @@ enum ScanState {
     Paused
 }
 
-export default class BluetoothImplRnBleManager implements Bluetooth {
+export default class ReactNativeBleManagerAdapter implements BluetoothPort {
     private readonly bleManagerEmitter = new NativeEventEmitter(
         NativeModules.BleManager
     );
@@ -103,7 +107,7 @@ export default class BluetoothImplRnBleManager implements Bluetooth {
     async startScan(
         serviceUuids: string[],
         timeout: Millisecond,
-        scanMode: ScanMode = ScanMode.balanced
+        scanMode: ScanMode = ScanMode.Balanced
     ): Promise<void> {
         if (this.scanState.value !== ScanState.Stopped) {
             throw Error("Scan already started.");

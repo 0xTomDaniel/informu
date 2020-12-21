@@ -281,6 +281,10 @@ export default class ProvisionedMuTag extends MuTag {
         this._color = color;
     }
 
+    setName(name: string): void {
+        this._name = name;
+    }
+
     updateAddress(address: Address): void {
         if (this._didExitRegion) {
             return;

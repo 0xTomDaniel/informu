@@ -181,13 +181,13 @@ export default class MuTagMonitorRnbm implements MuTagMonitor {
     }
 
     async startRangingAllMuTags(): Promise<void> {
-        const isMuTagRegionRanging = await this.isMuTagRegionRanging();
+        /*const isMuTagRegionRanging = await this.isMuTagRegionRanging();
         if (!isMuTagRegionRanging) {
             await Beacons.startRangingBeaconsInRegion(
                 this.regionId,
                 MuTagMonitorRnbm.muTagDeviceUuid
             );
-        }
+        }*/
     }
 
     async stopAllMonitoringAndRanging(): Promise<void> {

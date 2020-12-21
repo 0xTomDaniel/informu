@@ -1,38 +1,29 @@
 import Percent from "../../shared/metaLanguage/Percent";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
 import Account from "../../../source/Core/Domain/Account";
-import MuTagDevicesPort from "./MuTagDevicesPort";
 import UserError, { UserErrorType } from "../../shared/metaLanguage/UserError";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
-import { switchMap, take } from "rxjs/operators";
+import { switchMap, take, filter } from "rxjs/operators";
 import { Observable, Subject, BehaviorSubject } from "rxjs";
 import Logger from "../../shared/metaLanguage/Logger";
+import MuTagDevicesPort, {
+    Connection
+} from "../../shared/muTagDevices/MuTagDevicesPort";
+import { Millisecond } from "../../shared/metaLanguage/Types";
+
+export const FailedToRemoveMuTagFromAccount: UserErrorType = {
+    name: "FailedToRemoveMuTagFromAccount",
+    userFriendlyMessage:
+        "The Mu tag device successfully reset and disconnected from your account, but there was a problem removing the Mu tag from the app. Please notify support@informu.io."
+};
 
 interface LowMuTagBattery extends UserErrorType {
     name: "lowMuTagBattery";
     lowBatteryThreshold: string;
 }
-
-interface FailedToConnectToMuTag extends UserErrorType {
-    name: "failedToConnectToMuTag";
-}
-
-interface MuTagCommunicationFailure extends UserErrorType {
-    name: "muTagCommunicationFailure";
-}
-
-interface FailedToRemoveMuTagFromAccount extends UserErrorType {
-    name: "failedToRemoveMuTagFromAccount";
-}
-
-export type RemoveMuTagError =
-    | LowMuTagBattery
-    | FailedToConnectToMuTag
-    | MuTagCommunicationFailure
-    | FailedToRemoveMuTagFromAccount;
 
 export default interface RemoveMuTagInteractor {
     readonly showActivityIndicator: Observable<boolean>;
@@ -41,26 +32,8 @@ export default interface RemoveMuTagInteractor {
 }
 
 export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
-    private static createError(
-        type: RemoveMuTagError,
-        originatingError?: unknown
-    ): UserError<RemoveMuTagError> {
-        return UserError.create(type, originatingError);
-    }
-
-    private readonly accountRepoLocal: AccountRepositoryLocalPort;
-    private readonly accountRepoRemote: AccountRepositoryRemotePort;
-    private readonly logger = Logger.instance;
-    private readonly muTagDevices: MuTagDevicesPort;
-    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
-    private readonly muTagRepoRemote: MuTagRepositoryRemotePort;
-    private readonly removeMuTagBatteryThreshold: Percent;
-    private readonly showActivityIndicatorSubject = new BehaviorSubject(false);
-    readonly showActivityIndicator = this.showActivityIndicatorSubject.asObservable();
-    private readonly showErrorSubject = new Subject<
-        UserError<RemoveMuTagError>
-    >();
-    readonly showError = this.showErrorSubject.asObservable();
+    readonly showActivityIndicator: Observable<boolean>;
+    readonly showError: Observable<UserError>;
 
     constructor(
         removeMuTagBatteryThreshold: Percent,
@@ -76,70 +49,71 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
         this.accountRepoRemote = accountRepoRemote;
         this.muTagRepoLocal = muTagRepoLocal;
         this.muTagRepoRemote = muTagRepoRemote;
+        this.showActivityIndicatorSubject = new BehaviorSubject<boolean>(false);
+        this.showActivityIndicator = this.showActivityIndicatorSubject.asObservable();
+        this.showErrorSubject = new Subject<UserError>();
+        this.showError = this.showErrorSubject.asObservable();
     }
 
     async remove(uid: string): Promise<void> {
         this.showActivityIndicatorSubject.next(true);
-        let account: Account | undefined;
-        let muTag: ProvisionedMuTag | undefined;
+        let account: Account;
+        let muTag: ProvisionedMuTag;
         try {
             account = await this.accountRepoLocal.get();
             muTag = await this.muTagRepoLocal.getByUid(uid);
+            let connection: Connection;
             await this.muTagDevices
                 .connectToProvisionedMuTag(
                     account.accountNumber,
-                    muTag.beaconId
+                    muTag.beaconId,
+                    This.timeout
                 )
                 .pipe(
-                    switchMap(() =>
-                        this.muTagDevices.readBatteryLevel(
-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                            account!.accountNumber,
-                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                            muTag!.beaconId
-                        )
-                    ),
-                    switchMap(batteryLevel => {
-                        if (batteryLevel < this.removeMuTagBatteryThreshold) {
-                            const lowBatteryThreshold = this.removeMuTagBatteryThreshold
-                                .valueOf()
-                                .toString();
-                            throw RemoveMuTagInteractorImpl.createError({
-                                name: "lowMuTagBattery",
-                                lowBatteryThreshold: lowBatteryThreshold
-                            });
-                        } else {
-                            return this.muTagDevices.unprovisionMuTag(
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                account!.accountNumber,
-                                // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                muTag!.beaconId
+                    switchMap(cnnctn => {
+                        connection = cnnctn;
+                        return this.muTagDevices.readBatteryLevel(cnnctn);
+                    }),
+                    filter(batteryLevel => {
+                        const doesPassThreshold =
+                            batteryLevel >= this.removeMuTagBatteryThreshold;
+                        if (!doesPassThreshold) {
+                            this.muTagDevices
+                                .disconnectFromMuTag(connection)
+                                .catch(e => this.logger.warn(e, true));
+                            throw UserError.create(
+                                LowMuTagBattery(
+                                    this.removeMuTagBatteryThreshold.valueOf()
+                                )
                             );
                         }
+                        return doesPassThreshold;
                     }),
-                    // The connection will error out after being unprovisioned
-                    // so we should go ahead and complete observable.
+                    switchMap(() =>
+                        this.muTagDevices.unprovisionMuTag(connection)
+                    ),
+                    // The connection will error out 20s after being
+                    // unprovisioned so we should go ahead and complete
+                    // observable before it errors.
                     take(1)
                 )
                 .toPromise();
+            await this.removeMuTagFromPersistence(account, muTag);
         } catch (e) {
-            let error: UserError<RemoveMuTagError>;
-            if (e.name === "lowMuTagBattery") {
-                error = e;
-            } else {
-                error = RemoveMuTagInteractorImpl.createError(
-                    {
-                        name: "failedToConnectToMuTag"
-                    },
-                    e
-                );
-            }
             this.showActivityIndicatorSubject.next(false);
-            this.showErrorSubject.next(error);
-            return;
+            this.showErrorSubject.next(e);
         }
-        await this.removeMuTagFromPersistence(account, muTag);
     }
+
+    private readonly accountRepoLocal: AccountRepositoryLocalPort;
+    private readonly accountRepoRemote: AccountRepositoryRemotePort;
+    private readonly logger = Logger.instance;
+    private readonly muTagDevices: MuTagDevicesPort;
+    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
+    private readonly muTagRepoRemote: MuTagRepositoryRemotePort;
+    private readonly removeMuTagBatteryThreshold: Percent;
+    private readonly showActivityIndicatorSubject: BehaviorSubject<boolean>;
+    private readonly showErrorSubject: Subject<UserError>;
 
     private async removeMuTagFromPersistence(
         account: Account,
@@ -170,4 +144,8 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
             this.showActivityIndicatorSubject.next(false);
         }
     }
+
+    private static readonly timeout = 5000 as Millisecond;
 }
+
+const This = RemoveMuTagInteractorImpl;

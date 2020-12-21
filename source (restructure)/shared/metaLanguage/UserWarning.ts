@@ -9,6 +9,21 @@ export default class UserWarning<T extends UserWarningType> {
         return Logger.instance;
     }
 
+    readonly name: string;
+    readonly originatingError?: unknown;
+    readonly userFriendlyMessage: string;
+
+    private constructor(
+        name: string,
+        userFriendlyMessage: string,
+        originatingError?: unknown
+    ) {
+        super(userFriendlyMessage);
+        this.name = name;
+        this.userFriendlyMessage = userFriendlyMessage;
+        this.originatingError = originatingError;
+    }
+
     static create<T extends Readonly<UserWarningType>>(
         type: T,
         originatingError?: unknown,
@@ -35,8 +50,8 @@ export default class UserWarning<T extends UserWarningType> {
     readonly originatingError?: unknown;
     readonly type: T;
 
-    private constructor(type: T, originatingError?: unknown) {
+    /*private constructor(type: T, originatingError?: unknown) {
         this.originatingError = originatingError;
         this.type = type;
-    }
+    }*/
 }
