@@ -3,9 +3,6 @@ import Logger from "./Logger";
 type Severity = "log" | "warn" | "error";
 
 export default abstract class Exception<T extends string> extends Error {
-    get message(): string {
-        return this._message;
-    }
     readonly name: string;
     readonly originatingException: unknown;
     readonly severity: Severity;
@@ -19,15 +16,15 @@ export default abstract class Exception<T extends string> extends Error {
         logEvent = false,
         reportEvent = false
     ) {
-        super();
-        this.type = type;
-        this.name = this.constructor.name;
         // Concatenating to *message* so that Jest knows the inequality when
         // *originatingError* is different between *Exception* objects.
-        this._message =
+        super(
             originatingException == null
                 ? message
-                : `${message}\n<- ${String(originatingException)}`;
+                : `${message}\n<- ${String(originatingException)}`
+        );
+        this.type = type;
+        this.name = this.constructor.name;
         this.originatingException = originatingException;
         this.severity = severity;
         if (logEvent || reportEvent) {
@@ -47,8 +44,6 @@ export default abstract class Exception<T extends string> extends Error {
             }
         }
     }
-
-    private _message: string;
 
     private static get logger(): Logger {
         return Logger.instance;

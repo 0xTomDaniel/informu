@@ -1,15 +1,11 @@
 import AddMuTagViewModel from "./AddMuTagViewModel";
 import AddMuTagInteractor, {
-    NewMuTagNotFound,
-    FailedToSaveSettings,
-    FailedToAddMuTag
+    AddMuTagInteractorException
 } from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import { take, skip } from "rxjs/operators";
 import EventTracker from "../../../shared/metaLanguage/EventTracker";
 import Logger from "../../../shared/metaLanguage/Logger";
-import UserError from "../../../shared/metaLanguage/UserError";
-import UserWarning from "../../../shared/metaLanguage/UserWarning";
 import {
     Subscription,
     Subscriber,
@@ -66,9 +62,9 @@ const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
 const navigationPortMock = new NavigationPortMock();
 
 let findNewMuTagSubscriber: Subscriber<void>;
-let findNewMuTagFailure: UserError | undefined;
-let addNewMuTagFailure: UserError | undefined;
-let setMuTagNameFailure: UserWarning | undefined;
+let findNewMuTagFailure: AddMuTagInteractorException | undefined;
+let addNewMuTagFailure: AddMuTagInteractorException | undefined;
+let setMuTagNameFailure: AddMuTagInteractorException | undefined;
 const addMuTagInteractorMocks = {
     addFoundMuTag: jest.fn(() =>
         addNewMuTagFailure == null
@@ -340,11 +336,13 @@ test("Fails to find new Mu tag.", async () => {
             stateSequence.showRetry.set(getEmitCount(), show)
         )
     );
-    findNewMuTagFailure = UserError.create(NewMuTagNotFound);
+    findNewMuTagFailure = AddMuTagInteractorException.NewMuTagNotFound(
+        undefined
+    );
     await viewModel.startAddingMuTag();
     subscriptions.forEach(s => s.unsubscribe());
     const findNewMuTagFailureMessage = AddMuTagViewModel.createUserMessage(
-        findNewMuTagFailure.userFriendlyMessage,
+        findNewMuTagFailure.name,
         findNewMuTagFailure.message
     );
     expect(stateSequence).toStrictEqual({
@@ -387,13 +385,15 @@ test("Fails to add new Mu tag.", async () => {
             stateSequence.showRetry.set(getEmitCount(), show)
         )
     );
-    addNewMuTagFailure = UserError.create(FailedToAddMuTag);
+    addNewMuTagFailure = AddMuTagInteractorException.FailedToAddMuTag(
+        undefined
+    );
     const startAddingPromise = viewModel.startAddingMuTag();
     findNewMuTagSubscriber.complete();
     await startAddingPromise;
     subscriptions.forEach(s => s.unsubscribe());
     const findNewMuTagFailureMessage = AddMuTagViewModel.createUserMessage(
-        addNewMuTagFailure.userFriendlyMessage,
+        addNewMuTagFailure.name,
         addNewMuTagFailure.message
     );
     expect(stateSequence).toStrictEqual({
@@ -436,9 +436,11 @@ test("Successfully retry start adding Mu tag.", async () => {
             stateSequence.showRetry.set(getEmitCount(), show)
         )
     );
-    findNewMuTagFailure = UserError.create(NewMuTagNotFound);
+    findNewMuTagFailure = AddMuTagInteractorException.NewMuTagNotFound(
+        undefined
+    );
     const findNewMuTagFailureMessage = AddMuTagViewModel.createUserMessage(
-        findNewMuTagFailure.userFriendlyMessage,
+        findNewMuTagFailure.name,
         findNewMuTagFailure.message
     );
     await viewModel.startAddingMuTag();
@@ -566,7 +568,9 @@ test("Fails to name Mu tag.", async () => {
             stateSequence.showRetry.set(getEmitCount(), show)
         )
     );
-    setMuTagNameFailure = UserWarning.create(FailedToSaveSettings);
+    setMuTagNameFailure = AddMuTagInteractorException.FailedToSaveSettings(
+        undefined
+    );
     const muTagName = "Keys";
     await viewModel.setMuTagName(muTagName);
     subscriptions.forEach(s => s.unsubscribe());
@@ -576,7 +580,7 @@ test("Fails to name Mu tag.", async () => {
     );
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(0);
     const setMuTagNameFailureMessage = AddMuTagViewModel.createUserMessage(
-        setMuTagNameFailure.userFriendlyMessage,
+        setMuTagNameFailure.name,
         setMuTagNameFailure.message
     );
     expect(stateSequence).toStrictEqual({
@@ -603,7 +607,9 @@ test("Successfully retry to name Mu tag.", async () => {
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(0));
-    setMuTagNameFailure = UserWarning.create(FailedToSaveSettings);
+    setMuTagNameFailure = AddMuTagInteractorException.FailedToSaveSettings(
+        undefined
+    );
     const muTagName = "Keys";
     viewModel.setMuTagName(muTagName);
     expect(addMuTagInteractorMocks.setMuTagName).toHaveBeenCalledTimes(1);
@@ -611,7 +617,7 @@ test("Successfully retry to name Mu tag.", async () => {
         muTagName
     );
     const setMuTagNameFailureMessage = AddMuTagViewModel.createUserMessage(
-        setMuTagNameFailure.userFriendlyMessage,
+        setMuTagNameFailure.name,
         setMuTagNameFailure.message
     );
     await expect(showFailurePromise01).resolves.toStrictEqual(
