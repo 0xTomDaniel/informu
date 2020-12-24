@@ -2,7 +2,7 @@ import BluetoothPort, {
     PeripheralId,
     Peripheral,
     ScanMode,
-    BluetoothError
+    BluetoothException
 } from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
 import { Observable, Subject, BehaviorSubject, Subscriber } from "rxjs";
@@ -418,7 +418,7 @@ test("Fail to start Bluetooth scan again before first completes.", async () => {
     const startScanPromise02 = bluetoothAndroidConcurrencyDecorator
         .startScan([])
         .toPromise();
-    const error = BluetoothError.ScanAlreadyStarted;
+    const error = BluetoothException.ScanAlreadyStarted;
     await expect(startScanPromise02).rejects.toThrow(error);
     bluetoothAndroidConcurrencyDecorator.stopScan();
     await expect(startScanPromise01).resolves.toBeUndefined();

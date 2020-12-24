@@ -22,7 +22,7 @@ import BluetoothPort, {
     Peripheral,
     PeripheralId,
     ScanMode,
-    BluetoothError
+    BluetoothException
 } from "../../shared/bluetooth/BluetoothPort";
 import MuTagDevices from "../../shared/muTagDevices/MuTagDevices";
 import {
@@ -550,7 +550,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Given that Mu tag connection fails.
         //
-        let originatingError: BluetoothError;
+        let originatingError: BluetoothException;
 
         let removePromise: Promise<void>;
         const executionOrder: number[] = [];
@@ -587,7 +587,9 @@ describe("Mu tag user removes Mu tag.", (): void => {
                     executionOrder.push(3);
                 });
             onConnectMock.pipe(take(1)).subscribe(([peripheralId]) => {
-                originatingError = BluetoothError.FailedToConnect(peripheralId);
+                originatingError = BluetoothException.FailedToConnect(
+                    peripheralId
+                );
                 connections.get(peripheralId)?.error(originatingError);
             });
             // user removes Mu tag

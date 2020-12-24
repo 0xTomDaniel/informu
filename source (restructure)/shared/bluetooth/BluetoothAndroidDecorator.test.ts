@@ -2,7 +2,7 @@ import BluetoothPort, {
     PeripheralId,
     Peripheral,
     ScanMode,
-    BluetoothError
+    BluetoothException
 } from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
 import { Observable, Subject, Subscriber, throwError } from "rxjs";
@@ -211,7 +211,7 @@ test(
 test("Fail to start Bluetooth scan again before first completes.", async () => {
     expect.assertions(2);
     let didScanStart = false;
-    const error = BluetoothError.ScanAlreadyStarted;
+    const error = BluetoothException.ScanAlreadyStarted;
     const startScanImplementation = () => {
         if (didScanStart) {
             return throwError(error);
@@ -334,7 +334,7 @@ test("Fail to stop Bluetooth scan.", async () => {
     const startSubscription = bluetoothAndroidDecorator
         .startScan([])
         .subscribe();
-    const error = BluetoothError.FailedToStopScan;
+    const error = BluetoothException.FailedToStopScan;
     stopScanMock.mockRejectedValueOnce(error);
     await expect(bluetoothAndroidDecorator.stopScan()).rejects.toStrictEqual(
         error

@@ -3,8 +3,7 @@ import BluetoothPort, {
     ScanMode,
     PeripheralId,
     Peripheral,
-    BluetoothError,
-    BluetoothErrorType,
+    BluetoothException,
     TaskId
 } from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
@@ -109,10 +108,7 @@ export default class BluetoothAndroidDecorator implements BluetoothPort {
         this.sequentialTaskState = SequentialTaskState.Scan;
         return this.bluetooth.startScan(serviceUuids, timeout, scanMode).pipe(
             catchError(e => {
-                if (
-                    e instanceof BluetoothError &&
-                    e.type === BluetoothErrorType.ScanAlreadyStarted
-                ) {
+                if (BluetoothException.isType(e, "ScanAlreadyStarted")) {
                     throw e;
                 }
                 this.sequentialTaskState = SequentialTaskState.Idle;

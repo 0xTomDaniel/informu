@@ -13,7 +13,7 @@ import BluetoothPort, {
     Peripheral,
     PeripheralId,
     ScanMode,
-    BluetoothError
+    BluetoothException
 } from "../../shared/bluetooth/BluetoothPort";
 import {
     Observable,
@@ -107,7 +107,7 @@ const bluetoothMocks = {
                 let timeoutId: NodeJS.Timeout | undefined;
                 if (timeout != null) {
                     timeoutId = setTimeout(
-                        () => subscriber.error(BluetoothError.ScanTimeout),
+                        () => subscriber.error(BluetoothException.ScanTimeout),
                         timeout
                     );
                 }
@@ -792,7 +792,7 @@ describe("User adds Mu tag.", () => {
             fakeSchedulers(async advance => {
                 expect.assertions(1);
                 advance(30000);
-                const originatingError01 = BluetoothError.ScanTimeout;
+                const originatingError01 = BluetoothException.ScanTimeout;
                 const originatingError02 = UserError.create(
                     FindUnprovisionedMuTagTimeout,
                     originatingError01

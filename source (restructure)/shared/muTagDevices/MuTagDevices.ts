@@ -2,8 +2,7 @@ import BluetoothPort, {
     Peripheral,
     PeripheralId,
     ScanMode,
-    BluetoothError,
-    BluetoothErrorType,
+    BluetoothException,
     TaskId
 } from "../bluetooth/BluetoothPort";
 import { Observable, from } from "rxjs";
@@ -22,13 +21,8 @@ import MuTagDevicesPort, {
     UnprovisionedMuTag,
     TxPowerSetting,
     AdvertisingIntervalSetting,
-    MuTagCommunicationFailure,
-    FailedToConnectToMuTag,
-    FailedToFindMuTag,
-    FindUnprovisionedMuTagTimeout,
-    MuTagDisconnectedUnexpectedly
+    MuTagDevicesException
 } from "./MuTagDevicesPort";
-import UserError from "../metaLanguage/UserError";
 
 type MuTagPeripheral = { [K in keyof Peripheral]: NonNullable<Peripheral[K]> };
 
@@ -162,11 +156,8 @@ export default class MuTagDevices implements MuTagDevicesPort {
             ),
             map(peripheral => this.createUnprovisionedMuTag(peripheral)),
             catchError(e => {
-                if (
-                    e instanceof BluetoothError &&
-                    e.type === BluetoothErrorType.ScanTimeout
-                ) {
-                    throw UserError.create(FindUnprovisionedMuTagTimeout, e);
+                if (BluetoothException.isType(e, "ScanTimeout")) {
+                    throw MuTagDevicesException.FindNewMuTagTimeout(e);
                 } else {
                     throw e;
                 }
@@ -239,13 +230,19 @@ export default class MuTagDevices implements MuTagDevicesPort {
                 return connection;
             }),
             catchError(e => {
-                if (
-                    e instanceof BluetoothError &&
-                    e.type === BluetoothErrorType.ConnectionLostUnexpectedly
-                ) {
-                    throw UserError.create(MuTagDisconnectedUnexpectedly, e);
+                if (e instanceof BluetoothException) {
+                    switch (e.type) {
+                        case "ConnectionLostUnexpectedly":
+                            throw MuTagDevicesException.MuTagDisconnectedUnexpectedly(
+                                e
+                            );
+                        case "FailedToConnect":
+                            throw MuTagDevicesException.FailedToConnectToMuTag(
+                                e
+                            );
+                    }
                 }
-                throw UserError.create(FailedToConnectToMuTag, e);
+                throw e;
             })
         );
     }
@@ -296,7 +293,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
                 ),
                 map(peripheral => peripheral.id),
                 catchError(e => {
-                    throw UserError.create(FailedToFindMuTag, e);
+                    throw MuTagDevicesException.FailedToFindMuTag(e);
                 })
             )
             .toPromise();
@@ -317,7 +314,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
         characteristic: Characteristic<T> & ReadableCharacteristic<T>
     ): Promise<T> {
         return this.bluetooth.read(peripheralId, characteristic).catch(e => {
-            throw UserError.create(MuTagCommunicationFailure, e);
+            throw MuTagDevicesException.MuTagCommunicationFailure(e);
         });
     }
 
@@ -330,7 +327,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
         await this.bluetooth
             .write(peripheralId, characteristic, value, taskId)
             .catch(e => {
-                throw UserError.create(MuTagCommunicationFailure, e);
+                throw MuTagDevicesException.MuTagCommunicationFailure(e);
             });
     }
 
