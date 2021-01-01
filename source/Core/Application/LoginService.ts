@@ -1,16 +1,59 @@
 import LoginOutput from "../Ports/LoginOutput";
-import { Authentication } from "../Ports/Authentication";
+import {
+    Authentication,
+    AuthenticationException
+} from "../Ports/Authentication";
 import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
-import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
+import {
+    AccountRepositoryLocal,
+    AccountRepositoryLocalException
+} from "../Ports/AccountRepositoryLocal";
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import { Session } from "./SessionService";
 import { AccountRegistration } from "./AccountRegistrationService";
-import UserError, {
-    UserErrorType
-} from "../../../source (restructure)/shared/metaLanguage/UserError";
+import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
-export const ImproperEmailFormat: UserErrorType = {
+const ExceptionType = [
+    "InvalidEmailFormat",
+    "InvalidPasswordComplexity",
+    "UnknownError"
+] as const;
+type ExceptionType = typeof ExceptionType[number];
+
+export class LoginServiceException<T extends ExceptionType> extends Exception<
+    T
+> {
+    static get InvalidEmailFormat(): LoginServiceException<
+        "InvalidEmailFormat"
+    > {
+        return new this("InvalidEmailFormat", "Invalid email address.", "warn");
+    }
+
+    static get InvalidPasswordComplexity(): LoginServiceException<
+        "InvalidPasswordComplexity"
+    > {
+        return new this(
+            "InvalidPasswordComplexity",
+            "Password does not meet complexity requirements.",
+            "warn"
+        );
+    }
+
+    static UnknownError(
+        originatingException: unknown
+    ): LoginServiceException<"UnknownError"> {
+        return new this(
+            "UnknownError",
+            "Unknown error sign in error.",
+            "error",
+            originatingException,
+            true
+        );
+    }
+}
+
+/*export const ImproperEmailFormat: UserErrorType = {
     name: "ImproperEmailFormat",
     userFriendlyMessage: "This is not a proper email address."
 };
@@ -23,7 +66,7 @@ export const ImproperPasswordComplexity: UserErrorType = {
 const GenericSignInError: UserErrorType = {
     name: "GenericSignInError",
     userFriendlyMessage: "Failed to sign in."
-};
+};*/
 
 export class LoginService {
     private readonly loginOutput: LoginOutput;
@@ -61,10 +104,10 @@ export class LoginService {
     ): Promise<void> {
         try {
             if (!emailAddress.isValid()) {
-                throw UserError.create(ImproperEmailFormat);
+                throw LoginServiceException.InvalidEmailFormat;
             }
             if (!password.isValid()) {
-                throw UserError.create(ImproperPasswordComplexity);
+                throw LoginServiceException.InvalidPasswordComplexity;
             }
             this.loginOutput.showBusyIndicator();
             const userData = await this.authentication.authenticateWithEmail(
@@ -74,9 +117,9 @@ export class LoginService {
             await this.sessionService.start(userData);
         } catch (e) {
             if (
-                this.isLoginServiceException(e) ||
-                this.isAuthenticationException(e) ||
-                this.isAccountRepositoryLocalException(e)
+                LoginServiceException.isType(e) ||
+                AuthenticationException.isType(e) ||
+                AccountRepositoryLocalException.isType(e)
             ) {
                 this.loginOutput.showEmailLoginError(e);
             } else {
@@ -104,7 +147,7 @@ export class LoginService {
                     return;
                 default:
                     this.loginOutput.showFederatedLoginError(
-                        UserError.create(GenericSignInError, e)
+                        LoginServiceException.UnknownError(e)
                     );
             }
         } finally {
@@ -130,7 +173,7 @@ export class LoginService {
                     return;
                 default:
                     this.loginOutput.showFederatedLoginError(
-                        UserError.create(GenericSignInError, e)
+                        LoginServiceException.UnknownError(e)
                     );
             }
         } finally {
@@ -144,36 +187,6 @@ export class LoginService {
 
     abortSignIn(): void {
         this.sessionService.abortStart();
-    }
-
-    private isLoginServiceException(value: UserError): boolean {
-        return (
-            value.name === "ImproperEmailFormat" ||
-            value.name === "ImproperPasswordComplexity"
-        );
-    }
-
-    private isAuthenticationException(value: UserError): boolean {
-        return (
-            value.name === "InvalidCredentials" ||
-            value.name === "UserDisabled" ||
-            value.name === "IncorrectSignInMethod" ||
-            value.name === "TooManyAttempts" ||
-            value.name === "SignInCanceled" ||
-            value.name === "GooglePlayServicesNotAvailable" ||
-            value.name === "GoogleSignInFailed" ||
-            value.name === "FacebookSignInFailed" ||
-            value.name === "EmailNotFound"
-        );
-    }
-
-    private isAccountRepositoryLocalException(value: UserError): boolean {
-        return (
-            value.name === "AccountDoesNotExistOnLocal" ||
-            value.name === "FailedToGet" ||
-            value.name === "FailedToAdd" ||
-            value.name === "FailedToRemove"
-        );
     }
 }
 

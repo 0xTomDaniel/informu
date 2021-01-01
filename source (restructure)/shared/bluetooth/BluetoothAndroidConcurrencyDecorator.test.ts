@@ -16,6 +16,20 @@ import { v4 as uuidV4 } from "uuid";
 import { take, filter } from "rxjs/operators";
 import { Buffer } from "buffer";
 import { fakeSchedulers } from "rxjs-marbles/jest";
+import EventTracker from "../metaLanguage/EventTracker";
+import Logger from "../metaLanguage/Logger";
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+Logger.createInstance(eventTrackerMock);
 
 const connectMock = jest.fn<
     Observable<void>,

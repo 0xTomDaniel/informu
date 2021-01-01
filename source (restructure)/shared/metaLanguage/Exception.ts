@@ -8,13 +8,13 @@ export default abstract class Exception<T extends string> extends Error {
     readonly severity: Severity;
     readonly type: T;
 
-    protected constructor(
+    constructor(
         type: T,
         message: string,
         severity: Severity,
         originatingException?: unknown,
-        logEvent = false,
-        reportEvent = false
+        reportEvent = false,
+        logEvent = true
     ) {
         // Concatenating to *message* so that Jest knows the inequality when
         // *originatingError* is different between *Exception* objects.
@@ -43,6 +43,17 @@ export default abstract class Exception<T extends string> extends Error {
                     break;
             }
         }
+    }
+
+    static isType<T extends string, E extends Exception<string>>(
+        this: new (type: T, ...args: any) => E,
+        value: unknown,
+        type?: T
+    ): value is E & Exception<T> {
+        if (value instanceof this) {
+            return type == null ? true : value.type === type;
+        }
+        return false;
     }
 
     private static get logger(): Logger {

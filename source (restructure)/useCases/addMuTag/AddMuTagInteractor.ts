@@ -25,89 +25,75 @@ const ExceptionType = [
     "LowMuTagBattery",
     "NewMuTagNotFound"
 ] as const;
-type ExceptionType = typeof ExceptionType[number];
+export type ExceptionType = typeof ExceptionType[number];
 
-export class AddMuTagInteractorException extends Exception<ExceptionType> {
-    static isType<T extends ExceptionType>(
-        value: unknown,
-        type: T
-    ): value is AddMuTagInteractorException & Exception<T> {
-        if (value instanceof AddMuTagInteractorException) {
-            return value.type === type;
-        }
-        return false;
-    }
-
+export class AddMuTagInteractorException<
+    T extends ExceptionType
+> extends Exception<T> {
     static FailedToAddMuTag(
         originatingError: unknown
-    ): AddMuTagInteractorException {
+    ): AddMuTagInteractorException<"FailedToAddMuTag"> {
         return new this(
             "FailedToAddMuTag",
             "Failed to add Mu tag.",
             "error",
             originatingError,
-            true,
             true
         );
     }
 
     static FailedToNameMuTag(
         originatingError: unknown
-    ): AddMuTagInteractorException {
+    ): AddMuTagInteractorException<"FailedToNameMuTag"> {
         return new this(
             "FailedToNameMuTag",
             "Failed to name Mu tag.",
             "error",
             originatingError,
-            true,
             true
         );
     }
 
     static FailedToSaveSettings(
         originatingError: unknown
-    ): AddMuTagInteractorException {
+    ): AddMuTagInteractorException<"FailedToSaveSettings"> {
         return new this(
             "FailedToSaveSettings",
             "Failed to save Mu tag settings.",
             "error",
             originatingError,
-            true,
             true
         );
     }
 
-    static get FindNewMuTagCanceled(): AddMuTagInteractorException {
+    static get FindNewMuTagCanceled(): AddMuTagInteractorException<
+        "FindNewMuTagCanceled"
+    > {
         return new this(
             "FindNewMuTagCanceled",
             "Find new Mu tag has been canceled.",
-            "log",
-            undefined,
-            true
+            "log"
         );
     }
 
     static LowMuTagBattery(
         lowBatteryThreshold: number
-    ): AddMuTagInteractorException {
+    ): AddMuTagInteractorException<"LowMuTagBattery"> {
         return new this(
             "LowMuTagBattery",
             `Mu tag battery is too low. It's below ${lowBatteryThreshold}%.`,
-            "warn",
-            undefined,
-            true
+            "warn"
         );
     }
 
     static NewMuTagNotFound(
         originatingError: unknown
-    ): AddMuTagInteractorException {
+    ): AddMuTagInteractorException<"NewMuTagNotFound"> {
         return new this(
             "NewMuTagNotFound",
             "Could not find a new Mu tag.",
             "warn",
-            originatingError,
-            true
+            originatingError
         );
     }
 }

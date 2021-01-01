@@ -13,10 +13,10 @@ import {
 } from "rxjs/operators";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { Millisecond } from "../../../shared/metaLanguage/Types";
-import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
 import SignOutInteractor from "../../signOut/SignOutInteractor";
 import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 import { isEqual } from "lodash";
+import Exception from "../../../shared/metaLanguage/Exception";
 
 export enum BatteryBarLevel {
     "0%",
@@ -74,7 +74,7 @@ export default class BelongingDashboardViewModel {
     readonly showActivityIndicator: Observable<boolean>;
     readonly showBelongings: Observable<BelongingViewData[]>;
     readonly showEmptyDashboard: Observable<boolean>;
-    readonly showError: Observable<UserErrorViewData>;
+    readonly showError: Observable<Exception<string>>;
     private readonly signOutInteractor: SignOutInteractor;
 
     constructor(
@@ -119,10 +119,9 @@ export default class BelongingDashboardViewModel {
             signOutInteractor.showActivityIndicator
         ).pipe(distinctUntilChanged());
         this.showError = merge(
-            belongingDashboardInteractor.showError,
             removeMuTagInteractor.showError,
             signOutInteractor.showError
-        ).pipe(map(e => e.toViewData()));
+        );
     }
 
     addMuTag(): void {

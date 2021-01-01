@@ -230,7 +230,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
                 return connection;
             }),
             catchError(e => {
-                if (e instanceof BluetoothException) {
+                if (BluetoothException.isType(e)) {
                     switch (e.type) {
                         case "ConnectionLostUnexpectedly":
                             throw MuTagDevicesException.MuTagDisconnectedUnexpectedly(

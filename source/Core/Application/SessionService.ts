@@ -4,9 +4,6 @@ import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import { BelongingDetection } from "./BelongingDetectionService";
 import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import { UserData } from "../Ports/UserData";
-import UserWarning, {
-    UserWarningType
-} from "../../../source (restructure)/shared/metaLanguage/UserWarning";
 import { Database } from "../../Secondary Adapters/Persistence/Database";
 import { v4 as uuidV4 } from "uuid";
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";

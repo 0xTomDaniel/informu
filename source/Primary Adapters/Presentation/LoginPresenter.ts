@@ -1,7 +1,5 @@
 import LoginOutput from "../../Core/Ports/LoginOutput";
 import { LoginViewModel } from "./LoginViewModel";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
-import UserWarning from "../../../source (restructure)/shared/metaLanguage/UserWarning";
 
 export default class LoginPresenter implements LoginOutput {
     private readonly viewModel: LoginViewModel;

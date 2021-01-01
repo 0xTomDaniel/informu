@@ -60,7 +60,7 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
                 this.navigation.popToTop();
             })
             .catch(e => {
-                if (e instanceof AddMuTagInteractorException) {
+                if (AddMuTagInteractorException.isType(e)) {
                     this.showFailure.next(
                         This.createUserMessage(e.name, e.message)
                     );
@@ -96,7 +96,7 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
             })
             .catch(e => {
                 this.isFindingNewMuTag = false;
-                if (e instanceof AddMuTagInteractorException) {
+                if (AddMuTagInteractorException.isType(e)) {
                     this.showFailure.next(
                         This.createUserMessage(e.name, e.message)
                     );

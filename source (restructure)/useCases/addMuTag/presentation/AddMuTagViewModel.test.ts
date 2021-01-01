@@ -1,6 +1,7 @@
 import AddMuTagViewModel from "./AddMuTagViewModel";
 import AddMuTagInteractor, {
-    AddMuTagInteractorException
+    AddMuTagInteractorException,
+    ExceptionType
 } from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import { take, skip } from "rxjs/operators";
@@ -62,9 +63,9 @@ const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
 const navigationPortMock = new NavigationPortMock();
 
 let findNewMuTagSubscriber: Subscriber<void>;
-let findNewMuTagFailure: AddMuTagInteractorException | undefined;
-let addNewMuTagFailure: AddMuTagInteractorException | undefined;
-let setMuTagNameFailure: AddMuTagInteractorException | undefined;
+let findNewMuTagFailure: AddMuTagInteractorException<ExceptionType> | undefined;
+let addNewMuTagFailure: AddMuTagInteractorException<ExceptionType> | undefined;
+let setMuTagNameFailure: AddMuTagInteractorException<ExceptionType> | undefined;
 const addMuTagInteractorMocks = {
     addFoundMuTag: jest.fn(() =>
         addNewMuTagFailure == null

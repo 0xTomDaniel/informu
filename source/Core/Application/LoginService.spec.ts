@@ -7,11 +7,7 @@ import {
 } from "./LoginService";
 import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import Account, { AccountNumber, AccountData } from "../Domain/Account";
-import {
-    Authentication,
-    InvalidCredentials,
-    SignInCanceled
-} from "../Ports/Authentication";
+import { Authentication } from "../Ports/Authentication";
 import LoginOutput from "../Ports/LoginOutput";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
@@ -24,7 +20,6 @@ import { UserData } from "../Ports/UserData";
 import AccountRegistrationService from "./AccountRegistrationService";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 jest.mock("./AccountRegistrationService");
 

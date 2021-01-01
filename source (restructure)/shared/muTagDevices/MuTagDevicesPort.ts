@@ -11,22 +11,14 @@ const ExceptionType = [
     "MuTagCommunicationFailure",
     "MuTagDisconnectedUnexpectedly"
 ] as const;
-type ExceptionType = typeof ExceptionType[number];
+export type ExceptionType = typeof ExceptionType[number];
 
-export class MuTagDevicesException extends Exception<ExceptionType> {
-    static isType<T extends ExceptionType>(
-        value: unknown,
-        type: T
-    ): value is MuTagDevicesException & Exception<T> {
-        if (value instanceof MuTagDevicesException) {
-            return value.type === type;
-        }
-        return false;
-    }
-
+export class MuTagDevicesException<T extends ExceptionType> extends Exception<
+    T
+> {
     static FailedToConnectToMuTag(
         originatingError: unknown
-    ): MuTagDevicesException {
+    ): MuTagDevicesException<"FailedToConnectToMuTag"> {
         return new this(
             "FailedToConnectToMuTag",
             "Failed to connect to Mu tag.",
@@ -35,7 +27,9 @@ export class MuTagDevicesException extends Exception<ExceptionType> {
         );
     }
 
-    static FailedToFindMuTag(originatingError: unknown): MuTagDevicesException {
+    static FailedToFindMuTag(
+        originatingError: unknown
+    ): MuTagDevicesException<"FailedToFindMuTag"> {
         return new this(
             "FailedToFindMuTag",
             "Mu tag could not be found.",
@@ -46,7 +40,7 @@ export class MuTagDevicesException extends Exception<ExceptionType> {
 
     static FindNewMuTagTimeout(
         originatingError: unknown
-    ): MuTagDevicesException {
+    ): MuTagDevicesException<"FindNewMuTagTimeout"> {
         return new this(
             "FindNewMuTagTimeout",
             "Could not find unprovisioned Mu tag before timeout.",
@@ -57,7 +51,7 @@ export class MuTagDevicesException extends Exception<ExceptionType> {
 
     static MuTagCommunicationFailure(
         originatingError: unknown
-    ): MuTagDevicesException {
+    ): MuTagDevicesException<"MuTagCommunicationFailure"> {
         return new this(
             "MuTagCommunicationFailure",
             "Failed to read or write to Mu tag.",
@@ -68,7 +62,7 @@ export class MuTagDevicesException extends Exception<ExceptionType> {
 
     static MuTagDisconnectedUnexpectedly(
         originatingError: unknown
-    ): MuTagDevicesException {
+    ): MuTagDevicesException<"MuTagDisconnectedUnexpectedly"> {
         return new this(
             "MuTagDisconnectedUnexpectedly",
             "Mu tag has disconnected unexpectedly.",

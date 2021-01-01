@@ -3,7 +3,8 @@ import BluetoothPort, {
     Peripheral,
     PeripheralId,
     ScanMode,
-    BluetoothException
+    BluetoothException,
+    ExceptionType
 } from "../bluetooth/BluetoothPort";
 import { v4 as uuidV4 } from "uuid";
 import Percent from "../metaLanguage/Percent";
@@ -43,7 +44,7 @@ const eventTrackerMock = new EventTrackerMock();
 Logger.createInstance(eventTrackerMock);
 
 const connections = new Map<PeripheralId, Subscriber<void>>();
-let connectionError: BluetoothException | undefined;
+let connectionError: BluetoothException<ExceptionType> | undefined;
 const connectMock = jest.fn<
     Observable<void>,
     [PeripheralId, Millisecond | undefined]

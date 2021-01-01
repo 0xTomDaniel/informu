@@ -13,9 +13,9 @@ import Account, {
 import { MuTagColor } from "../../../source/Core/Domain/MuTag";
 import {
     RemoveMuTagInteractorImpl,
-    LowMuTagBattery
+    RemoveMuTagInteractorException,
+    ExceptionType
 } from "./RemoveMuTagInteractor";
-import UserError from "../../shared/metaLanguage/UserError";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
 import Logger from "../../shared/metaLanguage/Logger";
 import BluetoothPort, {
@@ -44,8 +44,8 @@ import { take, skip, filter } from "rxjs/operators";
 import BluetoothAndroidDecorator from "../../shared/bluetooth/BluetoothAndroidDecorator";
 import { fakeSchedulers } from "rxjs-marbles/jest";
 import {
-    FailedToFindMuTag,
-    FailedToConnectToMuTag
+    ExceptionType as MuTagDevicesExceptionType,
+    MuTagDevicesException
 } from "../../shared/muTagDevices/MuTagDevicesPort";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
@@ -472,14 +472,21 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Given that Mu tag cannot be found.
         //
-        const originatingError = new EmptyError();
-        const error = UserError.create(FailedToFindMuTag, originatingError);
+        const originatingError = MuTagDevicesException.FailedToFindMuTag(
+            new EmptyError()
+        );
+        const error = RemoveMuTagInteractorException.FailedToFindMuTag(
+            muTagUid,
+            originatingError
+        );
 
         let removePromise: Promise<void>;
         const executionOrder: number[] = [];
         let activityIndicatorPromise01: Promise<boolean>;
         let activityIndicatorPromise02: Promise<boolean>;
-        let showErrorPromise: Promise<UserError>;
+        let showErrorPromise: Promise<RemoveMuTagInteractorException<
+            ExceptionType
+        >>;
 
         // When
         //
@@ -550,14 +557,16 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Given that Mu tag connection fails.
         //
-        let originatingError: BluetoothException;
+        let originatingError: MuTagDevicesException<MuTagDevicesExceptionType>;
 
         let removePromise: Promise<void>;
         const executionOrder: number[] = [];
         let activityIndicatorPromise01: Promise<boolean>;
         let connectPromise: Promise<[PeripheralId, (Millisecond | undefined)?]>;
         let activityIndicatorPromise02: Promise<boolean>;
-        let showErrorPromise: Promise<UserError>;
+        let showErrorPromise: Promise<RemoveMuTagInteractorException<
+            ExceptionType
+        >>;
 
         // When
         //
@@ -587,8 +596,8 @@ describe("Mu tag user removes Mu tag.", (): void => {
                     executionOrder.push(3);
                 });
             onConnectMock.pipe(take(1)).subscribe(([peripheralId]) => {
-                originatingError = BluetoothException.FailedToConnect(
-                    peripheralId
+                originatingError = MuTagDevicesException.FailedToConnectToMuTag(
+                    BluetoothException.FailedToConnect(peripheralId)
                 );
                 connections.get(peripheralId)?.error(originatingError);
             });
@@ -633,10 +642,13 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should show 'failed to connect' error message.", async () => {
+        it("Should show 'failed to reset' error message.", async () => {
             expect.assertions(3);
             await expect(showErrorPromise).resolves.toStrictEqual(
-                UserError.create(FailedToConnectToMuTag, originatingError)
+                RemoveMuTagInteractorException.FailedToResetMuTag(
+                    muTagUid,
+                    originatingError
+                )
             );
             expect(executionOrder[3]).toBe(3);
             await expect(removePromise).resolves.toBeUndefined();
@@ -666,7 +678,9 @@ describe("Mu tag user removes Mu tag.", (): void => {
         let disconnectPromise: Promise<PeripheralId>;
         let readPromise: Promise<[PeripheralId, ReadableCharacteristic<any>]>;
         let activityIndicatorPromise02: Promise<boolean>;
-        let showErrorPromise: Promise<UserError>;
+        let showErrorPromise: Promise<RemoveMuTagInteractorException<
+            ExceptionType
+        >>;
 
         // When
         //
@@ -785,8 +799,8 @@ describe("Mu tag user removes Mu tag.", (): void => {
         > => {
             expect.assertions(3);
             await expect(showErrorPromise).resolves.toStrictEqual(
-                UserError.create(
-                    LowMuTagBattery(removeMuTagBatteryThreshold.valueOf())
+                RemoveMuTagInteractorException.LowMuTagBattery(
+                    removeMuTagBatteryThreshold.valueOf()
                 )
             );
             expect(executionOrder[5]).toBe(5);

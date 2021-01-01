@@ -12,12 +12,26 @@ import {
     UTF8Characteristic
 } from "./Characteristic";
 import BluetoothAndroidDecorator, {
-    BluetoothAndroidDecoratorError
+    BluetoothAndroidDecoratorException
 } from "./BluetoothAndroidDecorator";
 import { v4 as uuidV4 } from "uuid";
 import { take } from "rxjs/operators";
 import { Buffer } from "buffer";
 import { fakeSchedulers } from "rxjs-marbles/jest";
+import EventTracker from "../metaLanguage/EventTracker";
+import Logger from "../metaLanguage/Logger";
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+Logger.createInstance(eventTrackerMock);
 
 const connectMock = jest.fn<
     Observable<void>,
@@ -71,7 +85,7 @@ test("Fail to start Bluetooth scan while there are open connections.", async () 
         .startScan(serviceUuids)
         .toPromise();
     await expect(startScanPromise).rejects.toStrictEqual(
-        BluetoothAndroidDecoratorError.OpenConnections
+        BluetoothAndroidDecoratorException.OpenConnections
     );
 });
 
@@ -121,7 +135,7 @@ test("Fail to connect to Bluetooth device while scanning.", async () => {
         .connect(peripheralId)
         .toPromise();
     await expect(connectPromise).rejects.toStrictEqual(
-        BluetoothAndroidDecoratorError.ScanInProgress
+        BluetoothAndroidDecoratorException.ScanInProgress
     );
 });
 

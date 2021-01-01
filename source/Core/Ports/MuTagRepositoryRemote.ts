@@ -1,73 +1,6 @@
 import ProvisionedMuTag from "../Domain/ProvisionedMuTag";
 import { AccountNumber } from "../Domain/Account";
-import { Millisecond } from "../../../source (restructure)/shared/metaLanguage/Types";
-
-export enum MuTagRepoRemoteErrorType {
-    DoesNotExist,
-    FailedToAdd,
-    FailedToGet,
-    FailedToRemove,
-    FailedToUpdate,
-    PersistedDataMalformed
-}
-
-export class MuTagRepoRemoteError extends Error {
-    readonly originatingError: any;
-    readonly type: MuTagRepoRemoteErrorType;
-
-    constructor(
-        type: MuTagRepoRemoteErrorType,
-        message: string,
-        originatingError?: unknown
-    ) {
-        super(message);
-        this.name = MuTagRepoRemoteErrorType[type];
-        this.originatingError = originatingError;
-        this.type = type;
-    }
-
-    static get DoesNotExist(): MuTagRepoRemoteError {
-        return new MuTagRepoRemoteError(
-            MuTagRepoRemoteErrorType.DoesNotExist,
-            "Mu tag entity does not exist in remote persistence."
-        );
-    }
-
-    static get FailedToAdd(): MuTagRepoRemoteError {
-        return new MuTagRepoRemoteError(
-            MuTagRepoRemoteErrorType.FailedToAdd,
-            "Failed to add Mu tag entity to remote persistence."
-        );
-    }
-
-    static get FailedToGet(): MuTagRepoRemoteError {
-        return new MuTagRepoRemoteError(
-            MuTagRepoRemoteErrorType.FailedToGet,
-            "Failed to get Mu tag entity from remote persistence."
-        );
-    }
-
-    static get FailedToRemove(): MuTagRepoRemoteError {
-        return new MuTagRepoRemoteError(
-            MuTagRepoRemoteErrorType.FailedToRemove,
-            "Failed to remove Mu tag entity from remote persistence."
-        );
-    }
-
-    static get FailedToUpdate(): MuTagRepoRemoteError {
-        return new MuTagRepoRemoteError(
-            MuTagRepoRemoteErrorType.FailedToUpdate,
-            "Failed to update Mu tag entity to remote persistence."
-        );
-    }
-
-    static PersistedDataMalformed(json: string): MuTagRepoRemoteError {
-        return new MuTagRepoRemoteError(
-            MuTagRepoRemoteErrorType.PersistedDataMalformed,
-            `Received malformed data from remote persistence:\n${json}`
-        );
-    }
-}
+import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
 export interface MuTagRepositoryRemote {
     getAll(accountUid: string): Promise<Set<ProvisionedMuTag>>;
@@ -87,4 +20,91 @@ export interface MuTagRepositoryRemote {
         accountNumber: AccountNumber
     ): Promise<void>;
     removeByUid(uid: string, accountUid: string): Promise<void>;
+}
+
+const ExceptionType = [
+    "DoesNotExist",
+    "FailedToAdd",
+    "FailedToGet",
+    "FailedToRemove",
+    "FailedToUpdate",
+    "PersistedDataMalformed"
+] as const;
+export type ExceptionType = typeof ExceptionType[number];
+
+export class MuTagRepoRemoteException<
+    T extends ExceptionType
+> extends Exception<T> {
+    static DoesNotExist(
+        originatingException: unknown
+    ): MuTagRepoRemoteException<"DoesNotExist"> {
+        return new this(
+            "DoesNotExist",
+            "Mu tag entity does not exist in remote persistence.",
+            "error",
+            originatingException,
+            true
+        );
+    }
+
+    static FailedToAdd(
+        originatingException: unknown
+    ): MuTagRepoRemoteException<"FailedToAdd"> {
+        return new this(
+            "FailedToAdd",
+            "Failed to add Mu tag entity to remote persistence.",
+            "error",
+            originatingException,
+            true
+        );
+    }
+
+    static FailedToGet(
+        originatingException: unknown
+    ): MuTagRepoRemoteException<"FailedToGet"> {
+        return new this(
+            "FailedToGet",
+            "Failed to get Mu tag entity from remote persistence.",
+            "error",
+            originatingException,
+            true
+        );
+    }
+
+    static FailedToRemove(
+        originatingException: unknown
+    ): MuTagRepoRemoteException<"FailedToRemove"> {
+        return new this(
+            "FailedToRemove",
+            "Failed to remove Mu tag entity from remote persistence.",
+            "error",
+            originatingException,
+            true
+        );
+    }
+
+    static FailedToUpdate(
+        originatingException: unknown
+    ): MuTagRepoRemoteException<"FailedToUpdate"> {
+        return new this(
+            "FailedToUpdate",
+            "Failed to update Mu tag entity to remote persistence.",
+            "error",
+            originatingException,
+            true
+        );
+    }
+
+    static PersistedDataMalformed(
+        json: string,
+        originatingException: unknown
+    ): MuTagRepoRemoteException<"PersistedDataMalformed"> {
+        return new this(
+            "PersistedDataMalformed",
+            `Received malformed data from remote persistence:\n${json}`,
+            "error",
+            originatingException,
+            true
+        );
+    }
 }

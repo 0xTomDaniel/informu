@@ -1,52 +1,5 @@
 import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
-
-export class DoesNotExist extends Error {
-    constructor(id: string) {
-        super(`Mu tag (${id}) entity does not exist in local persistence.`);
-        this.name = "DoesNotExist";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class FailedToGet extends Error {
-    constructor() {
-        super("Failed to get Mu tag entity from local persistence.");
-        this.name = "FailedToGet";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class PersistedDataMalformed extends Error {
-    constructor(json: string) {
-        super(`Received malformed data from local persistence:\n${json}`);
-        this.name = "PersistedDataMalformed";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class FailedToAdd extends Error {
-    constructor() {
-        super("Failed to add Mu tag entity to local persistence.");
-        this.name = "FailedToAdd";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class FailedToUpdate extends Error {
-    constructor() {
-        super("Failed to update Mu tag entity to local persistence.");
-        this.name = "FailedToUpdate";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class FailedToRemove extends Error {
-    constructor() {
-        super("Failed to remove Mu tag entity from local persistence.");
-        this.name = "FailedToRemove";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
 export interface MuTagRepositoryLocal {
     getByUid(uid: string): Promise<ProvisionedMuTag>;
@@ -56,4 +9,92 @@ export interface MuTagRepositoryLocal {
     addMultiple(muTags: Set<ProvisionedMuTag>): Promise<void>;
     update(muTag: ProvisionedMuTag): Promise<void>;
     removeByUid(uid: string): Promise<void>;
+}
+
+const ExceptionType = [
+    "DoesNotExist",
+    "FailedToAdd",
+    "FailedToGet",
+    "FailedToRemove",
+    "FailedToUpdate",
+    "PersistedDataMalformed"
+] as const;
+export type ExceptionType = typeof ExceptionType[number];
+
+export class MuTagRepositoryLocalException<
+    T extends ExceptionType
+> extends Exception<T> {
+    static DoesNotExist(
+        mutagUid: string,
+        originatingError: unknown
+    ): MuTagRepositoryLocalException<"DoesNotExist"> {
+        return new this(
+            "DoesNotExist",
+            `Mu tag entity (${mutagUid}) does not exist in local persistence.`,
+            "error",
+            originatingError,
+            true
+        );
+    }
+
+    static FailedToAdd(
+        originatingError: unknown
+    ): MuTagRepositoryLocalException<"FailedToAdd"> {
+        return new this(
+            "FailedToAdd",
+            "Failed to add Mu tag entity to local persistence.",
+            "error",
+            originatingError,
+            true
+        );
+    }
+
+    static FailedToGet(
+        originatingError: unknown
+    ): MuTagRepositoryLocalException<"FailedToGet"> {
+        return new this(
+            "FailedToGet",
+            "Failed to get Mu tag entity from local persistence.",
+            "error",
+            originatingError,
+            true
+        );
+    }
+
+    static FailedToRemove(
+        originatingError: unknown
+    ): MuTagRepositoryLocalException<"FailedToRemove"> {
+        return new this(
+            "FailedToRemove",
+            "Failed to remove Mu tag entity from local persistence.",
+            "error",
+            originatingError,
+            true
+        );
+    }
+
+    static FailedToUpdate(
+        originatingError: unknown
+    ): MuTagRepositoryLocalException<"FailedToUpdate"> {
+        return new this(
+            "FailedToUpdate",
+            "Failed to update Mu tag entity to local persistence.",
+            "error",
+            originatingError,
+            true
+        );
+    }
+
+    static PersistedDataMalformed(
+        json: string,
+        originatingError: unknown
+    ): MuTagRepositoryLocalException<"PersistedDataMalformed"> {
+        return new this(
+            "PersistedDataMalformed",
+            `Received malformed data from local persistence:\n${json}`,
+            "error",
+            originatingError,
+            true
+        );
+    }
 }
