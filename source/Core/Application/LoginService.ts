@@ -3,14 +3,14 @@ import {
     Authentication,
     AuthenticationException
 } from "../Ports/Authentication";
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
+import AccountRepositoryRemote from "../Ports/AccountRepositoryRemote";
 import {
     AccountRepositoryLocal,
     AccountRepositoryLocalException
 } from "../Ports/AccountRepositoryLocal";
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
-import { Session } from "./SessionService";
+import SessionService from "./SessionService";
 import { AccountRegistration } from "./AccountRegistrationService";
 import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
@@ -53,21 +53,6 @@ export class LoginServiceException<T extends ExceptionType> extends Exception<
     }
 }
 
-/*export const ImproperEmailFormat: UserErrorType = {
-    name: "ImproperEmailFormat",
-    userFriendlyMessage: "This is not a proper email address."
-};
-
-export const ImproperPasswordComplexity: UserErrorType = {
-    name: "ImproperPasswordComplexity",
-    userFriendlyMessage: "Password doesn't meet complexity requirements."
-};
-
-const GenericSignInError: UserErrorType = {
-    name: "GenericSignInError",
-    userFriendlyMessage: "Failed to sign in."
-};*/
-
 export class LoginService {
     private readonly loginOutput: LoginOutput;
     private readonly authentication: Authentication;
@@ -75,7 +60,7 @@ export class LoginService {
     private readonly accountRepoRemote: AccountRepositoryRemote;
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private readonly muTagRepoRemote: MuTagRepositoryRemote;
-    private readonly sessionService: Session;
+    private readonly sessionService: SessionService;
     private readonly accountRegistrationService: AccountRegistration;
 
     constructor(
@@ -85,7 +70,7 @@ export class LoginService {
         accountRepoRemote: AccountRepositoryRemote,
         muTagRepoLocal: MuTagRepositoryLocal,
         muTagRepoRemote: MuTagRepositoryRemote,
-        sessionService: Session,
+        sessionService: SessionService,
         accountRegistrationService: AccountRegistration
     ) {
         this.loginOutput = loginOutput;

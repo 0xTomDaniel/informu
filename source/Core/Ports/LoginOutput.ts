@@ -1,12 +1,11 @@
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
-import UserWarning from "../../../source (restructure)/shared/metaLanguage/UserWarning";
+import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
 export default interface LoginOutput {
     showBusyIndicator(): void;
     hideBusyIndicator(): void;
     showHomeScreen(): void;
     showEmailLoginError(error: any): void;
-    showSignedIntoOtherDevice(warning: UserWarning): void;
-    showFederatedLoginError(error: UserError): void;
+    showSignedIntoOtherDevice(warning: Exception<string>): void;
+    showFederatedLoginError(error: Exception<string>): void;
     showMessage(message: string): void;
 }

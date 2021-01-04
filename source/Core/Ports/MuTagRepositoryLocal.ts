@@ -1,7 +1,7 @@
 import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
 import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
-export interface MuTagRepositoryLocal {
+export default interface MuTagRepositoryLocal {
     getByUid(uid: string): Promise<ProvisionedMuTag>;
     getByBeaconId(beaconId: BeaconId): Promise<ProvisionedMuTag>;
     getAll(): Promise<Set<ProvisionedMuTag>>;
@@ -25,14 +25,13 @@ export class MuTagRepositoryLocalException<
     T extends ExceptionType
 > extends Exception<T> {
     static DoesNotExist(
-        mutagUid: string,
-        originatingError: unknown
+        mutagUid: string
     ): MuTagRepositoryLocalException<"DoesNotExist"> {
         return new this(
             "DoesNotExist",
             `Mu tag entity (${mutagUid}) does not exist in local persistence.`,
             "error",
-            originatingError,
+            undefined,
             true
         );
     }

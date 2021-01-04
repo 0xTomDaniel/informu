@@ -1,7 +1,7 @@
 import ProvisionedMuTag, { BeaconId } from "../../Core/Domain/ProvisionedMuTag";
 import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import MuTagRepoLocalImpl from "./MuTagRepoLocalImpl";
-import { DoesNotExist as MuTagDoesNotExist } from "../../Core/Ports/MuTagRepositoryLocal";
+import { MuTagRepositoryLocalException } from "../../Core/Ports/MuTagRepositoryLocal";
 import { MuTagColor } from "../../Core/Domain/MuTag";
 import AccountRepoLocalImpl from "./AccountRepoLocalImpl";
 import Account, { AccountNumber, AccountData } from "../../Core/Domain/Account";
@@ -233,6 +233,6 @@ test("failed to get Mu tag that does not exist", async (): Promise<void> => {
     (databaseMock.get as jest.Mock).mockResolvedValueOnce(null);
     expect.assertions(1);
     await expect(muTagRepoLocalImpl.getByUid(muTag01.uid)).rejects.toEqual(
-        new MuTagDoesNotExist(muTag01.uid)
+        MuTagRepositoryLocalException.DoesNotExist(muTag01.uid)
     );
 });

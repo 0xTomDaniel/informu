@@ -2,12 +2,14 @@ import {
     LoginService,
     EmailAddress,
     Password,
-    ImproperEmailFormat,
-    ImproperPasswordComplexity
+    LoginServiceException
 } from "./LoginService";
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
+import AccountRepositoryRemote from "../Ports/AccountRepositoryRemote";
 import Account, { AccountNumber, AccountData } from "../Domain/Account";
-import { Authentication } from "../Ports/Authentication";
+import {
+    Authentication,
+    AuthenticationException
+} from "../Ports/Authentication";
 import LoginOutput from "../Ports/LoginOutput";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
@@ -15,7 +17,7 @@ import { MuTagColor } from "../Domain/MuTag";
 import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
-import { Session } from "./SessionService";
+import SessionService from "./SessionService";
 import { UserData } from "../Ports/UserData";
 import AccountRegistrationService from "./AccountRegistrationService";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
@@ -97,8 +99,8 @@ describe("user logs into their account", (): void => {
         })
     );
 
-    const SessionServiceMock = jest.fn<Session, any>(
-        (): Session => ({
+    const SessionServiceMock = jest.fn<SessionService, any>(
+        (): SessionService => ({
             load: jest.fn(),
             start: jest.fn(),
             continueStart: jest.fn(),
@@ -387,7 +389,7 @@ describe("user logs into their account", (): void => {
         //
         const invalidPassword = new Password("testPassword@");
         (authenticationMock.authenticateWithEmail as jest.Mock).mockRejectedValueOnce(
-            UserError.create(InvalidCredentials)
+            AuthenticationException.InvalidCredentials
         );
 
         // Given an account exists for the provided credentials
@@ -417,7 +419,7 @@ describe("user logs into their account", (): void => {
                 1
             );
             expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledWith(
-                UserError.create(InvalidCredentials)
+                AuthenticationException.InvalidCredentials
             );
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
         });
@@ -454,7 +456,9 @@ describe("user logs into their account", (): void => {
                 ).toHaveBeenCalledTimes(1);
                 expect(
                     loginOutputMock.showEmailLoginError
-                ).toHaveBeenCalledWith(UserError.create(ImproperEmailFormat));
+                ).toHaveBeenCalledWith(
+                    LoginServiceException.InvalidEmailFormat
+                );
                 expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
             });
         });
@@ -490,7 +494,7 @@ describe("user logs into their account", (): void => {
                 expect(
                     loginOutputMock.showEmailLoginError
                 ).toHaveBeenCalledWith(
-                    UserError.create(ImproperPasswordComplexity)
+                    LoginServiceException.InvalidPasswordComplexity
                 );
                 expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
             });
@@ -508,7 +512,7 @@ describe("user logs into their account", (): void => {
         // Given an account does not exists for the provided credentials
         //
         (authenticationMock.authenticateWithEmail as jest.Mock).mockRejectedValueOnce(
-            UserError.create(InvalidCredentials)
+            AuthenticationException.InvalidCredentials
         );
 
         // When the user submits credentials
@@ -536,7 +540,7 @@ describe("user logs into their account", (): void => {
                 1
             );
             expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledWith(
-                UserError.create(InvalidCredentials)
+                AuthenticationException.InvalidCredentials
             );
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
         });
@@ -549,10 +553,10 @@ describe("user logs into their account", (): void => {
 
         // Given that credentials are valid for authentication
         (authenticationMock.authenticateWithFacebook as jest.Mock).mockRejectedValueOnce(
-            UserError.create(SignInCanceled)
+            AuthenticationException.SignInCanceled
         );
         (authenticationMock.authenticateWithGoogle as jest.Mock).mockRejectedValueOnce(
-            UserError.create(SignInCanceled)
+            AuthenticationException.SignInCanceled
         );
 
         // When the user submits credentials

@@ -97,7 +97,7 @@ export class MuTagRepoRemoteException<
 
     static PersistedDataMalformed(
         json: string,
-        originatingException: unknown
+        originatingException?: unknown
     ): MuTagRepoRemoteException<"PersistedDataMalformed"> {
         return new this(
             "PersistedDataMalformed",

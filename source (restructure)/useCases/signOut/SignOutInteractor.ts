@@ -1,4 +1,4 @@
-import { Session } from "../../../source/Core/Application/SessionService";
+import SessionService from "../../../source/Core/Application/SessionService";
 import { Subject, Observable } from "rxjs";
 import Exception from "../../shared/metaLanguage/Exception";
 
@@ -29,7 +29,7 @@ export default interface SignOutInteractor {
 }
 
 export class SignOutInteractorImpl implements SignOutInteractor {
-    private readonly sessionService: Session;
+    private readonly sessionService: SessionService;
     private readonly showActivityIndicatorSubject = new Subject<boolean>();
     readonly showActivityIndicator = this.showActivityIndicatorSubject.asObservable();
     private readonly showErrorSubject = new Subject<
@@ -39,7 +39,7 @@ export class SignOutInteractorImpl implements SignOutInteractor {
     private readonly showSignInSubject = new Subject<void>();
     readonly showSignIn = this.showSignInSubject.asObservable();
 
-    constructor(sessionService: Session) {
+    constructor(sessionService: SessionService) {
         this.sessionService = sessionService;
     }
 

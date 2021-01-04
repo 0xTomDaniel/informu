@@ -2,14 +2,15 @@ import Account, { AccountNumber, AccountData } from "../Domain/Account";
 import { Authentication } from "../Ports/Authentication";
 import {
     AccountRepositoryLocal,
-    DoesNotExist
+    AccountRepositoryLocalException
 } from "../Ports/AccountRepositoryLocal";
-import { DoesNotExist as AccountDoesNotExistOnRemote } from "../Ports/AccountRepositoryRemote";
+import AccountRepositoryRemote, {
+    AccountRepositoryRemoteException
+} from "../Ports/AccountRepositoryRemote";
 import { SessionOutput } from "../Ports/SessionOutput";
-import SessionService from "./SessionService";
+import { SessionServiceImpl } from "./SessionService";
 import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
 import { BelongingDetection } from "./BelongingDetectionService";
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import { UserData } from "../Ports/UserData";
 import { Database } from "../../Secondary Adapters/Persistence/Database";
 import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
@@ -19,7 +20,6 @@ import { NewAccountFactory } from "../Ports/NewAccountFactory";
 import LoginOutput from "../Ports/LoginOutput";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 import { BelongingsLocation } from "../../../source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
 import MuTagBatteriesInteractor from "../../../source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 
@@ -178,7 +178,7 @@ describe("user opens saved login session", (): void => {
         undefined
     );
     (muTagBatteriesInteractorMock.stop as jest.Mock).mockReturnValue(undefined);
-    const sessionService = new SessionService(
+    const sessionService = new SessionServiceImpl(
         eventTrackerMock,
         sessionOutputMock,
         loginOutputMock,
@@ -284,7 +284,7 @@ describe("user opens saved login session", (): void => {
         beforeAll(
             async (): Promise<void> => {
                 (accountRepoLocalMock.get as jest.Mock).mockRejectedValueOnce(
-                    UserError.create(DoesNotExist)
+                    AccountRepositoryLocalException.DoesNotExist
                 );
                 await sessionService.load();
             }
@@ -635,7 +635,7 @@ describe("user opens saved login session", (): void => {
         beforeAll(
             async (): Promise<void> => {
                 (accountRepoRemoteMock.getByUid as jest.Mock).mockRejectedValueOnce(
-                    UserError.create(AccountDoesNotExistOnRemote)
+                    AccountRepositoryRemoteException.DoesNotExist
                 );
                 account.clearSession();
                 await sessionService.start(userData);

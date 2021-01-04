@@ -2,7 +2,7 @@ import { SessionOutput } from "../Ports/SessionOutput";
 import { Authentication } from "../Ports/Authentication";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import { BelongingDetection } from "./BelongingDetectionService";
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
+import AccountRepositoryRemote from "../Ports/AccountRepositoryRemote";
 import { UserData } from "../Ports/UserData";
 import { Database } from "../../Secondary Adapters/Persistence/Database";
 import { v4 as uuidV4 } from "uuid";
@@ -15,48 +15,37 @@ import LoginOutput from "../Ports/LoginOutput";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import { BelongingsLocation } from "../../../source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
 import MuTagBatteriesInteractor from "../../../source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
+import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
-/*export class SignedIntoOtherDevice extends UserWarning {
-    name = "SignedIntoOtherDevice";
-    userFriendlyMessage =
-        "It looks like you are already signed into another device. Would you like to sign out of the other device and continue signing in here?";
-}*/
+const ExceptionType = ["SignedIntoOtherDevice"] as const;
+type ExceptionType = typeof ExceptionType[number];
 
-export const SignedIntoOtherDevice: UserWarningType = {
-    name: "SignedIntoOtherDevice",
-    userFriendlyMessage:
-        "It looks like you are already signed into another device. Would you like to sign out of the other device and continue signing in here?"
-};
-
-export interface Session {
-    load(): Promise<void>;
-    start(userData: UserData): Promise<void>;
-    continueStart(): void;
-    abortStart(): void;
-    end(): Promise<void>;
-    pauseLoadOnce(): void;
+class SessionServiceException<T extends ExceptionType> extends Exception<T> {
+    static get SignedIntoOtherDevice(): SessionServiceException<
+        "SignedIntoOtherDevice"
+    > {
+        return new this(
+            "SignedIntoOtherDevice",
+            "Account is already signed into another device.",
+            "warn",
+            undefined,
+            true
+        );
+    }
 }
 
-export default class SessionService implements Session {
-    private readonly eventTracker: EventTracker;
-    private readonly sessionOutput: SessionOutput;
-    private readonly loginOutput: LoginOutput;
-    private readonly signedOutMessage =
-        "You have been signed out because your account is signed in on another device.";
-    private readonly authentication: Authentication;
-    private readonly accountRepoLocal: AccountRepositoryLocal;
-    private readonly accountRepoRemote: AccountRepositoryRemote;
-    private readonly muTagRepoLocal: MuTagRepositoryLocal;
-    private readonly muTagRepoRemote: MuTagRepositoryRemote;
-    private readonly belongingDetectionService: BelongingDetection;
-    private readonly belongingsLocationInteractor: BelongingsLocation;
-    private readonly localDatabase: Database;
-    private readonly accountRegistrationService: AccountRegistrationService;
-    private readonly muTagBatteriesInteractor: MuTagBatteriesInteractor;
-    private shouldPauseLoadOnce = false;
-    private appSessionId?: string;
-    private continueNewSession?: (value: boolean) => void;
+// "It looks like you are already signed into another device. Would you like to sign out of the other device and continue signing in here?"
 
+export default interface SessionService {
+    abortStart(): void;
+    continueStart(): void;
+    end(): Promise<void>;
+    load(): Promise<void>;
+    pauseLoadOnce(): void;
+    start(userData: UserData): Promise<void>;
+}
+
+export class SessionServiceImpl implements SessionService {
     readonly resetAllDependencies = new Subject<void>();
 
     constructor(
@@ -87,6 +76,37 @@ export default class SessionService implements Session {
         this.localDatabase = localDatabase;
         this.accountRegistrationService = accountRegistrationService;
         this.muTagBatteriesInteractor = muTagBatteriesInteractor;
+    }
+
+    abortStart(): void {
+        this.continueNewSession?.(false);
+        this.continueNewSession = undefined;
+    }
+
+    continueStart(): void {
+        this.continueNewSession?.(true);
+        this.continueNewSession = undefined;
+    }
+
+    async end(saveToRemote = true): Promise<void> {
+        if (saveToRemote) {
+            const account = await this.accountRepoLocal.get();
+            account.clearSession();
+            await this.accountRepoRemote.update(account);
+            const muTags = await this.muTagRepoLocal.getAll();
+            await this.muTagRepoRemote.updateMultiple(
+                muTags,
+                account.uid,
+                account.accountNumber
+            );
+        }
+        await this.belongingDetectionService.stop();
+        this.belongingsLocationInteractor.stop();
+        this.muTagBatteriesInteractor.stop();
+        await this.localDatabase.destroy();
+        this.eventTracker.removeUser();
+        this.resetAllDependencies.complete();
+        this.sessionOutput.showLoginScreen();
     }
 
     async load(): Promise<void> {
@@ -127,6 +147,10 @@ export default class SessionService implements Session {
         }
     }
 
+    pauseLoadOnce(): void {
+        this.shouldPauseLoadOnce = true;
+    }
+
     async start(userData: UserData): Promise<void> {
         this.eventTracker.setUser({
             id: userData.uid,
@@ -150,12 +174,12 @@ export default class SessionService implements Session {
         }
         let sessionId = await this.getAppSessionId();
         if (sessionId == null) {
-            sessionId = await this.createAppSessionId();
+            sessionId = await This.createAppSessionId();
             await this.setAppSessionId(sessionId);
         }
         if (account.hasActiveSession()) {
             this.loginOutput.showSignedIntoOtherDevice(
-                UserWarning.create(SignedIntoOtherDevice)
+                SessionServiceException.SignedIntoOtherDevice
             );
             const shouldContinue = await this.shouldContinueNewSession();
             if (!shouldContinue) {
@@ -173,44 +197,24 @@ export default class SessionService implements Session {
         await this.muTagBatteriesInteractor.start();
     }
 
-    continueStart(): void {
-        this.continueNewSession?.(true);
-        this.continueNewSession = undefined;
-    }
-
-    abortStart(): void {
-        this.continueNewSession?.(false);
-        this.continueNewSession = undefined;
-    }
-
-    async end(saveToRemote = true): Promise<void> {
-        if (saveToRemote) {
-            const account = await this.accountRepoLocal.get();
-            account.clearSession();
-            await this.accountRepoRemote.update(account);
-            const muTags = await this.muTagRepoLocal.getAll();
-            await this.muTagRepoRemote.updateMultiple(
-                muTags,
-                account.uid,
-                account.accountNumber
-            );
-        }
-        await this.belongingDetectionService.stop();
-        this.belongingsLocationInteractor.stop();
-        this.muTagBatteriesInteractor.stop();
-        await this.localDatabase.destroy();
-        this.eventTracker.removeUser();
-        this.resetAllDependencies.complete();
-        this.sessionOutput.showLoginScreen();
-    }
-
-    private async shouldContinueNewSession(): Promise<boolean> {
-        return new Promise(resolve => (this.continueNewSession = resolve));
-    }
-
-    pauseLoadOnce(): void {
-        this.shouldPauseLoadOnce = true;
-    }
+    private readonly eventTracker: EventTracker;
+    private readonly sessionOutput: SessionOutput;
+    private readonly loginOutput: LoginOutput;
+    private readonly signedOutMessage =
+        "You have been signed out because your account is signed in on another device.";
+    private readonly authentication: Authentication;
+    private readonly accountRepoLocal: AccountRepositoryLocal;
+    private readonly accountRepoRemote: AccountRepositoryRemote;
+    private readonly muTagRepoLocal: MuTagRepositoryLocal;
+    private readonly muTagRepoRemote: MuTagRepositoryRemote;
+    private readonly belongingDetectionService: BelongingDetection;
+    private readonly belongingsLocationInteractor: BelongingsLocation;
+    private readonly localDatabase: Database;
+    private readonly accountRegistrationService: AccountRegistrationService;
+    private readonly muTagBatteriesInteractor: MuTagBatteriesInteractor;
+    private shouldPauseLoadOnce = false;
+    private appSessionId?: string;
+    private continueNewSession?: (value: boolean) => void;
 
     private async getAppSessionId(): Promise<string | undefined> {
         if (this.appSessionId != null) {
@@ -224,7 +228,13 @@ export default class SessionService implements Session {
         await this.localDatabase.set("sessionId", sessionId);
     }
 
-    private async createAppSessionId(): Promise<string> {
+    private async shouldContinueNewSession(): Promise<boolean> {
+        return new Promise(resolve => (this.continueNewSession = resolve));
+    }
+
+    private static async createAppSessionId(): Promise<string> {
         return uuidV4();
     }
 }
+
+const This = SessionServiceImpl;

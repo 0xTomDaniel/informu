@@ -232,9 +232,9 @@ export class MuTagRepoRNFirebase
         try {
             assertIsMuTagJson(json);
         } catch (e) {
-            console.warn(e);
             throw MuTagRepoRemoteException.PersistedDataMalformed(
-                JSON.stringify(json)
+                JSON.stringify(json),
+                e
             );
         }
 

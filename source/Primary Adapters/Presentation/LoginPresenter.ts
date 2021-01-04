@@ -1,5 +1,6 @@
 import LoginOutput from "../../Core/Ports/LoginOutput";
 import { LoginViewModel } from "./LoginViewModel";
+import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
 export default class LoginPresenter implements LoginOutput {
     private readonly viewModel: LoginViewModel;
@@ -36,24 +37,24 @@ export default class LoginPresenter implements LoginOutput {
         }
     }
 
-    showSignedIntoOtherDevice(warning: UserWarning): void {
+    showSignedIntoOtherDevice(exception: Exception<string>): void {
         this.viewModel.updateState({
-            signedIntoOtherDeviceMessage: warning.userFriendlyMessage
+            signedIntoOtherDeviceMessage: exception.message
         });
     }
 
-    showFederatedLoginError(error: UserError): void {
+    showFederatedLoginError(exception: Exception<string>): void {
         this.hideBusyIndicator();
         let detailedErrorDescription: string;
-        if (error.originatingError instanceof Error) {
-            detailedErrorDescription = error.originatingError.message;
-        } else if (typeof error.originatingError === "string") {
-            detailedErrorDescription = error.originatingError;
+        if (exception.originatingException instanceof Error) {
+            detailedErrorDescription = exception.originatingException.message;
+        } else if (typeof exception.originatingException === "string") {
+            detailedErrorDescription = exception.originatingException;
         } else {
             detailedErrorDescription = "";
         }
         this.viewModel.updateState({
-            federatedUserErrorMessage: error.userFriendlyMessage,
+            federatedUserErrorMessage: exception.message,
             detailedErrorDescription: detailedErrorDescription
         });
     }

@@ -1,4 +1,4 @@
-import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
+import MuTagRepositoryLocal from "../../../source/Core/Ports/MuTagRepositoryLocal";
 import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
 import ProvisionedMuTag, {
     Address
