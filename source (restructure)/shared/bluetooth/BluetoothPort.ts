@@ -45,61 +45,61 @@ export class BluetoothException<T extends ExceptionType> extends Exception<T> {
 
     static ConnectionLostUnexpectedly(
         peripheralId: string,
-        originatingError?: unknown
+        sourceException?: unknown
     ): BluetoothException<"ConnectionLostUnexpectedly"> {
         return new this(
             "ConnectionLostUnexpectedly",
             `Connection to Bluetooth device (${peripheralId}) lost unexpectedly.`,
             "warn",
-            originatingError
+            sourceException
         );
     }
 
     static FailedToConnect(
         peripheralId: string,
-        originatingError?: unknown
+        sourceException?: unknown
     ): BluetoothException<"FailedToConnect"> {
         return new this(
             "FailedToConnect",
             `Failed to connect to Bluetooth device (${peripheralId}).`,
             "log",
-            originatingError
+            sourceException
         );
     }
 
     static FailedToDisconnect(
         peripheralId: string,
-        originatingError?: unknown
+        sourceException?: unknown
     ): BluetoothException<"FailedToDisconnect"> {
         return new this(
             "FailedToDisconnect",
             `Failed to disconnect from Bluetooth device (${peripheralId}).`,
             "warn",
-            originatingError
+            sourceException
         );
     }
 
     static FailedToEnableBluetooth(
-        originatingError?: unknown
+        sourceException?: unknown
     ): BluetoothException<"FailedToEnableBluetooth"> {
         return new this(
             "FailedToEnableBluetooth",
             `Bluetooth is disabled, failed to enable.`,
             "error",
-            originatingError
+            sourceException
         );
     }
 
     static FailedToRead(
         characteristic: string,
         peripheralId: string,
-        originatingError?: unknown
+        sourceException?: unknown
     ): BluetoothException<"FailedToRead"> {
         return new this(
             "FailedToRead",
             `Failed to read characteristic (${characteristic}) of Bluetooth device (${peripheralId}).`,
             "error",
-            originatingError
+            sourceException
         );
     }
 
@@ -107,35 +107,35 @@ export class BluetoothException<T extends ExceptionType> extends Exception<T> {
         value: string,
         characteristic: string,
         peripheralId: string,
-        originatingError?: unknown
+        sourceException?: unknown
     ): BluetoothException<"FailedToWrite"> {
         return new this(
             "FailedToWrite",
             `Failed to write (${value}) to characteristic (${characteristic}) of Bluetooth device (${peripheralId}).`,
             "error",
-            originatingError
+            sourceException
         );
     }
 
     static FailedToStartScan(
-        originatingError?: unknown
+        sourceException?: unknown
     ): BluetoothException<"FailedToStartScan"> {
         return new this(
             "FailedToStartScan",
             "Failed to start Bluetooth device scanning.",
             "error",
-            originatingError
+            sourceException
         );
     }
 
     static FailedToStopScan(
-        originatingError?: unknown
+        sourceException?: unknown
     ): BluetoothException<"FailedToStopScan"> {
         return new this(
             "FailedToStopScan",
             "Failed to stop Bluetooth device scanning.",
             "error",
-            originatingError
+            sourceException
         );
     }
 

@@ -4,7 +4,7 @@ type Severity = "log" | "warn" | "error";
 
 export default abstract class Exception<T extends string> extends Error {
     readonly name: string;
-    readonly originatingException: unknown;
+    readonly sourceException: unknown;
     readonly severity: Severity;
     readonly type: T;
 
@@ -12,20 +12,20 @@ export default abstract class Exception<T extends string> extends Error {
         type: T,
         message: string,
         severity: Severity,
-        originatingException?: unknown,
+        sourceException?: unknown,
         reportEvent = false,
         logEvent = true
     ) {
         // Concatenating to *message* so that Jest knows the inequality when
-        // *originatingError* is different between *Exception* objects.
+        // *sourceException* is different between *Exception* objects.
         super(
-            originatingException == null
+            sourceException == null
                 ? message
-                : `${message}\n<- ${String(originatingException)}`
+                : `${message}\n<- ${String(sourceException)}`
         );
         this.type = type;
         this.name = this.constructor.name;
-        this.originatingException = originatingException;
+        this.sourceException = sourceException;
         this.severity = severity;
         if (logEvent || reportEvent) {
             if (Exception.logger == null) {

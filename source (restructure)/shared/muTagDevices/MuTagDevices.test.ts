@@ -155,9 +155,9 @@ test(
             .startFindingUnprovisionedMuTags(proximityThreshold, timeout)
             .toPromise();
         advance(5000);
-        const originatingError = BluetoothException.ScanTimeout;
+        const sourceException = BluetoothException.ScanTimeout;
         const error = MuTagDevicesException.FindNewMuTagTimeout(
-            originatingError
+            sourceException
         );
         await expect(startFindingPromise).rejects.toEqual(error);
     })
@@ -299,8 +299,8 @@ test(
             .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
             .toPromise();
         advance(5000);
-        const originatingError = BluetoothException.ScanTimeout;
-        const error = MuTagDevicesException.FailedToFindMuTag(originatingError);
+        const sourceException = BluetoothException.ScanTimeout;
+        const error = MuTagDevicesException.FailedToFindMuTag(sourceException);
         await expect(connectPromise).rejects.toEqual(error);
     })
 );
@@ -318,12 +318,10 @@ test("Fails to connect to provisioned Mu tag.", async () => {
     const connectPromise = muTagDevices
         .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
         .toPromise();
-    const originatingError = BluetoothException.FailedToConnect(
+    const sourceException = BluetoothException.FailedToConnect(
         discoveredProvisionedPeripheral.id
     );
-    const error = MuTagDevicesException.FailedToConnectToMuTag(
-        originatingError
-    );
+    const error = MuTagDevicesException.FailedToConnectToMuTag(sourceException);
     await expect(connectPromise).rejects.toStrictEqual(error);
     connectionError = undefined;
 });

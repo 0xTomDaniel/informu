@@ -29,13 +29,13 @@ export class NewAccountFactoryException<
     }
 
     static FailedToCreateNewAccount(
-        originatingError: unknown
+        sourceException: unknown
     ): NewAccountFactoryException<"FailedToCreateNewAccount"> {
         return new this(
             "FailedToCreateNewAccount",
             "Failed to create a new account.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }

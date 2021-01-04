@@ -1,12 +1,15 @@
 import { SessionOutput } from "../Ports/SessionOutput";
 import { Authentication } from "../Ports/Authentication";
-import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
+import {
+    AccountRepositoryLocal,
+    AccountRepositoryLocalException
+} from "../Ports/AccountRepositoryLocal";
 import { BelongingDetection } from "./BelongingDetectionService";
 import AccountRepositoryRemote from "../Ports/AccountRepositoryRemote";
 import { UserData } from "../Ports/UserData";
 import { Database } from "../../Secondary Adapters/Persistence/Database";
 import { v4 as uuidV4 } from "uuid";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import MuTagRepositoryLocal from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import AccountRegistrationService from "./AccountRegistrationService";
 import { Subject } from "rxjs";
@@ -17,7 +20,7 @@ import { BelongingsLocation } from "../../../source (restructure)/useCases/updat
 import MuTagBatteriesInteractor from "../../../source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
-const ExceptionType = ["SignedIntoOtherDevice"] as const;
+const ExceptionType = ["SignedIntoOtherDevice", "UnknownException"] as const;
 type ExceptionType = typeof ExceptionType[number];
 
 class SessionServiceException<T extends ExceptionType> extends Exception<T> {
@@ -29,6 +32,18 @@ class SessionServiceException<T extends ExceptionType> extends Exception<T> {
             "Account is already signed into another device.",
             "warn",
             undefined,
+            true
+        );
+    }
+
+    static UnknownException(
+        sourceException: unknown
+    ): SessionServiceException<"UnknownException"> {
+        return new this(
+            "UnknownException",
+            "An unknown problem has occurred while attempting to load the login session.",
+            "error",
+            sourceException,
             true
         );
     }
@@ -139,10 +154,10 @@ export class SessionServiceImpl implements SessionService {
             await this.belongingsLocationInteractor.start();
             await this.muTagBatteriesInteractor.start();
         } catch (e) {
-            if (e.name === "DoesNotExist") {
+            if (AccountRepositoryLocalException.isType(e, "DoesNotExist")) {
                 this.sessionOutput.showLoginScreen();
             } else {
-                console.warn(e);
+                SessionServiceException.UnknownException(e);
             }
         }
     }

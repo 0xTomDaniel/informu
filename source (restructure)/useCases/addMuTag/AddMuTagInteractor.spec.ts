@@ -778,13 +778,13 @@ describe("User adds Mu tag.", () => {
             fakeSchedulers(async advance => {
                 expect.assertions(1);
                 advance(30000);
-                const originatingError01 = BluetoothException.ScanTimeout;
-                const originatingError02 = MuTagDevicesException.FindNewMuTagTimeout(
-                    originatingError01
+                const sourceException01 = BluetoothException.ScanTimeout;
+                const sourceException02 = MuTagDevicesException.FindNewMuTagTimeout(
+                    sourceException01
                 );
                 await expect(findNewMuTagPromise).rejects.toStrictEqual(
                     AddMuTagInteractorException.NewMuTagNotFound(
-                        originatingError02
+                        sourceException02
                     )
                 );
             })

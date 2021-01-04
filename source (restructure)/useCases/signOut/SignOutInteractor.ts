@@ -9,13 +9,13 @@ export class SignOutInteractorException<
     T extends ExceptionType
 > extends Exception<T> {
     static SignOutFailed(
-        originatingException: unknown
+        sourceException: unknown
     ): SignOutInteractorException<"SignOutFailed"> {
         return new this(
             "SignOutFailed",
             "Failed to sign out.",
             "error",
-            originatingException,
+            sourceException,
             true
         );
     }

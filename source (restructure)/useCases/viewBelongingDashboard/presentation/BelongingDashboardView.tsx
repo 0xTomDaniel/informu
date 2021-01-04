@@ -318,8 +318,8 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
             <ErrorDialog
                 message={showError?.message ?? ""}
                 detailMessage={
-                    showError?.originatingException != null
-                        ? String(showError?.originatingException)
+                    showError?.sourceException != null
+                        ? String(showError?.sourceException)
                         : ""
                 }
                 visible={showError != null}

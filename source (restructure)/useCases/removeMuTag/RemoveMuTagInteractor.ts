@@ -28,38 +28,38 @@ export class RemoveMuTagInteractorException<
 > extends Exception<T> {
     static FailedToFindMuTag(
         muTagUid: string,
-        originatingException: unknown
+        sourceException: unknown
     ): RemoveMuTagInteractorException<"FailedToFindMuTag"> {
         return new this(
             "FailedToFindMuTag",
             `Could not find Mu tag (${muTagUid}).`,
             "log",
-            originatingException
+            sourceException
         );
     }
 
     static FailedToRemoveMuTagFromAccount(
         muTagUid: string,
-        originatingException: unknown
+        sourceException: unknown
     ): RemoveMuTagInteractorException<"FailedToRemoveMuTagFromAccount"> {
         return new this(
             "FailedToRemoveMuTagFromAccount",
             `The Mu tag device (${muTagUid}) successfully reset, but there was a problem removing it from the app.`,
             "error",
-            originatingException,
+            sourceException,
             true
         );
     }
 
     static FailedToResetMuTag(
         muTagUid: string,
-        originatingException: unknown
+        sourceException: unknown
     ): RemoveMuTagInteractorException<"FailedToResetMuTag"> {
         return new this(
             "FailedToResetMuTag",
             `Failed to reset Mu tag (${muTagUid}).`,
             "error",
-            originatingException,
+            sourceException,
             true
         );
     }

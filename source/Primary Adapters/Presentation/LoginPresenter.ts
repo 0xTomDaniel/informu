@@ -46,10 +46,10 @@ export default class LoginPresenter implements LoginOutput {
     showFederatedLoginError(exception: Exception<string>): void {
         this.hideBusyIndicator();
         let detailedErrorDescription: string;
-        if (exception.originatingException instanceof Error) {
-            detailedErrorDescription = exception.originatingException.message;
-        } else if (typeof exception.originatingException === "string") {
-            detailedErrorDescription = exception.originatingException;
+        if (exception.sourceException instanceof Error) {
+            detailedErrorDescription = exception.sourceException.message;
+        } else if (typeof exception.sourceException === "string") {
+            detailedErrorDescription = exception.sourceException;
         } else {
             detailedErrorDescription = "";
         }

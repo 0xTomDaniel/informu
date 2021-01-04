@@ -37,62 +37,62 @@ export class MuTagRepositoryLocalException<
     }
 
     static FailedToAdd(
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagRepositoryLocalException<"FailedToAdd"> {
         return new this(
             "FailedToAdd",
             "Failed to add Mu tag entity to local persistence.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }
 
     static FailedToGet(
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagRepositoryLocalException<"FailedToGet"> {
         return new this(
             "FailedToGet",
             "Failed to get Mu tag entity from local persistence.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }
 
     static FailedToRemove(
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagRepositoryLocalException<"FailedToRemove"> {
         return new this(
             "FailedToRemove",
             "Failed to remove Mu tag entity from local persistence.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }
 
     static FailedToUpdate(
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagRepositoryLocalException<"FailedToUpdate"> {
         return new this(
             "FailedToUpdate",
             "Failed to update Mu tag entity to local persistence.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }
 
     static PersistedDataMalformed(
         json: string,
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagRepositoryLocalException<"PersistedDataMalformed"> {
         return new this(
             "PersistedDataMalformed",
             `Received malformed data from local persistence:\n${json}`,
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }

@@ -13,7 +13,7 @@ import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
 import { BelongingDetection } from "./BelongingDetectionService";
 import { UserData } from "../Ports/UserData";
 import { Database } from "../../Secondary Adapters/Persistence/Database";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import MuTagRepositoryLocal from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import AccountRegistrationService from "./AccountRegistrationService";
 import { NewAccountFactory } from "../Ports/NewAccountFactory";

@@ -36,74 +36,74 @@ export class MuTagRepoRemoteException<
     T extends ExceptionType
 > extends Exception<T> {
     static DoesNotExist(
-        originatingException: unknown
+        sourceException: unknown
     ): MuTagRepoRemoteException<"DoesNotExist"> {
         return new this(
             "DoesNotExist",
             "Mu tag entity does not exist in remote persistence.",
             "error",
-            originatingException,
+            sourceException,
             true
         );
     }
 
     static FailedToAdd(
-        originatingException: unknown
+        sourceException: unknown
     ): MuTagRepoRemoteException<"FailedToAdd"> {
         return new this(
             "FailedToAdd",
             "Failed to add Mu tag entity to remote persistence.",
             "error",
-            originatingException,
+            sourceException,
             true
         );
     }
 
     static FailedToGet(
-        originatingException: unknown
+        sourceException: unknown
     ): MuTagRepoRemoteException<"FailedToGet"> {
         return new this(
             "FailedToGet",
             "Failed to get Mu tag entity from remote persistence.",
             "error",
-            originatingException,
+            sourceException,
             true
         );
     }
 
     static FailedToRemove(
-        originatingException: unknown
+        sourceException: unknown
     ): MuTagRepoRemoteException<"FailedToRemove"> {
         return new this(
             "FailedToRemove",
             "Failed to remove Mu tag entity from remote persistence.",
             "error",
-            originatingException,
+            sourceException,
             true
         );
     }
 
     static FailedToUpdate(
-        originatingException: unknown
+        sourceException: unknown
     ): MuTagRepoRemoteException<"FailedToUpdate"> {
         return new this(
             "FailedToUpdate",
             "Failed to update Mu tag entity to remote persistence.",
             "error",
-            originatingException,
+            sourceException,
             true
         );
     }
 
     static PersistedDataMalformed(
         json: string,
-        originatingException?: unknown
+        sourceException?: unknown
     ): MuTagRepoRemoteException<"PersistedDataMalformed"> {
         return new this(
             "PersistedDataMalformed",
             `Received malformed data from remote persistence:\n${json}`,
             "error",
-            originatingException,
+            sourceException,
             true
         );
     }

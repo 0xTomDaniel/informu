@@ -1,4 +1,4 @@
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
+import AccountRepositoryRemote from "../Ports/AccountRepositoryRemote";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import { NewAccountFactory } from "../Ports/NewAccountFactory";
 

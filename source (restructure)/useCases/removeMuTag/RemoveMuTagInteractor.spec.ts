@@ -472,12 +472,12 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Given that Mu tag cannot be found.
         //
-        const originatingError = MuTagDevicesException.FailedToFindMuTag(
+        const sourceException = MuTagDevicesException.FailedToFindMuTag(
             new EmptyError()
         );
         const error = RemoveMuTagInteractorException.FailedToFindMuTag(
             muTagUid,
-            originatingError
+            sourceException
         );
 
         let removePromise: Promise<void>;
@@ -557,7 +557,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Given that Mu tag connection fails.
         //
-        let originatingError: MuTagDevicesException<MuTagDevicesExceptionType>;
+        let sourceException: MuTagDevicesException<MuTagDevicesExceptionType>;
 
         let removePromise: Promise<void>;
         const executionOrder: number[] = [];
@@ -596,10 +596,10 @@ describe("Mu tag user removes Mu tag.", (): void => {
                     executionOrder.push(3);
                 });
             onConnectMock.pipe(take(1)).subscribe(([peripheralId]) => {
-                originatingError = MuTagDevicesException.FailedToConnectToMuTag(
+                sourceException = MuTagDevicesException.FailedToConnectToMuTag(
                     BluetoothException.FailedToConnect(peripheralId)
                 );
-                connections.get(peripheralId)?.error(originatingError);
+                connections.get(peripheralId)?.error(sourceException);
             });
             // user removes Mu tag
             removePromise = removeMuTagInteractor.remove(muTagUid);
@@ -647,7 +647,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
             await expect(showErrorPromise).resolves.toStrictEqual(
                 RemoveMuTagInteractorException.FailedToResetMuTag(
                     muTagUid,
-                    originatingError
+                    sourceException
                 )
             );
             expect(executionOrder[3]).toBe(3);

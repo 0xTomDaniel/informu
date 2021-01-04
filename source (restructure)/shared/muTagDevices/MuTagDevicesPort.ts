@@ -17,57 +17,57 @@ export class MuTagDevicesException<T extends ExceptionType> extends Exception<
     T
 > {
     static FailedToConnectToMuTag(
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagDevicesException<"FailedToConnectToMuTag"> {
         return new this(
             "FailedToConnectToMuTag",
             "Failed to connect to Mu tag.",
             "warn",
-            originatingError
+            sourceException
         );
     }
 
     static FailedToFindMuTag(
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagDevicesException<"FailedToFindMuTag"> {
         return new this(
             "FailedToFindMuTag",
             "Mu tag could not be found.",
             "log",
-            originatingError
+            sourceException
         );
     }
 
     static FindNewMuTagTimeout(
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagDevicesException<"FindNewMuTagTimeout"> {
         return new this(
             "FindNewMuTagTimeout",
             "Could not find unprovisioned Mu tag before timeout.",
             "log",
-            originatingError
+            sourceException
         );
     }
 
     static MuTagCommunicationFailure(
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagDevicesException<"MuTagCommunicationFailure"> {
         return new this(
             "MuTagCommunicationFailure",
             "Failed to read or write to Mu tag.",
             "error",
-            originatingError
+            sourceException
         );
     }
 
     static MuTagDisconnectedUnexpectedly(
-        originatingError: unknown
+        sourceException: unknown
     ): MuTagDevicesException<"MuTagDisconnectedUnexpectedly"> {
         return new this(
             "MuTagDisconnectedUnexpectedly",
             "Mu tag has disconnected unexpectedly.",
             "warn",
-            originatingError
+            sourceException
         );
     }
 }

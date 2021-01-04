@@ -11,13 +11,13 @@ export class RepositoryLocalException<
     T extends ExceptionType
 > extends Exception<T> {
     static FailedToErase(
-        originatingError: unknown
+        sourceException: unknown
     ): RepositoryLocalException<"FailedToErase"> {
         return new this(
             "FailedToErase",
             "Failed to erase local persistence.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }

@@ -29,47 +29,47 @@ export class AuthenticationException<T extends ExceptionType> extends Exception<
 > {
     static EmailNotFound(
         emailAddress: string,
-        originatingError: unknown
+        sourceException: unknown
     ): AuthenticationException<"EmailNotFound"> {
         return new this(
             "EmailNotFound",
             `No account exists for the email address ${emailAddress}.`,
             "log",
-            originatingError
+            sourceException
         );
     }
 
     static FacebookSignInFailed(
-        originatingError: unknown
+        sourceException: unknown
     ): AuthenticationException<"FacebookSignInFailed"> {
         return new this(
             "FacebookSignInFailed",
             "Failed to sign in with Facebook.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }
 
     static GooglePlayServicesNotAvailable(
-        originatingError: unknown
+        sourceException: unknown
     ): AuthenticationException<"GooglePlayServicesNotAvailable"> {
         return new this(
             "GooglePlayServicesNotAvailable",
             "Google Play services must be installed to sign in with Google.",
             "warn",
-            originatingError
+            sourceException
         );
     }
 
     static GoogleSignInFailed(
-        originatingError: unknown
+        sourceException: unknown
     ): AuthenticationException<"GoogleSignInFailed"> {
         return new this(
             "GoogleSignInFailed",
             "Failed to sign in with Google.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }
@@ -77,59 +77,59 @@ export class AuthenticationException<T extends ExceptionType> extends Exception<
     static IncorrectSignInProvider(
         emailAddress: string,
         incorrectProvider: string,
-        originatingError: unknown
+        sourceException: unknown
     ): AuthenticationException<"IncorrectSignInProvider"> {
         return new this(
             "IncorrectSignInProvider",
             `The account for ${emailAddress} is not registered with the ${incorrectProvider} sign in provider.`,
             "warn",
-            originatingError,
+            sourceException,
             true
         );
     }
 
     static InvalidCredentials(
-        originatingError: unknown
+        sourceException: unknown
     ): AuthenticationException<"InvalidCredentials"> {
         return new this(
             "InvalidCredentials",
             "Wrong email address or password.",
             "warn",
-            originatingError
+            sourceException
         );
     }
 
     static SignInCanceled(
-        originatingError: unknown
+        sourceException: unknown
     ): AuthenticationException<"SignInCanceled"> {
         return new this(
             "SignInCanceled",
             "Sign in has been canceled.",
             "log",
-            originatingError
+            sourceException
         );
     }
 
     static TooManyAttempts(
-        originatingError: unknown
+        sourceException: unknown
     ): AuthenticationException<"TooManyAttempts"> {
         return new this(
             "TooManyAttempts",
             "Too many unsuccessful sign in attempts.",
             "warn",
-            originatingError,
+            sourceException,
             true
         );
     }
 
     static UserDisabled(
-        originatingError: unknown
+        sourceException: unknown
     ): AuthenticationException<"UserDisabled"> {
         return new this(
             "UserDisabled",
             "This user is currently disabled.",
             "warn",
-            originatingError,
+            sourceException,
             true
         );
     }

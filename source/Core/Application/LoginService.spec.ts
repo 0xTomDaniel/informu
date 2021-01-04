@@ -16,7 +16,7 @@ import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
 import { MuTagColor } from "../Domain/MuTag";
 import Percent from "../../../source (restructure)/shared/metaLanguage/Percent";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import MuTagRepositoryLocal from "../Ports/MuTagRepositoryLocal";
 import SessionService from "./SessionService";
 import { UserData } from "../Ports/UserData";
 import AccountRegistrationService from "./AccountRegistrationService";

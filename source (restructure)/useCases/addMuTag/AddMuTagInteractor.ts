@@ -31,37 +31,37 @@ export class AddMuTagInteractorException<
     T extends ExceptionType
 > extends Exception<T> {
     static FailedToAddMuTag(
-        originatingError: unknown
+        sourceException: unknown
     ): AddMuTagInteractorException<"FailedToAddMuTag"> {
         return new this(
             "FailedToAddMuTag",
             "Failed to add Mu tag.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }
 
     static FailedToNameMuTag(
-        originatingError: unknown
+        sourceException: unknown
     ): AddMuTagInteractorException<"FailedToNameMuTag"> {
         return new this(
             "FailedToNameMuTag",
             "Failed to name Mu tag.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }
 
     static FailedToSaveSettings(
-        originatingError: unknown
+        sourceException: unknown
     ): AddMuTagInteractorException<"FailedToSaveSettings"> {
         return new this(
             "FailedToSaveSettings",
             "Failed to save Mu tag settings.",
             "error",
-            originatingError,
+            sourceException,
             true
         );
     }
@@ -87,13 +87,13 @@ export class AddMuTagInteractorException<
     }
 
     static NewMuTagNotFound(
-        originatingError: unknown
+        sourceException: unknown
     ): AddMuTagInteractorException<"NewMuTagNotFound"> {
         return new this(
             "NewMuTagNotFound",
             "Could not find a new Mu tag.",
             "warn",
-            originatingError
+            sourceException
         );
     }
 }
