@@ -11,6 +11,9 @@ export interface Authentication {
     isAuthenticatedAs(uid: string): boolean;
 }
 
+const SignInProvider = ["Email", "Facebook", "Google"] as const;
+export type SignInProvider = typeof SignInProvider[number];
+
 const ExceptionType = [
     "EmailNotFound",
     "FacebookSignInFailed",
@@ -75,13 +78,12 @@ export class AuthenticationException<T extends ExceptionType> extends Exception<
     }
 
     static IncorrectSignInProvider(
-        emailAddress: string,
-        incorrectProvider: string,
+        incorrectProvider: SignInProvider,
         sourceException: unknown
     ): AuthenticationException<"IncorrectSignInProvider"> {
         return new this(
             "IncorrectSignInProvider",
-            `The account for ${emailAddress} is not registered with the ${incorrectProvider} sign in provider.`,
+            `The user with the supplied email address is not registered with the ${incorrectProvider} sign in provider.`,
             "warn",
             sourceException,
             true

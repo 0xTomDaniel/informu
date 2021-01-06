@@ -1,6 +1,8 @@
 import {
     Authentication,
-    AuthenticationException
+    AuthenticationException,
+    ExceptionType,
+    SignInProvider
 } from "../../Core/Ports/Authentication";
 import auth, { firebase } from "@react-native-firebase/auth";
 import { UserData } from "../../Core/Ports/UserData";
@@ -31,7 +33,7 @@ export class AuthenticationFirebase implements Authentication {
             };
             return userData;
         } catch (e) {
-            throw this.convertError(e);
+            throw this.convertError(e, "Email");
         }
     }
 
@@ -64,7 +66,7 @@ export class AuthenticationFirebase implements Authentication {
                 name: userCredential.user.displayName ?? ""
             };
         } catch (e) {
-            throw this.convertError(e);
+            throw this.convertError(e, "Facebook");
         }
     }
 
@@ -99,7 +101,7 @@ export class AuthenticationFirebase implements Authentication {
                 name: userCredential.user.displayName ?? ""
             };
         } catch (e) {
-            throw this.convertError(e);
+            throw this.convertError(e, "Google");
         }
     }
 
@@ -108,28 +110,36 @@ export class AuthenticationFirebase implements Authentication {
         return currentUser != null && currentUser.uid === uid;
     }
 
-    private convertError(error: any): any {
+    private convertError(
+        error: any,
+        signInProvider: SignInProvider
+    ): AuthenticationException<ExceptionType> {
         const errorCode = error.code;
         switch (errorCode) {
             case "auth/invalid-email":
             case "auth/user-not-found":
             case "auth/wrong-password":
-                return AuthenticationException.InvalidCredentials;
+                return AuthenticationException.InvalidCredentials(error);
             case "auth/user-disabled":
-                return AuthenticationException.UserDisabled;
+                return AuthenticationException.UserDisabled(error);
             case "auth/account-exists-with-different-credential":
-                return AuthenticationException.IncorrectSignInProvider;
+                return AuthenticationException.IncorrectSignInProvider(
+                    error,
+                    signInProvider
+                );
             case "auth/unknown":
                 switch (error.message) {
                     case "We have blocked all requests from this device due to unusual activity. Try again later. [ Too many unsuccessful login attempts.  Please include reCaptcha verification or try again later ]":
-                        return AuthenticationException.TooManyAttempts;
+                        return AuthenticationException.TooManyAttempts(error);
                     default:
                         return error;
                 }
             case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-                return AuthenticationException.GooglePlayServicesNotAvailable;
+                return AuthenticationException.GooglePlayServicesNotAvailable(
+                    error
+                );
             case statusCodes.SIGN_IN_CANCELLED:
-                return AuthenticationException.SignInCanceled;
+                return AuthenticationException.SignInCanceled(error);
             default:
                 return error;
         }

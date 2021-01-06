@@ -387,9 +387,10 @@ describe("user logs into their account", (): void => {
 
         // Given credentials are invalid for authentication
         //
+        const sourceException = Error("Password is incorrect.");
         const invalidPassword = new Password("testPassword@");
         (authenticationMock.authenticateWithEmail as jest.Mock).mockRejectedValueOnce(
-            AuthenticationException.InvalidCredentials
+            AuthenticationException.InvalidCredentials(sourceException)
         );
 
         // Given an account exists for the provided credentials
@@ -419,7 +420,7 @@ describe("user logs into their account", (): void => {
                 1
             );
             expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledWith(
-                AuthenticationException.InvalidCredentials
+                AuthenticationException.InvalidCredentials(sourceException)
             );
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
         });
@@ -511,8 +512,11 @@ describe("user logs into their account", (): void => {
 
         // Given an account does not exists for the provided credentials
         //
+        const sourceException = Error(
+            "User does not exists with this email address."
+        );
         (authenticationMock.authenticateWithEmail as jest.Mock).mockRejectedValueOnce(
-            AuthenticationException.InvalidCredentials
+            AuthenticationException.InvalidCredentials(sourceException)
         );
 
         // When the user submits credentials
@@ -540,7 +544,7 @@ describe("user logs into their account", (): void => {
                 1
             );
             expect(loginOutputMock.showEmailLoginError).toHaveBeenCalledWith(
-                AuthenticationException.InvalidCredentials
+                AuthenticationException.InvalidCredentials(sourceException)
             );
             expect(loginOutputMock.showHomeScreen).toHaveBeenCalledTimes(0);
         });

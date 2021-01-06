@@ -5,7 +5,9 @@ import {
     AccountRepositoryLocalException
 } from "../Ports/AccountRepositoryLocal";
 import { BelongingDetection } from "./BelongingDetectionService";
-import AccountRepositoryRemote from "../Ports/AccountRepositoryRemote";
+import AccountRepositoryRemote, {
+    AccountRepositoryRemoteException
+} from "../Ports/AccountRepositoryRemote";
 import { UserData } from "../Ports/UserData";
 import { Database } from "../../Secondary Adapters/Persistence/Database";
 import { v4 as uuidV4 } from "uuid";
@@ -176,7 +178,7 @@ export class SessionServiceImpl implements SessionService {
         try {
             account = await this.accountRepoRemote.getByUid(userData.uid);
         } catch (e) {
-            if (e.name === "DoesNotExist") {
+            if (AccountRepositoryRemoteException.isType(e, "DoesNotExist")) {
                 await this.accountRegistrationService.register(
                     userData.uid,
                     userData.emailAddress,
