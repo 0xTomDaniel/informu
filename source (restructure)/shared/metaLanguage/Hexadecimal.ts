@@ -1,8 +1,21 @@
-class InvalidHexadecimalString extends Error {
-    constructor(value: string) {
-        super(`${value} is an invalid hexadecimal string.`);
-        this.name = "InvalidHexadecimalString";
-        Object.setPrototypeOf(this, new.target.prototype);
+import Exception from "./Exception";
+
+const ExceptionType = ["InvalidHexadecimalString"] as const;
+export type ExceptionType = typeof ExceptionType[number];
+
+export class HexadecimalException<T extends ExceptionType> extends Exception<
+    T
+> {
+    static InvalidHexadecimalString(
+        value: string
+    ): HexadecimalException<"InvalidHexadecimalString"> {
+        return new this(
+            "InvalidHexadecimalString",
+            `${value} is an invalid hexadecimal string.`,
+            "error",
+            undefined,
+            true
+        );
     }
 }
 
@@ -56,7 +69,7 @@ export default class Hexadecimal {
 
     protected static numberFromString(hex: string): number {
         if (!this.regExpHex.test(hex)) {
-            throw new InvalidHexadecimalString(hex);
+            throw HexadecimalException.InvalidHexadecimalString(hex);
         }
 
         return parseInt(hex, 16);

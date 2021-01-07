@@ -28,7 +28,7 @@ import AppViewModel, {
     Screen
 } from "./source/Primary Adapters/Presentation/AppViewModel";
 import AppPresenter from "./source/Primary Adapters/Presentation/AppPresenter";
-import SessionService from "./source/Core/Application/SessionService";
+import { SessionServiceImpl } from "./source/Core/Application/SessionService";
 import { AppStateController } from "./source/Primary Adapters/Device/AppStateController";
 import { Rssi } from "./source (restructure)/shared/metaLanguage/Types";
 import Percent from "./source (restructure)/shared/metaLanguage/Percent";
@@ -159,7 +159,7 @@ export class Dependencies {
     backgroundFetchProxy: BackgroundFetchProxyImpl;
     backgroundTask: BackgroundTask;
     muTagBatteriesInteractor: MuTagBatteriesInteractor;
-    sessionService: SessionService;
+    sessionService: SessionServiceImpl;
     loginViewModel: LoginViewModel;
     loginPresenter: LoginPresenter;
     newAccountFactory: NewAccountFactoryImpl;
@@ -271,7 +271,7 @@ export class Dependencies {
             this.muTagDevices,
             this.muTagRepoLocal
         );
-        this.sessionService = new SessionService(
+        this.sessionService = new SessionServiceImpl(
             this.eventTracker,
             sessionPresenter,
             this.loginPresenter,
@@ -400,7 +400,7 @@ export class Dependencies {
             this.muTagDevices,
             this.muTagRepoLocal
         );
-        this.sessionService = new SessionService(
+        this.sessionService = new SessionServiceImpl(
             this.eventTracker,
             sessionPresenter,
             this.loginPresenter,

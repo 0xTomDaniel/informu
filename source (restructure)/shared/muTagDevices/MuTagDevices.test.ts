@@ -3,7 +3,8 @@ import BluetoothPort, {
     Peripheral,
     PeripheralId,
     ScanMode,
-    BluetoothError
+    BluetoothException,
+    ExceptionType
 } from "../bluetooth/BluetoothPort";
 import { v4 as uuidV4 } from "uuid";
 import Percent from "../metaLanguage/Percent";
@@ -27,11 +28,8 @@ import {
     UnprovisionedMuTag,
     Connection,
     AdvertisingIntervalSetting,
-    FailedToConnectToMuTag,
-    FailedToFindMuTag,
-    FindUnprovisionedMuTagTimeout
+    MuTagDevicesException
 } from "./MuTagDevicesPort";
-import UserError from "../metaLanguage/UserError";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -46,7 +44,7 @@ const eventTrackerMock = new EventTrackerMock();
 Logger.createInstance(eventTrackerMock);
 
 const connections = new Map<PeripheralId, Subscriber<void>>();
-let connectionError: BluetoothError | undefined;
+let connectionError: BluetoothException<ExceptionType> | undefined;
 const connectMock = jest.fn<
     Observable<void>,
     [PeripheralId, Millisecond | undefined]
@@ -85,7 +83,7 @@ const startScanMock = jest.fn<
             let timeoutId: NodeJS.Timeout | undefined;
             if (timeout != null) {
                 timeoutId = setTimeout(() => {
-                    subscriber.error(BluetoothError.ScanTimeout);
+                    subscriber.error(BluetoothException.ScanTimeout);
                 }, timeout);
             }
             const teardown = () => {
@@ -157,9 +155,9 @@ test(
             .startFindingUnprovisionedMuTags(proximityThreshold, timeout)
             .toPromise();
         advance(5000);
-        const error = UserError.create(
-            FindUnprovisionedMuTagTimeout,
-            BluetoothError.ScanTimeout
+        const sourceException = BluetoothException.ScanTimeout;
+        const error = MuTagDevicesException.FindNewMuTagTimeout(
+            sourceException
         );
         await expect(startFindingPromise).rejects.toEqual(error);
     })
@@ -301,17 +299,15 @@ test(
             .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
             .toPromise();
         advance(5000);
-        const error = UserError.create(
-            FailedToFindMuTag,
-            BluetoothError.ScanTimeout
-        );
+        const sourceException = BluetoothException.ScanTimeout;
+        const error = MuTagDevicesException.FailedToFindMuTag(sourceException);
         await expect(connectPromise).rejects.toEqual(error);
     })
 );
 
 test("Fails to connect to provisioned Mu tag.", async () => {
     expect.assertions(1);
-    connectionError = BluetoothError.FailedToConnect(
+    connectionError = BluetoothException.FailedToConnect(
         discoveredProvisionedPeripheral.id
     );
     startScanSubscriber
@@ -322,10 +318,10 @@ test("Fails to connect to provisioned Mu tag.", async () => {
     const connectPromise = muTagDevices
         .connectToProvisionedMuTag(accountNumber, beaconId, timeout)
         .toPromise();
-    const originatingError = BluetoothError.FailedToConnect(
+    const sourceException = BluetoothException.FailedToConnect(
         discoveredProvisionedPeripheral.id
     );
-    const error = UserError.create(FailedToConnectToMuTag, originatingError);
+    const error = MuTagDevicesException.FailedToConnectToMuTag(sourceException);
     await expect(connectPromise).rejects.toStrictEqual(error);
     connectionError = undefined;
 });

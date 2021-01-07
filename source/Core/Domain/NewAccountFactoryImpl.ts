@@ -3,48 +3,73 @@ import Account, { AccountNumber } from "./Account";
 import database from "@react-native-firebase/database";
 import _ from "lodash";
 import { BeaconId } from "./ProvisionedMuTag";
+import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
-export class FailedToCreateNewAccount extends Error {
-    constructor() {
-        super("Failed to create a new Account. Please try again.");
-        this.name = "FailedToCreateNewAccount";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+const ExceptionType = [
+    "AccountLimitReached",
+    "FailedToCreateNewAccount",
+    "FailedToGetNewAccountNumber",
+    "MalformedData"
+] as const;
+export type ExceptionType = typeof ExceptionType[number];
 
-export class FailedToGetNewAccountNumber extends Error {
-    constructor() {
-        super("Failed to get a new account number. Please try again.");
-        this.name = "FailedToGetNewAccountNumber";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class AccountLimitReached extends Error {
-    constructor() {
-        super(
-            "The maximum number of accounts has been reached. Please contact support@informu.io"
+export class NewAccountFactoryException<
+    T extends ExceptionType
+> extends Exception<T> {
+    static AccountLimitReached(): NewAccountFactoryException<
+        "AccountLimitReached"
+    > {
+        return new this(
+            "AccountLimitReached",
+            "The maximum number of informu accounts has been reached.",
+            "error",
+            undefined,
+            true
         );
-        this.name = "AccountLimitReached";
-        Object.setPrototypeOf(this, new.target.prototype);
+    }
+
+    static FailedToCreateNewAccount(
+        sourceException: unknown
+    ): NewAccountFactoryException<"FailedToCreateNewAccount"> {
+        return new this(
+            "FailedToCreateNewAccount",
+            "Failed to create a new account.",
+            "error",
+            sourceException,
+            true
+        );
+    }
+
+    static FailedToGetNewAccountNumber(): NewAccountFactoryException<
+        "FailedToGetNewAccountNumber"
+    > {
+        return new this(
+            "FailedToGetNewAccountNumber",
+            "Failed to get a new account number.",
+            "error",
+            undefined,
+            true
+        );
+    }
+
+    static get MalformedData(): NewAccountFactoryException<"MalformedData"> {
+        return new this(
+            "MalformedData",
+            "Received malformed data from the database.",
+            "error",
+            undefined,
+            true
+        );
     }
 }
 
-export class MalformedData extends Error {
-    constructor() {
-        super("The data received from the database is malformed.");
-        this.name = "MalformedData";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-interface AccountIDs {
+interface AccountIds {
     [key: string]: boolean;
 }
 
-function assertIsAccountIDs(val: any): asserts val is AccountIDs {
+function assertIsAccountIds(val: any): asserts val is AccountIds {
     if (typeof val !== "object") {
-        throw new MalformedData();
+        throw NewAccountFactoryException.MalformedData;
     }
 }
 
@@ -69,11 +94,10 @@ export default class NewAccountFactoryImpl implements NewAccountFactory {
                 _uid: uid
             });
         } catch (e) {
-            console.warn(e);
-            if (e instanceof AccountLimitReached) {
+            if (NewAccountFactoryException.isType(e, "AccountLimitReached")) {
                 throw e;
             }
-            throw new FailedToCreateNewAccount();
+            throw NewAccountFactoryException.FailedToCreateNewAccount(e);
         }
     }
 
@@ -93,11 +117,11 @@ export default class NewAccountFactoryImpl implements NewAccountFactory {
         //
         const transactionUpdate = (
             currentData?: any
-        ): AccountIDs | null | undefined => {
+        ): AccountIds | null | undefined => {
             if (currentData == null) {
                 return currentData;
             }
-            assertIsAccountIDs(currentData);
+            assertIsAccountIds(currentData);
             const recycledAccountIDs = _.toPairs(currentData);
             const newAccountNumberHex = recycledAccountIDs
                 .shift()?.[0]
@@ -125,7 +149,7 @@ export default class NewAccountFactoryImpl implements NewAccountFactory {
                 return "0000001";
             }
             if (currentData === "FFFFFFF") {
-                error = new AccountLimitReached();
+                error = NewAccountFactoryException.AccountLimitReached;
                 return;
             }
             newAccountNumber = AccountNumber.fromString(currentData);
@@ -138,7 +162,7 @@ export default class NewAccountFactoryImpl implements NewAccountFactory {
             throw error;
         }
         if (!result.committed || newAccountNumber == null) {
-            throw new FailedToGetNewAccountNumber();
+            throw NewAccountFactoryException.FailedToGetNewAccountNumber;
         }
         return newAccountNumber;
     }

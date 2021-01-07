@@ -1,14 +1,8 @@
 import {
     Authentication,
-    InvalidCredentials,
-    UserDisabled,
-    TooManyAttempts,
-    GoogleSignInFailed,
-    GooglePlayServicesNotAvailable,
-    EmailNotFound,
-    SignInCanceled,
-    FacebookSignInFailed,
-    IncorrectSignInMethod
+    AuthenticationException,
+    ExceptionType,
+    SignInProvider
 } from "../../Core/Ports/Authentication";
 import auth, { firebase } from "@react-native-firebase/auth";
 import { UserData } from "../../Core/Ports/UserData";
@@ -17,7 +11,6 @@ import {
     statusCodes
 } from "@react-native-community/google-signin";
 import { LoginManager, AccessToken } from "react-native-fbsdk";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export class AuthenticationFirebase implements Authentication {
     constructor(webClientID: string) {
@@ -40,7 +33,7 @@ export class AuthenticationFirebase implements Authentication {
             };
             return userData;
         } catch (e) {
-            throw this.convertError(e);
+            throw this.convertError(e, "Email");
         }
     }
 
@@ -52,11 +45,11 @@ export class AuthenticationFirebase implements Authentication {
                 "email"
             ]);
             if (result.isCancelled) {
-                throw UserError.create(SignInCanceled);
+                throw AuthenticationException.SignInCanceled;
             }
             const accessToken = await AccessToken.getCurrentAccessToken();
             if (accessToken == null) {
-                throw UserError.create(FacebookSignInFailed);
+                throw AuthenticationException.FacebookSignInFailed;
             }
             const authCredential = firebase.auth.FacebookAuthProvider.credential(
                 accessToken.accessToken
@@ -65,7 +58,7 @@ export class AuthenticationFirebase implements Authentication {
                 authCredential
             );
             if (userCredential.user.email == null) {
-                throw UserError.create(EmailNotFound);
+                throw AuthenticationException.EmailNotFound;
             }
             return {
                 uid: userCredential.user.uid,
@@ -73,7 +66,7 @@ export class AuthenticationFirebase implements Authentication {
                 name: userCredential.user.displayName ?? ""
             };
         } catch (e) {
-            throw this.convertError(e);
+            throw this.convertError(e, "Facebook");
         }
     }
 
@@ -91,7 +84,7 @@ export class AuthenticationFirebase implements Authentication {
 
             const user = await GoogleSignin.signIn();
             if (user.idToken == null) {
-                throw UserError.create(GoogleSignInFailed);
+                throw AuthenticationException.GoogleSignInFailed;
             }
             const authCredential = firebase.auth.GoogleAuthProvider.credential(
                 user.idToken
@@ -100,7 +93,7 @@ export class AuthenticationFirebase implements Authentication {
                 authCredential
             );
             if (userCredential.user.email == null) {
-                throw UserError.create(EmailNotFound);
+                throw AuthenticationException.EmailNotFound;
             }
             return {
                 uid: userCredential.user.uid,
@@ -108,7 +101,7 @@ export class AuthenticationFirebase implements Authentication {
                 name: userCredential.user.displayName ?? ""
             };
         } catch (e) {
-            throw this.convertError(e);
+            throw this.convertError(e, "Google");
         }
     }
 
@@ -117,28 +110,36 @@ export class AuthenticationFirebase implements Authentication {
         return currentUser != null && currentUser.uid === uid;
     }
 
-    private convertError(error: any): any {
+    private convertError(
+        error: any,
+        signInProvider: SignInProvider
+    ): AuthenticationException<ExceptionType> {
         const errorCode = error.code;
         switch (errorCode) {
             case "auth/invalid-email":
             case "auth/user-not-found":
             case "auth/wrong-password":
-                return UserError.create(InvalidCredentials);
+                return AuthenticationException.InvalidCredentials(error);
             case "auth/user-disabled":
-                return UserError.create(UserDisabled);
+                return AuthenticationException.UserDisabled(error);
             case "auth/account-exists-with-different-credential":
-                return UserError.create(IncorrectSignInMethod);
+                return AuthenticationException.IncorrectSignInProvider(
+                    error,
+                    signInProvider
+                );
             case "auth/unknown":
                 switch (error.message) {
                     case "We have blocked all requests from this device due to unusual activity. Try again later. [ Too many unsuccessful login attempts.  Please include reCaptcha verification or try again later ]":
-                        return UserError.create(TooManyAttempts);
+                        return AuthenticationException.TooManyAttempts(error);
                     default:
                         return error;
                 }
             case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-                return UserError.create(GooglePlayServicesNotAvailable);
+                return AuthenticationException.GooglePlayServicesNotAvailable(
+                    error
+                );
             case statusCodes.SIGN_IN_CANCELLED:
-                return UserError.create(SignInCanceled);
+                return AuthenticationException.SignInCanceled(error);
             default:
                 return error;
         }

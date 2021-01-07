@@ -1,11 +1,5 @@
-import {
-    AccountRepositoryRemote,
-    FailedToGet,
-    DoesNotExist,
-    PersistedDataMalformed,
-    FailedToAdd,
-    FailedToRemove,
-    FailedToUpdate
+import AccountRepositoryRemote, {
+    AccountRepositoryRemoteException
 } from "../../Core/Ports/AccountRepositoryRemote";
 import Account, {
     AccountJson,
@@ -16,7 +10,6 @@ import database, {
 } from "@react-native-firebase/database";
 import AccountRepositoryRemotePortAddMuTag from "../../../source (restructure)/useCases/addMuTag/AccountRepositoryRemotePort";
 import AccountRepositoryRemotePortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/AccountRepositoryRemotePort";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 interface DatabaseAccount {
     readonly account_id: string;
@@ -46,7 +39,7 @@ export class AccountRepoRNFirebase
                 .once("value");
         } catch (e) {
             console.warn(e);
-            throw UserError.create(FailedToGet);
+            throw AccountRepositoryRemoteException.FailedToGet;
         }
 
         const accountData = AccountRepoRNFirebase.toAccountData(uid, snapshot);
@@ -64,7 +57,7 @@ export class AccountRepoRNFirebase
                 .set(databaseAccount);
         } catch (e) {
             console.warn(e);
-            throw UserError.create(FailedToAdd);
+            throw AccountRepositoryRemoteException.FailedToAdd;
         }
     }
 
@@ -79,7 +72,7 @@ export class AccountRepoRNFirebase
                 .update(databaseAccount);
         } catch (e) {
             console.warn(e);
-            throw UserError.create(FailedToUpdate);
+            throw AccountRepositoryRemoteException.FailedToUpdate;
         }
     }
 
@@ -90,7 +83,7 @@ export class AccountRepoRNFirebase
                 .remove();
         } catch (e) {
             console.warn(e);
-            throw UserError.create(FailedToRemove);
+            throw AccountRepositoryRemoteException.FailedToRemove;
         }
     }
 
@@ -116,7 +109,6 @@ export class AccountRepoRNFirebase
                       {} as { [key: string]: boolean }
                   )
                 : null;
-        /*eslint-disable @typescript-eslint/camelcase*/
         const databaseAccount: DatabaseAccount = {
             account_id: accountJson._accountNumber,
             badge_count: 0,
@@ -130,7 +122,6 @@ export class AccountRepoRNFirebase
             onboarding: accountJson._onboarding,
             recycled_beacon_ids: recycledBeaconIds
         };
-        /*eslint-enable */
         return databaseAccount;
     }
 
@@ -139,12 +130,12 @@ export class AccountRepoRNFirebase
         snapshot: FirebaseDatabaseTypes.DataSnapshot
     ): AccountJson {
         if (!snapshot.exists()) {
-            throw UserError.create(DoesNotExist);
+            throw AccountRepositoryRemoteException.DoesNotExist;
         }
 
         const snapshotData = snapshot.val();
         if (typeof snapshotData !== "object") {
-            throw UserError.create(PersistedDataMalformed(uid));
+            throw AccountRepositoryRemoteException.PersistedDataMalformed(uid);
         }
 
         const data: { [key: string]: any } = {
@@ -193,8 +184,8 @@ export class AccountRepoRNFirebase
         try {
             assertIsAccountJson(data);
         } catch (e) {
-            throw UserError.create(
-                PersistedDataMalformed(JSON.stringify(data)),
+            throw AccountRepositoryRemoteException.PersistedDataMalformed(
+                JSON.stringify(data),
                 e
             );
         }

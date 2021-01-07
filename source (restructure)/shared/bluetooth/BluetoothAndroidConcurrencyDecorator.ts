@@ -13,7 +13,7 @@ import BluetoothPort, {
     ScanMode,
     PeripheralId,
     Peripheral,
-    BluetoothError,
+    BluetoothException,
     TaskId
 } from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
@@ -131,7 +131,7 @@ export default class BluetoothAndroidConcurrencyDecorator
         scanMode?: ScanMode
     ): Observable<Peripheral> {
         if (this.scanState.value !== ScanState.Stopped) {
-            const error = BluetoothError.ScanAlreadyStarted;
+            const error = BluetoothException.ScanAlreadyStarted;
             return throwError(error);
         }
         this.scanState.next(ScanState.Starting);

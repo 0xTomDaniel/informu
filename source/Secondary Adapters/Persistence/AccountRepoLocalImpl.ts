@@ -1,10 +1,6 @@
 import {
     AccountRepositoryLocal,
-    FailedToAdd,
-    FailedToGet,
-    DoesNotExist,
-    FailedToRemove,
-    FailedToUpdate
+    AccountRepositoryLocalException
 } from "../../Core/Ports/AccountRepositoryLocal";
 import Account from "../../Core/Domain/Account";
 import { Database } from "./Database";
@@ -12,7 +8,6 @@ import AccountRepositoryLocalPortAddMuTag from "../../../source (restructure)/us
 import AccountRepositoryLocalPortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/AccountRepositoryLocalPort";
 import { defer } from "rxjs";
 import { share, map } from "rxjs/operators";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 export default class AccountRepoLocalImpl
     implements
@@ -45,10 +40,10 @@ export default class AccountRepoLocalImpl
             account = await this.persistedAccount.toPromise();
         } catch (e) {
             console.log(e);
-            throw UserError.create(FailedToGet);
+            throw AccountRepositoryLocalException.FailedToGet;
         }
         if (account == null) {
-            throw UserError.create(DoesNotExist);
+            throw AccountRepositoryLocalException.DoesNotExist;
         }
         this.cachedAccount = account;
         return account;
@@ -60,7 +55,7 @@ export default class AccountRepoLocalImpl
             await this.database.set("account", rawAccount);
         } catch (e) {
             console.log(e);
-            throw UserError.create(FailedToAdd);
+            throw AccountRepositoryLocalException.FailedToAdd;
         }
         this.cachedAccount = account;
     }
@@ -71,7 +66,7 @@ export default class AccountRepoLocalImpl
             await this.database.set("account", rawAccount);
         } catch (e) {
             console.log(e);
-            throw UserError.create(FailedToUpdate);
+            throw AccountRepositoryLocalException.FailedToUpdate;
         }
     }
 
@@ -81,7 +76,7 @@ export default class AccountRepoLocalImpl
             this.cachedAccount = undefined;
         } catch (e) {
             console.log(e);
-            throw UserError.create(FailedToRemove);
+            throw AccountRepositoryLocalException.FailedToRemove;
         }
     }
 }

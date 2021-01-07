@@ -3,8 +3,7 @@ import BluetoothPort, {
     ScanMode,
     PeripheralId,
     Peripheral,
-    BluetoothError,
-    BluetoothErrorType,
+    BluetoothException,
     TaskId
 } from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
@@ -13,38 +12,35 @@ import {
     WritableCharacteristic
 } from "./Characteristic";
 import { catchError } from "rxjs/operators";
+import Exception from "../metaLanguage/Exception";
 
-export enum BluetoothAndroidDecoratorErrorType {
-    OpenConnections,
-    ScanInProgress
-}
+const ExceptionType = ["OpenConnections", "ScanInProgress"] as const;
+export type ExceptionType = typeof ExceptionType[number];
 
-export class BluetoothAndroidDecoratorError extends Error {
-    originatingError: any;
-    type: BluetoothAndroidDecoratorErrorType;
-
-    constructor(
-        type: BluetoothAndroidDecoratorErrorType,
-        message: string,
-        originatingError?: unknown
-    ) {
-        super(message);
-        this.name = BluetoothAndroidDecoratorErrorType[type];
-        this.originatingError = originatingError;
-        this.type = type;
-    }
-
-    static get OpenConnections(): BluetoothAndroidDecoratorError {
-        return new BluetoothAndroidDecoratorError(
-            BluetoothAndroidDecoratorErrorType.OpenConnections,
-            "Cannot start Bluetooth device scanning because there are open connections."
+export class BluetoothAndroidDecoratorException<
+    T extends ExceptionType
+> extends Exception<T> {
+    static get OpenConnections(): BluetoothAndroidDecoratorException<
+        "OpenConnections"
+    > {
+        return new this(
+            "OpenConnections",
+            "Cannot start Bluetooth device scanning because there are open connections.",
+            "error",
+            undefined,
+            true
         );
     }
 
-    static get ScanInProgress(): BluetoothAndroidDecoratorError {
-        return new BluetoothAndroidDecoratorError(
-            BluetoothAndroidDecoratorErrorType.ScanInProgress,
-            "Cannot connect to Bluetooth device because scan is in progress."
+    static get ScanInProgress(): BluetoothAndroidDecoratorException<
+        "ScanInProgress"
+    > {
+        return new this(
+            "ScanInProgress",
+            "Cannot connect to Bluetooth device because scan is in progress.",
+            "error",
+            undefined,
+            true
         );
     }
 }
@@ -72,7 +68,9 @@ export default class BluetoothAndroidDecorator implements BluetoothPort {
         timeout?: Millisecond
     ): Observable<void> {
         if (this.sequentialTaskState === SequentialTaskState.Scan) {
-            return throwError(BluetoothAndroidDecoratorError.ScanInProgress);
+            return throwError(
+                BluetoothAndroidDecoratorException.ScanInProgress
+            );
         }
         this.openConnections.add(peripheralId);
         if (this.sequentialTaskState !== SequentialTaskState.Connect) {
@@ -104,15 +102,14 @@ export default class BluetoothAndroidDecorator implements BluetoothPort {
         scanMode?: ScanMode
     ): Observable<Peripheral> {
         if (this.sequentialTaskState === SequentialTaskState.Connect) {
-            return throwError(BluetoothAndroidDecoratorError.OpenConnections);
+            return throwError(
+                BluetoothAndroidDecoratorException.OpenConnections
+            );
         }
         this.sequentialTaskState = SequentialTaskState.Scan;
         return this.bluetooth.startScan(serviceUuids, timeout, scanMode).pipe(
             catchError(e => {
-                if (
-                    e instanceof BluetoothError &&
-                    e.type === BluetoothErrorType.ScanAlreadyStarted
-                ) {
+                if (BluetoothException.isType(e, "ScanAlreadyStarted")) {
                     throw e;
                 }
                 this.sequentialTaskState = SequentialTaskState.Idle;

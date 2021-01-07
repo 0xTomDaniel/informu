@@ -1,9 +1,9 @@
 import { SignOutInteractorImpl } from "./SignOutInteractor";
-import { Session } from "../../../source/Core/Application/SessionService";
+import SessionService from "../../../source/Core/Application/SessionService";
 import { take, skip } from "rxjs/operators";
 
-const SessionServiceMock = jest.fn<Session, any>(
-    (): Session => ({
+const SessionServiceMock = jest.fn<SessionService, any>(
+    (): SessionService => ({
         load: jest.fn(),
         start: jest.fn(),
         continueStart: jest.fn(),

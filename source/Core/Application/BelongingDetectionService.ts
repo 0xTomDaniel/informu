@@ -1,5 +1,5 @@
 import { MuTagMonitor, MuTagSignal, MuTagBeacon } from "../Ports/MuTagMonitor";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import MuTagRepositoryLocal from "../Ports/MuTagRepositoryLocal";
 import ProvisionedMuTag from "../Domain/ProvisionedMuTag";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import { Subscription } from "rxjs";

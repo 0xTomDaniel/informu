@@ -32,8 +32,8 @@ import BelongingDashboardViewModel, {
 } from "./BelongingDashboardViewModel";
 import { Images } from "../../../../source/Primary Adapters/Presentation/Images";
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
-import { UserErrorViewData } from "../../../shared/metaLanguage/UserError";
 import BelongingCard from "./BelongingCard";
+import Exception from "../../../shared/metaLanguage/Exception";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -153,7 +153,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     const [belongings, setBelongings] = useState<BelongingViewData[]>([]);
     const [showActivityIndicator, setShowActivityIndicator] = useState(true);
     const [showEmptyDashboard, setShowEmptyDashboard] = useState(true);
-    const [showError, setShowError] = useState<UserErrorViewData | undefined>();
+    const [showError, setShowError] = useState<Exception<string> | undefined>();
     const [showSignOutDialog, setShowSignOutDialog] = useState(false);
 
     const onDismissErrorDialog = (): void => {
@@ -316,8 +316,12 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                 </Modal>
             </Portal>
             <ErrorDialog
-                message={showError?.errorDescription ?? ""}
-                detailMessage={showError?.detailedErrorDescription ?? ""}
+                message={showError?.message ?? ""}
+                detailMessage={
+                    showError?.sourceException != null
+                        ? String(showError?.sourceException)
+                        : ""
+                }
                 visible={showError != null}
                 onDismiss={onDismissErrorDialog}
             />
