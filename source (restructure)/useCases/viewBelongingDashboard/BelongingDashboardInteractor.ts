@@ -1,4 +1,4 @@
-import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
+import MuTagRepositoryLocal from "../../../source/Core/Ports/MuTagRepositoryLocal";
 import { AccountRepositoryLocal } from "../../../source/Core/Ports/AccountRepositoryLocal";
 import ProvisionedMuTag, {
     Address
@@ -24,7 +24,6 @@ export type DashboardBelongingDelta = Partial<DashboardBelonging> & {
 };
 
 export default interface BelongingDashboardInteractor {
-    //readonly showError: Observable<UserError>;
     readonly showOnDashboard: Observable<
         ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
     >;
@@ -46,8 +45,6 @@ export class BelongingDashboardInteractorImpl
     private readonly muTagIndexCache: string[] = [];
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private muTagsChangeSubscription: Subscription | undefined;
-    //private readonly showErrorSubject = new Subject<UserError>();
-    //readonly showError = this.showErrorSubject.asObservable();
     private readonly showOnDashboardSubject = new Subject<
         ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
     >();

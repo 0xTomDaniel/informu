@@ -3,7 +3,7 @@ import database, {
 } from "@react-native-firebase/database";
 import {
     MuTagRepositoryRemote,
-    MuTagRepoRemoteError
+    MuTagRepoRemoteException
 } from "../../Core/Ports/MuTagRepositoryRemote";
 import ProvisionedMuTag, {
     MuTagJson,
@@ -57,7 +57,7 @@ export class MuTagRepoRNFirebase
                 .once("value");
         } catch (e) {
             console.warn(e);
-            throw MuTagRepoRemoteError.FailedToGet;
+            throw MuTagRepoRemoteException.FailedToGet;
         }
 
         const muTags = new Set<ProvisionedMuTag>();
@@ -103,7 +103,7 @@ export class MuTagRepoRNFirebase
                 .set(databaseMuTag);
         } catch (e) {
             console.warn(e);
-            throw MuTagRepoRemoteError.FailedToAdd;
+            throw MuTagRepoRemoteException.FailedToAdd;
         }
     }
 
@@ -123,7 +123,7 @@ export class MuTagRepoRNFirebase
                 .update(databaseMuTag);
         } catch (e) {
             console.warn(e);
-            throw MuTagRepoRemoteError.FailedToUpdate;
+            throw MuTagRepoRemoteException.FailedToUpdate;
         }
     }
 
@@ -144,7 +144,7 @@ export class MuTagRepoRNFirebase
                 .remove();
         } catch (e) {
             console.warn(e);
-            throw MuTagRepoRemoteError.FailedToRemove;
+            throw MuTagRepoRemoteException.FailedToRemove;
         }
     }
 
@@ -197,12 +197,12 @@ export class MuTagRepoRNFirebase
         snapshot: FirebaseDatabaseTypes.DataSnapshot
     ): MuTagJson {
         if (!snapshot.exists()) {
-            throw MuTagRepoRemoteError.DoesNotExist;
+            throw MuTagRepoRemoteException.DoesNotExist;
         }
 
         const snapshotData = snapshot.val();
         if (typeof snapshotData !== "object") {
-            throw MuTagRepoRemoteError.PersistedDataMalformed(uid);
+            throw MuTagRepoRemoteException.PersistedDataMalformed(uid);
         }
 
         const json: { [key: string]: any } = {
@@ -232,9 +232,9 @@ export class MuTagRepoRNFirebase
         try {
             assertIsMuTagJson(json);
         } catch (e) {
-            console.warn(e);
-            throw MuTagRepoRemoteError.PersistedDataMalformed(
-                JSON.stringify(json)
+            throw MuTagRepoRemoteException.PersistedDataMalformed(
+                JSON.stringify(json),
+                e
             );
         }
 

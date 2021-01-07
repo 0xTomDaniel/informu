@@ -14,11 +14,16 @@ import { Subject, Observable } from "rxjs";
 import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectionUpdate";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { fakeSchedulers } from "rxjs-marbles/jest";
-import SignOutInteractor from "../../signOut/SignOutInteractor";
-import UserError from "../../../shared/metaLanguage/UserError";
-import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
+import SignOutInteractor, {
+    SignOutInteractorException,
+    ExceptionType as SignOutInteractorExceptionType
+} from "../../signOut/SignOutInteractor";
+import RemoveMuTagInteractor, {
+    RemoveMuTagInteractorException,
+    ExceptionType
+} from "../../removeMuTag/RemoveMuTagInteractor";
 
-const showErrorSubject = new Subject<UserError>();
+//const showErrorSubject = new Subject<Exception<string>>();
 const showOnDashboardSubject = new Subject<
     ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
 >();
@@ -27,7 +32,6 @@ const BelongingDashboardInteractorMock = jest.fn<
     any
 >(
     (): BelongingDashboardInteractor => ({
-        showError: showErrorSubject,
         showOnDashboard: showOnDashboardSubject
     })
 );
@@ -35,7 +39,9 @@ const belongingDashboardInteractorMock = BelongingDashboardInteractorMock();
 const RemoveMuTagInteractorMock = jest.fn<RemoveMuTagInteractor, any>(
     (): RemoveMuTagInteractor => ({
         showActivityIndicator: new Observable<boolean>(),
-        showError: new Observable<UserError>(),
+        showError: new Observable<
+            RemoveMuTagInteractorException<ExceptionType>
+        >(),
         remove: jest.fn()
     })
 );
@@ -43,7 +49,9 @@ const removeMuTagInteractorMock = RemoveMuTagInteractorMock();
 const SignOutInteractorMock = jest.fn<SignOutInteractor, any>(
     (): SignOutInteractor => ({
         showActivityIndicator: new Observable<boolean>(),
-        showError: new Observable<UserError>(),
+        showError: new Observable<
+            SignOutInteractorException<SignOutInteractorExceptionType>
+        >(),
         showSignIn: new Observable<void>(),
         signOut: jest.fn()
     })

@@ -4,101 +4,102 @@ import {
     ReadableCharacteristic,
     WritableCharacteristic
 } from "./Characteristic";
+import Exception from "../metaLanguage/Exception";
 
-export enum BluetoothErrorType {
-    BluetoothPoweredOff,
-    BluetoothUnauthorized,
-    ConnectionLostUnexpectedly,
-    FailedToConnect,
-    FailedToDisconnect,
-    FailedToEnableBluetooth,
-    FailedToRead,
-    FailedToWrite,
-    FailedToStartScan,
-    FailedToStopScan,
-    ScanAlreadyStarted,
-    ScanTimeout
-}
+const ExceptionType = [
+    "BluetoothPoweredOff",
+    "BluetoothUnauthorized",
+    "ConnectionLostUnexpectedly",
+    "FailedToConnect",
+    "FailedToDisconnect",
+    "FailedToEnableBluetooth",
+    "FailedToRead",
+    "FailedToWrite",
+    "FailedToStartScan",
+    "FailedToStopScan",
+    "ScanAlreadyStarted",
+    "ScanTimeout"
+] as const;
+export type ExceptionType = typeof ExceptionType[number];
 
-export class BluetoothError extends Error {
-    readonly originatingError: any;
-    readonly type: BluetoothErrorType;
-
-    constructor(
-        type: BluetoothErrorType,
-        message: string,
-        originatingError?: unknown
-    ) {
-        super(message);
-        this.name = BluetoothErrorType[type];
-        this.originatingError = originatingError;
-        this.type = type;
-    }
-
-    static get BluetoothPoweredOff(): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.BluetoothPoweredOff,
-            "Bluetooth is powered off."
+export class BluetoothException<T extends ExceptionType> extends Exception<T> {
+    static get BluetoothPoweredOff(): BluetoothException<
+        "BluetoothPoweredOff"
+    > {
+        return new this(
+            "BluetoothPoweredOff",
+            "Bluetooth is powered off.",
+            "warn"
         );
     }
 
-    static get BluetoothUnauthorized(): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.BluetoothUnauthorized,
-            "This application isn’t authorized to use the Bluetooth."
+    static get BluetoothUnauthorized(): BluetoothException<
+        "BluetoothUnauthorized"
+    > {
+        return new this(
+            "BluetoothUnauthorized",
+            "This application isn’t authorized to use the Bluetooth.",
+            "warn"
         );
     }
 
     static ConnectionLostUnexpectedly(
         peripheralId: string,
-        originatingError?: unknown
-    ): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.ConnectionLostUnexpectedly,
+        sourceException?: unknown
+    ): BluetoothException<"ConnectionLostUnexpectedly"> {
+        return new this(
+            "ConnectionLostUnexpectedly",
             `Connection to Bluetooth device (${peripheralId}) lost unexpectedly.`,
-            originatingError
+            "warn",
+            sourceException
         );
     }
 
     static FailedToConnect(
         peripheralId: string,
-        originatingError?: unknown
-    ): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.FailedToConnect,
+        sourceException?: unknown
+    ): BluetoothException<"FailedToConnect"> {
+        return new this(
+            "FailedToConnect",
             `Failed to connect to Bluetooth device (${peripheralId}).`,
-            originatingError
+            "log",
+            sourceException
         );
     }
 
     static FailedToDisconnect(
         peripheralId: string,
-        originatingError?: unknown
-    ): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.FailedToDisconnect,
+        sourceException?: unknown
+    ): BluetoothException<"FailedToDisconnect"> {
+        return new this(
+            "FailedToDisconnect",
             `Failed to disconnect from Bluetooth device (${peripheralId}).`,
-            originatingError
+            "warn",
+            sourceException
         );
     }
 
-    static FailedToEnableBluetooth(originatingError?: unknown): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.FailedToEnableBluetooth,
+    static FailedToEnableBluetooth(
+        sourceException?: unknown
+    ): BluetoothException<"FailedToEnableBluetooth"> {
+        return new this(
+            "FailedToEnableBluetooth",
             `Bluetooth is disabled, failed to enable.`,
-            originatingError
+            "error",
+            sourceException
         );
     }
 
     static FailedToRead(
         characteristic: string,
         peripheralId: string,
-        originatingError?: unknown
-    ): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.FailedToRead,
+        sourceException?: unknown
+    ): BluetoothException<"FailedToRead"> {
+        return new this(
+            "FailedToRead",
             `Failed to read characteristic (${characteristic}) of Bluetooth device (${peripheralId}).`,
-            originatingError
+            "error",
+            sourceException
         );
     }
 
@@ -106,42 +107,51 @@ export class BluetoothError extends Error {
         value: string,
         characteristic: string,
         peripheralId: string,
-        originatingError?: unknown
-    ): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.FailedToWrite,
+        sourceException?: unknown
+    ): BluetoothException<"FailedToWrite"> {
+        return new this(
+            "FailedToWrite",
             `Failed to write (${value}) to characteristic (${characteristic}) of Bluetooth device (${peripheralId}).`,
-            originatingError
+            "error",
+            sourceException
         );
     }
 
-    static FailedToStartScan(originatingError?: unknown): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.FailedToStartScan,
+    static FailedToStartScan(
+        sourceException?: unknown
+    ): BluetoothException<"FailedToStartScan"> {
+        return new this(
+            "FailedToStartScan",
             "Failed to start Bluetooth device scanning.",
-            originatingError
+            "error",
+            sourceException
         );
     }
 
-    static FailedToStopScan(originatingError?: unknown): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.FailedToStopScan,
+    static FailedToStopScan(
+        sourceException?: unknown
+    ): BluetoothException<"FailedToStopScan"> {
+        return new this(
+            "FailedToStopScan",
             "Failed to stop Bluetooth device scanning.",
-            originatingError
+            "error",
+            sourceException
         );
     }
 
-    static get ScanAlreadyStarted(): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.ScanAlreadyStarted,
-            "Bluetooth device scanning has already started."
+    static get ScanAlreadyStarted(): BluetoothException<"ScanAlreadyStarted"> {
+        return new this(
+            "ScanAlreadyStarted",
+            "Bluetooth device scanning has already started.",
+            "warn"
         );
     }
 
-    static get ScanTimeout(): BluetoothError {
-        return new BluetoothError(
-            BluetoothErrorType.ScanTimeout,
-            "Bluetooth device scanning has timed out."
+    static get ScanTimeout(): BluetoothException<"ScanTimeout"> {
+        return new this(
+            "ScanTimeout",
+            "Bluetooth device scanning has timed out.",
+            "log"
         );
     }
 }

@@ -1,12 +1,11 @@
 import AccountRepoLocalImpl from "./AccountRepoLocalImpl";
 import Account, { AccountNumber } from "../../Core/Domain/Account";
-import { DoesNotExist } from "../../Core/Ports/AccountRepositoryLocal";
+import { AccountRepositoryLocalException } from "../../Core/Ports/AccountRepositoryLocal";
 import { BeaconId } from "../../Core/Domain/ProvisionedMuTag";
 import DatabaseImplWatermelon from "./DatabaseImplWatermelon";
 import { Database } from "@nozbe/watermelondb";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 
 jest.mock("./DatabaseImplWatermelon");
 jest.mock("@nozbe/watermelondb");
@@ -94,6 +93,6 @@ test("failed to get account that does not exist", async (): Promise<void> => {
     //(database.get as jest.Mock).mockResolvedValueOnce(null);
     expect.assertions(1);
     await expect(accountRepoLocalImpl.get()).rejects.toEqual(
-        UserError.create(DoesNotExist)
+        AccountRepositoryLocalException.DoesNotExist
     );
 });

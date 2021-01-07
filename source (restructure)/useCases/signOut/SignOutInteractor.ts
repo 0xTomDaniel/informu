@@ -1,37 +1,45 @@
-import { Session } from "../../../source/Core/Application/SessionService";
+import SessionService from "../../../source/Core/Application/SessionService";
 import { Subject, Observable } from "rxjs";
-import UserError, { UserErrorType } from "../../shared/metaLanguage/UserError";
+import Exception from "../../shared/metaLanguage/Exception";
 
-interface SignOutFailed extends UserErrorType {
-    name: "signOutFailed";
+const ExceptionType = ["SignOutFailed"] as const;
+export type ExceptionType = typeof ExceptionType[number];
+
+export class SignOutInteractorException<
+    T extends ExceptionType
+> extends Exception<T> {
+    static SignOutFailed(
+        sourceException: unknown
+    ): SignOutInteractorException<"SignOutFailed"> {
+        return new this(
+            "SignOutFailed",
+            "Failed to sign out.",
+            "error",
+            sourceException,
+            true
+        );
+    }
 }
-
-export type SignOutError = SignOutFailed;
 
 export default interface SignOutInteractor {
     readonly showActivityIndicator: Observable<boolean>;
-    readonly showError: Observable<UserError<SignOutError>>;
+    readonly showError: Observable<SignOutInteractorException<ExceptionType>>;
     readonly showSignIn: Observable<void>;
     signOut: () => Promise<void>;
 }
 
 export class SignOutInteractorImpl implements SignOutInteractor {
-    private static createError(
-        type: SignOutError,
-        originatingError: unknown
-    ): UserError<SignOutError> {
-        return UserError.create(type, originatingError);
-    }
-
-    private readonly sessionService: Session;
+    private readonly sessionService: SessionService;
     private readonly showActivityIndicatorSubject = new Subject<boolean>();
     readonly showActivityIndicator = this.showActivityIndicatorSubject.asObservable();
-    private readonly showErrorSubject = new Subject<UserError<SignOutError>>();
+    private readonly showErrorSubject = new Subject<
+        SignOutInteractorException<ExceptionType>
+    >();
     readonly showError = this.showErrorSubject.asObservable();
     private readonly showSignInSubject = new Subject<void>();
     readonly showSignIn = this.showSignInSubject.asObservable();
 
-    constructor(sessionService: Session) {
+    constructor(sessionService: SessionService) {
         this.sessionService = sessionService;
     }
 
@@ -39,12 +47,7 @@ export class SignOutInteractorImpl implements SignOutInteractor {
         this.showActivityIndicatorSubject.next(true);
         await this.sessionService.end().catch(e => {
             this.showErrorSubject.next(
-                SignOutInteractorImpl.createError(
-                    {
-                        name: "signOutFailed"
-                    },
-                    e
-                )
+                SignOutInteractorException.SignOutFailed(e)
             );
         });
         this.showActivityIndicatorSubject.next(false);

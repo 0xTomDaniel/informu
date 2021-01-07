@@ -1,10 +1,6 @@
 import {
     AddMuTagInteractorImpl,
-    LowMuTagBattery,
-    NewMuTagNotFound,
-    FailedToNameMuTag,
-    FailedToAddMuTag,
-    FindNewMuTagCanceled
+    AddMuTagInteractorException
 } from "./AddMuTagInteractor";
 import Percent from "../../shared/metaLanguage/Percent";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
@@ -13,15 +9,9 @@ import BluetoothPort, {
     Peripheral,
     PeripheralId,
     ScanMode,
-    BluetoothError
+    BluetoothException
 } from "../../shared/bluetooth/BluetoothPort";
-import {
-    Observable,
-    Subscriber,
-    Subject,
-    BehaviorSubject,
-    EmptyError
-} from "rxjs";
+import { Observable, Subscriber, Subject, BehaviorSubject } from "rxjs";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
@@ -45,9 +35,8 @@ import {
     WritableCharacteristic,
     ReadableCharacteristic
 } from "../../shared/bluetooth/Characteristic";
-import UserError from "../../shared/metaLanguage/UserError";
 import { fakeSchedulers } from "rxjs-marbles/jest";
-import { FindUnprovisionedMuTagTimeout } from "../../shared/muTagDevices/MuTagDevicesPort";
+import { MuTagDevicesException } from "../../shared/muTagDevices/MuTagDevicesPort";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -107,7 +96,7 @@ const bluetoothMocks = {
                 let timeoutId: NodeJS.Timeout | undefined;
                 if (timeout != null) {
                     timeoutId = setTimeout(
-                        () => subscriber.error(BluetoothError.ScanTimeout),
+                        () => subscriber.error(BluetoothException.ScanTimeout),
                         timeout
                     );
                 }
@@ -705,11 +694,8 @@ describe("User adds Mu tag.", () => {
             expect.assertions(3);
             await expect(onStopFindUnprovisioned).resolves.toBeUndefined();
             await expect(stopFindingNewMuTagPromise).resolves.toBeUndefined();
-            const originatingError = new EmptyError();
-            const canceledError = UserError.create(
-                FindNewMuTagCanceled,
-                originatingError
-            );
+            const canceledError =
+                AddMuTagInteractorException.FindNewMuTagCanceled;
             await expect(findNewMuTagPromise).rejects.toStrictEqual(
                 canceledError
             );
@@ -761,8 +747,8 @@ describe("User adds Mu tag.", () => {
         it("Should produce low Mu tag battery error.", async () => {
             expect.assertions(1);
             await expect(addFoundMuTagPromise).rejects.toStrictEqual(
-                UserError.create(
-                    LowMuTagBattery(addMuTagBatteryThreshold.valueOf())
+                AddMuTagInteractorException.LowMuTagBattery(
+                    addMuTagBatteryThreshold.valueOf()
                 )
             );
         });
@@ -792,13 +778,14 @@ describe("User adds Mu tag.", () => {
             fakeSchedulers(async advance => {
                 expect.assertions(1);
                 advance(30000);
-                const originatingError01 = BluetoothError.ScanTimeout;
-                const originatingError02 = UserError.create(
-                    FindUnprovisionedMuTagTimeout,
-                    originatingError01
+                const sourceException01 = BluetoothException.ScanTimeout;
+                const sourceException02 = MuTagDevicesException.FindNewMuTagTimeout(
+                    sourceException01
                 );
                 await expect(findNewMuTagPromise).rejects.toStrictEqual(
-                    UserError.create(NewMuTagNotFound, originatingError02)
+                    AddMuTagInteractorException.NewMuTagNotFound(
+                        sourceException02
+                    )
                 );
             })
         );
@@ -838,7 +825,9 @@ describe("User adds Mu tag.", () => {
         it("Should produce failed to add Mu tag error.", async () => {
             expect.assertions(1);
             await expect(addFoundMuTagPromise).rejects.toStrictEqual(
-                UserError.create(FailedToAddMuTag, muTagRepoRemoteAddError)
+                AddMuTagInteractorException.FailedToAddMuTag(
+                    muTagRepoRemoteAddError
+                )
             );
         });
     });
@@ -878,7 +867,9 @@ describe("User adds Mu tag.", () => {
         it("Should produce failed to name Mu tag error.", async () => {
             expect.assertions(1);
             await expect(setMuTagNamePromise).rejects.toStrictEqual(
-                UserError.create(FailedToNameMuTag, muTagRepoRemoteUpdateError)
+                AddMuTagInteractorException.FailedToNameMuTag(
+                    muTagRepoRemoteUpdateError
+                )
             );
         });
     });

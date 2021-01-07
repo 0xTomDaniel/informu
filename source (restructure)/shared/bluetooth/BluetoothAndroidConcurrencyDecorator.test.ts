@@ -2,7 +2,7 @@ import BluetoothPort, {
     PeripheralId,
     Peripheral,
     ScanMode,
-    BluetoothError
+    BluetoothException
 } from "./BluetoothPort";
 import { Millisecond } from "../metaLanguage/Types";
 import { Observable, Subject, BehaviorSubject, Subscriber } from "rxjs";
@@ -16,6 +16,20 @@ import { v4 as uuidV4 } from "uuid";
 import { take, filter } from "rxjs/operators";
 import { Buffer } from "buffer";
 import { fakeSchedulers } from "rxjs-marbles/jest";
+import EventTracker from "../metaLanguage/EventTracker";
+import Logger from "../metaLanguage/Logger";
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+Logger.createInstance(eventTrackerMock);
 
 const connectMock = jest.fn<
     Observable<void>,
@@ -418,7 +432,7 @@ test("Fail to start Bluetooth scan again before first completes.", async () => {
     const startScanPromise02 = bluetoothAndroidConcurrencyDecorator
         .startScan([])
         .toPromise();
-    const error = BluetoothError.ScanAlreadyStarted;
+    const error = BluetoothException.ScanAlreadyStarted;
     await expect(startScanPromise02).rejects.toThrow(error);
     bluetoothAndroidConcurrencyDecorator.stopScan();
     await expect(startScanPromise01).resolves.toBeUndefined();

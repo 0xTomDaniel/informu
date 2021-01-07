@@ -2,7 +2,7 @@ import BluetoothPort, {
     Peripheral,
     ScanMode,
     PeripheralId,
-    BluetoothError,
+    BluetoothException,
     TaskId
 } from "./BluetoothPort";
 import {
@@ -64,7 +64,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
                     bleError => {
                         if (bleError != null) {
                             subscriber.error(
-                                BluetoothError.ConnectionLostUnexpectedly(
+                                BluetoothException.ConnectionLostUnexpectedly(
                                     peripheralId,
                                     bleError
                                 )
@@ -85,7 +85,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
                     .then(() => subscriber.next())
                     .catch(e =>
                         subscriber.error(
-                            BluetoothError.FailedToConnect(peripheralId, e)
+                            BluetoothException.FailedToConnect(peripheralId, e)
                         )
                     );
                 const teardown = () => subscription.remove();
@@ -97,7 +97,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
 
     async disconnect(peripheralId: PeripheralId): Promise<void> {
         await this.bleManager.cancelDeviceConnection(peripheralId).catch(e => {
-            throw BluetoothError.FailedToDisconnect(peripheralId, e);
+            throw BluetoothException.FailedToDisconnect(peripheralId, e);
         });
     }
 
@@ -113,7 +113,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
                 this.fullUuid(characteristic.uuid)
             )
             .catch(e => {
-                throw BluetoothError.FailedToRead(
+                throw BluetoothException.FailedToRead(
                     characteristic.uuid,
                     peripheralId,
                     e
@@ -133,7 +133,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
         scanMode: ScanMode = ScanMode.Balanced
     ): Observable<Peripheral> {
         if (this.scanState.value === ScanState.Started) {
-            const error = BluetoothError.ScanAlreadyStarted;
+            const error = BluetoothException.ScanAlreadyStarted;
             return throwError(error);
         }
         this.scanState.next(ScanState.Started);
@@ -146,7 +146,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
                 let didTimeout = false;
                 const subscription = this.onScanStateStopped.subscribe(() => {
                     if (didTimeout) {
-                        subscriber.error(BluetoothError.ScanTimeout);
+                        subscriber.error(BluetoothException.ScanTimeout);
                     } else {
                         subscriber.complete();
                     }
@@ -157,7 +157,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
                     (bleError, device) => {
                         if (bleError != null) {
                             subscriber.error(
-                                BluetoothError.FailedToStartScan(bleError)
+                                BluetoothException.FailedToStartScan(bleError)
                             );
                         } else if (device != null) {
                             const peripheral = This.toPeripheral(device);
@@ -196,7 +196,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
         try {
             this.bleManager.stopDeviceScan();
         } catch (e) {
-            throw BluetoothError.FailedToStopScan(e);
+            throw BluetoothException.FailedToStopScan(e);
         }
         this.scanState.next(ScanState.Stopped);
     }
@@ -238,7 +238,7 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
                     "hex"
                 );
             }
-            throw BluetoothError.FailedToWrite(
+            throw BluetoothException.FailedToWrite(
                 stringValue,
                 characteristic.uuid,
                 peripheralId,
@@ -268,15 +268,15 @@ export default class ReactNativeBlePlxAdapter implements BluetoothPort {
             // 'warnOnce' Jest bug preventing test from running when using State enum directly.
             case "PoweredOff":
                 if (this.platform.OS === "ios") {
-                    throw BluetoothError.BluetoothPoweredOff;
+                    throw BluetoothException.BluetoothPoweredOff;
                 }
                 await this.bleManager.enable().catch(e => {
-                    throw BluetoothError.FailedToEnableBluetooth(e);
+                    throw BluetoothException.FailedToEnableBluetooth(e);
                 });
                 break;
             case "Unauthorized":
                 if (this.platform.OS === "ios") {
-                    throw BluetoothError.BluetoothUnauthorized;
+                    throw BluetoothException.BluetoothUnauthorized;
                 }
                 break;
             default:

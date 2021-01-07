@@ -16,22 +16,6 @@ export default interface MuTagBatteriesInteractor {
 }
 
 export class MuTagBatteriesInteractorImpl {
-    private accountMuTagsChangeSubscription: Subscription | undefined;
-    private readonly accountRepoLocal: AccountRepositoryLocalPort;
-    private readonly backgroundTask: BackgroundTaskPort;
-    private readonly backgroundTaskUids = new Map<string, string>();
-    private readonly batteryReadInterval = 43200000 as Millisecond;
-    private readonly batteryReadRetryInterval = 14400000 as Millisecond;
-    private readonly didEnterRegionSubscriptions = new Map<
-        string,
-        Subscription
-    >();
-    private hasStarted = false;
-    private readonly lastBatteryReadTimestamps = new Map<string, Date>();
-    private readonly logger = Logger.instance;
-    private readonly muTagDevices: MuTagDevicesPort;
-    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
-
     constructor(
         accountRepoLocal: AccountRepositoryLocalPort,
         backgroundTask: BackgroundTaskPort,
@@ -83,6 +67,22 @@ export class MuTagBatteriesInteractorImpl {
         }
         this.hasStarted = false;
     }
+
+    private accountMuTagsChangeSubscription: Subscription | undefined;
+    private readonly accountRepoLocal: AccountRepositoryLocalPort;
+    private readonly backgroundTask: BackgroundTaskPort;
+    private readonly backgroundTaskUids = new Map<string, string>();
+    private readonly batteryReadInterval = 43200000 as Millisecond;
+    private readonly batteryReadRetryInterval = 14400000 as Millisecond;
+    private readonly didEnterRegionSubscriptions = new Map<
+        string,
+        Subscription
+    >();
+    private hasStarted = false;
+    private readonly lastBatteryReadTimestamps = new Map<string, Date>();
+    private readonly logger = Logger.instance;
+    private readonly muTagDevices: MuTagDevicesPort;
+    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
 
     private startUpBatteryReads(
         muTag: ProvisionedMuTag,
@@ -173,7 +173,11 @@ export class MuTagBatteriesInteractorImpl {
         muTag: ProvisionedMuTag
     ): Promise<Percent> {
         const batteryLevel = await this.muTagDevices
-            .connectToProvisionedMuTag(accountNumber, muTag.beaconId)
+            .connectToProvisionedMuTag(
+                accountNumber,
+                muTag.beaconId,
+                This.muTagConnectTimeout
+            )
             .pipe(
                 switchMap(connection =>
                     this.muTagDevices
@@ -187,4 +191,8 @@ export class MuTagBatteriesInteractorImpl {
         this.lastBatteryReadTimestamps.set(muTag.uid, new Date());
         return batteryLevel;
     }
+
+    private static muTagConnectTimeout = 5000 as Millisecond;
 }
+
+const This = MuTagBatteriesInteractorImpl;

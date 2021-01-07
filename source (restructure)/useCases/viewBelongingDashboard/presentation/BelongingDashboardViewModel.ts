@@ -13,14 +13,10 @@ import {
 } from "rxjs/operators";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { Millisecond } from "../../../shared/metaLanguage/Types";
-import UserError from "../../../shared/metaLanguage/UserError";
-import SignOutInteractor, {
-    SignOutError
-} from "../../signOut/SignOutInteractor";
-import RemoveMuTagInteractor, {
-    RemoveMuTagError
-} from "../../removeMuTag/RemoveMuTagInteractor";
+import SignOutInteractor from "../../signOut/SignOutInteractor";
+import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 import { isEqual, template } from "lodash";
+import Exception from "../../../shared/metaLanguage/Exception";
 import Localize from "../../../shared/localization/Localize";
 import ViewModel, {
     UserErrorViewData
@@ -86,7 +82,7 @@ export default class BelongingDashboardViewModel extends ViewModel {
     readonly showActivityIndicator: Observable<boolean>;
     readonly showBelongings: Observable<BelongingViewData[]>;
     readonly showEmptyDashboard: Observable<boolean>;
-    readonly showError: Observable<UserErrorViewData>;
+    readonly showError: Observable<Exception<string>>;
     private readonly signOutInteractor: SignOutInteractor;
 
     constructor(
@@ -132,17 +128,8 @@ export default class BelongingDashboardViewModel extends ViewModel {
             signOutInteractor.showActivityIndicator
         ).pipe(distinctUntilChanged());
         this.showError = merge(
-            //belongingDashboardInteractor.showError,
             removeMuTagInteractor.showError,
             signOutInteractor.showError
-        ).pipe(
-            map(e => {
-                const errorMessage = this.getUserErrorMessage(e);
-                return this.getUserErrorViewData(
-                    errorMessage,
-                    e.originatingError
-                );
-            })
         );
     }
 

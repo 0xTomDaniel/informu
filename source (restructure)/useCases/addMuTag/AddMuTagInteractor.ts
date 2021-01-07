@@ -12,13 +12,93 @@ import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
-import UserError, { UserErrorType } from "../../shared/metaLanguage/UserError";
-import { UserWarningType } from "../../shared/metaLanguage/UserWarning";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
 import { switchMap, catchError, first } from "rxjs/operators";
 import { EmptyError } from "rxjs";
+import Exception from "../../shared/metaLanguage/Exception";
 
-export const LowMuTagBattery = (
+const ExceptionType = [
+    "FailedToAddMuTag",
+    "FailedToNameMuTag",
+    "FailedToSaveSettings",
+    "FindNewMuTagCanceled",
+    "LowMuTagBattery",
+    "NewMuTagNotFound"
+] as const;
+export type ExceptionType = typeof ExceptionType[number];
+
+export class AddMuTagInteractorException<
+    T extends ExceptionType
+> extends Exception<T> {
+    static FailedToAddMuTag(
+        sourceException: unknown
+    ): AddMuTagInteractorException<"FailedToAddMuTag"> {
+        return new this(
+            "FailedToAddMuTag",
+            "Failed to add Mu tag.",
+            "error",
+            sourceException,
+            true
+        );
+    }
+
+    static FailedToNameMuTag(
+        sourceException: unknown
+    ): AddMuTagInteractorException<"FailedToNameMuTag"> {
+        return new this(
+            "FailedToNameMuTag",
+            "Failed to name Mu tag.",
+            "error",
+            sourceException,
+            true
+        );
+    }
+
+    static FailedToSaveSettings(
+        sourceException: unknown
+    ): AddMuTagInteractorException<"FailedToSaveSettings"> {
+        return new this(
+            "FailedToSaveSettings",
+            "Failed to save Mu tag settings.",
+            "error",
+            sourceException,
+            true
+        );
+    }
+
+    static get FindNewMuTagCanceled(): AddMuTagInteractorException<
+        "FindNewMuTagCanceled"
+    > {
+        return new this(
+            "FindNewMuTagCanceled",
+            "Find new Mu tag has been canceled.",
+            "log"
+        );
+    }
+
+    static LowMuTagBattery(
+        lowBatteryThreshold: number
+    ): AddMuTagInteractorException<"LowMuTagBattery"> {
+        return new this(
+            "LowMuTagBattery",
+            `Mu tag battery is too low. It's below ${lowBatteryThreshold}%.`,
+            "warn"
+        );
+    }
+
+    static NewMuTagNotFound(
+        sourceException: unknown
+    ): AddMuTagInteractorException<"NewMuTagNotFound"> {
+        return new this(
+            "NewMuTagNotFound",
+            "Could not find a new Mu tag.",
+            "warn",
+            sourceException
+        );
+    }
+}
+
+/*export const LowMuTagBattery = (
     lowBatteryThreshold: number
 ): UserErrorType => ({
     name: "LowMuTagBattery",
@@ -52,7 +132,7 @@ export const FailedToSaveSettings: UserWarningType = {
 export const FindNewMuTagCanceled: UserErrorType = {
     name: "FindNewMuTagCanceled",
     userFriendlyMessage: "Finding new Mu tag has been canceled."
-};
+};*/
 
 export default interface AddMuTagInteractor {
     addFoundMuTag(): Promise<void>;
@@ -121,11 +201,12 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
                 ),
                 catchError(e => {
                     this.muTagDevices.disconnectFromMuTag(connection);
-                    const isLowBattery =
-                        e instanceof UserError && e.name === "LowMuTagBattery";
-                    throw isLowBattery
+                    throw AddMuTagInteractorException.isType(
+                        e,
+                        "LowMuTagBattery"
+                    )
                         ? e
-                        : UserError.create(FailedToAddMuTag, e);
+                        : AddMuTagInteractorException.FailedToAddMuTag(e);
                 }),
                 switchMap(() =>
                     this.muTagDevices.disconnectFromMuTag(connection)
@@ -144,9 +225,9 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
                 first(),
                 catchError(e => {
                     if (e instanceof EmptyError) {
-                        throw UserError.create(FindNewMuTagCanceled, e);
+                        throw AddMuTagInteractorException.FindNewMuTagCanceled;
                     } else {
-                        throw UserError.create(NewMuTagNotFound, e);
+                        throw AddMuTagInteractorException.NewMuTagNotFound(e);
                     }
                 })
             )
@@ -173,7 +254,7 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
             );
             await this.muTagRepoLocal.update(this.provisionedMuTag);
         } catch (e) {
-            throw UserError.create(FailedToNameMuTag, e);
+            throw AddMuTagInteractorException.FailedToNameMuTag(e);
         }
     }
 
@@ -269,8 +350,8 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
             connection
         );
         if (batteryLevel.valueOf() < this.addMuTagBatteryThreshold.valueOf()) {
-            throw UserError.create(
-                LowMuTagBattery(this.addMuTagBatteryThreshold.valueOf())
+            throw AddMuTagInteractorException.LowMuTagBattery(
+                this.addMuTagBatteryThreshold.valueOf()
             );
         }
         return batteryLevel;

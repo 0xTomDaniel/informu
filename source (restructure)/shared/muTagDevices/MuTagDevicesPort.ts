@@ -2,35 +2,75 @@ import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import { Observable } from "rxjs";
 import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import Percent from "../../shared/metaLanguage/Percent";
-import { UserErrorType } from "../metaLanguage/UserError";
+import Exception from "../metaLanguage/Exception";
 
-export const FailedToFindMuTag: UserErrorType = {
-    name: "FailedToFindMuTag",
-    userFriendlyMessage:
-        "Could not find Mu tag. Please ensure that Mu tag is charged and move it closer to the app."
-};
+const ExceptionType = [
+    "FailedToConnectToMuTag",
+    "FailedToFindMuTag",
+    "FindNewMuTagTimeout",
+    "MuTagCommunicationFailure",
+    "MuTagDisconnectedUnexpectedly"
+] as const;
+export type ExceptionType = typeof ExceptionType[number];
 
-export const FailedToConnectToMuTag: UserErrorType = {
-    name: "FailedToConnectToMuTag",
-    userFriendlyMessage:
-        "Could not connect to Mu tag. Please ensure that Mu tag is charged and move it closer to the app."
-};
+export class MuTagDevicesException<T extends ExceptionType> extends Exception<
+    T
+> {
+    static FailedToConnectToMuTag(
+        sourceException: unknown
+    ): MuTagDevicesException<"FailedToConnectToMuTag"> {
+        return new this(
+            "FailedToConnectToMuTag",
+            "Failed to connect to Mu tag.",
+            "warn",
+            sourceException
+        );
+    }
 
-export const FindUnprovisionedMuTagTimeout: UserErrorType = {
-    name: "FindUnprovisionedMuTagTimeout",
-    userFriendlyMessage: "Finding unprovisioned Mu tags has timed out."
-};
+    static FailedToFindMuTag(
+        sourceException: unknown
+    ): MuTagDevicesException<"FailedToFindMuTag"> {
+        return new this(
+            "FailedToFindMuTag",
+            "Mu tag could not be found.",
+            "log",
+            sourceException
+        );
+    }
 
-export const MuTagDisconnectedUnexpectedly: UserErrorType = {
-    name: "MuTagDisconnectedUnexpectedly",
-    userFriendlyMessage: "Mu tag has disconnected unexpectedly."
-};
+    static FindNewMuTagTimeout(
+        sourceException: unknown
+    ): MuTagDevicesException<"FindNewMuTagTimeout"> {
+        return new this(
+            "FindNewMuTagTimeout",
+            "Could not find unprovisioned Mu tag before timeout.",
+            "log",
+            sourceException
+        );
+    }
 
-export const MuTagCommunicationFailure: UserErrorType = {
-    name: "MuTagCommunicationFailure",
-    userFriendlyMessage:
-        "There was a problem communicating with the Mu tag. Please move Mu tag closer to the app."
-};
+    static MuTagCommunicationFailure(
+        sourceException: unknown
+    ): MuTagDevicesException<"MuTagCommunicationFailure"> {
+        return new this(
+            "MuTagCommunicationFailure",
+            "Failed to read or write to Mu tag.",
+            "error",
+            sourceException
+        );
+    }
+
+    static MuTagDisconnectedUnexpectedly(
+        sourceException: unknown
+    ): MuTagDevicesException<"MuTagDisconnectedUnexpectedly"> {
+        return new this(
+            "MuTagDisconnectedUnexpectedly",
+            "Mu tag has disconnected unexpectedly.",
+            "warn",
+            sourceException
+        );
+    }
+}
 
 export class Connection {
     readonly uid = Symbol("uid");

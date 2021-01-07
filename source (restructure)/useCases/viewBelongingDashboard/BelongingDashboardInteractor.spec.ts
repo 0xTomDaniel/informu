@@ -9,7 +9,7 @@ import {
     DashboardBelonging,
     DashboardBelongingDelta
 } from "./BelongingDashboardInteractor";
-import { MuTagRepositoryLocal } from "../../../source/Core/Ports/MuTagRepositoryLocal";
+import MuTagRepositoryLocal from "../../../source/Core/Ports/MuTagRepositoryLocal";
 import Account, {
     AccountNumber,
     AccountData

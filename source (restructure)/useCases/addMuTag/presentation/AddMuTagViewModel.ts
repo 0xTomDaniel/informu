@@ -1,8 +1,8 @@
 import { BehaviorSubject, Subscription } from "rxjs";
-import AddMuTagInteractor from "../AddMuTagInteractor";
+import AddMuTagInteractor, {
+    AddMuTagInteractorException
+} from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
-import UserError from "../../../shared/metaLanguage/UserError";
-import UserWarning from "../../../shared/metaLanguage/UserWarning";
 import ViewModel from "../../../shared/viewModel/ViewModel";
 
 type Routes = typeof AddMuTagViewModel.routes[number];
@@ -60,15 +60,15 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
                 this.navigation.popToTop();
             })
             .catch(e => {
-                const message =
-                    e instanceof UserWarning
-                        ? e.userFriendlyMessage
-                        : String(e);
-                this.showFailure.next(
-                    This.createUserMessage(message, e.message)
-                );
-                this.showRetry.next(true);
-                this.showActivity.next(false);
+                if (AddMuTagInteractorException.isType(e)) {
+                    this.showFailure.next(
+                        This.createUserMessage(e.name, e.message)
+                    );
+                    this.showRetry.next(true);
+                    this.showActivity.next(false);
+                } else {
+                    throw e;
+                }
             });
         // Cannot use 'finally' function of promise because navigation executes
         // before 'finally' does. This may cause a race condition where the view
@@ -96,13 +96,15 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
             })
             .catch(e => {
                 this.isFindingNewMuTag = false;
-                const message =
-                    e instanceof UserError ? e.userFriendlyMessage : String(e);
-                this.showFailure.next(
-                    This.createUserMessage(message, e.message)
-                );
-                this.showRetry.next(true);
-                this.showActivity.next(false);
+                if (AddMuTagInteractorException.isType(e)) {
+                    this.showFailure.next(
+                        This.createUserMessage(e.name, e.message)
+                    );
+                    this.showRetry.next(true);
+                    this.showActivity.next(false);
+                } else {
+                    throw e;
+                }
             });
         // Cannot use 'finally' function of promise because navigation executes
         // before 'finally' does. This may cause a race condition where the view

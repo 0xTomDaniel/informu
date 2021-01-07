@@ -1,4 +1,4 @@
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
+import AccountRepositoryRemote from "../Ports/AccountRepositoryRemote";
 import Account, { AccountNumber, AccountData } from "../Domain/Account";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
 import AccountRegistrationService from "./AccountRegistrationService";

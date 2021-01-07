@@ -10,7 +10,7 @@ import {
     MuTagRegionExit,
     MuTagBeacon
 } from "../Ports/MuTagMonitor";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import MuTagRepositoryLocal from "../Ports/MuTagRepositoryLocal";
 import { Observable, Subscriber } from "rxjs";
 import BelongingDetectionService from "./BelongingDetectionService";
 import { AccountRepositoryLocal } from "../Ports/AccountRepositoryLocal";
