@@ -1,39 +1,38 @@
 import { BehaviorSubject } from "rxjs";
 import NavigationPort from "../navigation/NavigationPort";
 
-export interface ViewModelUserMessage {
+/*export interface ViewModelUserMessage {
     message: string;
     details?: string;
-}
+}*/
 
-export default abstract class ViewModel<T extends string> {
-    readonly showActivity = new BehaviorSubject<boolean>(false);
-    readonly showFailure = new BehaviorSubject<
-        ViewModelUserMessage | undefined
-    >(undefined);
-    readonly showSuccess = new BehaviorSubject<
-        ViewModelUserMessage | undefined
-    >(undefined);
+type LowPriorityMessageTimeout = 4 | 5 | 6 | 7 | 8 | 9 | 10;
 
-    constructor(navigation: NavigationPort<T>) {
+export default abstract class ViewModel<
+    N extends string,
+    H extends string | undefined = undefined,
+    L extends string | undefined = undefined,
+    M extends string | undefined = undefined
+> {
+    readonly showIndeterminateProgress = new BehaviorSubject<boolean>(false);
+    readonly highPriorityMessage = new BehaviorSubject<H | undefined>(
+        undefined
+    );
+    readonly lowPriorityMessage = new BehaviorSubject<L | undefined>(undefined);
+    readonly showMediumPriorityMessage = new BehaviorSubject<M | undefined>(
+        undefined
+    );
+
+    constructor(navigation: NavigationPort<N>) {
         this.navigation = navigation;
     }
 
-    protected navigation: NavigationPort<T>;
+    protected navigation: NavigationPort<N>;
 
-    static createUserMessage(
-        message: string,
-        details?: unknown
-    ): ViewModelUserMessage {
-        const userMessage: ViewModelUserMessage = {
-            message: message
-        };
-        if (details != null) {
-            userMessage.details = JSON.stringify(
-                details,
-                Object.getOwnPropertyNames(details)
-            );
-        }
-        return userMessage;
+    protected showLowPriorityMessage(
+        message: L,
+        timeout: LowPriorityMessageTimeout
+    ): void {
+        // TODO
     }
 }

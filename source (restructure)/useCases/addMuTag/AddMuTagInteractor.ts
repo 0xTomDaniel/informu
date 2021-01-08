@@ -13,7 +13,7 @@ import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
-import { switchMap, catchError, first } from "rxjs/operators";
+import { switchMap, catchError, first, finalize } from "rxjs/operators";
 import { EmptyError } from "rxjs";
 import Exception from "../../shared/metaLanguage/Exception";
 
@@ -168,7 +168,7 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
         await this.muTagDevices
             .connectToUnprovisionedMuTag(this.unprovisionedMuTag)
             .pipe(
-                switchMap(async cnnctn => {
+                switchMap(cnnctn => {
                     connection = cnnctn;
                     return this.verifyBatteryLevel(cnnctn);
                 }),
@@ -176,39 +176,47 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
                     this.addMuTagToPersistence(
                         batteryLevel,
                         this.unprovisionedMuTag?.macAddress
-                    )
+                    ).catch(e => {
+                        throw AddMuTagInteractorException.FailedToAddMuTag(e);
+                    })
                 ),
                 switchMap(() =>
-                    this.muTagDevices.provisionMuTag(
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        this.accountNumber!,
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        this.provisionedMuTag!.beaconId,
-                        connection
-                    )
+                    this.muTagDevices
+                        .provisionMuTag(
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            this.accountNumber!,
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            this.provisionedMuTag!.beaconId,
+                            connection
+                        )
+                        .catch(e => {
+                            throw AddMuTagInteractorException.FailedToAddMuTag(
+                                e
+                            );
+                        })
                 ),
                 switchMap(() =>
-                    this.muTagDevices.changeTxPower(
-                        TxPowerSetting["+6 dBm"],
-                        connection
-                    )
+                    this.muTagDevices
+                        .changeTxPower(TxPowerSetting["+6 dBm"], connection)
+                        .catch(e => {
+                            throw AddMuTagInteractorException.FailedToSaveSettings(
+                                e
+                            );
+                        })
                 ),
                 switchMap(() =>
-                    this.muTagDevices.changeAdvertisingInterval(
-                        AdvertisingIntervalSetting["852 ms"],
-                        connection
-                    )
+                    this.muTagDevices
+                        .changeAdvertisingInterval(
+                            AdvertisingIntervalSetting["852 ms"],
+                            connection
+                        )
+                        .catch(e => {
+                            throw AddMuTagInteractorException.FailedToSaveSettings(
+                                e
+                            );
+                        })
                 ),
-                catchError(e => {
-                    this.muTagDevices.disconnectFromMuTag(connection);
-                    throw AddMuTagInteractorException.isType(
-                        e,
-                        "LowMuTagBattery"
-                    )
-                        ? e
-                        : AddMuTagInteractorException.FailedToAddMuTag(e);
-                }),
-                switchMap(() =>
+                finalize(() =>
                     this.muTagDevices.disconnectFromMuTag(connection)
                 )
             )

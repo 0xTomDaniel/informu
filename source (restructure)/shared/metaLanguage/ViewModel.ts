@@ -1,4 +1,4 @@
-import UserError, { UserErrorType } from "./UserError";
+/*import UserError, { UserErrorType } from "./UserError";
 
 export interface UserErrorViewData {
     errorMessage: string;
@@ -25,4 +25,4 @@ export default abstract class ViewModel {
         }
         return viewData;
     }
-}
+}*/
