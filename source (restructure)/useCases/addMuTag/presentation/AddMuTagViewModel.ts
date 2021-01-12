@@ -6,8 +6,8 @@ import AddMuTagInteractor, {
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import ViewModel from "../../../shared/viewModel/ViewModel";
 
-type LowPriorityMessage = typeof AddMuTagViewModel.lowPriorityMessages[number];
-type MediumPriorityMessage = typeof AddMuTagViewModel.mediumPriorityMessages[number];
+export type LowPriorityMessage = typeof AddMuTagViewModel.lowPriorityMessages[number];
+export type MediumPriorityMessage = typeof AddMuTagViewModel.mediumPriorityMessages[number];
 type Route = typeof AddMuTagViewModel.routes[number];
 
 export default class AddMuTagViewModel extends ViewModel<
@@ -17,8 +17,17 @@ export default class AddMuTagViewModel extends ViewModel<
     MediumPriorityMessage
 > {
     readonly showCancel = new BehaviorSubject<boolean>(true);
+    get showCancelValue(): boolean {
+        return this._showCancel.value;
+    }
     readonly showCancelActivity = new BehaviorSubject<boolean>(false);
+    get showCancelActivityValue(): boolean {
+        return this._showCancelActivity.value;
+    }
     readonly showRetry = new BehaviorSubject<boolean>(false);
+    get showRetryValue(): boolean {
+        return this._showRetry.value;
+    }
 
     constructor(
         navigation: NavigationPort<Route>,
@@ -33,9 +42,9 @@ export default class AddMuTagViewModel extends ViewModel<
         if (this.isFindingNewMuTag) {
             await this.addMuTagInteractor.stopFindingNewMuTag();
         }
-        this.showIndeterminateProgress.next(false);
+        this.hideProgressIndicator();
         this.showCancel.next(true);
-        this.showFailure.next(undefined);
+        this.hideMediumPriorityMessage();
         this.showRetry.next(false);
         this.showCancelActivity.next(false);
         this.hardwareBackPressSubscription?.unsubscribe();
@@ -55,15 +64,15 @@ export default class AddMuTagViewModel extends ViewModel<
 
     async setMuTagName(name: string, retry = false): Promise<void> {
         if (retry) {
-            this.showFailure.next(undefined);
+            this.hideMediumPriorityMessage();
         }
-        this.showIndeterminateProgress.next(true);
+        this.showProgressIndicator("Indeterminate");
         await this.addMuTagInteractor
             .setMuTagName(name)
             .then(() => {
-                this.showFailure.next(undefined);
+                this.hideMediumPriorityMessage();
                 this.showRetry.next(false);
-                this.showIndeterminateProgress.next(false);
+                this.hideProgressIndicator();
                 this.hardwareBackPressSubscription?.unsubscribe();
                 this.navigation.popToTop();
             })
@@ -82,9 +91,9 @@ export default class AddMuTagViewModel extends ViewModel<
 
     async startAddingMuTag(retry = false): Promise<void> {
         if (retry) {
-            this.showFailure.next(undefined);
+            this.hideMediumPriorityMessage();
         }
-        this.showIndeterminateProgress.next(true);
+        this.showProgressIndicator("Indeterminate");
         this.isFindingNewMuTag = true;
         await this.addMuTagInteractor
             .findNewMuTag()
@@ -95,7 +104,7 @@ export default class AddMuTagViewModel extends ViewModel<
             })
             .then(() => {
                 this.showRetry.next(false);
-                this.showIndeterminateProgress.next(false);
+                this.hideProgressIndicator();
                 this.navigation.navigateTo("NameMuTag");
             })
             .catch(e => {
@@ -115,21 +124,19 @@ export default class AddMuTagViewModel extends ViewModel<
     private readonly addMuTagInteractor: AddMuTagInteractor;
     private hardwareBackPressSubscription: Subscription | undefined;
     private isFindingNewMuTag = false;
-
-    private clearAllMessages(): void {
-        this.lowPriorityMessage.next(undefined);
-        this.showMediumPriorityMessage.next(undefined);
-    }
+    private readonly _showCancel = new BehaviorSubject<boolean>(true);
+    private readonly _showCancelActivity = new BehaviorSubject<boolean>(false);
+    private readonly _showRetry = new BehaviorSubject<boolean>(false);
 
     private handleException(
         exception: AddMuTagInteractorException<ExceptionType>
     ): void {
         switch (exception.type) {
             case "FailedToAddMuTag":
-                this.showMediumPriorityMessage.next("FailedToAddMuTag");
+                this.showMediumPriorityMessage("FailedToAddMuTag");
                 break;
             case "FailedToNameMuTag":
-                this.showMediumPriorityMessage.next("FailedToNameMuTag");
+                this.showMediumPriorityMessage("FailedToNameMuTag");
                 break;
             case "FailedToSaveSettings":
                 this.showLowPriorityMessage("FailedToSaveSettings", 4);
@@ -137,14 +144,14 @@ export default class AddMuTagViewModel extends ViewModel<
             case "FindNewMuTagCanceled":
                 return;
             case "LowMuTagBattery":
-                this.showMediumPriorityMessage.next("LowMuTagBattery");
+                this.showMediumPriorityMessage("LowMuTagBattery");
                 break;
             case "NewMuTagNotFound":
-                this.showMediumPriorityMessage.next("NewMuTagNotFound");
+                this.showMediumPriorityMessage("NewMuTagNotFound");
                 break;
         }
         this.showRetry.next(true);
-        this.showIndeterminateProgress.next(false);
+        this.hideProgressIndicator();
     }
 
     static readonly lowPriorityMessages = ["FailedToSaveSettings"] as const;
@@ -160,5 +167,3 @@ export default class AddMuTagViewModel extends ViewModel<
         "NameMuTag"
     ] as const;
 }
-
-const This = AddMuTagViewModel;
