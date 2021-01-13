@@ -6,7 +6,7 @@ type LowPriorityMessageTimeout = 4 | 5 | 6 | 7 | 8 | 9 | 10;
 export type ProgressIndicatorState = "Indeterminate" | Range0_100 | undefined;
 
 export default abstract class ViewModel<
-    N extends string,
+    R extends string,
     H extends string | undefined = undefined,
     L extends string | undefined = undefined,
     M extends string | undefined = undefined
@@ -28,7 +28,7 @@ export default abstract class ViewModel<
         return this._progressIndicator.value;
     }
 
-    constructor(navigation: NavigationPort<N>) {
+    constructor(navigation: NavigationPort<R>) {
         this.highPriorityMessage = this._highPriorityMessage.asObservable();
         this.lowPriorityMessage = this._lowPriorityMessage.asObservable();
         this.mediumPriorityMessage = this._mediumPriorityMessage.asObservable();
@@ -36,7 +36,7 @@ export default abstract class ViewModel<
         this.progressIndicator = this._progressIndicator.asObservable();
     }
 
-    protected readonly navigation: NavigationPort<N>;
+    protected readonly navigation: NavigationPort<R>;
     protected readonly _showIndeterminateProgress = new BehaviorSubject<
         boolean
     >(false);

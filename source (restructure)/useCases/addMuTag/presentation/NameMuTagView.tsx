@@ -17,10 +17,10 @@ import React, {
 } from "react";
 import DeviceInfo from "react-native-device-info";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
-import AddMuTagViewModel from "./AddMuTagViewModel";
+import AddMuTagViewModel, { MediumPriorityMessage } from "./AddMuTagViewModel";
 import { skip } from "rxjs/operators";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { ViewModelUserMessage } from "../../../shared/viewModel/ViewModel";
+import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -88,30 +88,30 @@ interface NameMuTagViewProps extends NavigationScreenProps {
 const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
     props
 ): ReactElement => {
+    const [mediumPriorityMessage, setMediumPriorityMessage] = useState<
+        MediumPriorityMessage | undefined
+    >(props.viewModel.mediumPriorityMessageValue);
     const [muTagName, setMuTagName] = useState<string>("");
-    const [showActivity, setShowActivity] = useState<boolean>(
-        props.viewModel.showActivity.value
-    );
-    const [showFailure, setShowFailure] = useState<
-        ViewModelUserMessage | undefined
-    >(props.viewModel.showFailure.value);
+    const [progressIndicator, setProgressIndicator] = useState<
+        ProgressIndicatorState
+    >(props.viewModel.progressIndicatorValue);
     const [showRetry, setShowRetry] = useState<boolean>(
         props.viewModel.showRetry.value
     );
 
     useEffect(() => {
-        const subscription = props.viewModel.showActivity
+        const subscription = props.viewModel.progressIndicator
             .pipe(skip(1))
-            .subscribe(setShowActivity);
+            .subscribe(setProgressIndicator);
         return () => subscription.unsubscribe();
-    }, [props.viewModel.showActivity]);
+    }, [props.viewModel.progressIndicator]);
 
     useEffect(() => {
-        const subscription = props.viewModel.showFailure
+        const subscription = props.viewModel.mediumPriorityMessage
             .pipe(skip(1))
-            .subscribe(setShowFailure);
+            .subscribe(setMediumPriorityMessage);
         return () => subscription.unsubscribe();
-    }, [props.viewModel.showFailure]);
+    }, [props.viewModel.mediumPriorityMessage]);
 
     useEffect(() => {
         const subscription = props.viewModel.showRetry
@@ -141,7 +141,7 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                         style={styles.attachedToInput}
                     />
                     <View style={styles.bottomContent}>
-                        {showFailure == null ? null : (
+                        {mediumPriorityMessage == null ? null : (
                             <View style={styles.instructionsRow}>
                                 <Icon
                                     name="alert-circle"
@@ -156,7 +156,7 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                                         styles.instructionsInfoText
                                     ]}
                                 >
-                                    {showFailure?.message}
+                                    {mediumPriorityMessage}
                                 </Text>
                             </View>
                         )}
@@ -165,11 +165,15 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                 <Button
                     mode="contained"
                     onPress={() => props.viewModel.setMuTagName(muTagName)}
-                    loading={showActivity}
+                    loading={progressIndicator === "Indeterminate"}
                     style={styles.button}
-                    disabled={showActivity}
+                    disabled={progressIndicator === "Indeterminate"}
                 >
-                    {showActivity ? "Saving" : showRetry ? "Try again" : "Save"}
+                    {progressIndicator === "Indeterminate"
+                        ? "Saving"
+                        : showRetry
+                        ? "Try again"
+                        : "Save"}
                 </Button>
             </SafeAreaView>
         </TouchableWithoutFeedback>

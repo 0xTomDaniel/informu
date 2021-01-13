@@ -1,54 +1,43 @@
 import BelongingDashboardInteractor, {
     DashboardBelonging
 } from "../BelongingDashboardInteractor";
-import { Observable, combineLatest, timer, Subject, merge } from "rxjs";
+import { Observable, combineLatest, timer, merge } from "rxjs";
 import {
     scan,
     map,
     publishBehavior,
     refCount,
     distinctUntilChanged,
-    share,
-    mapTo
+    share
 } from "rxjs/operators";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { Millisecond } from "../../../shared/metaLanguage/Types";
 import SignOutInteractor from "../../signOut/SignOutInteractor";
 import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
-import { isEqual, template } from "lodash";
+import { isEqual } from "lodash";
 import Exception from "../../../shared/metaLanguage/Exception";
 import Localize from "../../../shared/localization/Localize";
-import ViewModel, {
-    UserErrorViewData
-} from "../../../shared/metaLanguage/ViewModel";
+import ViewModel from "../../../shared/viewModel/ViewModel";
+import NavigationPort from "../../../shared/navigation/NavigationPort";
 
 const localize = Localize.instance;
 
-export enum BatteryBarLevel {
-    "0%",
-    "10%",
-    "20%",
-    "30%",
-    "40%",
-    "50%",
-    "60%",
-    "70%",
-    "80%",
-    "90%",
-    "100%"
-}
+export type BatteryBarLevel =
+    | "0%"
+    | "10%"
+    | "20%"
+    | "30%"
+    | "40%"
+    | "50%"
+    | "60%"
+    | "70%"
+    | "80%"
+    | "90%"
+    | "100%";
 
-export enum BatteryLevelRange {
-    High,
-    Medium,
-    Low
-}
+export type BatteryLevelRange = "High" | "Medium" | "Low";
 
-export enum SafeStatus {
-    InRange,
-    InSafeZone,
-    Unsafe
-}
+export type SafeStatus = "InRange" | "InSafeZone" | "Unsafe";
 
 export interface BelongingViewData {
     readonly address: string;
@@ -60,37 +49,30 @@ export interface BelongingViewData {
     readonly uid: string;
 }
 
-export enum AppView {
-    AddMuTag,
-    SignIn
-}
+export type AppView = "AddMuTag" | "SignIn";
 
-type ViewModelUserError = RemoveMuTagError | SignOutError;
+export type LowPriorityMessage = typeof BelongingDashboardViewModel.lowPriorityMessages[number];
+export type MediumPriorityMessage = typeof BelongingDashboardViewModel.mediumPriorityMessages[number];
+type Route = typeof BelongingDashboardViewModel.routes[number];
 
-export default class BelongingDashboardViewModel extends ViewModel {
-    private static readonly hoursInDay = 24;
-    private static readonly minutesInHour = 60;
-    private static readonly secondsInMinute = 60;
-    private static readonly millisecondsInSecond = 1000;
-
-    private readonly belongingDashboardInteractor: BelongingDashboardInteractor;
-    private readonly dashboardBelongings: Observable<DashboardBelonging[]>;
-    private readonly lastSeenDisplayUpdateInterval = 15000 as Millisecond;
-    private readonly navigateToViewSubject = new Subject<AppView>();
-    readonly navigateToView = this.navigateToViewSubject.asObservable();
-    private readonly removeMuTagInteractor: RemoveMuTagInteractor;
+export default class BelongingDashboardViewModel extends ViewModel<
+    Route,
+    undefined,
+    LowPriorityMessage,
+    MediumPriorityMessage
+> {
     readonly showActivityIndicator: Observable<boolean>;
     readonly showBelongings: Observable<BelongingViewData[]>;
     readonly showEmptyDashboard: Observable<boolean>;
     readonly showError: Observable<Exception<string>>;
-    private readonly signOutInteractor: SignOutInteractor;
 
     constructor(
+        navigation: NavigationPort<Route>,
         belongingDashboardInteractor: BelongingDashboardInteractor,
         removeMuTagInteractor: RemoveMuTagInteractor,
         signOutInteractor: SignOutInteractor
     ) {
-        super();
+        super(navigation);
         this.belongingDashboardInteractor = belongingDashboardInteractor;
         this.dashboardBelongings = this.belongingDashboardInteractor.showOnDashboard.pipe(
             scan(
@@ -120,9 +102,9 @@ export default class BelongingDashboardViewModel extends ViewModel {
             refCount()
         );
         this.signOutInteractor = signOutInteractor;
-        this.signOutInteractor.showSignIn
-            .pipe(mapTo(AppView.SignIn))
-            .subscribe(this.navigateToViewSubject);
+        this.signOutInteractor.showSignIn.subscribe(() =>
+            this.navigation.navigateTo("SignIn")
+        );
         this.showActivityIndicator = merge(
             removeMuTagInteractor.showActivityIndicator,
             signOutInteractor.showActivityIndicator
@@ -134,7 +116,7 @@ export default class BelongingDashboardViewModel extends ViewModel {
     }
 
     addMuTag(): void {
-        this.navigateToViewSubject.next(AppView.AddMuTag);
+        this.navigation.navigateTo("AddMuTag");
     }
 
     removeMuTag(uid: string): void {
@@ -145,7 +127,13 @@ export default class BelongingDashboardViewModel extends ViewModel {
         this.signOutInteractor.signOut();
     }
 
-    protected getUserErrorMessage(
+    private readonly belongingDashboardInteractor: BelongingDashboardInteractor;
+    private readonly dashboardBelongings: Observable<DashboardBelonging[]>;
+    private readonly lastSeenDisplayUpdateInterval = 15000 as Millisecond;
+    private readonly removeMuTagInteractor: RemoveMuTagInteractor;
+    private readonly signOutInteractor: SignOutInteractor;
+
+    /*protected getUserErrorMessage(
         error: UserError<ViewModelUserError>
     ): string {
         switch (error.type.name) {
@@ -172,7 +160,16 @@ export default class BelongingDashboardViewModel extends ViewModel {
                     error.type.name
                 );
         }
-    }
+    }*/
+
+    static readonly lowPriorityMessages = [] as const;
+    static readonly mediumPriorityMessages = [] as const;
+    static readonly routes = ["AddMuTag", "SignIn"] as const;
+
+    private static readonly hoursInDay = 24;
+    private static readonly millisecondsInSecond = 1000;
+    private static readonly minutesInHour = 60;
+    private static readonly secondsInMinute = 60;
 
     private static convertToBelongingViewData(
         dashboardBelonging: DashboardBelonging
@@ -203,24 +200,57 @@ export default class BelongingDashboardViewModel extends ViewModel {
         };
     }
 
+    private static daysBetween(firstDate: Date, secondDate: Date): number {
+        const oneDayInMilliseconds =
+            this.hoursInDay *
+            this.minutesInHour *
+            this.secondsInMinute *
+            this.millisecondsInSecond;
+        const diffInMilliseconds = firstDate.getTime() - secondDate.getTime();
+
+        return Math.floor(Math.abs(diffInMilliseconds / oneDayInMilliseconds));
+    }
+
     private static getBatteryBarLevel(percentage: Percent): BatteryBarLevel {
-        return Math.round(percentage.valueOf() / 10);
+        const percentValue = Math.round(percentage.valueOf());
+        switch (percentValue) {
+            case 0:
+                return "0%";
+            case 10:
+                return "10%";
+            case 20:
+                return "20%";
+            case 30:
+                return "30%";
+            case 40:
+                return "40%";
+            case 50:
+                return "50%";
+            case 60:
+                return "60%";
+            case 70:
+                return "70%";
+            case 80:
+                return "80%";
+            case 90:
+                return "90%";
+            case 100:
+                return "100%";
+            default:
+                throw Error(`${percentValue} is an invalid BatteryBarLevel.`);
+        }
     }
 
     private static getBatteryLevelRange(
         percentage: Percent
     ): BatteryLevelRange {
         if (percentage.valueOf() >= 45) {
-            return BatteryLevelRange.High;
+            return "High";
         } else if (percentage.valueOf() >= 25) {
-            return BatteryLevelRange.Medium;
+            return "Medium";
         } else {
-            return BatteryLevelRange.Low;
+            return "Low";
         }
-    }
-
-    private static getSafeStatus(isSafe: boolean): SafeStatus {
-        return isSafe ? SafeStatus.InRange : SafeStatus.Unsafe;
     }
 
     private static getLastSeenDisplay(
@@ -267,15 +297,8 @@ export default class BelongingDashboardViewModel extends ViewModel {
         }
     }
 
-    private static daysBetween(firstDate: Date, secondDate: Date): number {
-        const oneDayInMilliseconds =
-            this.hoursInDay *
-            this.minutesInHour *
-            this.secondsInMinute *
-            this.millisecondsInSecond;
-        const diffInMilliseconds = firstDate.getTime() - secondDate.getTime();
-
-        return Math.floor(Math.abs(diffInMilliseconds / oneDayInMilliseconds));
+    private static getSafeStatus(isSafe: boolean): SafeStatus {
+        return isSafe ? "InRange" : "Unsafe";
     }
 
     private static hoursBetween(firstDate: Date, secondDate: Date): number {
