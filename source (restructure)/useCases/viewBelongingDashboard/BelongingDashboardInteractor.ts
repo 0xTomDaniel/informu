@@ -122,7 +122,7 @@ export class BelongingDashboardInteractorImpl
                         this.updateDashboardOnBatteryLevelChange(muTag);
                         this.updateDashboardOnSafetyStatusChange(muTag);
                     } catch (e) {
-                        this.logger.error(e, true);
+                        this.logger.error(e, true, true);
                     }
                 }
 

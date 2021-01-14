@@ -1,7 +1,7 @@
 import BelongingDashboardInteractor, {
     DashboardBelonging
 } from "../BelongingDashboardInteractor";
-import { Observable, combineLatest, timer, merge } from "rxjs";
+import { Observable, combineLatest, timer } from "rxjs";
 import {
     scan,
     map,
@@ -12,10 +12,13 @@ import {
 } from "rxjs/operators";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { Millisecond } from "../../../shared/metaLanguage/Types";
-import SignOutInteractor from "../../signOut/SignOutInteractor";
-import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
+import SignOutInteractor, {
+    SignOutInteractorException
+} from "../../signOut/SignOutInteractor";
+import RemoveMuTagInteractor, {
+    RemoveMuTagInteractorException
+} from "../../removeMuTag/RemoveMuTagInteractor";
 import { isEqual } from "lodash";
-import Exception from "../../../shared/metaLanguage/Exception";
 import Localize from "../../../shared/localization/Localize";
 import ViewModel from "../../../shared/viewModel/ViewModel";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
@@ -61,10 +64,8 @@ export default class BelongingDashboardViewModel extends ViewModel<
     LowPriorityMessage,
     MediumPriorityMessage
 > {
-    readonly showActivityIndicator: Observable<boolean>;
     readonly showBelongings: Observable<BelongingViewData[]>;
     readonly showEmptyDashboard: Observable<boolean>;
-    readonly showError: Observable<Exception<string>>;
 
     constructor(
         navigation: NavigationPort<Route>,
@@ -84,7 +85,7 @@ export default class BelongingDashboardViewModel extends ViewModel<
         this.removeMuTagInteractor = removeMuTagInteractor;
         this.showBelongings = combineLatest(
             this.dashboardBelongings,
-            timer(0, this.lastSeenDisplayUpdateInterval)
+            timer(0, This.lastSeenDisplayUpdateInterval)
         ).pipe(
             map(([dashboardBelongings]) =>
                 dashboardBelongings.map(dashboardBelonging =>
@@ -102,71 +103,68 @@ export default class BelongingDashboardViewModel extends ViewModel<
             refCount()
         );
         this.signOutInteractor = signOutInteractor;
-        this.signOutInteractor.showSignIn.subscribe(() =>
-            this.navigation.navigateTo("SignIn")
-        );
-        this.showActivityIndicator = merge(
-            removeMuTagInteractor.showActivityIndicator,
-            signOutInteractor.showActivityIndicator
-        ).pipe(distinctUntilChanged());
-        this.showError = merge(
-            removeMuTagInteractor.showError,
-            signOutInteractor.showError
-        );
     }
 
     addMuTag(): void {
         this.navigation.navigateTo("AddMuTag");
     }
 
-    removeMuTag(uid: string): void {
-        this.removeMuTagInteractor.remove(uid);
+    async removeMuTag(uid: string): Promise<void> {
+        this.showProgressIndicator("Indeterminate");
+        await this.removeMuTagInteractor
+            .remove(uid)
+            .finally(() => this.hideProgressIndicator())
+            .catch(e => {
+                if (RemoveMuTagInteractorException.isType(e)) {
+                    switch (e.type) {
+                        case "FailedToFindMuTag":
+                        case "LowMuTagBattery":
+                            this.showLowPriorityMessage(e.type, 4);
+                            break;
+                        case "FailedToRemoveMuTagFromAccount":
+                        case "FailedToResetMuTag":
+                            this.showMediumPriorityMessage(e.type);
+                            break;
+                    }
+                } else {
+                    throw e;
+                }
+            });
     }
 
-    signOut(): void {
-        this.signOutInteractor.signOut();
+    async signOut(): Promise<void> {
+        this.showProgressIndicator("Indeterminate");
+        await this.signOutInteractor
+            .signOut()
+            .finally(() => this.hideProgressIndicator())
+            .then(() => this.navigation.navigateTo("SignIn"))
+            .catch(e => {
+                if (SignOutInteractorException.isType(e)) {
+                    this.showMediumPriorityMessage(e.type);
+                } else {
+                    throw e;
+                }
+            });
     }
 
     private readonly belongingDashboardInteractor: BelongingDashboardInteractor;
     private readonly dashboardBelongings: Observable<DashboardBelonging[]>;
-    private readonly lastSeenDisplayUpdateInterval = 15000 as Millisecond;
     private readonly removeMuTagInteractor: RemoveMuTagInteractor;
     private readonly signOutInteractor: SignOutInteractor;
 
-    /*protected getUserErrorMessage(
-        error: UserError<ViewModelUserError>
-    ): string {
-        switch (error.type.name) {
-            case "lowMuTagBattery":
-                return template(
-                    Localize.instance.getText(
-                        "removeMuTag",
-                        "error",
-                        error.type.name
-                    )
-                )({ lowBatteryThreshold: error.type.lowBatteryThreshold });
-            case "failedToConnectToMuTag":
-            case "failedToRemoveMuTagFromAccount":
-            case "muTagCommunicationFailure":
-                return Localize.instance.getText(
-                    "removeMuTag",
-                    "error",
-                    error.type.name
-                );
-            case "signOutFailed":
-                return Localize.instance.getText(
-                    "signOut",
-                    "error",
-                    error.type.name
-                );
-        }
-    }*/
-
-    static readonly lowPriorityMessages = [] as const;
-    static readonly mediumPriorityMessages = [] as const;
+    static readonly lowPriorityMessages = [
+        "FailedToFindMuTag",
+        "LowMuTagBattery"
+    ] as const;
+    static readonly mediumPriorityMessages = [
+        "FailedToRemoveMuTagFromAccount",
+        "FailedToResetMuTag",
+        "SignOutFailed"
+    ] as const;
     static readonly routes = ["AddMuTag", "SignIn"] as const;
 
     private static readonly hoursInDay = 24;
+    private static readonly lastSeenDisplayUpdateInterval = 15000 as Millisecond;
     private static readonly millisecondsInSecond = 1000;
     private static readonly minutesInHour = 60;
     private static readonly secondsInMinute = 60;
@@ -321,3 +319,5 @@ export default class BelongingDashboardViewModel extends ViewModel<
         );
     }
 }
+
+const This = BelongingDashboardViewModel;

@@ -22,9 +22,6 @@ export class SignOutInteractorException<
 }
 
 export default interface SignOutInteractor {
-    readonly showActivityIndicator: Observable<boolean>;
-    readonly showError: Observable<SignOutInteractorException<ExceptionType>>;
-    readonly showSignIn: Observable<void>;
     signOut: () => Promise<void>;
 }
 

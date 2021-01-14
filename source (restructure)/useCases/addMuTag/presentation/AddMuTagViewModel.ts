@@ -69,10 +69,10 @@ export default class AddMuTagViewModel extends ViewModel<
         this.showProgressIndicator("Indeterminate");
         await this.addMuTagInteractor
             .setMuTagName(name)
+            .finally(() => this.hideProgressIndicator())
             .then(() => {
                 this.hideMediumPriorityMessage();
                 this.showRetry.next(false);
-                this.hideProgressIndicator();
                 this.hardwareBackPressSubscription?.unsubscribe();
                 this.navigation.popToTop();
             })
@@ -83,10 +83,6 @@ export default class AddMuTagViewModel extends ViewModel<
                     throw e;
                 }
             });
-        // Cannot use 'finally' function of promise because navigation executes
-        // before 'finally' does. This may cause a race condition where the view
-        // that's being navigated to misses the observable being emitted from
-        // 'finally' function.
     }
 
     async startAddingMuTag(retry = false): Promise<void> {
@@ -102,9 +98,9 @@ export default class AddMuTagViewModel extends ViewModel<
                 this.showCancel.next(false);
                 return this.addMuTagInteractor.addFoundMuTag();
             })
+            .finally(() => this.hideProgressIndicator())
             .then(() => {
                 this.showRetry.next(false);
-                this.hideProgressIndicator();
                 this.navigation.navigateTo("NameMuTag");
             })
             .catch(e => {
@@ -115,10 +111,6 @@ export default class AddMuTagViewModel extends ViewModel<
                     throw e;
                 }
             });
-        // Cannot use 'finally' function of promise because navigation executes
-        // before 'finally' does. This may cause a race condition where the view
-        // that's being navigated to misses the observable being emitted from
-        // 'finally' function.
     }
 
     private readonly addMuTagInteractor: AddMuTagInteractor;
@@ -133,25 +125,18 @@ export default class AddMuTagViewModel extends ViewModel<
     ): void {
         switch (exception.type) {
             case "FailedToAddMuTag":
-                this.showMediumPriorityMessage("FailedToAddMuTag");
-                break;
             case "FailedToNameMuTag":
-                this.showMediumPriorityMessage("FailedToNameMuTag");
+            case "LowMuTagBattery":
+            case "NewMuTagNotFound":
+                this.showMediumPriorityMessage(exception.type);
                 break;
             case "FailedToSaveSettings":
-                this.showLowPriorityMessage("FailedToSaveSettings", 4);
+                this.showLowPriorityMessage(exception.type, 4);
                 break;
             case "FindNewMuTagCanceled":
                 return;
-            case "LowMuTagBattery":
-                this.showMediumPriorityMessage("LowMuTagBattery");
-                break;
-            case "NewMuTagNotFound":
-                this.showMediumPriorityMessage("NewMuTagNotFound");
-                break;
         }
         this.showRetry.next(true);
-        this.hideProgressIndicator();
     }
 
     static readonly lowPriorityMessages = ["FailedToSaveSettings"] as const;

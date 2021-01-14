@@ -69,7 +69,9 @@ export default abstract class ViewModel<
         this._mediumPriorityMessage.next(message);
     }
 
-    protected showProgressIndicator(state: ProgressIndicatorState): void {
+    protected showProgressIndicator(
+        state: NonNullable<ProgressIndicatorState>
+    ): void {
         this._progressIndicator.next(state);
     }
 
