@@ -30,9 +30,7 @@ const EventTrackerMock = jest.fn<EventTracker, any>(
 const eventTrackerMock = new EventTrackerMock();
 Logger.createInstance(eventTrackerMock);
 
-const otherRoutes = ["Home", "Settings"] as const;
-const routes = [...AddMuTagViewModel.routes, ...otherRoutes];
-type Routes = typeof routes[number];
+type Routes = typeof AddMuTagViewModel.routes[number];
 
 const backPressSubscriber = new BehaviorSubject<Subscriber<void> | undefined>(
     undefined
@@ -53,7 +51,10 @@ const navigationPortMocks = {
 };
 const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
     (): NavigationPort<Routes> => ({
-        routes: Object.assign({}, ...routes.map(v => ({ [v]: v }))),
+        routes: Object.assign(
+            {},
+            ...AddMuTagViewModel.routes.map(v => ({ [v]: v }))
+        ),
         navigateTo: navigationPortMocks.navigateTo,
         onHardwareBackPress: navigationPortMocks.onHardwareBackPress,
         popToTop: navigationPortMocks.popToTop,

@@ -6,7 +6,6 @@ import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import { switchMap, take, filter } from "rxjs/operators";
-import { Observable, Subject, BehaviorSubject } from "rxjs";
 import Logger from "../../shared/metaLanguage/Logger";
 import MuTagDevicesPort, {
     Connection,
@@ -17,6 +16,7 @@ import Exception from "../../shared/metaLanguage/Exception";
 
 const ExceptionType = [
     "FailedToFindMuTag",
+    "FailedToRemoveMuTag",
     "FailedToRemoveMuTagFromAccount",
     "FailedToResetMuTag",
     "LowMuTagBattery"
@@ -35,6 +35,19 @@ export class RemoveMuTagInteractorException<
             `Could not find Mu tag (${muTagUid}).`,
             "log",
             sourceException
+        );
+    }
+
+    static FailedToRemoveMuTag(
+        muTagUid: string,
+        sourceException: unknown
+    ): RemoveMuTagInteractorException<"FailedToRemoveMuTag"> {
+        return new this(
+            "FailedToRemoveMuTag",
+            `Failed to remove MuTag (${muTagUid}).`,
+            "error",
+            sourceException,
+            true
         );
     }
 
@@ -76,19 +89,10 @@ export class RemoveMuTagInteractorException<
 }
 
 export default interface RemoveMuTagInteractor {
-    readonly showActivityIndicator: Observable<boolean>;
-    readonly showError: Observable<
-        RemoveMuTagInteractorException<ExceptionType>
-    >;
     remove: (uid: string) => Promise<void>;
 }
 
 export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
-    readonly showActivityIndicator: Observable<boolean>;
-    readonly showError: Observable<
-        RemoveMuTagInteractorException<ExceptionType>
-    >;
-
     constructor(
         removeMuTagBatteryThreshold: Percent,
         muTagDevices: MuTagDevicesPort,
@@ -103,16 +107,9 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
         this.accountRepoRemote = accountRepoRemote;
         this.muTagRepoLocal = muTagRepoLocal;
         this.muTagRepoRemote = muTagRepoRemote;
-        this.showActivityIndicatorSubject = new BehaviorSubject<boolean>(false);
-        this.showActivityIndicator = this.showActivityIndicatorSubject.asObservable();
-        this.showErrorSubject = new Subject<
-            RemoveMuTagInteractorException<ExceptionType>
-        >();
-        this.showError = this.showErrorSubject.asObservable();
     }
 
     async remove(uid: string): Promise<void> {
-        this.showActivityIndicatorSubject.next(true);
         let account: Account;
         let muTag: ProvisionedMuTag;
         try {
@@ -123,7 +120,7 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
                 .connectToProvisionedMuTag(
                     account.accountNumber,
                     muTag.beaconId,
-                    This.timeout
+                    This.muTagConnectTimeout
                 )
                 .pipe(
                     switchMap(cnnctn => {
@@ -154,28 +151,27 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
                 .toPromise();
             await this.removeMuTagFromPersistence(account, muTag);
         } catch (e) {
-            this.showActivityIndicatorSubject.next(false);
-            let exception: RemoveMuTagInteractorException<ExceptionType>;
             if (RemoveMuTagInteractorException.isType(e)) {
-                exception = e;
+                throw e;
             } else if (MuTagDevicesException.isType(e)) {
                 switch (e.type) {
                     case "FailedToFindMuTag":
-                        exception = RemoveMuTagInteractorException.FailedToFindMuTag(
+                        throw RemoveMuTagInteractorException.FailedToFindMuTag(
                             uid,
                             e
                         );
-                        break;
                     default:
-                        exception = RemoveMuTagInteractorException.FailedToResetMuTag(
+                        throw RemoveMuTagInteractorException.FailedToResetMuTag(
                             uid,
                             e
                         );
                 }
             } else {
-                throw e;
+                throw RemoveMuTagInteractorException.FailedToRemoveMuTag(
+                    uid,
+                    e
+                );
             }
-            this.showErrorSubject.next(exception);
         }
     }
 
@@ -186,10 +182,6 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
     private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
     private readonly muTagRepoRemote: MuTagRepositoryRemotePort;
     private readonly removeMuTagBatteryThreshold: Percent;
-    private readonly showActivityIndicatorSubject: BehaviorSubject<boolean>;
-    private readonly showErrorSubject: Subject<
-        RemoveMuTagInteractorException<ExceptionType>
-    >;
 
     private async removeMuTagFromPersistence(
         account: Account,
@@ -200,26 +192,20 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
             await this.accountRepoLocal.update(account);
             await this.muTagRepoLocal.removeByUid(muTag.uid);
         } catch (e) {
-            this.showActivityIndicatorSubject.next(false);
-            this.showErrorSubject.next(
-                RemoveMuTagInteractorException.FailedToRemoveMuTagFromAccount(
-                    muTag.uid,
-                    e
-                )
+            throw RemoveMuTagInteractorException.FailedToRemoveMuTagFromAccount(
+                muTag.uid,
+                e
             );
-            return;
         }
         try {
             await this.accountRepoRemote.update(account);
             await this.muTagRepoRemote.removeByUid(muTag.uid, account.uid);
         } catch (e) {
-            this.logger.warn(e, true);
-        } finally {
-            this.showActivityIndicatorSubject.next(false);
+            this.logger.warn(e, true, true);
         }
     }
 
-    private static readonly timeout = 5000 as Millisecond;
+    private static readonly muTagConnectTimeout = 5000 as Millisecond;
 }
 
 const This = RemoveMuTagInteractorImpl;

@@ -19,11 +19,8 @@ import RemoveMuTagInteractor, {
     RemoveMuTagInteractorException
 } from "../../removeMuTag/RemoveMuTagInteractor";
 import { isEqual } from "lodash";
-import Localize from "../../../shared/localization/Localize";
 import ViewModel from "../../../shared/viewModel/ViewModel";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
-
-const localize = Localize.instance;
 
 export type BatteryBarLevel =
     | "0%"
@@ -40,19 +37,35 @@ export type BatteryBarLevel =
 
 export type BatteryLevelRange = "High" | "Medium" | "Low";
 
+type LastSeenInterval = {
+    type: "Interval";
+    count: number;
+    unit: "Day" | "Hour" | "Minute";
+};
+
+type LastSeenDate = {
+    type: "Date";
+    date: Date;
+};
+
+type LastSeenRecent = {
+    type: "Recent";
+    state: "Now" | "Seconds";
+};
+
+export type LastSeen = LastSeenInterval | LastSeenDate | LastSeenRecent;
+
 export type SafeStatus = "InRange" | "InSafeZone" | "Unsafe";
 
 export interface BelongingViewData {
-    readonly address: string;
+    readonly address?: string;
     readonly batteryBarLevel: BatteryBarLevel;
     readonly batteryLevelRange: BatteryLevelRange;
-    readonly lastSeen: string;
+    readonly lastSeen: LastSeen;
     readonly name: string;
     readonly safeStatus: SafeStatus;
     readonly uid: string;
 }
-
-export type AppView = "AddMuTag" | "SignIn";
 
 export type LowPriorityMessage = typeof BelongingDashboardViewModel.lowPriorityMessages[number];
 export type MediumPriorityMessage = typeof BelongingDashboardViewModel.mediumPriorityMessages[number];
@@ -173,20 +186,14 @@ export default class BelongingDashboardViewModel extends ViewModel<
         dashboardBelonging: DashboardBelonging
     ): BelongingViewData {
         return {
-            address:
-                dashboardBelonging.address ??
-                localize.getText(
-                    "viewBelongingDashboard",
-                    "belongingCard",
-                    "noAddressName"
-                ),
+            address: dashboardBelonging.address,
             batteryBarLevel: BelongingDashboardViewModel.getBatteryBarLevel(
                 dashboardBelonging.batteryLevel
             ),
             batteryLevelRange: BelongingDashboardViewModel.getBatteryLevelRange(
                 dashboardBelonging.batteryLevel
             ),
-            lastSeen: BelongingDashboardViewModel.getLastSeenDisplay(
+            lastSeen: BelongingDashboardViewModel.getLastSeen(
                 dashboardBelonging.lastSeen,
                 dashboardBelonging.isSafe
             ),
@@ -210,29 +217,29 @@ export default class BelongingDashboardViewModel extends ViewModel<
     }
 
     private static getBatteryBarLevel(percentage: Percent): BatteryBarLevel {
-        const percentValue = Math.round(percentage.valueOf());
+        const percentValue = Math.round(percentage.valueOf() / 10);
         switch (percentValue) {
             case 0:
                 return "0%";
-            case 10:
+            case 1:
                 return "10%";
-            case 20:
+            case 2:
                 return "20%";
-            case 30:
+            case 3:
                 return "30%";
-            case 40:
+            case 4:
                 return "40%";
-            case 50:
+            case 5:
                 return "50%";
-            case 60:
+            case 6:
                 return "60%";
-            case 70:
+            case 7:
                 return "70%";
-            case 80:
+            case 8:
                 return "80%";
-            case 90:
+            case 9:
                 return "90%";
-            case 100:
+            case 10:
                 return "100%";
             default:
                 throw Error(`${percentValue} is an invalid BatteryBarLevel.`);
@@ -251,48 +258,58 @@ export default class BelongingDashboardViewModel extends ViewModel<
         }
     }
 
-    private static getLastSeenDisplay(
+    private static getLastSeen(
         timestamp: Date,
         isSafe: boolean | undefined
-    ): string {
+    ): LastSeen {
         const now = new Date();
+
         const daysSinceLastSeen = this.daysBetween(timestamp, now);
-        const hoursSinceLastSeen = this.hoursBetween(timestamp, now);
-        const minutesSinceLastSeen = this.minutesBetween(timestamp, now);
 
         if (daysSinceLastSeen >= 7) {
-            return timestamp.toLocaleDateString();
-        } else if (daysSinceLastSeen >= 1) {
-            return `${daysSinceLastSeen}${localize.getText(
-                "viewBelongingDashboard",
-                "lastSeen",
-                "daysAgo"
-            )}`;
-        } else if (hoursSinceLastSeen >= 1) {
-            return `${hoursSinceLastSeen}${localize.getText(
-                "viewBelongingDashboard",
-                "lastSeen",
-                "hoursAgo"
-            )}`;
-        } else if (minutesSinceLastSeen >= 1) {
-            return `${minutesSinceLastSeen}${localize.getText(
-                "viewBelongingDashboard",
-                "lastSeen",
-                "minutesAgo"
-            )}`;
-        } else if (isSafe != null && !isSafe) {
-            return localize.getText(
-                "viewBelongingDashboard",
-                "lastSeen",
-                "secondsAgo"
-            );
-        } else {
-            return localize.getText(
-                "viewBelongingDashboard",
-                "lastSeen",
-                "justNow"
-            );
+            return {
+                type: "Date",
+                date: timestamp
+            };
         }
+
+        if (daysSinceLastSeen >= 1) {
+            return {
+                type: "Interval",
+                count: daysSinceLastSeen,
+                unit: "Day"
+            };
+        }
+
+        const hoursSinceLastSeen = this.hoursBetween(timestamp, now);
+        if (hoursSinceLastSeen >= 1) {
+            return {
+                type: "Interval",
+                count: hoursSinceLastSeen,
+                unit: "Hour"
+            };
+        }
+
+        const minutesSinceLastSeen = this.minutesBetween(timestamp, now);
+        if (minutesSinceLastSeen >= 1) {
+            return {
+                type: "Interval",
+                count: minutesSinceLastSeen,
+                unit: "Minute"
+            };
+        }
+
+        if (isSafe != null && !isSafe) {
+            return {
+                type: "Recent",
+                state: "Seconds"
+            };
+        }
+
+        return {
+            type: "Recent",
+            state: "Now"
+        };
     }
 
     private static getSafeStatus(isSafe: boolean): SafeStatus {

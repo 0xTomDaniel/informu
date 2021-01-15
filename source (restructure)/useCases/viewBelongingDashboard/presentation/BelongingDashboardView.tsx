@@ -27,14 +27,15 @@ import React, {
 import DeviceInfo from "react-native-device-info";
 import LinearGradient from "react-native-linear-gradient";
 import BelongingDashboardViewModel, {
-    AppView,
-    BelongingViewData
+    BelongingViewData,
+    MediumPriorityMessage,
+    LowPriorityMessage
 } from "./BelongingDashboardViewModel";
 import { Images } from "../../../../source/Primary Adapters/Presentation/Images";
 import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
 import BelongingCard from "./BelongingCard";
-import Exception from "../../../shared/metaLanguage/Exception";
 import Localize from "../../../shared/localization/Localize";
+import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
 
 const localize = Localize.instance;
 
@@ -157,14 +158,19 @@ interface BelongingDashboardViewProps extends NavigationScreenProps {
 const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     props
 ): ReactElement => {
-    const [belongings, setBelongings] = useState<BelongingViewData[]>([]);
-    const [showActivityIndicator, setShowActivityIndicator] = useState(true);
+    const [belongings, setBelongings] = useState<BelongingViewData[]>();
+    const [progressIndicator, setProgressIndicator] = useState<
+        ProgressIndicatorState
+    >(undefined);
+    const [showBanner, setShowBanner] = useState<
+        MediumPriorityMessage | undefined
+    >(props.belongingDashboardViewModel.mediumPriorityMessageValue);
     const [showEmptyDashboard, setShowEmptyDashboard] = useState(true);
-    const [showError, setShowError] = useState<Exception<string> | undefined>();
     const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+    const [showSnackbar, setShowSnackbar] = useState<LowPriorityMessage>();
 
     const onDismissErrorDialog = (): void => {
-        setShowError(undefined);
+        setShowBanner(undefined);
     };
 
     const requestPermissions = async (): Promise<void> => {
@@ -213,28 +219,12 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
         }
     };
 
-    useEffect(() => {
-        const subscription = props.belongingDashboardViewModel.navigateToView.subscribe(
-            view => {
-                switch (view) {
-                    case AppView.AddMuTag:
-                        props.navigation.navigate("AddMuTagIntro");
-                        break;
-                    case AppView.SignIn:
-                        props.navigation.navigate("Login");
-                        break;
-                }
-            }
-        );
-        return () => subscription.unsubscribe();
-    }, [props.belongingDashboardViewModel.navigateToView, props.navigation]);
-
     useEffect((): (() => void) => {
-        const subscription = props.belongingDashboardViewModel.showActivityIndicator.subscribe(
-            setShowActivityIndicator
+        const subscription = props.belongingDashboardViewModel.progressIndicator.subscribe(
+            setProgressIndicator
         );
         return () => subscription.unsubscribe();
-    }, [props.belongingDashboardViewModel.showActivityIndicator]);
+    }, [props.belongingDashboardViewModel.progressIndicator]);
 
     useEffect((): (() => void) => {
         const subscription = props.belongingDashboardViewModel.showBelongings.subscribe(
@@ -251,11 +241,18 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     }, [props.belongingDashboardViewModel.showEmptyDashboard]);
 
     useEffect((): (() => void) => {
-        const subscription = props.belongingDashboardViewModel.showError.subscribe(
-            setShowError
+        const subscription = props.belongingDashboardViewModel.mediumPriorityMessage.subscribe(
+            setShowBanner
         );
         return () => subscription.unsubscribe();
-    }, [props.belongingDashboardViewModel.showError]);
+    }, [props.belongingDashboardViewModel.mediumPriorityMessage]);
+
+    useEffect((): (() => void) => {
+        const subscription = props.belongingDashboardViewModel.lowPriorityMessage.subscribe(
+            setShowSnackbar
+        );
+        return () => subscription.unsubscribe();
+    }, [props.belongingDashboardViewModel.lowPriorityMessage]);
 
     useEffect(() => {
         requestPermissions().catch(e => console.warn(e));
@@ -339,7 +336,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
             <Portal>
                 <Modal
                     dismissable={false}
-                    visible={showActivityIndicator}
+                    visible={progressIndicator === "Indeterminate"}
                     contentContainerStyle={styles.activityModal}
                 >
                     <ActivityIndicator
@@ -349,13 +346,9 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                 </Modal>
             </Portal>
             <ErrorDialog
-                message={showError?.message ?? ""}
-                detailMessage={
-                    showError?.sourceException != null
-                        ? String(showError?.sourceException)
-                        : ""
-                }
-                visible={showError != null}
+                message={showBanner ?? ""}
+                detailMessage={""}
+                visible={showBanner != null}
                 onDismiss={onDismissErrorDialog}
             />
         </SafeAreaView>

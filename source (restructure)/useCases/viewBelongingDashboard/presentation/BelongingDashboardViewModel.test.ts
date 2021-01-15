@@ -1,9 +1,6 @@
 import { expect, jest, test } from "@jest/globals";
 import BelongingDashboardViewModel, {
-    BelongingViewData,
-    BatteryBarLevel,
-    BatteryLevelRange,
-    SafeStatus
+    BelongingViewData
 } from "./BelongingDashboardViewModel";
 import BelongingDashboardInteractor, {
     DashboardBelonging,
@@ -14,14 +11,32 @@ import { Subject, Observable } from "rxjs";
 import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectionUpdate";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { fakeSchedulers } from "rxjs-marbles/jest";
-import SignOutInteractor, {
-    SignOutInteractorException,
-    ExceptionType as SignOutInteractorExceptionType
-} from "../../signOut/SignOutInteractor";
-import RemoveMuTagInteractor, {
-    RemoveMuTagInteractorException,
-    ExceptionType
-} from "../../removeMuTag/RemoveMuTagInteractor";
+import SignOutInteractor from "../../signOut/SignOutInteractor";
+import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
+import { NavigationContainerComponent } from "react-navigation";
+import NavigationPort from "../../../shared/navigation/NavigationPort";
+
+type Routes = typeof BelongingDashboardViewModel.routes[number];
+
+const navigationPortMocks = {
+    navigateTo: jest.fn<void, [Routes]>(),
+    onHardwareBackPress: jest.fn<Observable<void>, [boolean]>(),
+    popToTop: jest.fn<void, []>(),
+    setNavigator: jest.fn<void, [NavigationContainerComponent]>()
+};
+const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
+    (): NavigationPort<Routes> => ({
+        routes: Object.assign(
+            {},
+            ...BelongingDashboardViewModel.routes.map(v => ({ [v]: v }))
+        ),
+        navigateTo: navigationPortMocks.navigateTo,
+        onHardwareBackPress: navigationPortMocks.onHardwareBackPress,
+        popToTop: navigationPortMocks.popToTop,
+        setNavigator: navigationPortMocks.setNavigator
+    })
+);
+const navigationPortMock = new NavigationPortMock();
 
 //const showErrorSubject = new Subject<Exception<string>>();
 const showOnDashboardSubject = new Subject<
@@ -38,26 +53,18 @@ const BelongingDashboardInteractorMock = jest.fn<
 const belongingDashboardInteractorMock = BelongingDashboardInteractorMock();
 const RemoveMuTagInteractorMock = jest.fn<RemoveMuTagInteractor, any>(
     (): RemoveMuTagInteractor => ({
-        showActivityIndicator: new Observable<boolean>(),
-        showError: new Observable<
-            RemoveMuTagInteractorException<ExceptionType>
-        >(),
         remove: jest.fn()
     })
 );
 const removeMuTagInteractorMock = RemoveMuTagInteractorMock();
 const SignOutInteractorMock = jest.fn<SignOutInteractor, any>(
     (): SignOutInteractor => ({
-        showActivityIndicator: new Observable<boolean>(),
-        showError: new Observable<
-            SignOutInteractorException<SignOutInteractorExceptionType>
-        >(),
-        showSignIn: new Observable<void>(),
         signOut: jest.fn()
     })
 );
 const signOutInteractorMock = SignOutInteractorMock();
 const viewModel = new BelongingDashboardViewModel(
+    navigationPortMock,
     belongingDashboardInteractorMock,
     removeMuTagInteractorMock,
     signOutInteractorMock
@@ -82,20 +89,26 @@ const belongings: DashboardBelonging[] = [
 const belongingsViewData: BelongingViewData[] = [
     {
         address: "Lamar St, Arvada, CO",
-        batteryBarLevel: BatteryBarLevel["90%"],
-        batteryLevelRange: BatteryLevelRange.High,
-        lastSeen: "Just now",
+        batteryBarLevel: "90%",
+        batteryLevelRange: "High",
+        lastSeen: {
+            type: "Recent",
+            state: "Now"
+        },
         name: "Keys",
-        safeStatus: SafeStatus.InRange,
+        safeStatus: "InRange",
         uid: "randomUUID01"
     },
     {
-        address: "no location name found",
-        batteryBarLevel: BatteryBarLevel["20%"],
-        batteryLevelRange: BatteryLevelRange.Low,
-        lastSeen: "10/5/2011",
+        address: undefined,
+        batteryBarLevel: "20%",
+        batteryLevelRange: "Low",
+        lastSeen: {
+            type: "Date",
+            date: new Date("2011-10-05T14:48:00.000Z")
+        },
         name: "Laptop",
-        safeStatus: SafeStatus.Unsafe,
+        safeStatus: "Unsafe",
         uid: "randomUUID02"
     }
 ];
@@ -149,11 +162,14 @@ test("show added belonging", async (): Promise<void> => {
     };
     const newBelongingViewData: BelongingViewData = {
         address: "Everett St, Arvada, CO",
-        batteryBarLevel: BatteryBarLevel["30%"],
-        batteryLevelRange: BatteryLevelRange.Medium,
-        lastSeen: "Just now",
+        batteryBarLevel: "30%",
+        batteryLevelRange: "Medium",
+        lastSeen: {
+            type: "Recent",
+            state: "Now"
+        },
         name: "Wallet",
-        safeStatus: SafeStatus.InRange,
+        safeStatus: "InRange",
         uid: "randomUUID03"
     };
     belongingsViewData.splice(1, 0, newBelongingViewData);
@@ -206,11 +222,14 @@ test("show belonging update", async (): Promise<void> => {
     };
     const belongingUpdateViewData: BelongingViewData = {
         address: "Quitman St, Westminster, CO",
-        batteryBarLevel: BatteryBarLevel["10%"],
-        batteryLevelRange: BatteryLevelRange.Low,
-        lastSeen: "Just now",
+        batteryBarLevel: "10%",
+        batteryLevelRange: "Low",
+        lastSeen: {
+            type: "Recent",
+            state: "Now"
+        },
         name: "Laptop",
-        safeStatus: SafeStatus.InRange,
+        safeStatus: "InRange",
         uid: "randomUUID02"
     };
     belongingsViewData.splice(2, 1, belongingUpdateViewData);
@@ -259,11 +278,12 @@ test("show belonging update", async (): Promise<void> => {
     });
 });
 
-let belonging01LastSeenChange: string;
+let belonging01LastSeenChange: Date;
 
 test(
     "continuously update last seen message",
     fakeSchedulers(advance => {
+        expect.assertions(14);
         jest.useFakeTimers("modern");
 
         const oneSecondInMS = 1000;
@@ -283,45 +303,89 @@ test(
         );
 
         advance(oneSecondInMS * 5);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("Just now");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            state: "Now",
+            type: "Recent"
+        });
 
         advance(oneSecondInMS * 54);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("Just now");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            state: "Now",
+            type: "Recent"
+        });
 
         advance(oneSecondInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("1m ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 1,
+            type: "Interval",
+            unit: "Minute"
+        });
 
         advance(oneMinuteInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("2m ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 2,
+            type: "Interval",
+            unit: "Minute"
+        });
 
         advance(oneMinuteInMS * 57);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("59m ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 59,
+            type: "Interval",
+            unit: "Minute"
+        });
 
         advance(oneMinuteInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("1h ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 1,
+            type: "Interval",
+            unit: "Hour"
+        });
 
         advance(oneHourInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("2h ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 2,
+            type: "Interval",
+            unit: "Hour"
+        });
 
         advance(oneHourInMS * 21);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("23h ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 23,
+            type: "Interval",
+            unit: "Hour"
+        });
 
         advance(oneHourInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("1d ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 1,
+            type: "Interval",
+            unit: "Day"
+        });
 
         advance(oneDayInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("2d ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 2,
+            type: "Interval",
+            unit: "Day"
+        });
 
         advance(oneDayInMS * 4);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("6d ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 6,
+            type: "Interval",
+            unit: "Day"
+        });
 
         advance(oneDayInMS);
         const lastSeenViewDataDate = new Date();
         lastSeenViewDataDate.setDate(lastSeenViewDataDate.getDate() - 7);
-        belonging01LastSeenChange = lastSeenViewDataDate.toLocaleDateString();
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual(
-            belonging01LastSeenChange
-        );
+        belonging01LastSeenChange = lastSeenViewDataDate;
+        if (belongingsViewDataUpdate[1].lastSeen.type === "Date") {
+            expect(belongingsViewDataUpdate[1].lastSeen.date.getSeconds).toBe(
+                belonging01LastSeenChange.getSeconds
+            );
+        }
 
         const newLastSeenDate = new Date();
         showOnDashboardSubject.next(
@@ -361,10 +425,17 @@ test(
         });
 
         advance(oneSecondInMS * 5);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("Seconds ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            state: "Seconds",
+            type: "Recent"
+        });
 
         advance(oneSecondInMS * 55);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("1m ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 1,
+            type: "Interval",
+            unit: "Minute"
+        });
 
         subscription.unsubscribe();
     })
@@ -373,31 +444,42 @@ test(
 test(
     "remove belonging",
     fakeSchedulers(advance => {
-        const updatedBelongingsViewData: BelongingViewData[] = [
+        const updatedBelongingsViewData = [
             {
                 address: "Lamar St, Arvada, CO",
-                batteryBarLevel: BatteryBarLevel["90%"],
-                batteryLevelRange: BatteryLevelRange.High,
+                batteryBarLevel: "90%",
+                batteryLevelRange: "High",
                 uid: "randomUUID01",
                 name: "Keys",
-                safeStatus: SafeStatus.InRange,
-                lastSeen: belonging01LastSeenChange
+                safeStatus: "InRange"
             },
             {
                 address: "Everett St, Arvada, CO",
-                batteryBarLevel: BatteryBarLevel["30%"],
-                batteryLevelRange: BatteryLevelRange.Medium,
+                batteryBarLevel: "30%",
+                batteryLevelRange: "Medium",
                 uid: "randomUUID03",
                 name: "Wallet",
-                safeStatus: SafeStatus.Unsafe,
-                lastSeen: "1m ago"
+                safeStatus: "Unsafe",
+                lastSeen: {
+                    count: 1,
+                    type: "Interval",
+                    unit: "Minute"
+                }
             }
         ];
 
-        expect.assertions(2);
+        expect.assertions(3);
         viewModel.showBelongings.pipe(take(1)).subscribe(
-            currentBelongings =>
-                expect(currentBelongings).toEqual(updatedBelongingsViewData),
+            currentBelongings => {
+                expect(currentBelongings).toMatchObject(
+                    updatedBelongingsViewData
+                );
+                if (currentBelongings[0].lastSeen.type === "Date") {
+                    expect(currentBelongings[0].lastSeen.date.getSeconds).toBe(
+                        belonging01LastSeenChange.getSeconds
+                    );
+                }
+            },
             e => console.error(e)
         );
         viewModel.showEmptyDashboard.pipe(take(1)).subscribe(

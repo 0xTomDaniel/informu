@@ -382,7 +382,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
                 administrativeAreaLevel1: "CO"
             }
         ];
-        const locationUpdate = [39.8666811, -105.0415883];
+        const locationUpdate: [number, number] = [39.8666811, -105.0415883];
         const now = new Date();
         const belongingsDashboardChange: ObjectCollectionChange<
             DashboardBelongingDelta
