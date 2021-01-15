@@ -147,7 +147,7 @@ const AddMuTagIntroView: FunctionComponent<AddMuTagIntroViewProps> = (
                                     styles.instructionsText
                                 ]}
                             >
-                                Keep the Mu tag close to the app during this
+                                Keep the MuTag close to the app during this
                                 setup.
                             </Text>
                         </View>
@@ -167,7 +167,7 @@ const AddMuTagIntroView: FunctionComponent<AddMuTagIntroViewProps> = (
                                         styles.instructionsText
                                     ]}
                                 >
-                                    Press the Mu tag button now to wake it up.
+                                    Press the MuTag button now to wake it up.
                                 </Text>
                             </View>
                             <View
@@ -189,7 +189,7 @@ const AddMuTagIntroView: FunctionComponent<AddMuTagIntroViewProps> = (
                                         styles.instructionsInfoText
                                     ]}
                                 >
-                                    Once the dot on the Mu tag logo starts
+                                    Once the dot on the MuTag logo starts
                                     flashing green, press 'Continue' below.
                                 </Text>
                             </View>

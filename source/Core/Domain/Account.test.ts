@@ -130,7 +130,7 @@ describe("adding and removing Mu tags", (): void => {
         jest.clearAllMocks();
     });*/
 
-    test("successfully adds Mu tag to account", (): void => {
+    test("successfully adds MuTag to account", (): void => {
         expect.assertions(3);
         const subscription = referenceAccount.muTagsChange.subscribe(
             (muTagsChange): void => {
@@ -144,7 +144,7 @@ describe("adding and removing Mu tags", (): void => {
         subscription.unsubscribe();
     });
 
-    test("successfully adds another Mu tag to account", (): void => {
+    test("successfully adds another MuTag to account", (): void => {
         const beaconIdTwo = referenceAccount.newBeaconId;
 
         expect.assertions(3);

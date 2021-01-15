@@ -269,18 +269,18 @@ const discoveredPeripheral: Peripheral = {
     }
 };
 
-describe("Mu tag user removes Mu tag.", (): void => {
-    describe("Scenario 1: Mu tag removes successfully.", (): void => {
-        // Given that the account connected to the current Mu tag is logged in
+describe("MuTag user removes MuTag.", (): void => {
+    describe("Scenario 1: MuTag removes successfully.", (): void => {
+        // Given that the account connected to the current MuTag is logged in
         //
         getMock.mockResolvedValueOnce(account);
         getByUidMock.mockResolvedValueOnce(muTag);
 
-        // Given Mu tag is connectable
+        // Given MuTag is connectable
 
-        // Given the Mu tag battery is above threshold
+        // Given the MuTag battery is above threshold
 
-        // Given Mu tag hardware unprovisions successfully
+        // Given MuTag hardware unprovisions successfully
 
         let removePromise: Promise<void> | undefined;
         const executionOrder: number[] = [];
@@ -349,7 +349,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
                 .subscribe(([peripheralId]) =>
                     connections.get(peripheralId)?.next()
                 );
-            // user removes Mu tag
+            // user removes MuTag
             removePromise = removeMuTagInteractor.remove(muTagUid);
             const startScanSbscrbr = await onStartScan
                 .pipe(take(1))
@@ -363,7 +363,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should connect to the Mu tag.", async (): Promise<void> => {
+        it("Should connect to the MuTag.", async (): Promise<void> => {
             expect.assertions(2);
             await expect(connectPromise).resolves.toStrictEqual([
                 discoveredPeripheral.id,
@@ -374,9 +374,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should check the Mu tag battery level.", async (): Promise<
-            void
-        > => {
+        it("Should check the MuTag battery level.", async (): Promise<void> => {
             expect.assertions(2);
             await expect(readPromise).resolves.toStrictEqual([
                 discoveredPeripheral.id,
@@ -387,7 +385,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should unprovision the Mu tag hardware.", async () => {
+        it("Should unprovision the MuTag hardware.", async () => {
             expect.assertions(2);
             await expect(writePromise).resolves.toStrictEqual([
                 discoveredPeripheral.id,
@@ -399,7 +397,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should remove the Mu tag from local persistence.", async (): Promise<
+        it("Should remove the MuTag from local persistence.", async (): Promise<
             void
         > => {
             expect.assertions(6);
@@ -416,7 +414,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should remove the Mu tag from remote persistence.", async (): Promise<
+        it("Should remove the MuTag from remote persistence.", async (): Promise<
             void
         > => {
             expect.assertions(5);
@@ -432,13 +430,13 @@ describe("Mu tag user removes Mu tag.", (): void => {
         });
     });
 
-    describe("Scenario 2: Mu tag not found.", (): void => {
-        // Given that the account connected to the current Mu tag is logged in.
+    describe("Scenario 2: MuTag not found.", (): void => {
+        // Given that the account connected to the current MuTag is logged in.
         //
         getMock.mockResolvedValueOnce(account);
         getByUidMock.mockResolvedValueOnce(muTag);
 
-        // Given that Mu tag cannot be found.
+        // Given that MuTag cannot be found.
         //
         const sourceException = MuTagDevicesException.FailedToFindMuTag(
             bluetoothScanTimeoutException
@@ -455,7 +453,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
         beforeAll(
             fakeSchedulers(async advance => {
                 jest.useFakeTimers("modern");
-                // user removes Mu tag
+                // user removes MuTag
                 removePromise = removeMuTagInteractor.remove(muTagUid);
                 await onStartScan.pipe(take(1)).toPromise();
                 advance(5000);
@@ -469,19 +467,19 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should show 'failed to find Mu tag' error message.", async () => {
+        it("Should show 'failed to find MuTag' error message.", async () => {
             expect.assertions(1);
             await expect(removePromise).rejects.toStrictEqual(error);
         });
     });
 
-    describe("Scenario 3: Mu tag connection fails.", (): void => {
-        // Given that the account connected to the current Mu tag is logged in.
+    describe("Scenario 3: MuTag connection fails.", (): void => {
+        // Given that the account connected to the current MuTag is logged in.
         //
         getMock.mockResolvedValueOnce(account);
         getByUidMock.mockResolvedValueOnce(muTag);
 
-        // Given that Mu tag connection fails.
+        // Given that MuTag connection fails.
         //
         let sourceException: MuTagDevicesException<MuTagDevicesExceptionType>;
 
@@ -498,7 +496,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
                 );
                 connections.get(peripheralId)?.error(sourceException);
             });
-            // user removes Mu tag
+            // user removes MuTag
             removePromise = removeMuTagInteractor.remove(muTagUid);
             const startScanSbscrbr = await onStartScan
                 .pipe(take(1))
@@ -512,7 +510,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should connect to the Mu tag.", async () => {
+        it("Should connect to the MuTag.", async () => {
             expect.assertions(1);
             await expect(connectPromise).resolves.toStrictEqual([
                 discoveredPeripheral.id,
@@ -533,19 +531,19 @@ describe("Mu tag user removes Mu tag.", (): void => {
         });
     });
 
-    describe("Scenario 4: Mu tag hardware fails to unprovision", (): void => {
+    describe("Scenario 4: MuTag hardware fails to unprovision", (): void => {
         // There is currently no way to know if unprovision failed
     });
 
-    describe("Scenario 5: Mu tag battery is below threshold", (): void => {
-        // Given that the account connected to the current Mu tag is logged in
+    describe("Scenario 5: MuTag battery is below threshold", (): void => {
+        // Given that the account connected to the current MuTag is logged in
         //
         getMock.mockResolvedValueOnce(account);
         getByUidMock.mockResolvedValueOnce(muTag);
 
-        // Given Mu tag is connectable
+        // Given MuTag is connectable
 
-        // Given the Mu tag battery is below threshold
+        // Given the MuTag battery is below threshold
         //
         const lowBatteryLevel = new Percent(14);
 
@@ -588,7 +586,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
                     .subscribe(([peripheralId]) =>
                         connections.get(peripheralId)?.next()
                     );
-                // user removes Mu tag
+                // user removes MuTag
                 removePromise = removeMuTagInteractor.remove(muTagUid);
                 const startScanSbscrbr = await onStartScan
                     .pipe(take(1))
@@ -603,7 +601,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should connect to the Mu tag.", async (): Promise<void> => {
+        it("Should connect to the MuTag.", async (): Promise<void> => {
             expect.assertions(2);
             await expect(connectPromise).resolves.toStrictEqual([
                 discoveredPeripheral.id,
@@ -614,9 +612,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("Should check the Mu tag battery level.", async (): Promise<
-            void
-        > => {
+        it("Should check the MuTag battery level.", async (): Promise<void> => {
             expect.assertions(2);
             await expect(readPromise).resolves.toStrictEqual([
                 discoveredPeripheral.id,
@@ -627,7 +623,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("should disconnect from the Mu tag", async (): Promise<void> => {
+        it("should disconnect from the MuTag", async (): Promise<void> => {
             expect.assertions(2);
             await expect(disconnectPromise).resolves.toBe(
                 discoveredPeripheral.id
@@ -637,7 +633,7 @@ describe("Mu tag user removes Mu tag.", (): void => {
 
         // Then
         //
-        it("should reject with 'low Mu tag battery' error message.", async (): Promise<
+        it("should reject with 'low MuTag battery' error message.", async (): Promise<
             void
         > => {
             expect.assertions(1);

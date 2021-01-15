@@ -1,37 +1,37 @@
 {
     "addMuTag": {
         "instructions": {
-            "list1": "Keep the Mu tag close to the app during this setup.",
-            "list2": "Press the Mu tag button now to wake it up.",
-            "info": "Once the dot on the Mu tag logo starts flashing green, press 'Continue' below.",
+            "list1": "Keep the MuTag close to the app during this setup.",
+            "list2": "Press the MuTag button now to wake it up.",
+            "info": "Once the dot on the MuTag logo starts flashing green, press 'Continue' below.",
             "buttonContinue": "Continue"
         },
         "naming": {
-            "askNameTitle": "What is the name of this Mu tag?",
+            "askNameTitle": "What is the name of this MuTag?",
             "nameInputLabel": "Attached to",
             "buttonAdd": "Add",
             "buttonAdding": "Adding"
         },
         "adding": {
-            "connecting": "Connecting to Mu tag...",
-            "info": "If nothing seems to be happening, then press the Mu tag button to ensure it's awake.",
+            "connecting": "Connecting to MuTag...",
+            "info": "If nothing seems to be happening, then press the MuTag button to ensure it's awake.",
             "buttonCancel": "Cancel"
         },
         "error": {
-            "lowMuTagBattery": "Unable to add Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.",
-            "newMuTagNotFound": "Could not find a new Mu tag. Be sure the Mu tag light is flashing and keep it close to the app.",
-            "failedToAddMuTag": "There was problem adding the Mu tag. Please keep Mu tag close to the app and try again."
+            "lowMuTagBattery": "Unable to add MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.",
+            "newMuTagNotFound": "Could not find a new MuTag. Be sure the MuTag light is flashing and keep it close to the app.",
+            "failedToAddMuTag": "There was problem adding the MuTag. Please keep MuTag close to the app and try again."
         },
         "warning": {
-            "failedToSaveSettings": "Your Mu tag added successfully but some settings failed to save."
+            "failedToSaveSettings": "Your MuTag added successfully but some settings failed to save."
         }
     },
     "removeMuTag": {
         "error": {
-            "lowMuTagBattery": "Unable to remove Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.",
-            "failedToConnectToMuTag": "Could not connect to Mu tag. Please ensure that Mu tag is charged and move it closer to the app.",
-            "muTagCommunicationFailure": "There was a problem communicating with the Mu tag. Please move Mu tag closer to the app.",
-            "failedToRemoveMuTagFromAccount": "The Mu tag device successfully reset and disconnected from your account, but there was a problem removing the Mu tag from the app. Please notify support@informu.io."
+            "lowMuTagBattery": "Unable to remove MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.",
+            "failedToConnectToMuTag": "Could not connect to MuTag. Please ensure that MuTag is charged and move it closer to the app.",
+            "muTagCommunicationFailure": "There was a problem communicating with the MuTag. Please move MuTag closer to the app.",
+            "failedToRemoveMuTagFromAccount": "The MuTag device successfully reset and disconnected from your account, but there was a problem removing the MuTag from the app. Please notify support@informu.io."
         }
     },
     "signOut": {
@@ -41,8 +41,8 @@
     },
     "belongingsLocation": {
         "foregroundServiceNotification": {
-            "title": "Mu Tag Tracking",
-            "description": "Keeping Mu tag location up-to-date."
+            "title": "MuTag Tracking",
+            "description": "Keeping MuTag location up-to-date."
         }
     },
     "viewBelongingDashboard": {
@@ -69,7 +69,7 @@
             "buttonSignOut": "Sign Out"
         },
         "dashboard": {
-            "noMuTagMessage": "Add your first Mu tag to get started."
+            "noMuTagMessage": "Add your first MuTag to get started."
         }
     },
     "tabBar": {

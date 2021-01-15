@@ -32,7 +32,7 @@ export class RemoveMuTagInteractorException<
     ): RemoveMuTagInteractorException<"FailedToFindMuTag"> {
         return new this(
             "FailedToFindMuTag",
-            `Could not find Mu tag (${muTagUid}).`,
+            `Could not find MuTag (${muTagUid}).`,
             "log",
             sourceException
         );
@@ -57,7 +57,7 @@ export class RemoveMuTagInteractorException<
     ): RemoveMuTagInteractorException<"FailedToRemoveMuTagFromAccount"> {
         return new this(
             "FailedToRemoveMuTagFromAccount",
-            `The Mu tag device (${muTagUid}) successfully reset, but there was a problem removing it from the app.`,
+            `The MuTag device (${muTagUid}) successfully reset, but there was a problem removing it from the app.`,
             "error",
             sourceException,
             true
@@ -70,7 +70,7 @@ export class RemoveMuTagInteractorException<
     ): RemoveMuTagInteractorException<"FailedToResetMuTag"> {
         return new this(
             "FailedToResetMuTag",
-            `Failed to reset Mu tag (${muTagUid}).`,
+            `Failed to reset MuTag (${muTagUid}).`,
             "error",
             sourceException,
             true
@@ -82,7 +82,7 @@ export class RemoveMuTagInteractorException<
     ): RemoveMuTagInteractorException<"LowMuTagBattery"> {
         return new this(
             "LowMuTagBattery",
-            `Unable to remove Mu tag because its battery is below ${lowBatteryThreshold}%.`,
+            `Unable to remove MuTag because its battery is below ${lowBatteryThreshold}%.`,
             "log"
         );
     }

@@ -124,7 +124,7 @@ afterEach(() => {
     );
 });
 
-test("Cancel add Mu tag flow.", async () => {
+test("Cancel add MuTag flow.", async () => {
     expect.assertions(2);
     const stateSequence = {
         mediumPriorityMessage: new Map<
@@ -190,7 +190,7 @@ test("Cancel add Mu tag flow.", async () => {
     });
 });
 
-test("Successfully navigate to Find Mu Tag screen.", async () => {
+test("Successfully navigate to Find MuTag screen.", async () => {
     expect.assertions(5);
     expect(navigationPortMocks.onHardwareBackPress).toHaveBeenCalledTimes(0);
     viewModel.goToFindMuTag();
@@ -202,7 +202,7 @@ test("Successfully navigate to Find Mu Tag screen.", async () => {
     );
 });
 
-test("Successfully start adding Mu tag.", async () => {
+test("Successfully start adding MuTag.", async () => {
     expect.assertions(12);
     expect(viewModel.progressIndicatorValue).toBe(undefined);
     expect(viewModel.showCancelValue).toBe(true);
@@ -235,7 +235,7 @@ test("Successfully start adding Mu tag.", async () => {
     );
 });
 
-test("Cancel start adding Mu tag.", async () => {
+test("Cancel start adding MuTag.", async () => {
     expect.assertions(4);
     viewModel.startAddingMuTag();
     await viewModel.cancel();
@@ -247,7 +247,7 @@ test("Cancel start adding Mu tag.", async () => {
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
 });
 
-test("Hardware back press cancels on find & add Mu tag screen.", async () => {
+test("Hardware back press cancels on find & add MuTag screen.", async () => {
     expect.assertions(2);
     const stateSequence = {
         mediumPriorityMessage: new Map<
@@ -321,7 +321,7 @@ test("Hardware back press cancels on find & add Mu tag screen.", async () => {
     });
 });
 
-test("Fails to find new Mu tag.", async () => {
+test("Fails to find new MuTag.", async () => {
     expect.assertions(1);
     const stateSequence = {
         mediumPriorityMessage: new Map<
@@ -369,7 +369,7 @@ test("Fails to find new Mu tag.", async () => {
     });
 });
 
-test("Fails to add new Mu tag.", async () => {
+test("Fails to add new MuTag.", async () => {
     expect.assertions(1);
     const stateSequence = {
         mediumPriorityMessage: new Map<
@@ -419,7 +419,7 @@ test("Fails to add new Mu tag.", async () => {
     });
 });
 
-test("Successfully retry start adding Mu tag.", async () => {
+test("Successfully retry start adding MuTag.", async () => {
     expect.assertions(3);
     const stateSequence = {
         mediumPriorityMessage: new Map<
@@ -477,7 +477,7 @@ test("Successfully retry start adding Mu tag.", async () => {
     });
 });
 
-test("Successfully name Mu tag.", async () => {
+test("Successfully name MuTag.", async () => {
     expect.assertions(4);
     viewModel.goToFindMuTag();
     const addMuTagPromise = viewModel.startAddingMuTag();
@@ -553,7 +553,7 @@ test("Successfully name Mu tag.", async () => {
     });
 });
 
-test("Fails to name Mu tag.", async () => {
+test("Fails to name MuTag.", async () => {
     expect.assertions(4);
     const stateSequence = {
         mediumPriorityMessage: new Map<
@@ -607,7 +607,7 @@ test("Fails to name Mu tag.", async () => {
     });
 });
 
-test("Successfully retry to name Mu tag.", async () => {
+test("Successfully retry to name MuTag.", async () => {
     expect.assertions(10);
     const executionOrder: number[] = [];
     const mediumPriorityMessagePromise01 = viewModel.mediumPriorityMessage
@@ -653,7 +653,7 @@ test("Successfully retry to name Mu tag.", async () => {
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
 });
 
-test("Disable hardware back press on name Mu tag screen.", async () => {
+test("Disable hardware back press on name MuTag screen.", async () => {
     expect.assertions(2);
     viewModel.goToFindMuTag();
     const addMuTagPromise = viewModel.startAddingMuTag();

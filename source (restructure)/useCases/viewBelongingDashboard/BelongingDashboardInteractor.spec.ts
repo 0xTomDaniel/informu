@@ -156,7 +156,7 @@ const account = new Account(validAccountData);
 (accountRepoLocalMock.get as jest.Mock).mockResolvedValue(account);
 const notifier = new Subject<void>();
 
-describe("Mu tag user views a dashboard of all their belongings", (): void => {
+describe("MuTag user views a dashboard of all their belongings", (): void => {
     describe("current account has no belongings", (): void => {
         // Given that an account is logged in
 

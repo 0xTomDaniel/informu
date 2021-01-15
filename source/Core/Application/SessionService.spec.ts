@@ -263,7 +263,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should start Mu tag location updates", (): void => {
+        it("should start MuTag location updates", (): void => {
             expect(
                 belongingsLocationInteractorMock.start
             ).toHaveBeenCalledTimes(1);
@@ -271,7 +271,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should start Mu tag battery updates", (): void => {
+        it("should start MuTag battery updates", (): void => {
             expect(muTagBatteriesInteractorMock.start).toHaveBeenCalledTimes(1);
         });
     });
@@ -349,7 +349,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should stop Mu tag location updates", (): void => {
+        it("should stop MuTag location updates", (): void => {
             expect(belongingsLocationInteractorMock.stop).toHaveBeenCalledTimes(
                 1
             );
@@ -357,7 +357,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should stop Mu tag battery updates", (): void => {
+        it("should stop MuTag battery updates", (): void => {
             expect(muTagBatteriesInteractorMock.stop).toHaveBeenCalledTimes(1);
         });
 
@@ -440,7 +440,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should start Mu tag location updates", (): void => {
+        it("should start MuTag location updates", (): void => {
             expect(
                 belongingsLocationInteractorMock.start
             ).toHaveBeenCalledTimes(1);
@@ -448,7 +448,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should start Mu tag battery updates", (): void => {
+        it("should start MuTag battery updates", (): void => {
             expect(muTagBatteriesInteractorMock.start).toHaveBeenCalledTimes(1);
         });
     });
@@ -527,7 +527,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should start Mu tag location updates", (): void => {
+        it("should start MuTag location updates", (): void => {
             expect(
                 belongingsLocationInteractorMock.start
             ).toHaveBeenCalledTimes(1);
@@ -535,7 +535,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should start Mu tag battery updates", (): void => {
+        it("should start MuTag battery updates", (): void => {
             expect(muTagBatteriesInteractorMock.start).toHaveBeenCalledTimes(1);
         });
     });
@@ -576,7 +576,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should stop Mu tag location updates", (): void => {
+        it("should stop MuTag location updates", (): void => {
             expect(belongingsLocationInteractorMock.stop).toHaveBeenCalledTimes(
                 1
             );
@@ -584,7 +584,7 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should stop Mu tag battery updates", (): void => {
+        it("should stop MuTag battery updates", (): void => {
             expect(muTagBatteriesInteractorMock.stop).toHaveBeenCalledTimes(1);
         });
 

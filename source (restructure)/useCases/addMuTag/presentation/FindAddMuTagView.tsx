@@ -141,8 +141,8 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
                     <View>
                         <Headline style={styles.headline}>
                             {showCancel
-                                ? "Searching for new Mu tag..."
-                                : "Setting up new Mu tag..."}
+                                ? "Searching for new MuTag..."
+                                : "Setting up new MuTag..."}
                         </Headline>
                         <ActivityIndicator
                             animating={true}

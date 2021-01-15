@@ -125,7 +125,7 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
             <SafeAreaView style={[styles.safeAreaView, styles.base]}>
                 <View style={styles.mainContainer}>
                     <Headline style={styles.headline}>
-                        What is the name of this Mu tag?
+                        What is the name of this MuTag?
                     </Headline>
                     <TextInput
                         label="Attached to"
