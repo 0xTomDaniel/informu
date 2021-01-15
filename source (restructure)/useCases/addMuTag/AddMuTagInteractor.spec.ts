@@ -777,7 +777,7 @@ describe("User adds Mu tag.", () => {
             "Should produce Mu tag not found error.",
             fakeSchedulers(async advance => {
                 expect.assertions(1);
-                advance(30000);
+                advance(5000);
                 const sourceException01 = BluetoothException.ScanTimeout;
                 const sourceException02 = MuTagDevicesException.FindNewMuTagTimeout(
                     sourceException01

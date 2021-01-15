@@ -79,6 +79,7 @@ const belongings: DashboardBelonging[] = [
         uid: "randomUUID01"
     },
     {
+        address: undefined,
         batteryLevel: new Percent(15),
         isSafe: false,
         lastSeen: new Date("2011-10-05T14:48:00.000Z"),

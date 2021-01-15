@@ -1,14 +1,10 @@
-import BelongingMapViewModel, {
-    BelongingFeatureProperties
-} from "./BelongingMapViewModel";
+import BelongingMapViewModel from "./BelongingMapViewModel";
 import BelongingMapInteractor, {
     BelongingLocation,
     BelongingLocationDelta
 } from "../BelongingMapInteractor";
 import { Subject, Subscription } from "rxjs";
 import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectionUpdate";
-import { FeatureCollection, Point } from "geojson";
-import { cloneDeep } from "lodash";
 
 const belongingMapInteractorShowOnMapSubject = new Subject<
     ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>

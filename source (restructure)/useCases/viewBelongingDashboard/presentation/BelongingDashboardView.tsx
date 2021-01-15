@@ -6,7 +6,8 @@ import {
     ActivityIndicator,
     Dialog,
     Paragraph,
-    Button
+    Button,
+    Snackbar
 } from "react-native-paper";
 import {
     StyleSheet,
@@ -152,7 +153,7 @@ const BelongingsEmpty: FunctionComponent = (): ReactElement => {
 };
 
 interface BelongingDashboardViewProps extends NavigationScreenProps {
-    belongingDashboardViewModel: BelongingDashboardViewModel;
+    viewModel: BelongingDashboardViewModel;
 }
 
 const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
@@ -162,15 +163,17 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     const [progressIndicator, setProgressIndicator] = useState<
         ProgressIndicatorState
     >(undefined);
-    const [showBanner, setShowBanner] = useState<
+    const [bannerMessage, setBannerMessage] = useState<
         MediumPriorityMessage | undefined
-    >(props.belongingDashboardViewModel.mediumPriorityMessageValue);
+    >(props.viewModel.mediumPriorityMessageValue);
     const [showEmptyDashboard, setShowEmptyDashboard] = useState(true);
     const [showSignOutDialog, setShowSignOutDialog] = useState(false);
-    const [showSnackbar, setShowSnackbar] = useState<LowPriorityMessage>();
+    const [snackbarMessage, setSnackbarMessage] = useState<
+        LowPriorityMessage
+    >();
 
     const onDismissErrorDialog = (): void => {
-        setShowBanner(undefined);
+        setBannerMessage(undefined);
     };
 
     const requestPermissions = async (): Promise<void> => {
@@ -220,39 +223,39 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     };
 
     useEffect((): (() => void) => {
-        const subscription = props.belongingDashboardViewModel.progressIndicator.subscribe(
+        const subscription = props.viewModel.progressIndicator.subscribe(
             setProgressIndicator
         );
         return () => subscription.unsubscribe();
-    }, [props.belongingDashboardViewModel.progressIndicator]);
+    }, [props.viewModel.progressIndicator]);
 
     useEffect((): (() => void) => {
-        const subscription = props.belongingDashboardViewModel.showBelongings.subscribe(
+        const subscription = props.viewModel.showBelongings.subscribe(
             setBelongings
         );
         return () => subscription.unsubscribe();
-    }, [props.belongingDashboardViewModel.showBelongings]);
+    }, [props.viewModel.showBelongings]);
 
     useEffect((): (() => void) => {
-        const subscription = props.belongingDashboardViewModel.showEmptyDashboard.subscribe(
+        const subscription = props.viewModel.showEmptyDashboard.subscribe(
             setShowEmptyDashboard
         );
         return () => subscription.unsubscribe();
-    }, [props.belongingDashboardViewModel.showEmptyDashboard]);
+    }, [props.viewModel.showEmptyDashboard]);
 
     useEffect((): (() => void) => {
-        const subscription = props.belongingDashboardViewModel.mediumPriorityMessage.subscribe(
-            setShowBanner
+        const subscription = props.viewModel.mediumPriorityMessage.subscribe(
+            setBannerMessage
         );
         return () => subscription.unsubscribe();
-    }, [props.belongingDashboardViewModel.mediumPriorityMessage]);
+    }, [props.viewModel.mediumPriorityMessage]);
 
     useEffect((): (() => void) => {
-        const subscription = props.belongingDashboardViewModel.lowPriorityMessage.subscribe(
-            setShowSnackbar
+        const subscription = props.viewModel.lowPriorityMessage.subscribe(
+            setSnackbarMessage
         );
         return () => subscription.unsubscribe();
-    }, [props.belongingDashboardViewModel.lowPriorityMessage]);
+    }, [props.viewModel.lowPriorityMessage]);
 
     useEffect(() => {
         requestPermissions().catch(e => console.warn(e));
@@ -272,7 +275,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                     icon="plus-circle-outline"
                     color={Theme.Color.DarkGrey}
                     style={styles.appBarActionAddMuTag}
-                    onPress={() => props.belongingDashboardViewModel.addMuTag()}
+                    onPress={() => props.viewModel.addMuTag()}
                 />
                 <Appbar.Action
                     icon="logout"
@@ -288,14 +291,24 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                 data={belongings}
                 renderItem={({ item }) => (
                     <BelongingCard
-                        onRemoveMuTag={uid =>
-                            props.belongingDashboardViewModel.removeMuTag(uid)
-                        }
+                        onRemoveMuTag={uid => props.viewModel.removeMuTag(uid)}
                         viewData={item}
                     />
                 )}
                 keyExtractor={item => item.uid}
             />
+            <Snackbar
+                duration={Number.POSITIVE_INFINITY}
+                visible={snackbarMessage != null}
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                onDismiss={() => {}}
+                action={{
+                    label: "Dismiss",
+                    onPress: () => props.viewModel.hideLowPriorityMessage()
+                }}
+            >
+                {snackbarMessage}
+            </Snackbar>
             <Portal>
                 <Dialog
                     visible={showSignOutDialog}
@@ -320,9 +333,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                         </Button>
                         <Button
                             mode="contained"
-                            onPress={() =>
-                                props.belongingDashboardViewModel.signOut()
-                            }
+                            onPress={() => props.viewModel.signOut()}
                         >
                             {localize.getText(
                                 "viewBelongingDashboard",
@@ -346,9 +357,9 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                 </Modal>
             </Portal>
             <ErrorDialog
-                message={showBanner ?? ""}
+                message={bannerMessage ?? ""}
                 detailMessage={""}
-                visible={showBanner != null}
+                visible={bannerMessage != null}
                 onDismiss={onDismissErrorDialog}
             />
         </SafeAreaView>

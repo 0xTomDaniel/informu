@@ -36,6 +36,10 @@ export default abstract class ViewModel<
         this.progressIndicator = this._progressIndicator.asObservable();
     }
 
+    hideLowPriorityMessage(): void {
+        this._lowPriorityMessage.next(undefined);
+    }
+
     protected readonly navigation: NavigationPort<R>;
     protected readonly _showIndeterminateProgress = new BehaviorSubject<
         boolean

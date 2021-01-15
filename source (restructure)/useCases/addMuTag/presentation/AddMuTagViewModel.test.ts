@@ -356,15 +356,15 @@ test("Fails to find new Mu tag.", async () => {
         progressIndicator: new Map([
             [0, undefined],
             [3, "Indeterminate"],
-            [6, undefined]
+            [4, undefined]
         ]),
         mediumPriorityMessage: new Map([
             [1, undefined],
-            [4, "NewMuTagNotFound"]
+            [5, "NewMuTagNotFound"]
         ]),
         showRetry: new Map([
             [2, false],
-            [5, true]
+            [6, true]
         ])
     });
 });
@@ -405,16 +405,16 @@ test("Fails to add new Mu tag.", async () => {
     expect(stateSequence).toStrictEqual({
         mediumPriorityMessage: new Map([
             [1, undefined],
-            [4, "FailedToAddMuTag"]
+            [5, "FailedToAddMuTag"]
         ]),
         progressIndicator: new Map([
             [0, undefined],
             [3, "Indeterminate"],
-            [6, undefined]
+            [4, undefined]
         ]),
         showRetry: new Map([
             [2, false],
-            [5, true]
+            [6, true]
         ])
     });
 });
@@ -459,20 +459,20 @@ test("Successfully retry start adding Mu tag.", async () => {
     expect(stateSequence).toStrictEqual({
         mediumPriorityMessage: new Map([
             [1, undefined],
-            [4, "NewMuTagNotFound"],
+            [5, "NewMuTagNotFound"],
             [7, undefined]
         ]),
         progressIndicator: new Map([
             [0, undefined],
             [3, "Indeterminate"],
-            [6, undefined],
+            [4, undefined],
             [8, "Indeterminate"],
-            [10, undefined]
+            [9, undefined]
         ]),
         showRetry: new Map([
             [2, false],
-            [5, true],
-            [9, false]
+            [6, true],
+            [10, false]
         ])
     });
 });
@@ -536,19 +536,19 @@ test("Successfully name Mu tag.", async () => {
     expect(stateSequence).toStrictEqual({
         mediumPriorityMessage: new Map([
             [3, undefined],
-            [6, undefined]
+            [7, undefined]
         ]),
         onUnsubscribe: new Set([9]),
         progressIndicator: new Map([
             [0, undefined],
             [5, "Indeterminate"],
-            [8, undefined]
+            [6, undefined]
         ]),
         showCancel: new Map([[1, false]]),
         showCancelActivity: new Map([[2, false]]),
         showRetry: new Map([
             [4, false],
-            [7, false]
+            [8, false]
         ])
     });
 });
@@ -593,16 +593,16 @@ test("Fails to name Mu tag.", async () => {
     expect(stateSequence).toStrictEqual({
         mediumPriorityMessage: new Map([
             [1, undefined],
-            [4, "FailedToNameMuTag"]
+            [5, "FailedToNameMuTag"]
         ]),
         progressIndicator: new Map([
             [0, undefined],
             [3, "Indeterminate"],
-            [6, undefined]
+            [4, undefined]
         ]),
         showRetry: new Map([
             [2, false],
-            [5, true]
+            [6, true]
         ])
     });
 });
@@ -635,12 +635,12 @@ test("Successfully retry to name Mu tag.", async () => {
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(2));
-    const showRetryPromise = viewModel.showRetry
-        .pipe(skip(1), take(1))
-        .toPromise()
-        .finally(() => executionOrder.push(3));
     const progressIndicatorPromise02 = viewModel.progressIndicator
         .pipe(skip(2), take(1))
+        .toPromise()
+        .finally(() => executionOrder.push(3));
+    const showRetryPromise = viewModel.showRetry
+        .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(4));
     viewModel.setMuTagName(muTagName, true);

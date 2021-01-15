@@ -13,7 +13,7 @@ import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
-import { switchMap, catchError, first, finalize } from "rxjs/operators";
+import { switchMap, catchError, first, finalize, take } from "rxjs/operators";
 import { EmptyError } from "rxjs";
 import Exception from "../../shared/metaLanguage/Exception";
 
@@ -216,6 +216,7 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
                             );
                         })
                 ),
+                take(1),
                 finalize(() =>
                     this.muTagDevices.disconnectFromMuTag(connection)
                 )
