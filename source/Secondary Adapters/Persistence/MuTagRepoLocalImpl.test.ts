@@ -212,7 +212,7 @@ test("successfully gets added MuTag instance that's not overwritten by new insta
     ).resolves.toBe(muTag01);
 });
 
-test("successfully adds two Mu tags", async (): Promise<void> => {
+test("successfully adds two MuTags", async (): Promise<void> => {
     (databaseMock.set as jest.Mock).mockResolvedValueOnce(undefined);
     expect.assertions(1);
     const muTagsToAdd = new Set([muTag02, muTag03]);

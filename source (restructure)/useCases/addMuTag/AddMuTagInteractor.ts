@@ -335,7 +335,7 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
         };
 
         // MuTag must be added to local persistence before being added to
-        // account. It's probably best to refactor so that Mu tags don't need to
+        // account. It's probably best to refactor so that MuTags don't need to
         // be added to the account object. That's probably better domain driven
         // design.
         await this.muTagRepoLocal.add(this.provisionedMuTag).catch(onError);

@@ -145,7 +145,7 @@ beforeEach(() => {
 let unprovisionedMuTag: UnprovisionedMuTag;
 
 test(
-    "Finding unprovisioned Mu tags times out.",
+    "Finding unprovisioned MuTags times out.",
     fakeSchedulers(async advance => {
         expect.assertions(1);
         jest.useFakeTimers("modern");
@@ -163,7 +163,7 @@ test(
     })
 );
 
-test("Successfully finds two unprovisioned Mu tags.", async () => {
+test("Successfully finds two unprovisioned MuTags.", async () => {
     expect.assertions(1);
     const discoveredUnprovisionedPeripheral02: Peripheral = {
         id: uuidV4() as PeripheralId,

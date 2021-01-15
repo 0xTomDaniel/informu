@@ -116,7 +116,7 @@ describe("session management", (): void => {
     });
 });
 
-describe("adding and removing Mu tags", (): void => {
+describe("adding and removing MuTags", (): void => {
     const beaconIdOne = referenceAccount.newBeaconId;
     const muTagUIDOne = "UUID01";
     const muTagUIDTwo = "UUID02";
@@ -160,7 +160,7 @@ describe("adding and removing Mu tags", (): void => {
         subscription.unsubscribe();
     });
 
-    test("successfully removes two Mu tags from account", (): void => {
+    test("successfully removes two MuTags from account", (): void => {
         expect.assertions(3);
         const subscription = referenceAccount.muTagsChange.subscribe(
             (muTagsChange): void => {

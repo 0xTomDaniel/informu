@@ -58,8 +58,8 @@
             "justNow": "Just now"
         },
         "locationPermissionRequest": {
-            "title": "Mu Tags Require 'Coarse Location' Permission",
-            "message": "Please select 'Allow'. This is required for your Mu tags to have accurate and up-to-date locations.",
+            "title": "MuTags Require 'Coarse Location' Permission",
+            "message": "Please select 'Allow'. This is required for your MuTags to have accurate and up-to-date locations.",
             "buttonDeny": "Deny",
             "buttonAllow": "Allow"
         },

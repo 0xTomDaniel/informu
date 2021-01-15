@@ -174,7 +174,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
 
         // Then
         //
-        it("should show indication that no Mu tags are attached to account and one needs to be added", async (): Promise<
+        it("should show indication that no MuTags are attached to account and one needs to be added", async (): Promise<
             void
         > => {
             expect.assertions(1);
