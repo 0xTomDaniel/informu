@@ -123,7 +123,11 @@ const appViewModel = new AppViewModel();
 const sessionPresenter = new AppPresenter(appViewModel);
 
 const otherRoutes = ["Home"] as const;
-const routes = [...AddMuTagViewModel.routes, ...otherRoutes];
+const routes = [
+    ...AddMuTagViewModel.routes,
+    ...BelongingDashboardViewModel.routes,
+    ...otherRoutes
+];
 const navigationAdapter = new ReactNavigationAdapter(routes, BackHandler);
 
 export class Dependencies {
@@ -299,6 +303,7 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.belongingDashboardViewModel = new BelongingDashboardViewModel(
+            navigationAdapter,
             this.belongingDashboardInteractor,
             this.removeMuTagInteractor,
             this.signOutInteractor
@@ -428,6 +433,7 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.belongingDashboardViewModel = new BelongingDashboardViewModel(
+            navigationAdapter,
             this.belongingDashboardInteractor,
             this.removeMuTagInteractor,
             this.signOutInteractor
@@ -467,9 +473,7 @@ const HomeStack = createStackNavigator(
         [navigationAdapter.routes.Home]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <BelongingDashboardView
-                    belongingDashboardViewModel={
-                        dependencies.belongingDashboardViewModel
-                    }
+                    viewModel={dependencies.belongingDashboardViewModel}
                     {...props}
                 />
             )

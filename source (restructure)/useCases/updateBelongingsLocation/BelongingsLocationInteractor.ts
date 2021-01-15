@@ -12,8 +12,6 @@ import {
 } from "../../shared/geolocation/LocationMonitor";
 import Localize from "../../shared/localization/Localize";
 
-const localize = Localize.instance;
-
 export interface BelongingsLocation {
     start(): Promise<void>;
     stop(): void;
@@ -21,47 +19,35 @@ export interface BelongingsLocation {
 
 export default class BelongingsLocationInteractor
     implements BelongingsLocation {
-    private accountMuTagsChangeSubscription?: Subscription;
-    private readonly accountRepoLocal: AccountRepositoryLocal;
-    private readonly defaultLocationMonitorOptions: GeolocationOptions = {
-        activitiesInterval: 10000,
-        desiredAccuracy: GeolocationAccuracy.Medium,
-        fastestInterval: 5000,
-        interval: 10000,
-        locationProvider: LocationProvider.Activity,
-        //notificationIconColor: string,
-        //notificationIconLarge: string,
-        //notificationIconSmall: string,
-        notificationTitle: localize.getText(
-            "belongingsLocation",
-            "foregroundServiceNotification",
-            "title"
-        ),
-        notificationText: localize.getText(
-            "belongingsLocation",
-            "foregroundServiceNotification",
-            "description"
-        ),
-        stopOnTerminate: false,
-        startForeground: true,
-        startOnBoot: true
-    };
-    private hasStarted = false;
-    private readonly locationMonitor: LocationMonitorPort;
-    private locationSubscription?: Subscription;
-    private logger = Logger.instance;
-    private readonly muTagDetectionSubscriptions = new Map<
-        string,
-        Subscription
-    >();
-    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
-
     constructor(
         accountRepoLocal: AccountRepositoryLocal,
         locationMonitor: LocationMonitorPort,
         muTagRepoLocal: MuTagRepositoryLocalPort
     ) {
         this.accountRepoLocal = accountRepoLocal;
+        this.defaultLocationMonitorOptions = {
+            activitiesInterval: 10000,
+            desiredAccuracy: GeolocationAccuracy.Medium,
+            fastestInterval: 5000,
+            interval: 10000,
+            locationProvider: LocationProvider.Activity,
+            //notificationIconColor: string,
+            //notificationIconLarge: string,
+            //notificationIconSmall: string,
+            notificationTitle: this.localize.getText(
+                "belongingsLocation",
+                "foregroundServiceNotification",
+                "title"
+            ),
+            notificationText: this.localize.getText(
+                "belongingsLocation",
+                "foregroundServiceNotification",
+                "description"
+            ),
+            stopOnTerminate: false,
+            startForeground: true,
+            startOnBoot: true
+        };
         this.locationMonitor = locationMonitor;
         this.muTagRepoLocal = muTagRepoLocal;
 
@@ -125,6 +111,20 @@ export default class BelongingsLocationInteractor
         );
         this.hasStarted = false;
     }
+
+    private accountMuTagsChangeSubscription?: Subscription;
+    private readonly accountRepoLocal: AccountRepositoryLocal;
+    private readonly defaultLocationMonitorOptions: GeolocationOptions;
+    private hasStarted = false;
+    private readonly localize = Localize.instance;
+    private readonly locationMonitor: LocationMonitorPort;
+    private locationSubscription?: Subscription;
+    private readonly logger = Logger.instance;
+    private readonly muTagDetectionSubscriptions = new Map<
+        string,
+        Subscription
+    >();
+    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
 
     private updateMuTagLocationWhenDetected(
         muTags: Set<ProvisionedMuTag>

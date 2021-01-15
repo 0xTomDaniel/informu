@@ -75,22 +75,22 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
         batteryLevelRange: BatteryLevelRange
     ): string => {
         switch (batteryLevelRange) {
-            case BatteryLevelRange.High:
+            case "High":
                 return Theme.Color.Green;
-            case BatteryLevelRange.Medium:
+            case "Medium":
                 return "gold";
-            case BatteryLevelRange.Low:
+            case "Low":
                 return Theme.Color.Error;
         }
     };
     const convertToBatteryIconName = (
         batteryBarLevel: BatteryBarLevel
     ): string => {
-        const batteryLevelPercentage = batteryBarLevel * 10;
+        const batteryLevelPercentage = batteryBarLevel.slice(0, -1);
         switch (batteryLevelPercentage) {
-            case 0:
+            case "0":
                 return "battery-outline";
-            case 100:
+            case "100":
                 return "battery";
             default:
                 return `battery-${batteryLevelPercentage}`;
@@ -98,11 +98,11 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
     };
     const convertToSafeStatusColor = (safeStatus: SafeStatus): string => {
         switch (safeStatus) {
-            case SafeStatus.InRange:
+            case "InRange":
                 return Theme.Color.Green;
-            case SafeStatus.InSafeZone:
+            case "InSafeZone":
                 return "gray";
-            case SafeStatus.Unsafe:
+            case "Unsafe":
                 return Theme.Color.Error;
         }
     };

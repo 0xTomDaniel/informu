@@ -21,7 +21,7 @@ export class MuTagDevicesException<T extends ExceptionType> extends Exception<
     ): MuTagDevicesException<"FailedToConnectToMuTag"> {
         return new this(
             "FailedToConnectToMuTag",
-            "Failed to connect to Mu tag.",
+            "Failed to connect to MuTag.",
             "warn",
             sourceException
         );
@@ -32,7 +32,7 @@ export class MuTagDevicesException<T extends ExceptionType> extends Exception<
     ): MuTagDevicesException<"FailedToFindMuTag"> {
         return new this(
             "FailedToFindMuTag",
-            "Mu tag could not be found.",
+            "MuTag could not be found.",
             "log",
             sourceException
         );
@@ -43,7 +43,7 @@ export class MuTagDevicesException<T extends ExceptionType> extends Exception<
     ): MuTagDevicesException<"FindNewMuTagTimeout"> {
         return new this(
             "FindNewMuTagTimeout",
-            "Could not find unprovisioned Mu tag before timeout.",
+            "Could not find unprovisioned MuTag before timeout.",
             "log",
             sourceException
         );
@@ -54,7 +54,7 @@ export class MuTagDevicesException<T extends ExceptionType> extends Exception<
     ): MuTagDevicesException<"MuTagCommunicationFailure"> {
         return new this(
             "MuTagCommunicationFailure",
-            "Failed to read or write to Mu tag.",
+            "Failed to read or write to MuTag.",
             "error",
             sourceException
         );
@@ -65,7 +65,7 @@ export class MuTagDevicesException<T extends ExceptionType> extends Exception<
     ): MuTagDevicesException<"MuTagDisconnectedUnexpectedly"> {
         return new this(
             "MuTagDisconnectedUnexpectedly",
-            "Mu tag has disconnected unexpectedly.",
+            "MuTag has disconnected unexpectedly.",
             "warn",
             sourceException
         );
@@ -107,7 +107,7 @@ export enum AdvertisingIntervalSetting {
 export default interface MuTagDevicesPort {
     /**
      * @function startFindingUnprovisionedMuTags
-     * @param {Rssi} proximityThreshold - Mu tag with an RSSI less than this threshold will be ignored.
+     * @param {Rssi} proximityThreshold - MuTag with an RSSI less than this threshold will be ignored.
      * @param {number} timeout - Promise will resolve when timeout in seconds has been reached.
      */
     changeAdvertisingInterval(

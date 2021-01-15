@@ -23,6 +23,35 @@ import LocationMonitor, {
 import { EventSubscription } from "@mauron85/react-native-background-geolocation";
 import { take } from "rxjs/operators";
 import { Address } from "./LocationMonitorPort";
+import Localize, { RnLocalize } from "../../shared/localization/Localize";
+
+const ReactNativeLocalizeMock = jest.fn<RnLocalize, any>(
+    (): RnLocalize => ({
+        getCalendar: jest.fn(),
+        getCountry: jest.fn(),
+        getCurrencies: jest.fn(),
+        getLocales: jest.fn(() => [
+            {
+                languageCode: "",
+                countryCode: "",
+                languageTag: "en-US",
+                isRTL: true
+            }
+        ]),
+        getNumberFormatSettings: jest.fn(),
+        getTemperatureUnit: jest.fn(),
+        getTimeZone: jest.fn(),
+        uses24HourClock: jest.fn(),
+        usesMetricSystem: jest.fn(),
+        usesAutoDateAndTime: jest.fn(),
+        usesAutoTimeZone: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        findBestAvailableLanguage: jest.fn()
+    })
+);
+const reactNativeLocalizeMock = new ReactNativeLocalizeMock();
+Localize.createInstance(reactNativeLocalizeMock);
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({

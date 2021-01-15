@@ -59,12 +59,12 @@ const muTagJson: MuTagJson = {
     _uid: muTagData._uid
 };
 
-test("successfully creates Mu tag from MuTagJSON", (): void => {
+test("successfully creates MuTag from MuTagJSON", (): void => {
     const muTag = ProvisionedMuTag.deserialize(muTagJson);
     expect(muTag).toEqual(referenceMuTag);
 });
 
-test("successfully serializes and deserializes Mu tag", (): void => {
+test("successfully serializes and deserializes MuTag", (): void => {
     // This is to ensure JSON.stringify doesn't throw error 'TypeError: Converting
     // circular structure to JSON'
     const subscription = referenceMuTag.safetyStatus.subscribe(

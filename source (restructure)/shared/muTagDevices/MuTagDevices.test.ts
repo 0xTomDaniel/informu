@@ -145,7 +145,7 @@ beforeEach(() => {
 let unprovisionedMuTag: UnprovisionedMuTag;
 
 test(
-    "Finding unprovisioned Mu tags times out.",
+    "Finding unprovisioned MuTags times out.",
     fakeSchedulers(async advance => {
         expect.assertions(1);
         jest.useFakeTimers("modern");
@@ -163,7 +163,7 @@ test(
     })
 );
 
-test("Successfully finds two unprovisioned Mu tags.", async () => {
+test("Successfully finds two unprovisioned MuTags.", async () => {
     expect.assertions(1);
     const discoveredUnprovisionedPeripheral02: Peripheral = {
         id: uuidV4() as PeripheralId,
@@ -219,7 +219,7 @@ test("Successfully finds two unprovisioned Mu tags.", async () => {
 const accountNumber = AccountNumber.fromString("0000007");
 const beaconId = BeaconId.fromNumber(5);
 
-test("Successfully provisions an unprovisioned Mu tag.", async (): Promise<
+test("Successfully provisions an unprovisioned MuTag.", async (): Promise<
     void
 > => {
     expect.assertions(1);
@@ -270,7 +270,7 @@ const discoveredProvisionedPeripheral: Peripheral = {
 const timeout = 5000 as Millisecond;
 
 test(
-    "Successfully connects to provisioned Mu tag.",
+    "Successfully connects to provisioned MuTag.",
     fakeSchedulers(async advance => {
         jest.useFakeTimers("modern");
         expect.assertions(1);
@@ -291,7 +291,7 @@ test(
 );
 
 test(
-    "Fails to find provisioned Mu tag.",
+    "Fails to find provisioned MuTag.",
     fakeSchedulers(async advance => {
         expect.assertions(1);
         jest.useFakeTimers("modern");
@@ -305,7 +305,7 @@ test(
     })
 );
 
-test("Fails to connect to provisioned Mu tag.", async () => {
+test("Fails to connect to provisioned MuTag.", async () => {
     expect.assertions(1);
     connectionError = BluetoothException.FailedToConnect(
         discoveredProvisionedPeripheral.id
@@ -326,7 +326,7 @@ test("Fails to connect to provisioned Mu tag.", async () => {
     connectionError = undefined;
 });
 
-test("Successfully disconnects from provisioned Mu tag.", async () => {
+test("Successfully disconnects from provisioned MuTag.", async () => {
     expect.assertions(2);
     startScanSubscriber
         .pipe(skip(1), take(1))
@@ -354,7 +354,7 @@ test("Successfully disconnects from provisioned Mu tag.", async () => {
     await connectPromise;
 });
 
-test("Successfully changes advertising interval of provisioned Mu tag.", async () => {
+test("Successfully changes advertising interval of provisioned MuTag.", async () => {
     expect.assertions(3);
     startScanSubscriber
         .pipe(skip(1), take(1))
@@ -383,7 +383,7 @@ test("Successfully changes advertising interval of provisioned Mu tag.", async (
 });
 
 test(
-    "Successfully unprovisions a provisioned Mu tag.",
+    "Successfully unprovisions a provisioned MuTag.",
     fakeSchedulers(async advance => {
         expect.assertions(4);
         jest.useFakeTimers("modern");

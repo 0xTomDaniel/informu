@@ -84,7 +84,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
         const peripheralId = this.unprovisionedMuTags.get(unprovisionedMuTag);
         if (peripheralId == null) {
             throw Error(
-                `Unprovisioned Mu tag not found (${JSON.stringify(
+                `Unprovisioned MuTag not found (${JSON.stringify(
                     unprovisionedMuTag
                 )}).`
             );
@@ -113,7 +113,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
             batteryLevel.valueOf() < minimumBatteryLevel.valueOf()
         ) {
             throw Error(
-                `Unprovisioned Mu tag battery level of %${batteryLevel} is below the %${minimumBatteryLevel} threshold.`
+                `Unprovisioned MuTag battery level of %${batteryLevel} is below the %${minimumBatteryLevel} threshold.`
             );
         }
         const major = This.getMajor(accountNumber);
@@ -171,7 +171,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
 
     async unprovisionMuTag(connection: Connection): Promise<void> {
         const peripheralId = this.getPeripheralId(connection);
-        // Write fails because Mu tag restarts as soon as it is unprovisioned.
+        // Write fails because MuTag restarts as soon as it is unprovisioned.
         const writePromise = this.writeCharacteristic(
             peripheralId,
             MuTagBleGatt.MuTagConfiguration.Provision,

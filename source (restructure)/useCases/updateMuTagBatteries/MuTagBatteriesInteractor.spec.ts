@@ -209,9 +209,9 @@ const oneSecondInMs = 1000;
 const oneMinuteInMs = oneSecondInMs * 60;
 const oneHourInMs = oneMinuteInMs * 60;
 
-describe("Mu tag battery levels update", (): void => {
-    describe("Scenario 1: Mu tag is in range", (): void => {
-        // Given that Mu tag is in range
+describe("MuTag battery levels update", (): void => {
+    describe("Scenario 1: MuTag is in range", (): void => {
+        // Given that MuTag is in range
 
         const batteryLevelUpdate01 = new Percent(49);
         const batteryLevelUpdate02 = new Percent(48);
@@ -238,7 +238,7 @@ describe("Mu tag battery levels update", (): void => {
         // Then
         //
         it(
-            "should read and update the Mu tag battery level",
+            "should read and update the MuTag battery level",
             fakeSchedulers(async advance => {
                 expect.assertions(3);
                 const promise01 = belonging01.batteryLevel
@@ -261,8 +261,8 @@ describe("Mu tag battery levels update", (): void => {
         );
     });
 
-    describe("Scenario 2: Mu tag is out of range", (): void => {
-        // Given that the Mu tag is out of range
+    describe("Scenario 2: MuTag is out of range", (): void => {
+        // Given that the MuTag is out of range
 
         const batteryLevelUpdate = new Percent(36);
         (muTagDevicesMock.readBatteryLevel as jest.Mock).mockReturnValueOnce(
@@ -272,7 +272,7 @@ describe("Mu tag battery levels update", (): void => {
         let promise01: Promise<Percent>;
         // When the battery level hasn't been read for 12 hours
         //
-        // And the Mu tag comes back into range
+        // And the MuTag comes back into range
         //
         beforeAll(
             async (): Promise<void> => {
@@ -290,7 +290,7 @@ describe("Mu tag battery levels update", (): void => {
         // Then
         //
         it(
-            "should read and update the Mu tag battery level",
+            "should read and update the MuTag battery level",
             fakeSchedulers(async () => {
                 const batteryLevel = await promise01;
                 expect(batteryLevel).toBe(batteryLevelUpdate);
@@ -328,8 +328,8 @@ describe("Mu tag battery levels update", (): void => {
     };
     const newBelonging = new ProvisionedMuTag(newBelongingData);
 
-    describe("Scenario 3: Mu tag is added", (): void => {
-        // Given that a Mu tag is unprovisioned
+    describe("Scenario 3: MuTag is added", (): void => {
+        // Given that a MuTag is unprovisioned
 
         (muTagRepositoryLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
             newBelonging
@@ -347,7 +347,7 @@ describe("Mu tag battery levels update", (): void => {
             Promise.resolve(batteryLevelUpdate)
         );
 
-        // When the Mu tag is added to the current account
+        // When the MuTag is added to the current account
         //
         beforeAll(
             async (): Promise<void> => {
@@ -365,7 +365,7 @@ describe("Mu tag battery levels update", (): void => {
         // Then
         //
         it(
-            "should read and update the Mu tag battery level every 12 hours",
+            "should read and update the MuTag battery level every 12 hours",
             fakeSchedulers(async advance => {
                 expect.assertions(1);
                 const promise = newBelonging.batteryLevel
@@ -378,8 +378,8 @@ describe("Mu tag battery levels update", (): void => {
         );
     });
 
-    describe("Scenario 4: Mu tag is removed", (): void => {
-        // Given that a Mu tag is added to the current account
+    describe("Scenario 4: MuTag is removed", (): void => {
+        // Given that a MuTag is added to the current account
 
         //const belonging01BatteryLevel = new Percent(43);
         const belonging02BatteryLevel = new Percent(36);
@@ -394,7 +394,7 @@ describe("Mu tag battery levels update", (): void => {
             Promise.resolve(batteryLevelUpdate)
         );
 
-        // When the Mu tag is added to the current account
+        // When the MuTag is added to the current account
         //
         beforeAll(
             async (): Promise<void> => {
@@ -413,7 +413,7 @@ describe("Mu tag battery levels update", (): void => {
         // Then
         //
         it(
-            "should read and update the Mu tag battery level every 12 hours",
+            "should read and update the MuTag battery level every 12 hours",
             fakeSchedulers(async advance => {
                 expect.assertions(1);
                 const promise = newBelonging.batteryLevel

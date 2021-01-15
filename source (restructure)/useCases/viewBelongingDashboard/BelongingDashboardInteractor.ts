@@ -11,7 +11,7 @@ import Logger from "../../shared/metaLanguage/Logger";
 import LifecycleObservable from "../../shared/metaLanguage/LifecycleObservable";
 
 export interface DashboardBelonging {
-    readonly address?: string;
+    readonly address: string | undefined;
     readonly batteryLevel: Percent;
     readonly isSafe: boolean;
     readonly lastSeen: Date;
@@ -122,7 +122,7 @@ export class BelongingDashboardInteractorImpl
                         this.updateDashboardOnBatteryLevelChange(muTag);
                         this.updateDashboardOnSafetyStatusChange(muTag);
                     } catch (e) {
-                        this.logger.error(e, true);
+                        this.logger.error(e, true, true);
                     }
                 }
 
@@ -173,6 +173,7 @@ export class BelongingDashboardInteractorImpl
             this.logger.warn(e, true);
         }
         return {
+            address: undefined,
             batteryLevel: batteryLevel,
             uid: muTag.uid,
             name: muTag.name,
