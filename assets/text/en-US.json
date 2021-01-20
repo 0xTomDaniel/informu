@@ -44,7 +44,7 @@
         }
     },
     "SignOut": {
-        "Error": {
+        "BannerMessage": {
             "SignOutFailed": "Failed to sign out. Please try again."
         }
     },
