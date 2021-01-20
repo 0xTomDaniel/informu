@@ -35,14 +35,14 @@ export default class BelongingsLocationInteractor
             //notificationIconLarge: string,
             //notificationIconSmall: string,
             notificationTitle: this.localize.getText(
-                "belongingsLocation",
-                "foregroundServiceNotification",
-                "title"
+                "BelongingsLocation",
+                "ForegroundServiceNotification",
+                "Title"
             ),
             notificationText: this.localize.getText(
-                "belongingsLocation",
-                "foregroundServiceNotification",
-                "description"
+                "BelongingsLocation",
+                "ForegroundServiceNotification",
+                "Description"
             ),
             stopOnTerminate: false,
             startForeground: true,
