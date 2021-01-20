@@ -1,29 +1,35 @@
 import * as D from "io-ts/lib/Decoder";
 
 export const AddMuTagTextDecoder = D.type({
-    instructions: D.type({
-        list1: D.string,
-        list2: D.string,
-        info: D.string,
-        buttonContinue: D.string
+    Instructions: D.type({
+        List1: D.string,
+        List2: D.string,
+        Info: D.string,
+        ButtonContinue: D.string
     }),
-    naming: D.type({
-        askNameTitle: D.string,
-        nameInputLabel: D.string,
-        buttonAdd: D.string,
-        buttonAdding: D.string
+    Naming: D.type({
+        AskNameTitle: D.string,
+        NameInputLabel: D.string,
+        ButtonSave: D.string,
+        ButtonSaving: D.string,
+        ButtonTryAgain: D.string
     }),
-    adding: D.type({
-        connecting: D.string,
-        info: D.string,
-        buttonCancel: D.string
+    Adding: D.type({
+        Searching: D.string,
+        SettingUp: D.string,
+        ButtonCancel: D.string,
+        ButtonTryAgain: D.string
     }),
-    error: D.type({
-        lowMuTagBattery: D.string,
-        newMuTagNotFound: D.string,
-        failedToAddMuTag: D.string
+    BannerMessage: D.type({
+        FailedToAddMuTag: D.string,
+        FailedToNameMuTag: D.string,
+        LowMuTagBattery: D.string,
+        NewMuTagNotFound: D.string
     }),
-    warning: D.type({
-        failedToSaveSettings: D.string
+    SnackbarMessage: D.type({
+        FailedToSaveSettings: D.string
+    }),
+    SnackbarButton: D.type({
+        Dismiss: D.string
     })
 });

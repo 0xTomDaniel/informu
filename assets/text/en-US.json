@@ -1,81 +1,90 @@
 {
-    "addMuTag": {
-        "instructions": {
-            "list1": "Keep the MuTag close to the app during this setup.",
-            "list2": "Press the MuTag button now to wake it up.",
-            "info": "Once the dot on the MuTag logo starts flashing green, press 'Continue' below.",
-            "buttonContinue": "Continue"
+    "AddMuTag": {
+        "Instructions": {
+            "List1": "Keep the MuTag close to the app during this setup.",
+            "List2": "Press the MuTag button now to wake it up.",
+            "Info": "Once the dot on the MuTag logo starts flashing green, press 'Continue' below.",
+            "ButtonContinue": "Continue"
         },
-        "naming": {
-            "askNameTitle": "What is the name of this MuTag?",
-            "nameInputLabel": "Attached to",
-            "buttonAdd": "Add",
-            "buttonAdding": "Adding"
+        "Naming": {
+            "AskNameTitle": "What is the name of this MuTag?",
+            "NameInputLabel": "Attached to",
+            "ButtonSave": "Save",
+            "ButtonSaving": "Saving",
+            "ButtonTryAgain": "Try again"
         },
-        "adding": {
-            "connecting": "Connecting to MuTag...",
-            "info": "If nothing seems to be happening, then press the MuTag button to ensure it's awake.",
-            "buttonCancel": "Cancel"
+        "Adding": {
+            "Searching": "Searching for new MuTag...",
+            "SettingUp": "Setting up new MuTag...",
+            "ButtonCancel": "Cancel",
+            "ButtonTryAgain": "Try again"
         },
-        "error": {
-            "lowMuTagBattery": "Unable to add MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.",
-            "newMuTagNotFound": "Could not find a new MuTag. Be sure the MuTag light is flashing and keep it close to the app.",
-            "failedToAddMuTag": "There was problem adding the MuTag. Please keep MuTag close to the app and try again."
+        "BannerMessage": {
+            "FailedToAddMuTag": "There was problem adding the MuTag. Please keep MuTag close to the app and try again.",
+            "FailedToNameMuTag": "There was problem naming the MuTag. Please try again.",
+            "LowMuTagBattery": "Unable to add MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.",
+            "NewMuTagNotFound": "Could not find a new MuTag. Be sure the MuTag light is flashing and keep it close to the app."
         },
-        "warning": {
-            "failedToSaveSettings": "Your MuTag added successfully but some settings failed to save."
+        "SnackbarMessage": {
+            "FailedToSaveSettings": "Your MuTag added successfully but some settings failed to save."
+        },
+        "SnackbarButton": {
+            "Dismiss": "Dismiss"
         }
     },
-    "removeMuTag": {
-        "error": {
-            "lowMuTagBattery": "Unable to remove MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.",
-            "failedToConnectToMuTag": "Could not connect to MuTag. Please ensure that MuTag is charged and move it closer to the app.",
-            "muTagCommunicationFailure": "There was a problem communicating with the MuTag. Please move MuTag closer to the app.",
-            "failedToRemoveMuTagFromAccount": "The MuTag device successfully reset and disconnected from your account, but there was a problem removing the MuTag from the app. Please notify support@informu.io."
+    "RemoveMuTag": {
+        "Error": {
+            "LowMuTagBattery": "Unable to remove MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.",
+            "FailedToConnectToMuTag": "Could not connect to MuTag. Please ensure that MuTag is charged and move it closer to the app.",
+            "MuTagCommunicationFailure": "There was a problem communicating with the MuTag. Please move MuTag closer to the app.",
+            "FailedToRemoveMuTagFromAccount": "The MuTag device successfully reset and disconnected from your account, but there was a problem removing the MuTag from the app. Please notify support@informu.io."
         }
     },
-    "signOut": {
-        "error": {
-            "signOutFailed": "Failed to sign out. Please try again."
+    "SignOut": {
+        "Error": {
+            "SignOutFailed": "Failed to sign out. Please try again."
         }
     },
-    "belongingsLocation": {
-        "foregroundServiceNotification": {
-            "title": "MuTag Tracking",
-            "description": "Keeping MuTag location up-to-date."
+    "BelongingsLocation": {
+        "ForegroundServiceNotification": {
+            "Title": "MuTag Tracking",
+            "Description": "Keeping MuTag location up-to-date."
         }
     },
-    "viewBelongingDashboard": {
-        "belongingCard": {
-            "noAddressName": "no location name found",
-            "buttonRemove": "Remove"
+    "ViewBelongingDashboard": {
+        "BelongingCard": {
+            "NoAddressName": "no location name found",
+            "ButtonRemove": "Remove"
         },
-        "lastSeen": {
-            "daysAgo": "d ago",
-            "hoursAgo": "h ago",
-            "minutesAgo": "m ago",
-            "secondsAgo": "Seconds ago",
-            "justNow": "Just now"
+        "LastSeen": {
+            "DaysAgo": "d ago",
+            "HoursAgo": "h ago",
+            "MinutesAgo": "m ago",
+            "SecondsAgo": "Seconds ago",
+            "JustNow": "Just now"
         },
-        "locationPermissionRequest": {
-            "title": "MuTags Require 'Coarse Location' Permission",
-            "message": "Please select 'Allow'. This is required for your MuTags to have accurate and up-to-date locations.",
-            "buttonDeny": "Deny",
-            "buttonAllow": "Allow"
+        "LocationPermissionRequest": {
+            "Title": "MuTags Require 'Coarse Location' Permission",
+            "Message": "Please select 'Allow'. This is required for your MuTags to have accurate and up-to-date locations.",
+            "ButtonDeny": "Deny",
+            "ButtonAllow": "Allow"
         },
-        "signOutDialog": {
-            "message": "Are you sure you want to sign out?",
-            "buttonCancel": "Cancel",
-            "buttonSignOut": "Sign Out"
+        "SignOutDialog": {
+            "Message": "Are you sure you want to sign out?",
+            "ButtonCancel": "Cancel",
+            "ButtonSignOut": "Sign Out"
         },
-        "dashboard": {
-            "noMuTagMessage": "Add your first MuTag to get started."
+        "Dashboard": {
+            "NoMuTagMessage": "Add your first MuTag to get started."
+        },
+        "SnackbarButton": {
+            "Dismiss": "Dismiss"
         }
     },
-    "tabBar": {
-        "screen": {
-            "home": "Home",
-            "map": "Map"
+    "TabBar": {
+        "Screen": {
+            "Home": "Home",
+            "Map": "Map"
         }
     }
 }

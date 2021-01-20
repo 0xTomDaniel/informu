@@ -303,7 +303,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 onDismiss={() => {}}
                 action={{
-                    label: "Dismiss",
+                    label: ,
                     onPress: () => props.viewModel.hideLowPriorityMessage()
                 }}
             >

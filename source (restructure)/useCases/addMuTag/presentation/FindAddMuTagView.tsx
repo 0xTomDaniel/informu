@@ -1,4 +1,9 @@
-import { Button, Headline, ActivityIndicator, Text } from "react-native-paper";
+import {
+    Button,
+    Headline,
+    ActivityIndicator,
+    Banner
+} from "react-native-paper";
 import { StyleSheet, Platform, StatusBar, View } from "react-native";
 import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { SafeAreaView, NavigationScreenProps } from "react-navigation";
@@ -13,6 +18,7 @@ import { Scale } from "../../../../source/Primary Adapters/Presentation/Responsi
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import AddMuTagViewModel, { MediumPriorityMessage } from "./AddMuTagViewModel";
 import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
+import Localize from "../../../shared/localization/Localize";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -47,14 +53,14 @@ const styles = StyleSheet.create({
         marginTop: 4,
         marginBottom: 12
     },
-    instructionsIconCol: {
+    /*instructionsIconCol: {
         flex: 1,
         textAlign: "center"
     },
     instructionsIcon: {
         fontSize: Scale(40),
         color: Theme.Color.PrimaryBlue
-    },
+    },*/
     instructionsTextCol: {
         flex: 6,
         marginHorizontal: 12
@@ -74,17 +80,21 @@ const styles = StyleSheet.create({
     }
 });
 
+type BannerActions = Array<{ label: string; onPress: () => void }>;
+
 interface FindAddMuTagViewProps extends NavigationScreenProps {
+    localize: Localize;
     viewModel: AddMuTagViewModel;
 }
 
 const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
     props
 ): ReactElement => {
-    const [mediumPriorityMessage, setMediumPriorityMessage] = useState<
+    const [bannerActions, setBannerActions] = useState<BannerActions>([]);
+    const [bannerMessage, setBannerMessage] = useState<
         MediumPriorityMessage | undefined
     >(props.viewModel.mediumPriorityMessageValue);
-    const [progressIndicator, setShowActivity] = useState<
+    const [progressIndicator, setProgressIndicator] = useState<
         ProgressIndicatorState
     >(props.viewModel.progressIndicatorValue);
     const [showCancel, setShowCancel] = useState<boolean>(
@@ -99,7 +109,7 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
 
     useEffect(() => {
         const subscription = props.viewModel.progressIndicator.subscribe(
-            setShowActivity
+            setProgressIndicator
         );
         return () => subscription.unsubscribe();
     }, [props.viewModel.progressIndicator]);
@@ -120,7 +130,7 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
 
     useEffect(() => {
         const subscription = props.viewModel.mediumPriorityMessage.subscribe(
-            setMediumPriorityMessage
+            setBannerMessage
         );
         return () => subscription.unsubscribe();
     }, [props.viewModel.mediumPriorityMessage]);
@@ -134,15 +144,63 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
         props.viewModel.startAddingMuTag();
     }, [props.viewModel]);
 
+    useEffect(() => {
+        const actions: BannerActions = [];
+        if (showCancel) {
+            actions.push({
+                label: props.localize.getText(
+                    "AddMuTag",
+                    "Adding",
+                    "ButtonCancel"
+                ),
+                onPress: () => props.viewModel.cancel()
+            });
+        }
+        if (showRetry) {
+            actions.push({
+                label: props.localize.getText(
+                    "AddMuTag",
+                    "Adding",
+                    "ButtonTryAgain"
+                ),
+                onPress: () => props.viewModel.startAddingMuTag(true)
+            });
+        }
+        setBannerActions(actions);
+    }, [props.localize, props.viewModel, showCancel, showRetry]);
+
     return (
         <SafeAreaView style={[styles.safeAreaView, styles.base]}>
+            <Banner
+                visible={bannerMessage != null}
+                actions={bannerActions}
+                icon={({ size }) => (
+                    <Icon name="alert-circle" style={{ fontSize: size }} />
+                )}
+            >
+                {bannerMessage != null
+                    ? props.localize.getText(
+                          "AddMuTag",
+                          "BannerMessage",
+                          bannerMessage
+                      )
+                    : ""}
+            </Banner>
             <View style={styles.mainContainer}>
-                {progressIndicator ? (
+                {progressIndicator === "Indeterminate" ? (
                     <View>
                         <Headline style={styles.headline}>
                             {showCancel
-                                ? "Searching for new MuTag..."
-                                : "Setting up new MuTag..."}
+                                ? props.localize.getText(
+                                      "AddMuTag",
+                                      "Adding",
+                                      "Searching"
+                                  )
+                                : props.localize.getText(
+                                      "AddMuTag",
+                                      "Adding",
+                                      "SettingUp"
+                                  )}
                         </Headline>
                         <ActivityIndicator
                             animating={true}
@@ -151,7 +209,7 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
                         />
                     </View>
                 ) : null}
-                {mediumPriorityMessage == null ? null : (
+                {/*bannerMessage == null ? null : (
                     <View style={styles.instructionsRow}>
                         <Icon
                             name="alert-circle"
@@ -166,10 +224,10 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
                                 styles.instructionsText
                             ]}
                         >
-                            {mediumPriorityMessage}
+                            {bannerMessage}
                         </Text>
                     </View>
-                )}
+                )*/}
             </View>
             <View style={styles.buttonContainer}>
                 <Button
@@ -179,18 +237,26 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
                     disabled={!showCancel}
                     loading={showCancelActivity}
                 >
-                    Cancel
+                    {props.localize.getText(
+                        "AddMuTag",
+                        "Adding",
+                        "ButtonCancel"
+                    )}
                 </Button>
-                {showRetry ? (
+                {/*showRetry ? (
                     <Button
                         mode="contained"
                         onPress={() => props.viewModel.startAddingMuTag(true)}
                         style={styles.button}
                         disabled={progressIndicator != null}
                     >
-                        Try again
+                        {props.localize.getText(
+                            "AddMuTag",
+                            "Adding",
+                            "ButtonTryAgain"
+                        )}
                     </Button>
-                ) : null}
+                ) : null*/}
             </View>
         </SafeAreaView>
     );

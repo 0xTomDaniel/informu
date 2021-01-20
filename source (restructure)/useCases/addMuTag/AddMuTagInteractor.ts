@@ -98,42 +98,6 @@ export class AddMuTagInteractorException<
     }
 }
 
-/*export const LowMuTagBattery = (
-    lowBatteryThreshold: number
-): UserErrorType => ({
-    name: "LowMuTagBattery",
-    userFriendlyMessage: `Unable to add MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.`
-});
-
-export const NewMuTagNotFound: UserErrorType = {
-    name: "NewMuTagNotFound",
-    userFriendlyMessage:
-        "Could not find a new MuTag. Be sure the MuTag light is flashing and keep it close to the app."
-};
-
-export const FailedToAddMuTag: UserErrorType = {
-    name: "FailedToAddMuTag",
-    userFriendlyMessage:
-        "There was problem adding the MuTag. Please keep MuTag close to the app and try again."
-};
-
-export const FailedToNameMuTag: UserErrorType = {
-    name: "FailedToNameMuTag",
-    userFriendlyMessage:
-        "There was problem naming the MuTag. Please try again."
-};
-
-export const FailedToSaveSettings: UserWarningType = {
-    name: "FailedToSaveSettings",
-    userFriendlyMessage:
-        "Your MuTag added successfully but some settings failed to save."
-};
-
-export const FindNewMuTagCanceled: UserErrorType = {
-    name: "FindNewMuTagCanceled",
-    userFriendlyMessage: "Finding new MuTag has been canceled."
-};*/
-
 export default interface AddMuTagInteractor {
     addFoundMuTag(): Promise<void>;
     findNewMuTag(): Promise<void>;

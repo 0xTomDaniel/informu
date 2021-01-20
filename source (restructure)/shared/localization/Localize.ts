@@ -20,18 +20,18 @@ export enum LanguageTag {
 // Cannot import TabBarTextDecoder from App.ts because Jest throws a weird
 // error, "Cannot find module 'warnOnce'".
 const TabBarTextDecoder = D.type({
-    screen: D.type({
-        home: D.string,
-        map: D.string
+    Screen: D.type({
+        Home: D.string,
+        Map: D.string
     })
 });
 const LocalizedTextDecoder = D.type({
-    addMuTag: AddMuTagTextDecoder,
-    removeMuTag: RemoveMuTagTextDecoder,
-    signOut: SignOutTextDecoder,
-    belongingsLocation: BelongingsLocationTextDecoder,
-    viewBelongingDashboard: ViewBelongingDashboardTextDecoder,
-    tabBar: TabBarTextDecoder
+    AddMuTag: AddMuTagTextDecoder,
+    RemoveMuTag: RemoveMuTagTextDecoder,
+    SignOut: SignOutTextDecoder,
+    BelongingsLocation: BelongingsLocationTextDecoder,
+    ViewBelongingDashboard: ViewBelongingDashboardTextDecoder,
+    TabBar: TabBarTextDecoder
 });
 type LocalizedText = D.TypeOf<typeof LocalizedTextDecoder>;
 export type RnLocalize = typeof ReactNativeLocalize;
