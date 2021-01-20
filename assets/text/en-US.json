@@ -23,7 +23,7 @@
             "FailedToAddMuTag": "There was problem adding the MuTag. Please keep MuTag close to the app and try again.",
             "FailedToNameMuTag": "There was problem naming the MuTag. Please try again.",
             "LowMuTagBattery": "Unable to add MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.",
-            "NewMuTagNotFound": "Could not find a new MuTag. Be sure the MuTag light is flashing and keep it close to the app."
+            "NewMuTagNotFound": "New MuTag not found. Be sure the MuTag light is flashing and keep it close to the app."
         },
         "SnackbarMessage": {
             "FailedToSaveSettings": "Your MuTag added successfully but some settings failed to save."
@@ -33,11 +33,14 @@
         }
     },
     "RemoveMuTag": {
-        "Error": {
-            "LowMuTagBattery": "Unable to remove MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.",
-            "FailedToConnectToMuTag": "Could not connect to MuTag. Please ensure that MuTag is charged and move it closer to the app.",
-            "MuTagCommunicationFailure": "There was a problem communicating with the MuTag. Please move MuTag closer to the app.",
-            "FailedToRemoveMuTagFromAccount": "The MuTag device successfully reset and disconnected from your account, but there was a problem removing the MuTag from the app. Please notify support@informu.io."
+        "BannerMessage": {
+            "FailedToRemoveMuTag": "There was problem removing the MuTag. Please keep MuTag close to the app and try again.",
+            "FailedToRemoveMuTagFromAccount": "The MuTag device reset successfully, but could not be removed from the app. Please notify support@informu.io.",
+            "FailedToResetMuTag": "Failed to reset MuTag device. Please try again."
+        },
+        "SnackbarMessage": {
+            "FailedToFindMuTag": "MuTag not found. Please ensure that MuTag is charged and move it closer to the app.",
+            "LowMuTagBattery": "Unable to remove MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again."
         }
     },
     "SignOut": {

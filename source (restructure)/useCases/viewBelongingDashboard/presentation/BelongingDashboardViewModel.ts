@@ -21,6 +21,7 @@ import RemoveMuTagInteractor, {
 import { isEqual } from "lodash";
 import ViewModel from "../../../shared/viewModel/ViewModel";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
+import assertUnreachable from "../../../shared/metaLanguage/assertUnreachable";
 
 export type BatteryBarLevel =
     | "0%"
@@ -129,15 +130,19 @@ export default class BelongingDashboardViewModel extends ViewModel<
             .finally(() => this.hideProgressIndicator())
             .catch(e => {
                 if (RemoveMuTagInteractorException.isType(e)) {
-                    switch (e.type) {
+                    const type = e.type;
+                    switch (type) {
                         case "FailedToFindMuTag":
                         case "LowMuTagBattery":
-                            this.showLowPriorityMessage(e.type, 4);
+                            this.showLowPriorityMessage(type, 4);
                             break;
+                        case "FailedToRemoveMuTag":
                         case "FailedToRemoveMuTagFromAccount":
                         case "FailedToResetMuTag":
-                            this.showMediumPriorityMessage(e.type);
+                            this.showMediumPriorityMessage(type);
                             break;
+                        default:
+                            assertUnreachable(type);
                     }
                 } else {
                     throw e;
@@ -170,6 +175,7 @@ export default class BelongingDashboardViewModel extends ViewModel<
         "LowMuTagBattery"
     ] as const;
     static readonly mediumPriorityMessages = [
+        "FailedToRemoveMuTag",
         "FailedToRemoveMuTagFromAccount",
         "FailedToResetMuTag",
         "SignOutFailed"
