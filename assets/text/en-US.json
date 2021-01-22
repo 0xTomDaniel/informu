@@ -75,12 +75,14 @@
             "NoAddressName": "no location name found",
             "ButtonRemove": "Remove"
         },
-        "LastSeen": {
-            "DaysAgo": "d ago",
-            "HoursAgo": "h ago",
-            "MinutesAgo": "m ago",
-            "SecondsAgo": "Seconds ago",
-            "JustNow": "Just now"
+        "LastSeenInterval": {
+            "Day": "d ago",
+            "Hour": "h ago",
+            "Minute": "m ago"
+        },
+        "LastSeenRecent": {
+            "Now": "Just now",
+            "Seconds": "Seconds ago"
         },
         "LocationPermissionRequest": {
             "Title": "MuTags Require 'Coarse Location' Permission",

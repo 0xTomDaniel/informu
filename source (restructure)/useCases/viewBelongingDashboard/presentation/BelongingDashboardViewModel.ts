@@ -8,7 +8,8 @@ import {
     publishBehavior,
     refCount,
     distinctUntilChanged,
-    share
+    share,
+    tap
 } from "rxjs/operators";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { Millisecond } from "../../../shared/metaLanguage/Types";
@@ -80,6 +81,9 @@ export default class BelongingDashboardViewModel extends ViewModel<
     MediumPriorityMessage
 > {
     readonly showBelongings: Observable<BelongingViewData[]>;
+    get showBelongingsValue(): BelongingViewData[] {
+        return this._showBelongings.value;
+    }
     //readonly showDashboardLoading: Observable<boolean>;
     readonly showEmptyDashboard: Observable<boolean>;
     get showEmptyDashboardValue(): boolean {
@@ -102,7 +106,8 @@ export default class BelongingDashboardViewModel extends ViewModel<
             share()
         );
         this.removeMuTagInteractor = removeMuTagInteractor;
-        this.showBelongings = combineLatest(
+        this.showBelongings = this._showBelongings.asObservable();
+        combineLatest(
             this.dashboardBelongings,
             timer(0, This.lastSeenDisplayUpdateInterval)
         ).pipe(
@@ -114,7 +119,7 @@ export default class BelongingDashboardViewModel extends ViewModel<
                 )
             ),
             distinctUntilChanged(isEqual)
-        );
+        ).subscribe(this._showBelongings);
         this.showEmptyDashboard = this._showEmptyDashboard.asObservable();
         this.dashboardBelongings
             .pipe(
@@ -181,6 +186,7 @@ export default class BelongingDashboardViewModel extends ViewModel<
     private readonly belongingDashboardInteractor: BelongingDashboardInteractor;
     private readonly dashboardBelongings: Observable<DashboardBelonging[]>;
     private readonly removeMuTagInteractor: RemoveMuTagInteractor;
+    private readonly _showBelongings = new BehaviorSubject<BelongingViewData[]>([]);
     private readonly _showEmptyDashboard = new BehaviorSubject<boolean>(true);
     private readonly signOutInteractor: SignOutInteractor;
 

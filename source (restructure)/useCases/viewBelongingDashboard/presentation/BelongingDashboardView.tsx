@@ -184,7 +184,9 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     const [bannerMessage, setBannerMessage] = useState<
         MediumPriorityMessage | undefined
     >(props.viewModel.mediumPriorityMessageValue);
-    const [belongings, setBelongings] = useState<BelongingViewData[]>();
+    const [belongings, setBelongings] = useState<BelongingViewData[]>(
+        props.viewModel.showBelongingsValue
+    );
     const [dialogMessage, setDialogMessage] = useState<HighPriorityMessage>();
     const [progressIndicator, setProgressIndicator] = useState<
         ProgressIndicatorState

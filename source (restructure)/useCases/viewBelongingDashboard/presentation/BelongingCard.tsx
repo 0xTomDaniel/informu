@@ -137,6 +137,23 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
         setSafeStatusColor(convertToSafeStatusColor(props.viewData.safeStatus));
     }, [props.viewData.safeStatus]);
 
+    const getLastSeenText = (): string => {
+        const lastSeen = props.viewData.lastSeen
+        switch (lastSeen.type) {
+            case "Date":
+                return lastSeen.date.toLocaleDateString()
+            case "Interval":
+                return `${lastSeen.count}${props.localize.getText("ViewBelongingDashboard", "LastSeenInterval", lastSeen.unit)}`
+            case "Recent":
+                return props.localize.getText("ViewBelongingDashboard", "LastSeenRecent", lastSeen.state)
+        }
+    }
+
+    const onRemove = () => {
+        hideMenu();
+        props.onRemoveMuTag(props.viewData.uid);
+    }
+
     return (
         <Card elevation={0} style={styles.card}>
             <View style={styles.cardHeader}>
@@ -156,7 +173,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                             size={10}
                             color={safeStatusColor}
                         />
-                        {` ${props.viewData.lastSeen}`}
+                        {` ${getLastSeenText()}`}
                     </Text>
                 }
                 left={(leftProps: any): ReactElement => (
@@ -188,9 +205,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                                 "ButtonRemove"
                             )}
                             icon="minus-circle-outline"
-                            onPress={() =>
-                                props.onRemoveMuTag(props.viewData.uid)
-                            }
+                            onPress={onRemove}
                         />
                     </Menu>
                 )}
@@ -207,7 +222,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         style={styles.cardAddressIcon}
                     />
                     <Text style={styles.cardAddressText}>
-                        {props.viewData.address}
+                        {props.viewData.address ?? props.localize.getText("ViewBelongingDashboard", "BelongingCard", "NoAddressName")}
                     </Text>
                 </View>
             </Card.Content>

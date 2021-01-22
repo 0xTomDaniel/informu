@@ -5,12 +5,14 @@ export const ViewBelongingDashboardTextDecoder = D.type({
         NoAddressName: D.string,
         ButtonRemove: D.string
     }),
-    LastSeen: D.type({
-        DaysAgo: D.string,
-        HoursAgo: D.string,
-        MinutesAgo: D.string,
-        SecondsAgo: D.string,
-        JustNow: D.string
+    LastSeenInterval: D.type({
+        Day: D.string,
+        Hour: D.string,
+        Minute: D.string
+    }),
+    LastSeenRecent: D.type({
+        Now: D.string,
+        Seconds: D.string
     }),
     LocationPermissionRequest: D.type({
         Title: D.string,
