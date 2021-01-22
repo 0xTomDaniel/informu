@@ -84,7 +84,8 @@ import MuTagBatteriesInteractor, {
 import BackgroundTask from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundTask";
 import BackgroundFetchProxyImpl from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundFetchProxy";
 import Localize from "./source (restructure)/shared/localization/Localize";
-const localize = Localize.instance;
+import ReactNativeLocalize from "react-native-localize";
+Localize.createInstance(ReactNativeLocalize);
 import { Platform, BackHandler } from "react-native";
 import BluetoothAndroidDecorator from "./source (restructure)/shared/bluetooth/BluetoothAndroidDecorator";
 import ReactNativeBlePlxAdapter from "./source (restructure)/shared/bluetooth/ReactNativeBlePlxAdapter";
@@ -467,12 +468,14 @@ assertNotNullOrUndefined(geocodingApiKey);
 const mapboxAccessToken = process.env.MAPBOX_ACCESS_TOKEN;
 assertNotNullOrUndefined(mapboxAccessToken);
 const dependencies = new Dependencies(webClientId, geocodingApiKey);
+const localize = Localize.instance;
 
 const HomeStack = createStackNavigator(
     {
         [navigationAdapter.routes.Home]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <BelongingDashboardView
+                    localize={localize}
                     viewModel={dependencies.belongingDashboardViewModel}
                     {...props}
                 />
@@ -481,6 +484,7 @@ const HomeStack = createStackNavigator(
         [navigationAdapter.routes.AddMuTagIntro]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <AddMuTagIntroView
+                    localize={localize}
                     viewModel={dependencies.addMuTagViewModel}
                     {...props}
                 />
@@ -489,6 +493,7 @@ const HomeStack = createStackNavigator(
         [navigationAdapter.routes.FindAddMuTag]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <FindAddMuTagView
+                    localize={localize}
                     viewModel={dependencies.addMuTagViewModel}
                     {...props}
                 />
@@ -497,6 +502,7 @@ const HomeStack = createStackNavigator(
         [navigationAdapter.routes.NameMuTag]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <NameMuTagView
+                    localize={localize}
                     viewModel={dependencies.addMuTagViewModel}
                     {...props}
                 />
@@ -591,15 +597,15 @@ const MapStack = createStackNavigator(
 
 const AppStack = createMaterialBottomTabNavigator(
     {
-        [localize.getText("tabBar", "screen", "home")]: { screen: HomeStack },
-        [localize.getText("tabBar", "screen", "map")]: { screen: MapStack }
+        [localize.getText("TabBar", "Screen", "Home")]: { screen: HomeStack },
+        [localize.getText("TabBar", "Screen", "Map")]: { screen: MapStack }
         //Debug: { screen: DebugStack }
     },
     {
         defaultNavigationOptions: {
             header: null
         },
-        initialRouteName: localize.getText("tabBar", "screen", "home"),
+        initialRouteName: localize.getText("TabBar", "Screen", "Home"),
         activeColor: Theme.Color.PrimaryBlue,
         shifting: true,
         barStyle: { backgroundColor: "white" }

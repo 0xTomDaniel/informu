@@ -10,8 +10,6 @@ export interface BelongingFeatureProperties {
 }
 
 export default class BelongingMapViewModel {
-    private readonly belongingMapInteractor: BelongingMapInteractor;
-    private features: Feature<Point, BelongingFeatureProperties>[] = [];
     readonly showBelongingMarkers: Observable<
         FeatureCollection<Point, BelongingFeatureProperties>
     >;
@@ -69,6 +67,9 @@ export default class BelongingMapViewModel {
             }, this)
         );
     }
+
+    private readonly belongingMapInteractor: BelongingMapInteractor;
+    private features: Feature<Point, BelongingFeatureProperties>[] = [];
 
     private addRandomOffset(coordinate: number): number {
         const randomOffset = Math.round(Math.random() * 100 - 50) / 1000000;
