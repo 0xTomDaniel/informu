@@ -128,7 +128,7 @@ export default class BelongingDashboardViewModel extends ViewModel<
     }
 
     addMuTag(): void {
-        this.navigation.navigateTo("AddMuTag");
+        this.navigation.navigateTo("AddMuTagIntro");
     }
 
     async confirmSignOut(): Promise<void> {
@@ -195,7 +195,7 @@ export default class BelongingDashboardViewModel extends ViewModel<
         "FailedToResetMuTag",
         "SignOutFailed"
     ] as const;
-    static readonly routes = ["AddMuTag", "SignIn"] as const;
+    static readonly routes = ["AddMuTagIntro", "SignIn"] as const;
 
     private static readonly hoursInDay = 24;
     private static readonly lastSeenDisplayUpdateInterval = 15000 as Millisecond;

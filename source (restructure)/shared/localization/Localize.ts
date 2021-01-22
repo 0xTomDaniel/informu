@@ -54,9 +54,9 @@ export default class Localize {
         this._instance = new this(rnLocalize);
     }
 
-    private languageTag: LanguageTag;
+    private readonly languageTag: LanguageTag;
     private localizedText: LocalizedText | undefined;
-    private rnLocalize: RnLocalize;
+    private readonly rnLocalize: RnLocalize;
 
     private constructor(rnLocalize: RnLocalize) {
         this.rnLocalize = rnLocalize;
