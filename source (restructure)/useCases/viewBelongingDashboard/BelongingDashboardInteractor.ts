@@ -24,13 +24,30 @@ export type DashboardBelongingDelta = Partial<DashboardBelonging> & {
 };
 
 export default interface BelongingDashboardInteractor {
-    readonly showOnDashboard: Observable<
+    readonly dashboardBelongings: Observable<
         ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
     >;
 }
 
 export class BelongingDashboardInteractorImpl
     implements BelongingDashboardInteractor {
+    readonly dashboardBelongings: Observable<
+        ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
+    >;
+
+    constructor(
+        muTagRepoLocal: MuTagRepositoryLocal,
+        accountRepoLocal: AccountRepositoryLocal
+    ) {
+        this.muTagRepoLocal = muTagRepoLocal;
+        this.accountRepoLocal = accountRepoLocal;
+        this.dashboardBelongings = LifecycleObservable(
+            this._showOnDashboard,
+            this.start.bind(this),
+            this.stop.bind(this)
+        );
+    }
+
     private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly logger = Logger.instance;
     private readonly muTagAddressSubscription = new Map<string, Subscription>();
@@ -45,22 +62,9 @@ export class BelongingDashboardInteractorImpl
     private readonly muTagIndexCache: string[] = [];
     private readonly muTagRepoLocal: MuTagRepositoryLocal;
     private muTagsChangeSubscription: Subscription | undefined;
-    private readonly showOnDashboardSubject = new Subject<
+    private readonly _showOnDashboard = new Subject<
         ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
     >();
-    readonly showOnDashboard = LifecycleObservable(
-        this.showOnDashboardSubject,
-        this.start.bind(this),
-        this.stop.bind(this)
-    );
-
-    constructor(
-        muTagRepoLocal: MuTagRepositoryLocal,
-        accountRepoLocal: AccountRepositoryLocal
-    ) {
-        this.muTagRepoLocal = muTagRepoLocal;
-        this.accountRepoLocal = accountRepoLocal;
-    }
 
     private async start(): Promise<void> {
         const muTags = await this.muTagRepoLocal.getAll();
@@ -70,7 +74,7 @@ export class BelongingDashboardInteractorImpl
             const dashboardBelonging = await this.toDashboardBelonging(muTag);
             belongings.push(dashboardBelonging);
         }
-        this.showOnDashboardSubject.next(
+        this._showOnDashboard.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
         await this.subscribeToAccountMuTagChanges();
@@ -108,7 +112,7 @@ export class BelongingDashboardInteractorImpl
                             muTag
                         );
                         const index = this.muTagIndexCache.push(muTag.uid) - 1;
-                        this.showOnDashboardSubject.next(
+                        this._showOnDashboard.next(
                             new ObjectCollectionUpdate({
                                 added: [
                                     {
@@ -137,7 +141,7 @@ export class BelongingDashboardInteractorImpl
                         .get(change.deletion)
                         ?.unsubscribe();
                     const index = this.muTagIndexCache.indexOf(change.deletion);
-                    this.showOnDashboardSubject.next(
+                    this._showOnDashboard.next(
                         new ObjectCollectionUpdate({
                             removed: [
                                 {
@@ -149,17 +153,6 @@ export class BelongingDashboardInteractorImpl
                 }
             }
         );
-    }
-
-    private addressOutput(address: Address | undefined): string | undefined {
-        if (address == null) {
-            return;
-        }
-        const route = address.route.length === 0 ? "" : `${address.route}, `;
-        const locality =
-            address.locality.length === 0 ? "" : `${address.locality}, `;
-        const formattedAddress = `${route}${locality}${address.administrativeAreaLevel1}`;
-        return formattedAddress.length === 0 ? undefined : formattedAddress;
     }
 
     private async toDashboardBelonging(
@@ -185,14 +178,14 @@ export class BelongingDashboardInteractorImpl
     private updateDashboardOnAddressChange(muTag: ProvisionedMuTag): void {
         const subscription = muTag.address.subscribe(addressUpdate => {
             const index = this.muTagIndexCache.indexOf(muTag.uid);
-            this.showOnDashboardSubject.next(
+            this._showOnDashboard.next(
                 new ObjectCollectionUpdate({
                     changed: [
                         {
                             index: index,
                             elementChange: {
                                 uid: muTag.uid,
-                                address: this.addressOutput(addressUpdate)
+                                address: This.addressOutput(addressUpdate)
                             }
                         }
                     ]
@@ -207,7 +200,7 @@ export class BelongingDashboardInteractorImpl
             .pipe(skip(1))
             .subscribe(update => {
                 const index = this.muTagIndexCache.indexOf(muTag.uid);
-                this.showOnDashboardSubject.next(
+                this._showOnDashboard.next(
                     new ObjectCollectionUpdate({
                         changed: [
                             {
@@ -229,7 +222,7 @@ export class BelongingDashboardInteractorImpl
             .pipe(skip(1))
             .subscribe((update): void => {
                 const index = this.muTagIndexCache.indexOf(muTag.uid);
-                this.showOnDashboardSubject.next(
+                this._showOnDashboard.next(
                     new ObjectCollectionUpdate({
                         changed: [
                             {
@@ -246,4 +239,19 @@ export class BelongingDashboardInteractorImpl
             });
         this.muTagSafetyStatusSubscription.set(muTag.uid, subscription);
     }
+
+    private static addressOutput(
+        address: Address | undefined
+    ): string | undefined {
+        if (address == null) {
+            return;
+        }
+        const route = address.route.length === 0 ? "" : `${address.route}, `;
+        const locality =
+            address.locality.length === 0 ? "" : `${address.locality}, `;
+        const formattedAddress = `${route}${locality}${address.administrativeAreaLevel1}`;
+        return formattedAddress.length === 0 ? undefined : formattedAddress;
+    }
 }
+
+const This = BelongingDashboardInteractorImpl;

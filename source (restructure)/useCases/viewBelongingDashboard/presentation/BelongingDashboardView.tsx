@@ -7,7 +7,8 @@ import {
     Dialog,
     Paragraph,
     Button,
-    Snackbar
+    Snackbar,
+    Banner
 } from "react-native-paper";
 import {
     StyleSheet,
@@ -15,10 +16,15 @@ import {
     StatusBar,
     PermissionsAndroid,
     View,
-    FlatList
+    FlatList,
+    ListRenderItem
 } from "react-native";
 import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
-import { SafeAreaView, NavigationScreenProps } from "react-navigation";
+import {
+    SafeAreaView,
+    NavigationScreenProps,
+    ScreenProps
+} from "react-navigation";
 import React, {
     ReactElement,
     FunctionComponent,
@@ -30,15 +36,14 @@ import LinearGradient from "react-native-linear-gradient";
 import BelongingDashboardViewModel, {
     BelongingViewData,
     MediumPriorityMessage,
-    LowPriorityMessage
+    LowPriorityMessage,
+    HighPriorityMessage
 } from "./BelongingDashboardViewModel";
 import { Images } from "../../../../source/Primary Adapters/Presentation/Images";
-import ErrorDialog from "../../../../source/Primary Adapters/Presentation/Base Components/ErrorDialog";
 import BelongingCard from "./BelongingCard";
-import Localize from "../../../shared/localization/Localize";
 import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
-
-const localize = Localize.instance;
+import Icon from "react-native-vector-icons/MaterialCommunityIcons";
+import Localize from "../../../shared/localization/Localize";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -114,67 +119,86 @@ const styles = StyleSheet.create({
     belongingsEmpty: {
         flex: 1,
         justifyContent: "center"
-    },
-    activityModal: {
+    }
+    /*activityModal: {
         alignSelf: "center",
         width: 80,
         height: 80,
         borderRadius: 40,
         backgroundColor: Theme.Color.AlmostWhite
-    }
+    }*/
 });
 
-const BelongingsEmpty: FunctionComponent = (): ReactElement => {
+interface BelongingsEmptyViewProps extends ScreenProps {
+    isLoading: boolean;
+    localize: Localize;
+}
+
+const BelongingsEmpty: FunctionComponent<BelongingsEmptyViewProps> = (
+    props
+): ReactElement => {
     return (
         <View style={styles.belongingsEmpty}>
-            <View>
-                <View style={styles.triangle} />
-                <LinearGradient
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1.5, y: 0 }}
-                    colors={[
-                        Theme.Color.PrimaryOrange,
-                        Theme.Color.SecondaryOrange
-                    ]}
-                    style={styles.tooltipContent}
-                >
-                    <Text style={styles.tooltipText}>
-                        {localize.getText(
-                            "viewBelongingDashboard",
-                            "dashboard",
-                            "noMuTagMessage"
-                        )}
-                    </Text>
-                </LinearGradient>
-            </View>
+            {props.isLoading ? (
+                <ActivityIndicator
+                    size="large"
+                    color={Theme.Color.PrimaryBlue}
+                />
+            ) : (
+                <View>
+                    <View style={styles.triangle} />
+                    <LinearGradient
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 1.5, y: 0 }}
+                        colors={[
+                            Theme.Color.PrimaryOrange,
+                            Theme.Color.SecondaryOrange
+                        ]}
+                        style={styles.tooltipContent}
+                    >
+                        <Text style={styles.tooltipText}>
+                            {props.localize.getText(
+                                "ViewBelongingDashboard",
+                                "Dashboard",
+                                "NoMuTagMessage"
+                            )}
+                        </Text>
+                    </LinearGradient>
+                </View>
+            )}
             <Images.NoMuTags />
         </View>
     );
 };
 
+type BannerActions = Array<{ label: string; onPress: () => void }>;
+
 interface BelongingDashboardViewProps extends NavigationScreenProps {
+    localize: Localize;
     viewModel: BelongingDashboardViewModel;
 }
 
 const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     props
 ): ReactElement => {
-    const [belongings, setBelongings] = useState<BelongingViewData[]>();
-    const [progressIndicator, setProgressIndicator] = useState<
-        ProgressIndicatorState
-    >(undefined);
     const [bannerMessage, setBannerMessage] = useState<
         MediumPriorityMessage | undefined
     >(props.viewModel.mediumPriorityMessageValue);
-    const [showEmptyDashboard, setShowEmptyDashboard] = useState(true);
-    const [showSignOutDialog, setShowSignOutDialog] = useState(false);
+    const [belongings, setBelongings] = useState<BelongingViewData[]>();
+    const [dialogMessage, setDialogMessage] = useState<HighPriorityMessage>();
+    const [progressIndicator, setProgressIndicator] = useState<
+        ProgressIndicatorState
+    >(props.viewModel.progressIndicatorValue);
     const [snackbarMessage, setSnackbarMessage] = useState<
-        LowPriorityMessage
-    >();
+        LowPriorityMessage | undefined
+    >(props.viewModel.lowPriorityMessageValue);
+    const [showEmptyDashboard, setShowEmptyDashboard] = useState(
+        props.viewModel.showEmptyDashboardValue
+    );
 
-    const onDismissErrorDialog = (): void => {
+    /*const onDismissErrorDialog = (): void => {
         setBannerMessage(undefined);
-    };
+    };*/
 
     const requestPermissions = async (): Promise<void> => {
         const isPermissionGranted = await PermissionsAndroid.check(
@@ -191,26 +215,26 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
         const permissionStatus = await PermissionsAndroid.request(
             PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
             {
-                title: localize.getText(
-                    "viewBelongingDashboard",
-                    "locationPermissionRequest",
-                    "title"
+                title: props.localize.getText(
+                    "ViewBelongingDashboard",
+                    "LocationPermissionRequest",
+                    "Title"
                 ),
-                message: localize.getText(
-                    "viewBelongingDashboard",
-                    "locationPermissionRequest",
-                    "message"
+                message: props.localize.getText(
+                    "ViewBelongingDashboard",
+                    "LocationPermissionRequest",
+                    "Message"
                 ),
                 //buttonNeutral: "Ask Me Later",
-                buttonNegative: localize.getText(
-                    "viewBelongingDashboard",
-                    "locationPermissionRequest",
-                    "buttonDeny"
+                buttonNegative: props.localize.getText(
+                    "ViewBelongingDashboard",
+                    "LocationPermissionRequest",
+                    "ButtonDeny"
                 ),
-                buttonPositive: localize.getText(
-                    "viewBelongingDashboard",
-                    "locationPermissionRequest",
-                    "buttonAllow"
+                buttonPositive: props.localize.getText(
+                    "ViewBelongingDashboard",
+                    "LocationPermissionRequest",
+                    "ButtonAllow"
                 )
             }
         );
@@ -244,6 +268,13 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     }, [props.viewModel.showEmptyDashboard]);
 
     useEffect((): (() => void) => {
+        const subscription = props.viewModel.highPriorityMessage.subscribe(
+            setDialogMessage
+        );
+        return () => subscription.unsubscribe();
+    }, [props.viewModel.highPriorityMessage]);
+
+    useEffect((): (() => void) => {
         const subscription = props.viewModel.mediumPriorityMessage.subscribe(
             setBannerMessage
         );
@@ -260,6 +291,65 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     useEffect(() => {
         requestPermissions().catch(e => console.warn(e));
     }, []);
+
+    const renderItem: ListRenderItem<BelongingViewData> = ({ item }) => (
+        <BelongingCard
+            localize={props.localize}
+            onRemoveMuTag={uid => props.viewModel.removeMuTag(uid)}
+            viewData={item}
+        />
+    );
+
+    const getBannerActions = (): BannerActions => {
+        let buttonLabel: string;
+        switch (bannerMessage) {
+            case "FailedToRemoveMuTag":
+            case "FailedToRemoveMuTagFromAccount":
+            case "FailedToResetMuTag":
+                buttonLabel = props.localize.getText(
+                    "RemoveMuTag",
+                    "BannerButton",
+                    "Dismiss"
+                );
+                break;
+            case "SignOutFailed":
+                buttonLabel = props.localize.getText(
+                    "SignOut",
+                    "BannerButton",
+                    "Dismiss"
+                );
+                break;
+            default:
+                buttonLabel = "";
+        }
+        return [
+            {
+                label: buttonLabel,
+                onPress: () => props.viewModel.hideMediumPriorityMessage()
+            }
+        ];
+    };
+
+    const getBannerMessage = (): string => {
+        switch (bannerMessage) {
+            case "FailedToRemoveMuTag":
+            case "FailedToRemoveMuTagFromAccount":
+            case "FailedToResetMuTag":
+                return props.localize.getText(
+                    "RemoveMuTag",
+                    "BannerMessage",
+                    bannerMessage
+                );
+            case "SignOutFailed":
+                return props.localize.getText(
+                    "SignOut",
+                    "BannerMessage",
+                    "SignOutFailed"
+                );
+            default:
+                return "";
+        }
+    };
 
     return (
         <SafeAreaView style={[styles.safeAreaView, styles.base]}>
@@ -281,20 +371,29 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                     icon="logout"
                     color={Theme.Color.DarkGrey}
                     style={styles.appBarActionSignOut}
-                    onPress={() => setShowSignOutDialog(true)}
+                    onPress={() => props.viewModel.signOut()}
                 />
             </Appbar.Header>
+            <Banner
+                visible={bannerMessage != null}
+                actions={getBannerActions()}
+                icon={({ size }) => (
+                    <Icon name="alert-circle" style={{ fontSize: size }} />
+                )}
+            >
+                {getBannerMessage()}
+            </Banner>
             <FlatList
                 contentContainerStyle={styles.belongingsContainer}
-                ListEmptyComponent={<BelongingsEmpty />}
-                scrollEnabled={!showEmptyDashboard}
-                data={belongings}
-                renderItem={({ item }) => (
-                    <BelongingCard
-                        onRemoveMuTag={uid => props.viewModel.removeMuTag(uid)}
-                        viewData={item}
+                ListEmptyComponent={
+                    <BelongingsEmpty
+                        isLoading={false}
+                        localize={props.localize}
                     />
-                )}
+                }
+                scrollEnabled={!showEmptyDashboard}
+                data={belongings ?? null}
+                renderItem={renderItem}
                 keyExtractor={item => item.uid}
             />
             <Snackbar
@@ -303,42 +402,53 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                 // eslint-disable-next-line @typescript-eslint/no-empty-function
                 onDismiss={() => {}}
                 action={{
-                    label: ,
+                    label: props.localize.getText(
+                        "RemoveMuTag",
+                        "SnackbarButton",
+                        "Dismiss"
+                    ),
                     onPress: () => props.viewModel.hideLowPriorityMessage()
                 }}
             >
-                {snackbarMessage}
+                {snackbarMessage != null
+                    ? props.localize.getText(
+                          "RemoveMuTag",
+                          "SnackbarMessage",
+                          snackbarMessage
+                      )
+                    : undefined}
             </Snackbar>
             <Portal>
                 <Dialog
-                    visible={showSignOutDialog}
-                    onDismiss={() => setShowSignOutDialog(false)}
+                    visible={dialogMessage != null}
+                    onDismiss={() => props.viewModel.hideHighPriorityMessage()}
                 >
                     <Dialog.Content>
                         <Paragraph>
-                            {localize.getText(
-                                "viewBelongingDashboard",
-                                "signOutDialog",
-                                "message"
+                            {props.localize.getText(
+                                "SignOut",
+                                "DialogMessage",
+                                "ConfirmSignOut"
                             )}
                         </Paragraph>
                     </Dialog.Content>
                     <Dialog.Actions>
-                        <Button onPress={() => setShowSignOutDialog(false)}>
-                            {localize.getText(
-                                "viewBelongingDashboard",
-                                "signOutDialog",
-                                "buttonCancel"
+                        <Button
+                            onPress={() =>
+                                props.viewModel.hideHighPriorityMessage
+                            }
+                        >
+                            {props.localize.getText(
+                                "SignOut",
+                                "DialogButton",
+                                "Cancel"
                             )}
                         </Button>
-                        <Button
-                            mode="contained"
-                            onPress={() => props.viewModel.signOut()}
-                        >
-                            {localize.getText(
-                                "viewBelongingDashboard",
-                                "signOutDialog",
-                                "buttonSignOut"
+                        <Button onPress={() => props.viewModel.signOut()}>
+                            {props.localize.getText(
+                                "SignOut",
+                                "DialogButton",
+                                "SignOut"
                             )}
                         </Button>
                     </Dialog.Actions>
@@ -347,8 +457,8 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
             <Portal>
                 <Modal
                     dismissable={false}
-                    visible={progressIndicator === "Indeterminate"}
-                    contentContainerStyle={styles.activityModal}
+                    visible={progressIndicator != null}
+                    //contentContainerStyle={styles.activityModal}
                 >
                     <ActivityIndicator
                         size="large"
@@ -356,12 +466,12 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                     />
                 </Modal>
             </Portal>
-            <ErrorDialog
+            {/*<ErrorDialog
                 message={bannerMessage ?? ""}
                 detailMessage={""}
                 visible={bannerMessage != null}
                 onDismiss={onDismissErrorDialog}
-            />
+            />*/}
         </SafeAreaView>
     );
 };

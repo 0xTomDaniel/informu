@@ -1,7 +1,7 @@
 import BelongingDashboardInteractor, {
     DashboardBelonging
 } from "../BelongingDashboardInteractor";
-import { Observable, combineLatest, timer } from "rxjs";
+import { Observable, combineLatest, timer, BehaviorSubject } from "rxjs";
 import {
     scan,
     map,
@@ -68,18 +68,23 @@ export interface BelongingViewData {
     readonly uid: string;
 }
 
+export type HighPriorityMessage = typeof BelongingDashboardViewModel.highPriorityMessages[number];
 export type LowPriorityMessage = typeof BelongingDashboardViewModel.lowPriorityMessages[number];
 export type MediumPriorityMessage = typeof BelongingDashboardViewModel.mediumPriorityMessages[number];
 type Route = typeof BelongingDashboardViewModel.routes[number];
 
 export default class BelongingDashboardViewModel extends ViewModel<
     Route,
-    undefined,
+    HighPriorityMessage,
     LowPriorityMessage,
     MediumPriorityMessage
 > {
     readonly showBelongings: Observable<BelongingViewData[]>;
+    //readonly showDashboardLoading: Observable<boolean>;
     readonly showEmptyDashboard: Observable<boolean>;
+    get showEmptyDashboardValue(): boolean {
+        return this._showEmptyDashboard.value;
+    }
 
     constructor(
         navigation: NavigationPort<Route>,
@@ -89,7 +94,7 @@ export default class BelongingDashboardViewModel extends ViewModel<
     ) {
         super(navigation);
         this.belongingDashboardInteractor = belongingDashboardInteractor;
-        this.dashboardBelongings = this.belongingDashboardInteractor.showOnDashboard.pipe(
+        this.dashboardBelongings = this.belongingDashboardInteractor.dashboardBelongings.pipe(
             scan(
                 (accumulated, update) => update.applyTo(accumulated),
                 [] as DashboardBelonging[]
@@ -110,17 +115,36 @@ export default class BelongingDashboardViewModel extends ViewModel<
             ),
             distinctUntilChanged(isEqual)
         );
-        this.showEmptyDashboard = this.dashboardBelongings.pipe(
-            map(belongings => belongings.length === 0),
-            distinctUntilChanged(),
-            publishBehavior(true),
-            refCount()
-        );
+        this.showEmptyDashboard = this._showEmptyDashboard.asObservable();
+        this.dashboardBelongings
+            .pipe(
+                map(belongings => belongings.length === 0),
+                distinctUntilChanged(),
+                publishBehavior(true),
+                refCount()
+            )
+            .subscribe(this._showEmptyDashboard);
         this.signOutInteractor = signOutInteractor;
     }
 
     addMuTag(): void {
         this.navigation.navigateTo("AddMuTag");
+    }
+
+    async confirmSignOut(): Promise<void> {
+        this.hideHighPriorityMessage();
+        this.showProgressIndicator("Indeterminate");
+        await this.signOutInteractor
+            .signOut()
+            .finally(() => this.hideProgressIndicator())
+            .then(() => this.navigation.navigateTo("SignIn"))
+            .catch(e => {
+                if (SignOutInteractorException.isType(e)) {
+                    this.showMediumPriorityMessage(e.type);
+                } else {
+                    throw e;
+                }
+            });
     }
 
     async removeMuTag(uid: string): Promise<void> {
@@ -150,26 +174,17 @@ export default class BelongingDashboardViewModel extends ViewModel<
             });
     }
 
-    async signOut(): Promise<void> {
-        this.showProgressIndicator("Indeterminate");
-        await this.signOutInteractor
-            .signOut()
-            .finally(() => this.hideProgressIndicator())
-            .then(() => this.navigation.navigateTo("SignIn"))
-            .catch(e => {
-                if (SignOutInteractorException.isType(e)) {
-                    this.showMediumPriorityMessage(e.type);
-                } else {
-                    throw e;
-                }
-            });
+    signOut(): void {
+        this.showHighPriorityMessage("ConfirmSignOut");
     }
 
     private readonly belongingDashboardInteractor: BelongingDashboardInteractor;
     private readonly dashboardBelongings: Observable<DashboardBelonging[]>;
     private readonly removeMuTagInteractor: RemoveMuTagInteractor;
+    private readonly _showEmptyDashboard = new BehaviorSubject<boolean>(true);
     private readonly signOutInteractor: SignOutInteractor;
 
+    static readonly highPriorityMessages = ["ConfirmSignOut"] as const;
     static readonly lowPriorityMessages = [
         "FailedToFindMuTag",
         "LowMuTagBattery"

@@ -1,13 +1,14 @@
 import { expect, jest, test } from "@jest/globals";
 import BelongingDashboardViewModel, {
-    BelongingViewData
+    BelongingViewData,
+    HighPriorityMessage
 } from "./BelongingDashboardViewModel";
 import BelongingDashboardInteractor, {
     DashboardBelonging,
     DashboardBelongingDelta
 } from "../BelongingDashboardInteractor";
 import { take, skip } from "rxjs/operators";
-import { Subject, Observable } from "rxjs";
+import { Subject, Observable, Subscription } from "rxjs";
 import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectionUpdate";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { fakeSchedulers } from "rxjs-marbles/jest";
@@ -15,6 +16,7 @@ import SignOutInteractor from "../../signOut/SignOutInteractor";
 import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
 import { NavigationContainerComponent } from "react-navigation";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
+import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
 
 type Routes = typeof BelongingDashboardViewModel.routes[number];
 
@@ -47,7 +49,7 @@ const BelongingDashboardInteractorMock = jest.fn<
     any
 >(
     (): BelongingDashboardInteractor => ({
-        showOnDashboard: showOnDashboardSubject
+        dashboardBelongings: showOnDashboardSubject
     })
 );
 const belongingDashboardInteractorMock = BelongingDashboardInteractorMock();
@@ -59,7 +61,7 @@ const RemoveMuTagInteractorMock = jest.fn<RemoveMuTagInteractor, any>(
 const removeMuTagInteractorMock = RemoveMuTagInteractorMock();
 const SignOutInteractorMock = jest.fn<SignOutInteractor, any>(
     (): SignOutInteractor => ({
-        signOut: jest.fn()
+        signOut: jest.fn(() => Promise.resolve())
     })
 );
 const signOutInteractorMock = SignOutInteractorMock();
@@ -114,7 +116,18 @@ const belongingsViewData: BelongingViewData[] = [
     }
 ];
 
-test("show empty dashboard", async (): Promise<void> => {
+let emitCount = 0;
+const getEmitCount = (): number => {
+    const number = emitCount;
+    emitCount++;
+    return number;
+};
+
+afterEach(() => {
+    emitCount = 0;
+});
+
+test("Show empty dashboard.", async (): Promise<void> => {
     expect.assertions(1);
     await new Promise((resolve, reject) => {
         viewModel.showEmptyDashboard.pipe(take(1)).subscribe(
@@ -125,7 +138,7 @@ test("show empty dashboard", async (): Promise<void> => {
     });
 });
 
-test("show all current belongings", async (): Promise<void> => {
+test("Show all current belongings.", async (): Promise<void> => {
     expect.assertions(2);
     await new Promise((resolve, reject) => {
         let completed = 0;
@@ -152,7 +165,7 @@ test("show all current belongings", async (): Promise<void> => {
     });
 });
 
-test("show added belonging", async (): Promise<void> => {
+test("Show added belonging.", async (): Promise<void> => {
     const newBelonging: DashboardBelonging = {
         address: "Everett St, Arvada, CO",
         batteryLevel: new Percent(25),
@@ -212,7 +225,7 @@ test("show added belonging", async (): Promise<void> => {
     });
 });
 
-test("show belonging update", async (): Promise<void> => {
+test("Show belonging update.", async (): Promise<void> => {
     const now = new Date();
     const belongingChange: DashboardBelongingDelta = {
         address: "Quitman St, Westminster, CO",
@@ -282,7 +295,7 @@ test("show belonging update", async (): Promise<void> => {
 let belonging01LastSeenChange: Date;
 
 test(
-    "continuously update last seen message",
+    "Continuously update last seen message.",
     fakeSchedulers(advance => {
         expect.assertions(14);
         jest.useFakeTimers("modern");
@@ -443,7 +456,7 @@ test(
 );
 
 test(
-    "remove belonging",
+    "Remove belonging.",
     fakeSchedulers(advance => {
         const updatedBelongingsViewData = [
             {
@@ -504,3 +517,43 @@ test(
         jest.useRealTimers();
     })
 );
+
+test("Sign out.", async (): Promise<void> => {
+    expect.assertions(1);
+    const stateSequence = {
+        highPriorityMessage: new Map<number, HighPriorityMessage | undefined>(),
+        progressIndicator: new Map<number, ProgressIndicatorState>()
+    };
+    const highPriorityMessageSubject = new Subject<void>();
+    const subscriptions: Subscription[] = [];
+    subscriptions.push(
+        viewModel.highPriorityMessage.subscribe(message => {
+            stateSequence.highPriorityMessage.set(getEmitCount(), message);
+            highPriorityMessageSubject.next();
+        })
+    );
+    subscriptions.push(
+        viewModel.progressIndicator.subscribe(message =>
+            stateSequence.progressIndicator.set(getEmitCount(), message)
+        )
+    );
+    const highPriorityMessagePromise = highPriorityMessageSubject
+        .pipe(take(1))
+        .toPromise();
+    viewModel.signOut();
+    await highPriorityMessagePromise;
+    await viewModel.confirmSignOut();
+    subscriptions.forEach(s => s.unsubscribe());
+    expect(stateSequence).toStrictEqual({
+        highPriorityMessage: new Map([
+            [0, undefined],
+            [2, "ConfirmSignOut"],
+            [3, undefined]
+        ]),
+        progressIndicator: new Map([
+            [1, undefined],
+            [4, "Indeterminate"],
+            [5, undefined]
+        ])
+    });
+});

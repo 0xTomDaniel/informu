@@ -179,7 +179,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
         > => {
             expect.assertions(1);
             await new Promise((resolve, reject) => {
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(1))
                     .subscribe(
                         belongings => expect(belongings.initial).toEqual([]),
@@ -263,7 +263,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
             expect.assertions(3);
             await new Promise((resolve, reject) => {
                 let count = 0;
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(takeUntil(notifier))
                     .subscribe(belongings => {
                         count += 1;
@@ -328,7 +328,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
         > => {
             expect.assertions(1);
             await new Promise((resolve, reject) => {
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(1))
                     .subscribe(
                         belongings => {
@@ -470,7 +470,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
                 ]);
             };
             await new Promise((resolve, reject) => {
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(7))
                     .subscribe(
                         next,
@@ -505,7 +505,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
         > => {
             expect.assertions(1);
             await new Promise((resolve, reject) => {
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(1))
                     .subscribe(
                         belongings => {

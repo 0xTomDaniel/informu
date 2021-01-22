@@ -13,8 +13,6 @@ import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
 import Localize from "../../../shared/localization/Localize";
 
-const localize = Localize.instance;
-
 const styles = StyleSheet.create({
     card: {
         //paddingVertical: 8,
@@ -64,6 +62,7 @@ const styles = StyleSheet.create({
 });
 
 interface BelongingCardProps {
+    localize: Localize;
     onRemoveMuTag: (uid: string) => void;
     viewData: BelongingViewData;
 }
@@ -183,10 +182,10 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         }
                     >
                         <Menu.Item
-                            title={localize.getText(
-                                "viewBelongingDashboard",
-                                "belongingCard",
-                                "buttonRemove"
+                            title={props.localize.getText(
+                                "ViewBelongingDashboard",
+                                "BelongingCard",
+                                "ButtonRemove"
                             )}
                             icon="minus-circle-outline"
                             onPress={() =>

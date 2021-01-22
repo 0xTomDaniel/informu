@@ -33,10 +33,16 @@
         }
     },
     "RemoveMuTag": {
+        "BannerButton": {
+            "Dismiss": "Dismiss"
+        },
         "BannerMessage": {
             "FailedToRemoveMuTag": "There was problem removing the MuTag. Please keep MuTag close to the app and try again.",
             "FailedToRemoveMuTagFromAccount": "The MuTag device reset successfully, but could not be removed from the app. Please notify support@informu.io.",
             "FailedToResetMuTag": "Failed to reset MuTag device. Please try again."
+        },
+        "SnackbarButton": {
+            "Dismiss": "Dismiss"
         },
         "SnackbarMessage": {
             "FailedToFindMuTag": "MuTag not found. Please ensure that MuTag is charged and move it closer to the app.",
@@ -44,8 +50,18 @@
         }
     },
     "SignOut": {
+        "BannerButton": {
+            "Dismiss": "Dismiss"
+        },
         "BannerMessage": {
             "SignOutFailed": "Failed to sign out. Please try again."
+        },
+        "DialogButton": {
+            "Cancel": "Cancel",
+            "SignOut": "Sign Out"
+        },
+        "DialogMessage": {
+            "ConfirmSignOut": "Are you sure you want to sign out?"
         }
     },
     "BelongingsLocation": {
@@ -71,11 +87,6 @@
             "Message": "Please select 'Allow'. This is required for your MuTags to have accurate and up-to-date locations.",
             "ButtonDeny": "Deny",
             "ButtonAllow": "Allow"
-        },
-        "SignOutDialog": {
-            "Message": "Are you sure you want to sign out?",
-            "ButtonCancel": "Cancel",
-            "ButtonSignOut": "Sign Out"
         },
         "Dashboard": {
             "NoMuTagMessage": "Add your first MuTag to get started."
