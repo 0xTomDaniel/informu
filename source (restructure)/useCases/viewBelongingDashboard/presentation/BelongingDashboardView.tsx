@@ -437,7 +437,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                     <Dialog.Actions>
                         <Button
                             onPress={() =>
-                                props.viewModel.hideHighPriorityMessage
+                                props.viewModel.hideHighPriorityMessage()
                             }
                         >
                             {props.localize.getText(
@@ -457,16 +457,14 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                 </Dialog>
             </Portal>
             <Portal>
-                <Modal
-                    dismissable={false}
-                    visible={progressIndicator != null}
-                    //contentContainerStyle={styles.activityModal}
-                >
-                    <ActivityIndicator
-                        size="large"
-                        color={Theme.Color.PrimaryBlue}
-                    />
-                </Modal>
+                <Dialog visible={progressIndicator != null} dismissable={false}>
+                    <Dialog.Content>
+                        <ActivityIndicator
+                            size="large"
+                            color={Theme.Color.PrimaryBlue}
+                        />
+                    </Dialog.Content>
+                </Dialog>
             </Portal>
             {/*<ErrorDialog
                 message={bannerMessage ?? ""}
