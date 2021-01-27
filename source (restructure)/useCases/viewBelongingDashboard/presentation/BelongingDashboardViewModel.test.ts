@@ -41,7 +41,7 @@ const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
 const navigationPortMock = new NavigationPortMock();
 
 //const showErrorSubject = new Subject<Exception<string>>();
-const showOnDashboardSubject = new Subject<
+const dashboardBelongingsSubject = new Subject<
     ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
 >();
 const BelongingDashboardInteractorMock = jest.fn<
@@ -49,7 +49,7 @@ const BelongingDashboardInteractorMock = jest.fn<
     any
 >(
     (): BelongingDashboardInteractor => ({
-        dashboardBelongings: showOnDashboardSubject
+        dashboardBelongings: dashboardBelongingsSubject
     })
 );
 const belongingDashboardInteractorMock = BelongingDashboardInteractorMock();
@@ -159,7 +159,7 @@ test("Show all current belongings.", async (): Promise<void> => {
             e => reject(e),
             () => resolveWhenAllCompleted()
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
     });
@@ -208,10 +208,10 @@ test("Show added belonging.", async (): Promise<void> => {
             e => reject(e),
             () => resolveWhenAllCompleted()
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 added: [
                     {
@@ -268,10 +268,10 @@ test("Show belonging update.", async (): Promise<void> => {
             e => reject(e),
             () => resolveWhenAllCompleted()
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 changed: [
                     {
@@ -312,7 +312,7 @@ test(
             e => console.error(e)
         );
 
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
 
@@ -402,7 +402,7 @@ test(
         }
 
         const newLastSeenDate = new Date();
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 changed: [
                     {
@@ -416,7 +416,7 @@ test(
                 ]
             })
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 changed: [
                     {
@@ -500,10 +500,10 @@ test(
             shouldShow => expect(shouldShow).toBe(false),
             e => console.error(e)
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 removed: [
                     {

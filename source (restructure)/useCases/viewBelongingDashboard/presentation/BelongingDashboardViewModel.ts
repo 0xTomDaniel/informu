@@ -1,7 +1,7 @@
 import BelongingDashboardInteractor, {
     DashboardBelonging
 } from "../BelongingDashboardInteractor";
-import { Observable, combineLatest, timer, BehaviorSubject } from "rxjs";
+import { Observable, combineLatest, timer } from "rxjs";
 import {
     scan,
     map,
@@ -81,14 +81,9 @@ export default class BelongingDashboardViewModel extends ViewModel<
     MediumPriorityMessage
 > {
     readonly showBelongings: Observable<BelongingViewData[]>;
-    get showBelongingsValue(): BelongingViewData[] {
-        return this._showBelongings.value;
-    }
-    //readonly showDashboardLoading: Observable<boolean>;
+    showBelongingsValue: BelongingViewData[] = [];
     readonly showEmptyDashboard: Observable<boolean>;
-    get showEmptyDashboardValue(): boolean {
-        return this._showEmptyDashboard.value;
-    }
+    showEmptyDashboardValue = true;
 
     constructor(
         navigation: NavigationPort<Route>,
@@ -106,8 +101,7 @@ export default class BelongingDashboardViewModel extends ViewModel<
             share()
         );
         this.removeMuTagInteractor = removeMuTagInteractor;
-        this.showBelongings = this._showBelongings.asObservable();
-        combineLatest(
+        this.showBelongings = combineLatest(
             this.dashboardBelongings,
             timer(0, This.lastSeenDisplayUpdateInterval)
         ).pipe(
@@ -118,17 +112,25 @@ export default class BelongingDashboardViewModel extends ViewModel<
                     )
                 )
             ),
-            distinctUntilChanged(isEqual)
-        ).subscribe(this._showBelongings);
-        this.showEmptyDashboard = this._showEmptyDashboard.asObservable();
-        this.dashboardBelongings
-            .pipe(
-                map(belongings => belongings.length === 0),
-                distinctUntilChanged(),
-                publishBehavior(true),
-                refCount()
+            distinctUntilChanged(isEqual),
+            tap(
+                belongingViewData =>
+                    (this.showBelongingsValue = belongingViewData),
+                () => (this.showBelongingsValue = []),
+                () => (this.showBelongingsValue = [])
             )
-            .subscribe(this._showEmptyDashboard);
+        );
+        this.showEmptyDashboard = this.dashboardBelongings.pipe(
+            map(belongings => belongings.length === 0),
+            distinctUntilChanged(),
+            publishBehavior(true),
+            refCount(),
+            tap(
+                show => (this.showEmptyDashboardValue = show),
+                () => (this.showEmptyDashboardValue = true),
+                () => (this.showEmptyDashboardValue = true)
+            )
+        );
         this.signOutInteractor = signOutInteractor;
     }
 
@@ -186,8 +188,6 @@ export default class BelongingDashboardViewModel extends ViewModel<
     private readonly belongingDashboardInteractor: BelongingDashboardInteractor;
     private readonly dashboardBelongings: Observable<DashboardBelonging[]>;
     private readonly removeMuTagInteractor: RemoveMuTagInteractor;
-    private readonly _showBelongings = new BehaviorSubject<BelongingViewData[]>([]);
-    private readonly _showEmptyDashboard = new BehaviorSubject<boolean>(true);
     private readonly signOutInteractor: SignOutInteractor;
 
     static readonly highPriorityMessages = ["ConfirmSignOut"] as const;
