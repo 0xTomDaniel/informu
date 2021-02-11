@@ -44,10 +44,7 @@ const ReactNativeLocalizeMock = jest.fn<RnLocalize, any>(
         uses24HourClock: jest.fn(),
         usesMetricSystem: jest.fn(),
         usesAutoDateAndTime: jest.fn(),
-        usesAutoTimeZone: jest.fn(),
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        findBestAvailableLanguage: jest.fn()
+        usesAutoTimeZone: jest.fn()
     })
 );
 const reactNativeLocalizeMock = new ReactNativeLocalizeMock();
