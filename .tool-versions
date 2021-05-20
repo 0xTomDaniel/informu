@@ -1,1 +1,5 @@
 ruby 3.0.1
+nodejs 16.1.0
+yarn 1.22.10
+java zulu-11.48.21
+bundler 2.2.17
