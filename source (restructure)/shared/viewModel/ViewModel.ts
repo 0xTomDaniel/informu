@@ -2,7 +2,7 @@ import { BehaviorSubject, Observable } from "rxjs";
 import NavigationPort from "../navigation/NavigationPort";
 import { Range0_100 } from "../metaLanguage/Range0_100";
 
-type LowPriorityMessageTimeout = 4 | 5 | 6 | 7 | 8 | 9 | 10;
+type LowPriorityMessageTimeoutSeconds = 4 | 5 | 6 | 7 | 8 | 9 | 10;
 export type ProgressIndicatorState = "Indeterminate" | Range0_100 | undefined;
 
 export default abstract class ViewModel<
@@ -63,10 +63,11 @@ export default abstract class ViewModel<
 
     protected showLowPriorityMessage(
         message: L,
-        timeout: LowPriorityMessageTimeout
+        timeout: LowPriorityMessageTimeoutSeconds
     ): void {
         this._lowPriorityMessage.next(message);
-        setTimeout(() => this._lowPriorityMessage.next(undefined), timeout);
+        const timeoutMilliseconds = timeout * 1000;
+        setTimeout(() => this._lowPriorityMessage.next(undefined), timeoutMilliseconds);
     }
 
     protected showMediumPriorityMessage(message: M): void {
