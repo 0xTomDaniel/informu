@@ -6,5 +6,9 @@
         "**/.project": true,
         "**/.settings": true,
         "**/.factorypath": true
-    }
+    },
+    "editor.formatOnSave": true,
+    "editor.rulers": [
+        80
+    ]
 }
