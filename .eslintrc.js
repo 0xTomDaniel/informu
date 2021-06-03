@@ -26,6 +26,7 @@ module.exports = {
     "@typescript-eslint/no-explicit-any": "off",
     "react-hooks/rules-of-hooks": "error",
     "react-hooks/exhaustive-deps": "warn",
-    "no-dupe-class-members": "off"
+    "no-dupe-class-members": "off",
+    "@typescript-eslint/no-use-before-define": "off"
   }
 };
