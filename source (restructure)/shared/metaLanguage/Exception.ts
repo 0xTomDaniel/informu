@@ -2,14 +2,21 @@ import Logger from "./Logger";
 
 type Severity = "log" | "warn" | "error";
 
-export default abstract class Exception<T extends string> extends Error {
+type ExceptionAttributes = {
+    type: string;
+    data: readonly [...any];
+};
+
+export default abstract class Exception<
+    A extends ExceptionAttributes
+> extends Error {
+    readonly attributes: A;
     readonly name: string;
     readonly sourceException: unknown;
     readonly severity: Severity;
-    readonly type: T;
 
     constructor(
-        type: T,
+        attributes: A,
         message: string,
         severity: Severity,
         sourceException?: unknown,
@@ -23,7 +30,7 @@ export default abstract class Exception<T extends string> extends Error {
                 ? message
                 : `${message}\n<- ${String(sourceException)}`
         );
-        this.type = type;
+        this.attributes = attributes;
         this.name = this.constructor.name;
         this.sourceException = sourceException;
         this.severity = severity;
@@ -45,15 +52,11 @@ export default abstract class Exception<T extends string> extends Error {
         }
     }
 
-    static isType<T extends string, E extends Exception<string>>(
-        this: new (type: T, ...args: any) => E,
-        value: unknown,
-        type?: T
-    ): value is E & Exception<T> {
-        if (value instanceof this) {
-            return type == null ? true : value.type === type;
-        }
-        return false;
+    static isType<E extends Exception<ExceptionAttributes>>(
+        this: new (...args: any) => E,
+        value: unknown
+    ): value is E {
+        return value instanceof this;
     }
 
     private static get logger(): Logger {
