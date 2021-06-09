@@ -5,11 +5,16 @@ import { Range0_100 } from "../metaLanguage/Range0_100";
 type LowPriorityMessageTimeoutSeconds = 4 | 5 | 6 | 7 | 8 | 9 | 10;
 export type ProgressIndicatorState = "Indeterminate" | Range0_100 | undefined;
 
+type Message = {
+    messageKey: string;
+    data: readonly [...any];
+};
+
 export default abstract class ViewModel<
     R extends string,
-    H extends string | undefined = undefined,
-    L extends string | undefined = undefined,
-    M extends string | undefined = undefined
+    H extends Message | undefined = undefined,
+    L extends Message | undefined = undefined,
+    M extends Message | undefined = undefined
 > {
     readonly highPriorityMessage: Observable<H | undefined>;
     get highPriorityMessageValue(): H | undefined {
@@ -67,7 +72,10 @@ export default abstract class ViewModel<
     ): void {
         this._lowPriorityMessage.next(message);
         const timeoutMilliseconds = timeout * 1000;
-        setTimeout(() => this._lowPriorityMessage.next(undefined), timeoutMilliseconds);
+        setTimeout(
+            () => this._lowPriorityMessage.next(undefined),
+            timeoutMilliseconds
+        );
     }
 
     protected showMediumPriorityMessage(message: M): void {
