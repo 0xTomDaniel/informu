@@ -2,7 +2,6 @@ import {
     Appbar,
     Text,
     Portal,
-    Modal,
     ActivityIndicator,
     Dialog,
     Paragraph,
@@ -304,7 +303,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
 
     const getBannerActions = (): BannerActions => {
         let buttonLabel: string;
-        switch (bannerMessage) {
+        switch (bannerMessage?.messageKey) {
             case "FailedToRemoveMuTag":
             case "FailedToRemoveMuTagFromAccount":
             case "FailedToResetMuTag":
@@ -333,14 +332,14 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     };
 
     const getBannerMessage = (): string => {
-        switch (bannerMessage) {
+        switch (bannerMessage?.messageKey) {
             case "FailedToRemoveMuTag":
             case "FailedToRemoveMuTagFromAccount":
             case "FailedToResetMuTag":
                 return props.localize.getText(
                     "RemoveMuTag",
                     "BannerMessage",
-                    bannerMessage
+                    bannerMessage.messageKey
                 );
             case "SignOutFailed":
                 return props.localize.getText(
@@ -351,6 +350,20 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
             default:
                 return "";
         }
+    };
+
+    const getSnackbarMessage = (): string => {
+        if (snackbarMessage == null) {
+            return "";
+        }
+
+        const message = props.localize.getText(
+            "RemoveMuTag",
+            "SnackbarMessage",
+            snackbarMessage.messageKey
+        );
+
+        return props.localize.replaceVariables(message, snackbarMessage.data);
     };
 
     return (
@@ -412,13 +425,7 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                     onPress: () => props.viewModel.hideLowPriorityMessage()
                 }}
             >
-                {snackbarMessage != null
-                    ? props.localize.getText(
-                          "RemoveMuTag",
-                          "SnackbarMessage",
-                          snackbarMessage
-                      )
-                    : undefined}
+                {getSnackbarMessage()}
             </Snackbar>
             <Portal>
                 <Dialog

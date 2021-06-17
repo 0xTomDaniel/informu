@@ -1,17 +1,15 @@
 import SessionService from "../../../source/Core/Application/SessionService";
 import Exception from "../../shared/metaLanguage/Exception";
 
-const ExceptionType = ["SignOutFailed"] as const;
-export type ExceptionType = typeof ExceptionType[number];
+type ExceptionType = {
+    type: "SignOutFailed";
+    data: [];
+};
 
-export class SignOutInteractorException<
-    T extends ExceptionType
-> extends Exception<T> {
-    static SignOutFailed(
-        sourceException: unknown
-    ): SignOutInteractorException<"SignOutFailed"> {
+export class SignOutInteractorException extends Exception<ExceptionType> {
+    static SignOutFailed(sourceException: unknown): SignOutInteractorException {
         return new this(
-            "SignOutFailed",
+            { type: "SignOutFailed", data: [] },
             "Failed to sign out.",
             "error",
             sourceException,

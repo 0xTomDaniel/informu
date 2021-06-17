@@ -22,7 +22,7 @@
         "BannerMessage": {
             "FailedToAddMuTag": "There was problem adding the MuTag. Please keep MuTag close to the app and try again.",
             "FailedToNameMuTag": "There was problem naming the MuTag. Please try again.",
-            "LowMuTagBattery": "Unable to add MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again.",
+            "LowMuTagBattery": "Unable to add MuTag because its battery is below ${ A }%. Please charge MuTag and try again.",
             "NewMuTagNotFound": "New MuTag not found. Be sure the MuTag light is flashing and keep it close to the app."
         },
         "SnackbarMessage": {
@@ -46,7 +46,7 @@
         },
         "SnackbarMessage": {
             "FailedToFindMuTag": "MuTag not found. Please ensure that MuTag is charged and move it closer to the app.",
-            "LowMuTagBattery": "Unable to remove MuTag because its battery is below ${lowBatteryThreshold}%. Please charge MuTag and try again."
+            "LowMuTagBattery": "Unable to remove MuTag because its battery is below ${ A }%. Please charge MuTag and try again."
         }
     },
     "SignOut": {

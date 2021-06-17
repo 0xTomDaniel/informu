@@ -69,9 +69,39 @@ export interface BelongingViewData {
     readonly uid: string;
 }
 
-export type HighPriorityMessage = typeof BelongingDashboardViewModel.highPriorityMessages[number];
-export type LowPriorityMessage = typeof BelongingDashboardViewModel.lowPriorityMessages[number];
-export type MediumPriorityMessage = typeof BelongingDashboardViewModel.mediumPriorityMessages[number];
+export type HighPriorityMessage = {
+    messageKey: "ConfirmSignOut";
+    data: [];
+};
+
+export type LowPriorityMessage =
+    | {
+          messageKey: "FailedToFindMuTag";
+          data: [string];
+      }
+    | {
+          messageKey: "LowMuTagBattery";
+          data: [number];
+      };
+
+export type MediumPriorityMessage =
+    | {
+          messageKey: "FailedToRemoveMuTag";
+          data: [string];
+      }
+    | {
+          messageKey: "FailedToRemoveMuTagFromAccount";
+          data: [string];
+      }
+    | {
+          messageKey: "FailedToResetMuTag";
+          data: [string];
+      }
+    | {
+          messageKey: "SignOutFailed";
+          data: [];
+      };
+
 type Route = typeof BelongingDashboardViewModel.routes[number];
 
 export default class BelongingDashboardViewModel extends ViewModel<
@@ -147,7 +177,10 @@ export default class BelongingDashboardViewModel extends ViewModel<
             .then(() => this.navigation.navigateTo("SignIn"))
             .catch(e => {
                 if (SignOutInteractorException.isType(e)) {
-                    this.showMediumPriorityMessage(e.type);
+                    this.showMediumPriorityMessage({
+                        messageKey: e.attributes.type,
+                        data: []
+                    });
                 } else {
                     throw e;
                 }
@@ -161,19 +194,35 @@ export default class BelongingDashboardViewModel extends ViewModel<
             .finally(() => this.hideProgressIndicator())
             .catch(e => {
                 if (RemoveMuTagInteractorException.isType(e)) {
-                    const type = e.type;
-                    switch (type) {
+                    switch (e.attributes.type) {
                         case "FailedToFindMuTag":
+                            this.showLowPriorityMessage(
+                                {
+                                    messageKey: e.attributes.type,
+                                    data: e.attributes.data
+                                },
+                                7
+                            );
+                            break;
                         case "LowMuTagBattery":
-                            this.showLowPriorityMessage(type, 4);
+                            this.showLowPriorityMessage(
+                                {
+                                    messageKey: e.attributes.type,
+                                    data: e.attributes.data
+                                },
+                                7
+                            );
                             break;
                         case "FailedToRemoveMuTag":
                         case "FailedToRemoveMuTagFromAccount":
                         case "FailedToResetMuTag":
-                            this.showMediumPriorityMessage(type);
+                            this.showMediumPriorityMessage({
+                                messageKey: e.attributes.type,
+                                data: e.attributes.data
+                            });
                             break;
                         default:
-                            assertUnreachable(type);
+                            assertUnreachable(e.attributes);
                     }
                 } else {
                     throw e;
@@ -182,7 +231,10 @@ export default class BelongingDashboardViewModel extends ViewModel<
     }
 
     signOut(): void {
-        this.showHighPriorityMessage("ConfirmSignOut");
+        this.showHighPriorityMessage({
+            messageKey: "ConfirmSignOut",
+            data: []
+        });
     }
 
     private readonly belongingDashboardInteractor: BelongingDashboardInteractor;
@@ -190,17 +242,6 @@ export default class BelongingDashboardViewModel extends ViewModel<
     private readonly removeMuTagInteractor: RemoveMuTagInteractor;
     private readonly signOutInteractor: SignOutInteractor;
 
-    static readonly highPriorityMessages = ["ConfirmSignOut"] as const;
-    static readonly lowPriorityMessages = [
-        "FailedToFindMuTag",
-        "LowMuTagBattery"
-    ] as const;
-    static readonly mediumPriorityMessages = [
-        "FailedToRemoveMuTag",
-        "FailedToRemoveMuTagFromAccount",
-        "FailedToResetMuTag",
-        "SignOutFailed"
-    ] as const;
     static readonly routes = ["AddMuTagIntro", "SignIn"] as const;
 
     private static readonly hoursInDay = 24;

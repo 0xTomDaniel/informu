@@ -14,24 +14,35 @@ import MuTagDevicesPort, {
 import { Millisecond } from "../../shared/metaLanguage/Types";
 import Exception from "../../shared/metaLanguage/Exception";
 
-const ExceptionType = [
-    "FailedToFindMuTag",
-    "FailedToRemoveMuTag",
-    "FailedToRemoveMuTagFromAccount",
-    "FailedToResetMuTag",
-    "LowMuTagBattery"
-] as const;
-export type ExceptionType = typeof ExceptionType[number];
+type ExceptionType =
+    | {
+          type: "FailedToFindMuTag";
+          data: [string];
+      }
+    | {
+          type: "FailedToRemoveMuTag";
+          data: [string];
+      }
+    | {
+          type: "FailedToRemoveMuTagFromAccount";
+          data: [string];
+      }
+    | {
+          type: "FailedToResetMuTag";
+          data: [string];
+      }
+    | {
+          type: "LowMuTagBattery";
+          data: [number];
+      };
 
-export class RemoveMuTagInteractorException<
-    T extends ExceptionType
-> extends Exception<T> {
+export class RemoveMuTagInteractorException extends Exception<ExceptionType> {
     static FailedToFindMuTag(
         muTagUid: string,
         sourceException: unknown
-    ): RemoveMuTagInteractorException<"FailedToFindMuTag"> {
+    ): RemoveMuTagInteractorException {
         return new this(
-            "FailedToFindMuTag",
+            { type: "FailedToFindMuTag", data: [muTagUid] },
             `Could not find MuTag (${muTagUid}).`,
             "log",
             sourceException
@@ -41,9 +52,9 @@ export class RemoveMuTagInteractorException<
     static FailedToRemoveMuTag(
         muTagUid: string,
         sourceException: unknown
-    ): RemoveMuTagInteractorException<"FailedToRemoveMuTag"> {
+    ): RemoveMuTagInteractorException {
         return new this(
-            "FailedToRemoveMuTag",
+            { type: "FailedToRemoveMuTag", data: [muTagUid] },
             `Failed to remove MuTag (${muTagUid}).`,
             "error",
             sourceException,
@@ -54,9 +65,9 @@ export class RemoveMuTagInteractorException<
     static FailedToRemoveMuTagFromAccount(
         muTagUid: string,
         sourceException: unknown
-    ): RemoveMuTagInteractorException<"FailedToRemoveMuTagFromAccount"> {
+    ): RemoveMuTagInteractorException {
         return new this(
-            "FailedToRemoveMuTagFromAccount",
+            { type: "FailedToRemoveMuTagFromAccount", data: [muTagUid] },
             `The MuTag device (${muTagUid}) successfully reset, but there was a problem removing it from the app.`,
             "error",
             sourceException,
@@ -67,9 +78,9 @@ export class RemoveMuTagInteractorException<
     static FailedToResetMuTag(
         muTagUid: string,
         sourceException: unknown
-    ): RemoveMuTagInteractorException<"FailedToResetMuTag"> {
+    ): RemoveMuTagInteractorException {
         return new this(
-            "FailedToResetMuTag",
+            { type: "FailedToResetMuTag", data: [muTagUid] },
             `Failed to reset MuTag (${muTagUid}).`,
             "error",
             sourceException,
@@ -79,11 +90,12 @@ export class RemoveMuTagInteractorException<
 
     static LowMuTagBattery(
         lowBatteryThreshold: number
-    ): RemoveMuTagInteractorException<"LowMuTagBattery"> {
+    ): RemoveMuTagInteractorException {
         return new this(
-            "LowMuTagBattery",
+            { type: "LowMuTagBattery", data: [lowBatteryThreshold] },
             `Unable to remove MuTag because its battery is below ${lowBatteryThreshold}%.`,
-            "log"
+            "log",
+            undefined
         );
     }
 }
@@ -154,7 +166,7 @@ export class RemoveMuTagInteractorImpl implements RemoveMuTagInteractor {
             if (RemoveMuTagInteractorException.isType(e)) {
                 throw e;
             } else if (MuTagDevicesException.isType(e)) {
-                switch (e.type) {
+                switch (e.attributes.type) {
                     case "FailedToFindMuTag":
                         throw RemoveMuTagInteractorException.FailedToFindMuTag(
                             uid,

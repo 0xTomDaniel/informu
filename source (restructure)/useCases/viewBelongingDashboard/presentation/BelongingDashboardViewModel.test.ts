@@ -1,7 +1,8 @@
 import { expect, jest, test } from "@jest/globals";
 import BelongingDashboardViewModel, {
     BelongingViewData,
-    HighPriorityMessage
+    HighPriorityMessage,
+    LowPriorityMessage
 } from "./BelongingDashboardViewModel";
 import BelongingDashboardInteractor, {
     DashboardBelonging,
@@ -13,10 +14,27 @@ import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectio
 import Percent from "../../../shared/metaLanguage/Percent";
 import { fakeSchedulers } from "rxjs-marbles/jest";
 import SignOutInteractor from "../../signOut/SignOutInteractor";
-import RemoveMuTagInteractor from "../../removeMuTag/RemoveMuTagInteractor";
+import RemoveMuTagInteractor, {
+    RemoveMuTagInteractorException
+} from "../../removeMuTag/RemoveMuTagInteractor";
 import { NavigationContainerComponent } from "react-navigation";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
+import { v4 as uuidV4 } from "uuid";
+import EventTracker from "../../../shared/metaLanguage/EventTracker";
+import Logger from "../../../shared/metaLanguage/Logger";
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+Logger.createInstance(eventTrackerMock);
 
 type Routes = typeof BelongingDashboardViewModel.routes[number];
 
@@ -55,7 +73,9 @@ const BelongingDashboardInteractorMock = jest.fn<
 const belongingDashboardInteractorMock = BelongingDashboardInteractorMock();
 const RemoveMuTagInteractorMock = jest.fn<RemoveMuTagInteractor, any>(
     (): RemoveMuTagInteractor => ({
-        remove: jest.fn()
+        remove: jest.fn(() =>
+            Promise.reject(RemoveMuTagInteractorException.LowMuTagBattery(9))
+        )
     })
 );
 const removeMuTagInteractorMock = RemoveMuTagInteractorMock();
@@ -71,6 +91,7 @@ const viewModel = new BelongingDashboardViewModel(
     removeMuTagInteractorMock,
     signOutInteractorMock
 );
+const belongingUuids = [uuidV4(), uuidV4(), uuidV4()];
 const belongings: DashboardBelonging[] = [
     {
         address: "Lamar St, Arvada, CO",
@@ -78,7 +99,7 @@ const belongings: DashboardBelonging[] = [
         isSafe: true,
         lastSeen: new Date(),
         name: "Keys",
-        uid: "randomUUID01"
+        uid: belongingUuids[0]
     },
     {
         address: undefined,
@@ -86,7 +107,7 @@ const belongings: DashboardBelonging[] = [
         isSafe: false,
         lastSeen: new Date("2011-10-05T14:48:00.000Z"),
         name: "Laptop",
-        uid: "randomUUID02"
+        uid: belongingUuids[1]
     }
 ];
 const belongingsViewData: BelongingViewData[] = [
@@ -100,7 +121,7 @@ const belongingsViewData: BelongingViewData[] = [
         },
         name: "Keys",
         safeStatus: "InRange",
-        uid: "randomUUID01"
+        uid: belongingUuids[0]
     },
     {
         address: undefined,
@@ -112,7 +133,7 @@ const belongingsViewData: BelongingViewData[] = [
         },
         name: "Laptop",
         safeStatus: "Unsafe",
-        uid: "randomUUID02"
+        uid: belongingUuids[1]
     }
 ];
 
@@ -129,7 +150,7 @@ afterEach(() => {
 
 test("Show empty dashboard.", async (): Promise<void> => {
     expect.assertions(1);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         viewModel.showEmptyDashboard.pipe(take(1)).subscribe(
             shouldShow => expect(shouldShow).toBe(true),
             e => reject(e),
@@ -140,7 +161,7 @@ test("Show empty dashboard.", async (): Promise<void> => {
 
 test("Show all current belongings.", async (): Promise<void> => {
     expect.assertions(2);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         let completed = 0;
         const resolveWhenAllCompleted = (): void => {
             completed += 1;
@@ -172,7 +193,7 @@ test("Show added belonging.", async (): Promise<void> => {
         isSafe: true,
         lastSeen: new Date(),
         name: "Wallet",
-        uid: "randomUUID03"
+        uid: belongingUuids[2]
     };
     const newBelongingViewData: BelongingViewData = {
         address: "Everett St, Arvada, CO",
@@ -184,12 +205,12 @@ test("Show added belonging.", async (): Promise<void> => {
         },
         name: "Wallet",
         safeStatus: "InRange",
-        uid: "randomUUID03"
+        uid: belongingUuids[2]
     };
     belongingsViewData.splice(1, 0, newBelongingViewData);
 
     expect.assertions(2);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         let completed = 0;
         const resolveWhenAllCompleted = (): void => {
             completed += 1;
@@ -232,7 +253,7 @@ test("Show belonging update.", async (): Promise<void> => {
         batteryLevel: new Percent(14),
         isSafe: true,
         lastSeen: now,
-        uid: "randomUUID02"
+        uid: belongingUuids[1]
     };
     const belongingUpdateViewData: BelongingViewData = {
         address: "Quitman St, Westminster, CO",
@@ -244,12 +265,12 @@ test("Show belonging update.", async (): Promise<void> => {
         },
         name: "Laptop",
         safeStatus: "InRange",
-        uid: "randomUUID02"
+        uid: belongingUuids[1]
     };
     belongingsViewData.splice(2, 1, belongingUpdateViewData);
 
     expect.assertions(2);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         let completed = 0;
         const resolveWhenAllCompleted = (): void => {
             completed += 1;
@@ -408,7 +429,7 @@ test(
                     {
                         index: 1,
                         elementChange: {
-                            uid: "randomUUID03",
+                            uid: belongingUuids[2],
                             isSafe: true,
                             lastSeen: newLastSeenDate
                         }
@@ -422,7 +443,7 @@ test(
                     {
                         index: 1,
                         elementChange: {
-                            uid: "randomUUID03",
+                            uid: belongingUuids[2],
                             isSafe: false
                         }
                     }
@@ -463,7 +484,7 @@ test(
                 address: "Lamar St, Arvada, CO",
                 batteryBarLevel: "90%",
                 batteryLevelRange: "High",
-                uid: "randomUUID01",
+                uid: belongingUuids[0],
                 name: "Keys",
                 safeStatus: "InRange"
             },
@@ -471,7 +492,7 @@ test(
                 address: "Everett St, Arvada, CO",
                 batteryBarLevel: "30%",
                 batteryLevelRange: "Medium",
-                uid: "randomUUID03",
+                uid: belongingUuids[2],
                 name: "Wallet",
                 safeStatus: "Unsafe",
                 lastSeen: {
@@ -518,6 +539,50 @@ test(
     })
 );
 
+test("Remove belonging fails.", async (): Promise<void> => {
+    expect.assertions(1);
+    const stateSequence = {
+        lowPriorityMessage: new Map<number, LowPriorityMessage | undefined>(),
+        progressIndicator: new Map<number, ProgressIndicatorState>()
+    };
+    const lowPriorityMessageSubject = new Subject<void>();
+    const subscriptions: Subscription[] = [];
+    subscriptions.push(
+        viewModel.lowPriorityMessage.subscribe(message => {
+            stateSequence.lowPriorityMessage.set(getEmitCount(), message);
+            lowPriorityMessageSubject.next();
+        })
+    );
+    subscriptions.push(
+        viewModel.progressIndicator.subscribe(message =>
+            stateSequence.progressIndicator.set(getEmitCount(), message)
+        )
+    );
+    const highPriorityMessagePromise = lowPriorityMessageSubject
+        .pipe(take(1))
+        .toPromise();
+    await viewModel.removeMuTag("");
+    await highPriorityMessagePromise;
+    subscriptions.forEach(s => s.unsubscribe());
+    expect(stateSequence).toStrictEqual({
+        lowPriorityMessage: new Map([
+            [0, undefined],
+            [
+                4,
+                {
+                    messageKey: "LowMuTagBattery",
+                    data: [9]
+                }
+            ]
+        ]),
+        progressIndicator: new Map([
+            [1, undefined],
+            [2, "Indeterminate"],
+            [3, undefined]
+        ])
+    });
+});
+
 test("Sign out.", async (): Promise<void> => {
     expect.assertions(1);
     const stateSequence = {
@@ -547,7 +612,13 @@ test("Sign out.", async (): Promise<void> => {
     expect(stateSequence).toStrictEqual({
         highPriorityMessage: new Map([
             [0, undefined],
-            [2, "ConfirmSignOut"],
+            [
+                2,
+                {
+                    messageKey: "ConfirmSignOut",
+                    data: []
+                }
+            ],
             [3, undefined]
         ]),
         progressIndicator: new Map([

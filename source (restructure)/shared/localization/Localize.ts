@@ -7,6 +7,7 @@ import { RemoveMuTagTextDecoder } from "../../useCases/removeMuTag/presentation/
 import { SignOutTextDecoder } from "../../useCases/signOut/presentation/Localization";
 import { BelongingsLocationTextDecoder } from "../../useCases/updateBelongingsLocation/presentation/Localization";
 import { ViewBelongingDashboardTextDecoder } from "../../useCases/viewBelongingDashboard/presentation/Localization";
+import _ from "lodash";
 
 const localizedTextJson: Record<keyof typeof LanguageTag, unknown> = {
     "en-US": require("../../../assets/text/en-US.json"),
@@ -67,10 +68,6 @@ export default class Localize {
             ) ?? LanguageTag["en-US"];
     }
 
-    /*getText(a: string, b: string, c: string): string {
-        return a + b + c;
-    }*/
-
     getText<
         C extends keyof LocalizedText,
         S extends keyof LocalizedText[C],
@@ -80,7 +77,21 @@ export default class Localize {
             const localizedText = Localize.getLocalizedText(this.languageTag);
             this.localizedText = localizedText;
         }
+
         return this.localizedText[component][section][key];
+    }
+
+    replaceVariables(text: string, data: [...any]): string {
+        if (!data.length) {
+            return text;
+        }
+
+        const dataConversion = data.reduce((acc, currentValue, index) => {
+            acc[(index + 10).toString(36).toUpperCase()] = currentValue;
+            return acc;
+        }, {});
+
+        return _.template(text)(dataConversion);
     }
 
     private static getLocalizedText(languageTag: LanguageTag): LocalizedText {
