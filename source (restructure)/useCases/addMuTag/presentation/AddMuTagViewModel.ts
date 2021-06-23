@@ -1,13 +1,34 @@
 import { BehaviorSubject, Subscription } from "rxjs";
 import AddMuTagInteractor, {
-    AddMuTagInteractorException,
-    ExceptionType
+    AddMuTagInteractorException
 } from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import ViewModel from "../../../shared/viewModel/ViewModel";
+import assertUnreachable from "../../../shared/metaLanguage/assertUnreachable";
 
-export type LowPriorityMessage = typeof AddMuTagViewModel.lowPriorityMessages[number];
-export type MediumPriorityMessage = typeof AddMuTagViewModel.mediumPriorityMessages[number];
+export type LowPriorityMessage = {
+    messageKey: "FailedToSaveSettings";
+    data: [];
+};
+
+export type MediumPriorityMessage =
+    | {
+          messageKey: "FailedToAddMuTag";
+          data: [];
+      }
+    | {
+          messageKey: "FailedToNameMuTag";
+          data: [];
+      }
+    | {
+          messageKey: "LowMuTagBattery";
+          data: [number];
+      }
+    | {
+          messageKey: "NewMuTagNotFound";
+          data: [];
+      };
+
 type Route = typeof AddMuTagViewModel.routes[number];
 
 export default class AddMuTagViewModel extends ViewModel<
@@ -120,32 +141,39 @@ export default class AddMuTagViewModel extends ViewModel<
     private readonly _showCancelActivity = new BehaviorSubject<boolean>(false);
     private readonly _showRetry = new BehaviorSubject<boolean>(false);
 
-    private handleException(
-        exception: AddMuTagInteractorException<ExceptionType>
-    ): void {
-        switch (exception.type) {
+    private handleException(exception: AddMuTagInteractorException): void {
+        switch (exception.attributes.type) {
             case "FailedToAddMuTag":
             case "FailedToNameMuTag":
-            case "LowMuTagBattery":
             case "NewMuTagNotFound":
-                this.showMediumPriorityMessage(exception.type);
+                this.showMediumPriorityMessage({
+                    messageKey: exception.attributes.type,
+                    data: exception.attributes.data
+                });
+                break;
+            case "LowMuTagBattery":
+                this.showMediumPriorityMessage({
+                    messageKey: exception.attributes.type,
+                    data: exception.attributes.data
+                });
                 break;
             case "FailedToSaveSettings":
-                this.showLowPriorityMessage(exception.type, 4);
+                this.showLowPriorityMessage(
+                    {
+                        messageKey: exception.attributes.type,
+                        data: exception.attributes.data
+                    },
+                    4
+                );
                 break;
             case "FindNewMuTagCanceled":
                 return;
+            default:
+                assertUnreachable(exception.attributes);
         }
         this.showRetry.next(true);
     }
 
-    static readonly lowPriorityMessages = ["FailedToSaveSettings"] as const;
-    static readonly mediumPriorityMessages = [
-        "FailedToAddMuTag",
-        "FailedToNameMuTag",
-        "LowMuTagBattery",
-        "NewMuTagNotFound"
-    ] as const;
     static readonly routes = [
         "AddMuTagIntro",
         "FindAddMuTag",

@@ -3,8 +3,7 @@ import BluetoothPort, {
     Peripheral,
     PeripheralId,
     ScanMode,
-    BluetoothException,
-    ExceptionType
+    BluetoothException
 } from "../bluetooth/BluetoothPort";
 import { v4 as uuidV4 } from "uuid";
 import Percent from "../metaLanguage/Percent";
@@ -44,7 +43,7 @@ const eventTrackerMock = new EventTrackerMock();
 Logger.createInstance(eventTrackerMock);
 
 const connections = new Map<PeripheralId, Subscriber<void>>();
-let connectionError: BluetoothException<ExceptionType> | undefined;
+let connectionError: BluetoothException | undefined;
 const connectMock = jest.fn<
     Observable<void>,
     [PeripheralId, Millisecond | undefined]
@@ -80,6 +79,7 @@ const startScanMock = jest.fn<
 >(
     (uuids, timeout) =>
         new Observable(subscriber => {
+            // eslint-disable-next-line no-undef
             let timeoutId: NodeJS.Timeout | undefined;
             if (timeout != null) {
                 timeoutId = setTimeout(() => {

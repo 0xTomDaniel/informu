@@ -1,7 +1,6 @@
 import AddMuTagViewModel, { MediumPriorityMessage } from "./AddMuTagViewModel";
 import AddMuTagInteractor, {
-    AddMuTagInteractorException,
-    ExceptionType
+    AddMuTagInteractorException
 } from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import { take, skip } from "rxjs/operators";
@@ -64,9 +63,9 @@ const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
 const navigationPortMock = new NavigationPortMock();
 
 let findNewMuTagSubscriber: Subscriber<void>;
-let findNewMuTagFailure: AddMuTagInteractorException<ExceptionType> | undefined;
-let addNewMuTagFailure: AddMuTagInteractorException<ExceptionType> | undefined;
-let setMuTagNameFailure: AddMuTagInteractorException<ExceptionType> | undefined;
+let findNewMuTagFailure: AddMuTagInteractorException | undefined;
+let addNewMuTagFailure: AddMuTagInteractorException | undefined;
+let setMuTagNameFailure: AddMuTagInteractorException | undefined;
 const addMuTagInteractorMocks = {
     addFoundMuTag: jest.fn(() =>
         addNewMuTagFailure == null
@@ -360,7 +359,13 @@ test("Fails to find new MuTag.", async () => {
         ]),
         mediumPriorityMessage: new Map([
             [1, undefined],
-            [5, "NewMuTagNotFound"]
+            [
+                5,
+                {
+                    messageKey: "NewMuTagNotFound",
+                    data: []
+                }
+            ]
         ]),
         showRetry: new Map([
             [2, false],
@@ -405,7 +410,13 @@ test("Fails to add new MuTag.", async () => {
     expect(stateSequence).toStrictEqual({
         mediumPriorityMessage: new Map([
             [1, undefined],
-            [5, "FailedToAddMuTag"]
+            [
+                5,
+                {
+                    messageKey: "FailedToAddMuTag",
+                    data: []
+                }
+            ]
         ]),
         progressIndicator: new Map([
             [0, undefined],
@@ -459,7 +470,13 @@ test("Successfully retry start adding MuTag.", async () => {
     expect(stateSequence).toStrictEqual({
         mediumPriorityMessage: new Map([
             [1, undefined],
-            [5, "NewMuTagNotFound"],
+            [
+                5,
+                {
+                    messageKey: "NewMuTagNotFound",
+                    data: []
+                }
+            ],
             [7, undefined]
         ]),
         progressIndicator: new Map([
@@ -593,7 +610,13 @@ test("Fails to name MuTag.", async () => {
     expect(stateSequence).toStrictEqual({
         mediumPriorityMessage: new Map([
             [1, undefined],
-            [5, "FailedToNameMuTag"]
+            [
+                5,
+                {
+                    messageKey: "FailedToNameMuTag",
+                    data: []
+                }
+            ]
         ]),
         progressIndicator: new Map([
             [0, undefined],
@@ -623,9 +646,10 @@ test("Successfully retry to name MuTag.", async () => {
     expect(addMuTagInteractorMocks.setMuTagName).toHaveBeenCalledWith(
         muTagName
     );
-    await expect(mediumPriorityMessagePromise01).resolves.toStrictEqual(
-        "FailedToNameMuTag"
-    );
+    await expect(mediumPriorityMessagePromise01).resolves.toStrictEqual({
+        messageKey: "FailedToNameMuTag",
+        data: []
+    });
     setMuTagNameFailure = undefined;
     const mediumPriorityMessagePromise02 = viewModel.mediumPriorityMessage
         .pipe(skip(1), take(1))

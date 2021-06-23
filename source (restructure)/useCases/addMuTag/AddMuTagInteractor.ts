@@ -17,24 +17,38 @@ import { switchMap, catchError, first, finalize, take } from "rxjs/operators";
 import { EmptyError } from "rxjs";
 import Exception from "../../shared/metaLanguage/Exception";
 
-const ExceptionType = [
-    "FailedToAddMuTag",
-    "FailedToNameMuTag",
-    "FailedToSaveSettings",
-    "FindNewMuTagCanceled",
-    "LowMuTagBattery",
-    "NewMuTagNotFound"
-] as const;
-export type ExceptionType = typeof ExceptionType[number];
+type ExceptionType =
+    | {
+          type: "FailedToAddMuTag";
+          data: [];
+      }
+    | {
+          type: "FailedToNameMuTag";
+          data: [];
+      }
+    | {
+          type: "FailedToSaveSettings";
+          data: [];
+      }
+    | {
+          type: "FindNewMuTagCanceled";
+          data: [];
+      }
+    | {
+          type: "LowMuTagBattery";
+          data: [number];
+      }
+    | {
+          type: "NewMuTagNotFound";
+          data: [];
+      };
 
-export class AddMuTagInteractorException<
-    T extends ExceptionType
-> extends Exception<T> {
+export class AddMuTagInteractorException extends Exception<ExceptionType> {
     static FailedToAddMuTag(
         sourceException: unknown
-    ): AddMuTagInteractorException<"FailedToAddMuTag"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "FailedToAddMuTag",
+            { type: "FailedToAddMuTag", data: [] },
             "Failed to add MuTag.",
             "error",
             sourceException,
@@ -44,9 +58,9 @@ export class AddMuTagInteractorException<
 
     static FailedToNameMuTag(
         sourceException: unknown
-    ): AddMuTagInteractorException<"FailedToNameMuTag"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "FailedToNameMuTag",
+            { type: "FailedToNameMuTag", data: [] },
             "Failed to name MuTag.",
             "error",
             sourceException,
@@ -56,9 +70,9 @@ export class AddMuTagInteractorException<
 
     static FailedToSaveSettings(
         sourceException: unknown
-    ): AddMuTagInteractorException<"FailedToSaveSettings"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "FailedToSaveSettings",
+            { type: "FailedToSaveSettings", data: [] },
             "Failed to save MuTag settings.",
             "error",
             sourceException,
@@ -66,11 +80,9 @@ export class AddMuTagInteractorException<
         );
     }
 
-    static get FindNewMuTagCanceled(): AddMuTagInteractorException<
-        "FindNewMuTagCanceled"
-    > {
+    static get FindNewMuTagCanceled(): AddMuTagInteractorException {
         return new this(
-            "FindNewMuTagCanceled",
+            { type: "FindNewMuTagCanceled", data: [] },
             "Find new MuTag has been canceled.",
             "log"
         );
@@ -78,9 +90,9 @@ export class AddMuTagInteractorException<
 
     static LowMuTagBattery(
         lowBatteryThreshold: number
-    ): AddMuTagInteractorException<"LowMuTagBattery"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "LowMuTagBattery",
+            { type: "LowMuTagBattery", data: [lowBatteryThreshold] },
             `MuTag battery is too low. It's below ${lowBatteryThreshold}%.`,
             "warn"
         );
@@ -88,9 +100,9 @@ export class AddMuTagInteractorException<
 
     static NewMuTagNotFound(
         sourceException: unknown
-    ): AddMuTagInteractorException<"NewMuTagNotFound"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "NewMuTagNotFound",
+            { type: "NewMuTagNotFound", data: [] },
             "Could not find a new MuTag.",
             "warn",
             sourceException
