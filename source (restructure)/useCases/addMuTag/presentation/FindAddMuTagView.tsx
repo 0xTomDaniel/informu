@@ -182,7 +182,7 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
                     ? props.localize.getText(
                           "AddMuTag",
                           "BannerMessage",
-                          bannerMessage
+                          bannerMessage.messageKey
                       )
                     : ""}
             </Banner>
