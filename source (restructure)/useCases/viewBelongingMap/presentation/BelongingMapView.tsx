@@ -127,21 +127,20 @@ const BelongingMapView: FunctionComponent<BelongingMapViewProps> = (
         }
     };
 
-    useEffect(
-        () =>
-            props.belongingMapViewModel.showBelongingMarkers.subscribe(
-                update => {
-                    setBelongingMarkers(update);
-                    /*if (update.features.length !== 0) {
+    useEffect(() => {
+        const subscription = props.belongingMapViewModel.showBelongingMarkers.subscribe(
+            update => {
+                setBelongingMarkers(update);
+                /*if (update.features.length !== 0) {
                     setMapLocation([
                         update.features[0].geometry.coordinates[0],
                         update.features[0].geometry.coordinates[1]
                     ]);
                 }*/
-                }
-            ).unsubscribe,
-        [props.belongingMapViewModel.showBelongingMarkers]
-    );
+            }
+        );
+        return () => subscription.unsubscribe();
+    }, [props.belongingMapViewModel.showBelongingMarkers]);
 
     useEffect(() => {
         MapboxGL.setAccessToken(props.mapboxAccessToken);

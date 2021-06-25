@@ -50,7 +50,17 @@ trace.html
 #
 node_modules/
 npm-debug.log
+
+# yarn
+#
 yarn-error.log
+.yarn/*
+!.yarn/cache
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
 
 # BUCK
 buck-out/

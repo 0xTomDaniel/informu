@@ -1,7 +1,6 @@
-import AddMuTagViewModel from "./AddMuTagViewModel";
+import AddMuTagViewModel, { MediumPriorityMessage } from "./AddMuTagViewModel";
 import AddMuTagInteractor, {
-    AddMuTagInteractorException,
-    ExceptionType
+    AddMuTagInteractorException
 } from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import { take, skip } from "rxjs/operators";
@@ -16,7 +15,7 @@ import {
     Subject
 } from "rxjs";
 import { NavigationContainerComponent } from "react-navigation";
-import { ViewModelUserMessage } from "../../../shared/viewModel/ViewModel";
+import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -30,9 +29,7 @@ const EventTrackerMock = jest.fn<EventTracker, any>(
 const eventTrackerMock = new EventTrackerMock();
 Logger.createInstance(eventTrackerMock);
 
-const otherRoutes = ["Home", "Settings"] as const;
-const routes = [...AddMuTagViewModel.routes, ...otherRoutes];
-type Routes = typeof routes[number];
+type Routes = typeof AddMuTagViewModel.routes[number];
 
 const backPressSubscriber = new BehaviorSubject<Subscriber<void> | undefined>(
     undefined
@@ -53,7 +50,10 @@ const navigationPortMocks = {
 };
 const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
     (): NavigationPort<Routes> => ({
-        routes: Object.assign({}, ...routes.map(v => ({ [v]: v }))),
+        routes: Object.assign(
+            {},
+            ...AddMuTagViewModel.routes.map(v => ({ [v]: v }))
+        ),
         navigateTo: navigationPortMocks.navigateTo,
         onHardwareBackPress: navigationPortMocks.onHardwareBackPress,
         popToTop: navigationPortMocks.popToTop,
@@ -63,9 +63,9 @@ const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
 const navigationPortMock = new NavigationPortMock();
 
 let findNewMuTagSubscriber: Subscriber<void>;
-let findNewMuTagFailure: AddMuTagInteractorException<ExceptionType> | undefined;
-let addNewMuTagFailure: AddMuTagInteractorException<ExceptionType> | undefined;
-let setMuTagNameFailure: AddMuTagInteractorException<ExceptionType> | undefined;
+let findNewMuTagFailure: AddMuTagInteractorException | undefined;
+let addNewMuTagFailure: AddMuTagInteractorException | undefined;
+let setMuTagNameFailure: AddMuTagInteractorException | undefined;
 const addMuTagInteractorMocks = {
     addFoundMuTag: jest.fn(() =>
         addNewMuTagFailure == null
@@ -123,19 +123,22 @@ afterEach(() => {
     );
 });
 
-test("Cancel add Mu tag flow.", async () => {
+test("Cancel add MuTag flow.", async () => {
     expect.assertions(2);
     const stateSequence = {
-        showActivity: new Map<number, boolean>(),
+        mediumPriorityMessage: new Map<
+            number,
+            MediumPriorityMessage | undefined
+        >(),
+        progressIndicator: new Map<number, ProgressIndicatorState>(),
         showCancel: new Map<number, boolean>(),
         showCancelActivity: new Map<number, boolean>(),
-        showFailure: new Map<number, ViewModelUserMessage | undefined>(),
         showRetry: new Map<number, boolean>()
     };
     const subscriptions: Subscription[] = [];
     subscriptions.push(
-        viewModel.showActivity.subscribe(show =>
-            stateSequence.showActivity.set(getEmitCount(), show)
+        viewModel.progressIndicator.subscribe(state =>
+            stateSequence.progressIndicator.set(getEmitCount(), state)
         )
     );
     subscriptions.push(
@@ -149,8 +152,8 @@ test("Cancel add Mu tag flow.", async () => {
         )
     );
     subscriptions.push(
-        viewModel.showFailure.subscribe(failure =>
-            stateSequence.showFailure.set(getEmitCount(), failure)
+        viewModel.mediumPriorityMessage.subscribe(message =>
+            stateSequence.mediumPriorityMessage.set(getEmitCount(), message)
         )
     );
     subscriptions.push(
@@ -162,9 +165,13 @@ test("Cancel add Mu tag flow.", async () => {
     subscriptions.forEach(s => s.unsubscribe());
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
     expect(stateSequence).toStrictEqual({
-        showActivity: new Map([
-            [0, false],
-            [6, false]
+        mediumPriorityMessage: new Map([
+            [3, undefined],
+            [8, undefined]
+        ]),
+        progressIndicator: new Map([
+            [0, undefined],
+            [6, undefined]
         ]),
         showCancel: new Map([
             [1, true],
@@ -175,10 +182,6 @@ test("Cancel add Mu tag flow.", async () => {
             [5, true],
             [10, false]
         ]),
-        showFailure: new Map([
-            [3, undefined],
-            [8, undefined]
-        ]),
         showRetry: new Map([
             [4, false],
             [9, false]
@@ -186,7 +189,7 @@ test("Cancel add Mu tag flow.", async () => {
     });
 });
 
-test("Successfully navigate to Find Mu Tag screen.", async () => {
+test("Successfully navigate to Find MuTag screen.", async () => {
     expect.assertions(5);
     expect(navigationPortMocks.onHardwareBackPress).toHaveBeenCalledTimes(0);
     viewModel.goToFindMuTag();
@@ -198,13 +201,13 @@ test("Successfully navigate to Find Mu Tag screen.", async () => {
     );
 });
 
-test("Successfully start adding Mu tag.", async () => {
+test("Successfully start adding MuTag.", async () => {
     expect.assertions(12);
-    expect(viewModel.showActivity.value).toBe(false);
-    expect(viewModel.showCancel.value).toBe(true);
-    expect(viewModel.showFailure.value).toBeUndefined();
+    expect(viewModel.progressIndicatorValue).toBe(undefined);
+    expect(viewModel.showCancelValue).toBe(true);
+    expect(viewModel.mediumPriorityMessageValue).toBeUndefined();
     const executionOrder: number[] = [];
-    const showActivityPromise01 = viewModel.showActivity
+    const progressIndicatorPromise01 = viewModel.progressIndicator
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(0));
@@ -212,18 +215,18 @@ test("Successfully start adding Mu tag.", async () => {
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(1));
-    const showActivityPromise02 = viewModel.showActivity
+    const progressIndicatorPromise02 = viewModel.progressIndicator
         .pipe(skip(2), take(1))
         .toPromise()
         .finally(() => executionOrder.push(2));
     viewModel.startAddingMuTag();
-    await expect(showActivityPromise01).resolves.toBe(true);
+    await expect(progressIndicatorPromise01).resolves.toBe("Indeterminate");
     expect(addMuTagInteractorMocks.findNewMuTag).toHaveBeenCalledTimes(1);
     expect(addMuTagInteractorMocks.addFoundMuTag).toHaveBeenCalledTimes(0);
     findNewMuTagSubscriber.complete();
     await expect(showCancelPromise).resolves.toBe(false);
     expect(addMuTagInteractorMocks.addFoundMuTag).toHaveBeenCalledTimes(1);
-    await expect(showActivityPromise02).resolves.toBe(false);
+    await expect(progressIndicatorPromise02).resolves.toBe(undefined);
     expect(executionOrder).toStrictEqual([0, 1, 2]);
     expect(navigationPortMocks.navigateTo).toHaveBeenCalledTimes(1);
     expect(navigationPortMocks.navigateTo).toHaveBeenCalledWith(
@@ -231,7 +234,7 @@ test("Successfully start adding Mu tag.", async () => {
     );
 });
 
-test("Cancel start adding Mu tag.", async () => {
+test("Cancel start adding MuTag.", async () => {
     expect.assertions(4);
     viewModel.startAddingMuTag();
     await viewModel.cancel();
@@ -243,14 +246,17 @@ test("Cancel start adding Mu tag.", async () => {
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
 });
 
-test("Hardware back press cancels on find & add Mu tag screen.", async () => {
+test("Hardware back press cancels on find & add MuTag screen.", async () => {
     expect.assertions(2);
     const stateSequence = {
+        mediumPriorityMessage: new Map<
+            number,
+            MediumPriorityMessage | undefined
+        >(),
         onUnsubscribe: new Set<number>(),
-        showActivity: new Map<number, boolean>(),
+        progressIndicator: new Map<number, ProgressIndicatorState>(),
         showCancel: new Map<number, boolean>(),
         showCancelActivity: new Map<number, boolean>(),
-        showFailure: new Map<number, ViewModelUserMessage | undefined>(),
         showRetry: new Map<number, boolean>()
     };
     const subscriptions: Subscription[] = [];
@@ -260,8 +266,8 @@ test("Hardware back press cancels on find & add Mu tag screen.", async () => {
         )
     );
     subscriptions.push(
-        viewModel.showActivity.subscribe(show =>
-            stateSequence.showActivity.set(getEmitCount(), show)
+        viewModel.progressIndicator.subscribe(state =>
+            stateSequence.progressIndicator.set(getEmitCount(), state)
         )
     );
     subscriptions.push(
@@ -275,8 +281,8 @@ test("Hardware back press cancels on find & add Mu tag screen.", async () => {
         )
     );
     subscriptions.push(
-        viewModel.showFailure.subscribe(failure =>
-            stateSequence.showFailure.set(getEmitCount(), failure)
+        viewModel.mediumPriorityMessage.subscribe(failure =>
+            stateSequence.mediumPriorityMessage.set(getEmitCount(), failure)
         )
     );
     subscriptions.push(
@@ -289,10 +295,14 @@ test("Hardware back press cancels on find & add Mu tag screen.", async () => {
     subscriptions.forEach(s => s.unsubscribe());
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
     expect(stateSequence).toStrictEqual({
+        mediumPriorityMessage: new Map([
+            [3, undefined],
+            [8, undefined]
+        ]),
         onUnsubscribe: new Set([11]),
-        showActivity: new Map([
-            [0, false],
-            [6, false]
+        progressIndicator: new Map([
+            [0, undefined],
+            [6, undefined]
         ]),
         showCancel: new Map([
             [1, true],
@@ -303,10 +313,6 @@ test("Hardware back press cancels on find & add Mu tag screen.", async () => {
             [5, true],
             [10, false]
         ]),
-        showFailure: new Map([
-            [3, undefined],
-            [8, undefined]
-        ]),
         showRetry: new Map([
             [4, false],
             [9, false]
@@ -314,22 +320,25 @@ test("Hardware back press cancels on find & add Mu tag screen.", async () => {
     });
 });
 
-test("Fails to find new Mu tag.", async () => {
+test("Fails to find new MuTag.", async () => {
     expect.assertions(1);
     const stateSequence = {
-        showActivity: new Map<number, boolean>(),
-        showFailure: new Map<number, ViewModelUserMessage | undefined>(),
+        mediumPriorityMessage: new Map<
+            number,
+            MediumPriorityMessage | undefined
+        >(),
+        progressIndicator: new Map<number, ProgressIndicatorState>(),
         showRetry: new Map<number, boolean>()
     };
     const subscriptions: Subscription[] = [];
     subscriptions.push(
-        viewModel.showActivity.subscribe(show =>
-            stateSequence.showActivity.set(getEmitCount(), show)
+        viewModel.progressIndicator.subscribe(show =>
+            stateSequence.progressIndicator.set(getEmitCount(), show)
         )
     );
     subscriptions.push(
-        viewModel.showFailure.subscribe(failure =>
-            stateSequence.showFailure.set(getEmitCount(), failure)
+        viewModel.mediumPriorityMessage.subscribe(failure =>
+            stateSequence.mediumPriorityMessage.set(getEmitCount(), failure)
         )
     );
     subscriptions.push(
@@ -342,43 +351,48 @@ test("Fails to find new Mu tag.", async () => {
     );
     await viewModel.startAddingMuTag();
     subscriptions.forEach(s => s.unsubscribe());
-    const findNewMuTagFailureMessage = AddMuTagViewModel.createUserMessage(
-        findNewMuTagFailure.name,
-        findNewMuTagFailure.message
-    );
     expect(stateSequence).toStrictEqual({
-        showActivity: new Map([
-            [0, false],
-            [3, true],
-            [6, false]
+        progressIndicator: new Map([
+            [0, undefined],
+            [3, "Indeterminate"],
+            [4, undefined]
         ]),
-        showFailure: new Map([
+        mediumPriorityMessage: new Map([
             [1, undefined],
-            [4, findNewMuTagFailureMessage]
+            [
+                5,
+                {
+                    messageKey: "NewMuTagNotFound",
+                    data: []
+                }
+            ]
         ]),
         showRetry: new Map([
             [2, false],
-            [5, true]
+            [6, true]
         ])
     });
 });
 
-test("Fails to add new Mu tag.", async () => {
+test("Fails to add new MuTag.", async () => {
     expect.assertions(1);
     const stateSequence = {
-        showActivity: new Map<number, boolean>(),
-        showFailure: new Map<number, ViewModelUserMessage | undefined>(),
+        mediumPriorityMessage: new Map<
+            number,
+            MediumPriorityMessage | undefined
+        >(),
+        progressIndicator: new Map<number, ProgressIndicatorState>(),
         showRetry: new Map<number, boolean>()
     };
     const subscriptions: Subscription[] = [];
     subscriptions.push(
-        viewModel.showActivity.subscribe(show =>
-            stateSequence.showActivity.set(getEmitCount(), show)
+        viewModel.progressIndicator.subscribe(show =>
+            stateSequence.progressIndicator.set(getEmitCount(), show)
         )
     );
     subscriptions.push(
-        viewModel.showFailure.subscribe(failure =>
-            stateSequence.showFailure.set(getEmitCount(), failure)
+        viewModel.mediumPriorityMessage.subscribe(failure =>
+            stateSequence.mediumPriorityMessage.set(getEmitCount(), failure)
         )
     );
     subscriptions.push(
@@ -393,43 +407,48 @@ test("Fails to add new Mu tag.", async () => {
     findNewMuTagSubscriber.complete();
     await startAddingPromise;
     subscriptions.forEach(s => s.unsubscribe());
-    const findNewMuTagFailureMessage = AddMuTagViewModel.createUserMessage(
-        addNewMuTagFailure.name,
-        addNewMuTagFailure.message
-    );
     expect(stateSequence).toStrictEqual({
-        showActivity: new Map([
-            [0, false],
-            [3, true],
-            [6, false]
-        ]),
-        showFailure: new Map([
+        mediumPriorityMessage: new Map([
             [1, undefined],
-            [4, findNewMuTagFailureMessage]
+            [
+                5,
+                {
+                    messageKey: "FailedToAddMuTag",
+                    data: []
+                }
+            ]
+        ]),
+        progressIndicator: new Map([
+            [0, undefined],
+            [3, "Indeterminate"],
+            [4, undefined]
         ]),
         showRetry: new Map([
             [2, false],
-            [5, true]
+            [6, true]
         ])
     });
 });
 
-test("Successfully retry start adding Mu tag.", async () => {
+test("Successfully retry start adding MuTag.", async () => {
     expect.assertions(3);
     const stateSequence = {
-        showActivity: new Map<number, boolean>(),
-        showFailure: new Map<number, ViewModelUserMessage | undefined>(),
+        mediumPriorityMessage: new Map<
+            number,
+            MediumPriorityMessage | undefined
+        >(),
+        progressIndicator: new Map<number, ProgressIndicatorState>(),
         showRetry: new Map<number, boolean>()
     };
     const subscriptions: Subscription[] = [];
     subscriptions.push(
-        viewModel.showActivity.subscribe(show =>
-            stateSequence.showActivity.set(getEmitCount(), show)
+        viewModel.progressIndicator.subscribe(show =>
+            stateSequence.progressIndicator.set(getEmitCount(), show)
         )
     );
     subscriptions.push(
-        viewModel.showFailure.subscribe(failure =>
-            stateSequence.showFailure.set(getEmitCount(), failure)
+        viewModel.mediumPriorityMessage.subscribe(failure =>
+            stateSequence.mediumPriorityMessage.set(getEmitCount(), failure)
         )
     );
     subscriptions.push(
@@ -440,10 +459,6 @@ test("Successfully retry start adding Mu tag.", async () => {
     findNewMuTagFailure = AddMuTagInteractorException.NewMuTagNotFound(
         undefined
     );
-    const findNewMuTagFailureMessage = AddMuTagViewModel.createUserMessage(
-        findNewMuTagFailure.name,
-        findNewMuTagFailure.message
-    );
     await viewModel.startAddingMuTag();
     findNewMuTagFailure = undefined;
     const startAddingPromise = viewModel.startAddingMuTag(true);
@@ -453,38 +468,47 @@ test("Successfully retry start adding Mu tag.", async () => {
     expect(addMuTagInteractorMocks.findNewMuTag).toHaveBeenCalledTimes(2);
     expect(addMuTagInteractorMocks.addFoundMuTag).toHaveBeenCalledTimes(1);
     expect(stateSequence).toStrictEqual({
-        showActivity: new Map([
-            [0, false],
-            [3, true],
-            [6, false],
-            [8, true],
-            [10, false]
-        ]),
-        showFailure: new Map([
+        mediumPriorityMessage: new Map([
             [1, undefined],
-            [4, findNewMuTagFailureMessage],
+            [
+                5,
+                {
+                    messageKey: "NewMuTagNotFound",
+                    data: []
+                }
+            ],
             [7, undefined]
+        ]),
+        progressIndicator: new Map([
+            [0, undefined],
+            [3, "Indeterminate"],
+            [4, undefined],
+            [8, "Indeterminate"],
+            [9, undefined]
         ]),
         showRetry: new Map([
             [2, false],
-            [5, true],
-            [9, false]
+            [6, true],
+            [10, false]
         ])
     });
 });
 
-test("Successfully name Mu tag.", async () => {
+test("Successfully name MuTag.", async () => {
     expect.assertions(4);
     viewModel.goToFindMuTag();
     const addMuTagPromise = viewModel.startAddingMuTag();
     findNewMuTagSubscriber.complete();
     await addMuTagPromise;
     const stateSequence = {
+        mediumPriorityMessage: new Map<
+            number,
+            MediumPriorityMessage | undefined
+        >(),
         onUnsubscribe: new Set<number>(),
-        showActivity: new Map<number, boolean>(),
+        progressIndicator: new Map<number, ProgressIndicatorState>(),
         showCancel: new Map<number, boolean>(),
         showCancelActivity: new Map<number, boolean>(),
-        showFailure: new Map<number, ViewModelUserMessage | undefined>(),
         showRetry: new Map<number, boolean>()
     };
     const subscriptions: Subscription[] = [];
@@ -494,8 +518,8 @@ test("Successfully name Mu tag.", async () => {
         )
     );
     subscriptions.push(
-        viewModel.showActivity.subscribe(show =>
-            stateSequence.showActivity.set(getEmitCount(), show)
+        viewModel.progressIndicator.subscribe(show =>
+            stateSequence.progressIndicator.set(getEmitCount(), show)
         )
     );
     subscriptions.push(
@@ -509,8 +533,8 @@ test("Successfully name Mu tag.", async () => {
         )
     );
     subscriptions.push(
-        viewModel.showFailure.subscribe(failure =>
-            stateSequence.showFailure.set(getEmitCount(), failure)
+        viewModel.mediumPriorityMessage.subscribe(failure =>
+            stateSequence.mediumPriorityMessage.set(getEmitCount(), failure)
         )
     );
     subscriptions.push(
@@ -527,41 +551,44 @@ test("Successfully name Mu tag.", async () => {
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
     subscriptions.forEach(s => s.unsubscribe());
     expect(stateSequence).toStrictEqual({
+        mediumPriorityMessage: new Map([
+            [3, undefined],
+            [7, undefined]
+        ]),
         onUnsubscribe: new Set([9]),
-        showActivity: new Map([
-            [0, false],
-            [5, true],
-            [8, false]
+        progressIndicator: new Map([
+            [0, undefined],
+            [5, "Indeterminate"],
+            [6, undefined]
         ]),
         showCancel: new Map([[1, false]]),
         showCancelActivity: new Map([[2, false]]),
-        showFailure: new Map([
-            [3, undefined],
-            [6, undefined]
-        ]),
         showRetry: new Map([
             [4, false],
-            [7, false]
+            [8, false]
         ])
     });
 });
 
-test("Fails to name Mu tag.", async () => {
+test("Fails to name MuTag.", async () => {
     expect.assertions(4);
     const stateSequence = {
-        showActivity: new Map<number, boolean>(),
-        showFailure: new Map<number, ViewModelUserMessage | undefined>(),
+        mediumPriorityMessage: new Map<
+            number,
+            MediumPriorityMessage | undefined
+        >(),
+        progressIndicator: new Map<number, ProgressIndicatorState>(),
         showRetry: new Map<number, boolean>()
     };
     const subscriptions: Subscription[] = [];
     subscriptions.push(
-        viewModel.showActivity.subscribe(show =>
-            stateSequence.showActivity.set(getEmitCount(), show)
+        viewModel.progressIndicator.subscribe(show =>
+            stateSequence.progressIndicator.set(getEmitCount(), show)
         )
     );
     subscriptions.push(
-        viewModel.showFailure.subscribe(failure =>
-            stateSequence.showFailure.set(getEmitCount(), failure)
+        viewModel.mediumPriorityMessage.subscribe(message =>
+            stateSequence.mediumPriorityMessage.set(getEmitCount(), message)
         )
     );
     subscriptions.push(
@@ -569,7 +596,7 @@ test("Fails to name Mu tag.", async () => {
             stateSequence.showRetry.set(getEmitCount(), show)
         )
     );
-    setMuTagNameFailure = AddMuTagInteractorException.FailedToSaveSettings(
+    setMuTagNameFailure = AddMuTagInteractorException.FailedToNameMuTag(
         undefined
     );
     const muTagName = "Keys";
@@ -580,35 +607,37 @@ test("Fails to name Mu tag.", async () => {
         muTagName
     );
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(0);
-    const setMuTagNameFailureMessage = AddMuTagViewModel.createUserMessage(
-        setMuTagNameFailure.name,
-        setMuTagNameFailure.message
-    );
     expect(stateSequence).toStrictEqual({
-        showActivity: new Map([
-            [0, false],
-            [3, true],
-            [6, false]
-        ]),
-        showFailure: new Map([
+        mediumPriorityMessage: new Map([
             [1, undefined],
-            [4, setMuTagNameFailureMessage]
+            [
+                5,
+                {
+                    messageKey: "FailedToNameMuTag",
+                    data: []
+                }
+            ]
+        ]),
+        progressIndicator: new Map([
+            [0, undefined],
+            [3, "Indeterminate"],
+            [4, undefined]
         ]),
         showRetry: new Map([
             [2, false],
-            [5, true]
+            [6, true]
         ])
     });
 });
 
-test("Successfully retry to name Mu tag.", async () => {
+test("Successfully retry to name MuTag.", async () => {
     expect.assertions(10);
     const executionOrder: number[] = [];
-    const showFailurePromise01 = viewModel.showFailure
+    const mediumPriorityMessagePromise01 = viewModel.mediumPriorityMessage
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(0));
-    setMuTagNameFailure = AddMuTagInteractorException.FailedToSaveSettings(
+    setMuTagNameFailure = AddMuTagInteractorException.FailedToNameMuTag(
         undefined
     );
     const muTagName = "Keys";
@@ -617,41 +646,38 @@ test("Successfully retry to name Mu tag.", async () => {
     expect(addMuTagInteractorMocks.setMuTagName).toHaveBeenCalledWith(
         muTagName
     );
-    const setMuTagNameFailureMessage = AddMuTagViewModel.createUserMessage(
-        setMuTagNameFailure.name,
-        setMuTagNameFailure.message
-    );
-    await expect(showFailurePromise01).resolves.toStrictEqual(
-        setMuTagNameFailureMessage
-    );
+    await expect(mediumPriorityMessagePromise01).resolves.toStrictEqual({
+        messageKey: "FailedToNameMuTag",
+        data: []
+    });
     setMuTagNameFailure = undefined;
-    const showFailurePromise02 = viewModel.showFailure
+    const mediumPriorityMessagePromise02 = viewModel.mediumPriorityMessage
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(1));
-    const showActivityPromise01 = viewModel.showActivity
+    const progressIndicatorPromise01 = viewModel.progressIndicator
         .pipe(skip(1), take(1))
         .toPromise()
         .finally(() => executionOrder.push(2));
+    const progressIndicatorPromise02 = viewModel.progressIndicator
+        .pipe(skip(2), take(1))
+        .toPromise()
+        .finally(() => executionOrder.push(3));
     const showRetryPromise = viewModel.showRetry
         .pipe(skip(1), take(1))
         .toPromise()
-        .finally(() => executionOrder.push(3));
-    const showActivityPromise02 = viewModel.showActivity
-        .pipe(skip(2), take(1))
-        .toPromise()
         .finally(() => executionOrder.push(4));
     viewModel.setMuTagName(muTagName, true);
-    await expect(showFailurePromise02).resolves.toBeUndefined();
-    await expect(showActivityPromise01).resolves.toBe(true);
+    await expect(mediumPriorityMessagePromise02).resolves.toBeUndefined();
+    await expect(progressIndicatorPromise01).resolves.toBe("Indeterminate");
     expect(addMuTagInteractorMocks.setMuTagName).toHaveBeenCalledTimes(2);
     await expect(showRetryPromise).resolves.toBe(false);
-    await expect(showActivityPromise02).resolves.toBe(false);
+    await expect(progressIndicatorPromise02).resolves.toBe(undefined);
     expect(executionOrder).toStrictEqual([0, 1, 2, 3, 4]);
     expect(navigationPortMocks.popToTop).toHaveBeenCalledTimes(1);
 });
 
-test("Disable hardware back press on name Mu tag screen.", async () => {
+test("Disable hardware back press on name MuTag screen.", async () => {
     expect.assertions(2);
     viewModel.goToFindMuTag();
     const addMuTagPromise = viewModel.startAddingMuTag();

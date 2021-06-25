@@ -11,6 +11,7 @@ import {
 } from "./BelongingDashboardViewModel";
 import Theme from "../../../../source/Primary Adapters/Presentation/Theme";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
+import Localize from "../../../shared/localization/Localize";
 
 const styles = StyleSheet.create({
     card: {
@@ -61,6 +62,7 @@ const styles = StyleSheet.create({
 });
 
 interface BelongingCardProps {
+    localize: Localize;
     onRemoveMuTag: (uid: string) => void;
     viewData: BelongingViewData;
 }
@@ -72,22 +74,22 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
         batteryLevelRange: BatteryLevelRange
     ): string => {
         switch (batteryLevelRange) {
-            case BatteryLevelRange.High:
+            case "High":
                 return Theme.Color.Green;
-            case BatteryLevelRange.Medium:
+            case "Medium":
                 return "gold";
-            case BatteryLevelRange.Low:
+            case "Low":
                 return Theme.Color.Error;
         }
     };
     const convertToBatteryIconName = (
         batteryBarLevel: BatteryBarLevel
     ): string => {
-        const batteryLevelPercentage = batteryBarLevel * 10;
+        const batteryLevelPercentage = batteryBarLevel.slice(0, -1);
         switch (batteryLevelPercentage) {
-            case 0:
+            case "0":
                 return "battery-outline";
-            case 100:
+            case "100":
                 return "battery";
             default:
                 return `battery-${batteryLevelPercentage}`;
@@ -95,11 +97,11 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
     };
     const convertToSafeStatusColor = (safeStatus: SafeStatus): string => {
         switch (safeStatus) {
-            case SafeStatus.InRange:
+            case "InRange":
                 return Theme.Color.Green;
-            case SafeStatus.InSafeZone:
+            case "InSafeZone":
                 return "gray";
-            case SafeStatus.Unsafe:
+            case "Unsafe":
                 return Theme.Color.Error;
         }
     };
@@ -135,6 +137,23 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
         setSafeStatusColor(convertToSafeStatusColor(props.viewData.safeStatus));
     }, [props.viewData.safeStatus]);
 
+    const getLastSeenText = (): string => {
+        const lastSeen = props.viewData.lastSeen
+        switch (lastSeen.type) {
+            case "Date":
+                return lastSeen.date.toLocaleDateString()
+            case "Interval":
+                return `${lastSeen.count}${props.localize.getText("ViewBelongingDashboard", "LastSeenInterval", lastSeen.unit)}`
+            case "Recent":
+                return props.localize.getText("ViewBelongingDashboard", "LastSeenRecent", lastSeen.state)
+        }
+    }
+
+    const onRemove = () => {
+        hideMenu();
+        props.onRemoveMuTag(props.viewData.uid);
+    }
+
     return (
         <Card elevation={0} style={styles.card}>
             <View style={styles.cardHeader}>
@@ -154,7 +173,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                             size={10}
                             color={safeStatusColor}
                         />
-                        {` ${props.viewData.lastSeen}`}
+                        {` ${getLastSeenText()}`}
                     </Text>
                 }
                 left={(leftProps: any): ReactElement => (
@@ -180,11 +199,13 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         }
                     >
                         <Menu.Item
-                            title="Remove"
+                            title={props.localize.getText(
+                                "ViewBelongingDashboard",
+                                "BelongingCard",
+                                "ButtonRemove"
+                            )}
                             icon="minus-circle-outline"
-                            onPress={() =>
-                                props.onRemoveMuTag(props.viewData.uid)
-                            }
+                            onPress={onRemove}
                         />
                     </Menu>
                 )}
@@ -201,7 +222,7 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
                         style={styles.cardAddressIcon}
                     />
                     <Text style={styles.cardAddressText}>
-                        {props.viewData.address}
+                        {props.viewData.address ?? props.localize.getText("ViewBelongingDashboard", "BelongingCard", "NoAddressName")}
                     </Text>
                 </View>
             </Card.Content>

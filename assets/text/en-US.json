@@ -1,0 +1,106 @@
+{
+    "AddMuTag": {
+        "Instructions": {
+            "List1": "Keep the MuTag close to the app during this setup.",
+            "List2": "Press the MuTag button now to wake it up.",
+            "Info": "Once the dot on the MuTag logo starts flashing green, press 'Continue' below.",
+            "ButtonContinue": "Continue"
+        },
+        "Naming": {
+            "AskNameTitle": "What is the name of this MuTag?",
+            "NameInputLabel": "Attached to",
+            "ButtonSave": "Save",
+            "ButtonSaving": "Saving",
+            "ButtonTryAgain": "Try again"
+        },
+        "Adding": {
+            "Searching": "Searching for new MuTag...",
+            "SettingUp": "Setting up new MuTag...",
+            "ButtonCancel": "Cancel",
+            "ButtonTryAgain": "Try again"
+        },
+        "BannerMessage": {
+            "FailedToAddMuTag": "There was problem adding the MuTag. Please keep MuTag close to the app and try again.",
+            "FailedToNameMuTag": "There was problem naming the MuTag. Please try again.",
+            "LowMuTagBattery": "Unable to add MuTag because its battery is below ${ A }%. Please charge MuTag and try again.",
+            "NewMuTagNotFound": "New MuTag not found. Be sure the MuTag light is flashing and keep it close to the app."
+        },
+        "SnackbarMessage": {
+            "FailedToSaveSettings": "Your MuTag added successfully but some settings failed to save."
+        },
+        "SnackbarButton": {
+            "Dismiss": "Dismiss"
+        }
+    },
+    "RemoveMuTag": {
+        "BannerButton": {
+            "Dismiss": "Dismiss"
+        },
+        "BannerMessage": {
+            "FailedToRemoveMuTag": "There was problem removing the MuTag. Please keep MuTag close to the app and try again.",
+            "FailedToRemoveMuTagFromAccount": "The MuTag device reset successfully, but could not be removed from the app. Please notify support@informu.io.",
+            "FailedToResetMuTag": "Failed to reset MuTag device. Please try again."
+        },
+        "SnackbarButton": {
+            "Dismiss": "Dismiss"
+        },
+        "SnackbarMessage": {
+            "FailedToFindMuTag": "MuTag not found. Please ensure that MuTag is charged and move it closer to the app.",
+            "LowMuTagBattery": "Unable to remove MuTag because its battery is below ${ A }%. Please charge MuTag and try again."
+        }
+    },
+    "SignOut": {
+        "BannerButton": {
+            "Dismiss": "Dismiss"
+        },
+        "BannerMessage": {
+            "SignOutFailed": "Failed to sign out. Please try again."
+        },
+        "DialogButton": {
+            "Cancel": "Cancel",
+            "SignOut": "Sign Out"
+        },
+        "DialogMessage": {
+            "ConfirmSignOut": "Are you sure you want to sign out?"
+        }
+    },
+    "BelongingsLocation": {
+        "ForegroundServiceNotification": {
+            "Title": "MuTag Tracking",
+            "Description": "Keeping MuTag location up-to-date."
+        }
+    },
+    "ViewBelongingDashboard": {
+        "BelongingCard": {
+            "NoAddressName": "no location name found",
+            "ButtonRemove": "Remove"
+        },
+        "LastSeenInterval": {
+            "Day": "d ago",
+            "Hour": "h ago",
+            "Minute": "m ago"
+        },
+        "LastSeenRecent": {
+            "Now": "Just now",
+            "Seconds": "Seconds ago"
+        },
+        "LocationPermissionRequest": {
+            "Title": "MuTags Require 'Coarse Location' Permission",
+            "Message": "Please select 'Allow'. This is required for your MuTags to have accurate and up-to-date locations.",
+            "ButtonDeny": "Deny",
+            "ButtonAllow": "Allow"
+        },
+        "Dashboard": {
+            "NoMuTagMessage": "Add your first MuTag to get started."
+        },
+        "SnackbarButton": {
+            "Dismiss": "Dismiss"
+        }
+    },
+    "TabBar": {
+        "Screen": {
+            "Home": "Home",
+            "Map": "Map"
+        }
+    }
+}

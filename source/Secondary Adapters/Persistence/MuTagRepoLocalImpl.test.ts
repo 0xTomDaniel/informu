@@ -178,7 +178,7 @@ const muTag03 = new ProvisionedMuTag({
         })
 );
 
-test("successfully populate Mu tag cache from logged in account", async (): Promise<
+test("successfully populate MuTag cache from logged in account", async (): Promise<
     void
 > => {
     await accountRepoLocalImpl.add(account);
@@ -188,7 +188,7 @@ test("successfully populate Mu tag cache from logged in account", async (): Prom
     );
 });
 
-test("successfully adds Mu tag", async (): Promise<void> => {
+test("successfully adds MuTag", async (): Promise<void> => {
     // Create new instance so that cache is no longer populated
     muTagRepoLocalImpl = new MuTagRepoLocalImpl(
         databaseMock,
@@ -200,7 +200,7 @@ test("successfully adds Mu tag", async (): Promise<void> => {
     await expect(muTagRepoLocalImpl.add(muTag01)).resolves.toEqual(undefined);
 });
 
-test("successfully gets added Mu tag instance that's not overwritten by new instance from database", async (): Promise<
+test("successfully gets added MuTag instance that's not overwritten by new instance from database", async (): Promise<
     void
 > => {
     expect.assertions(2);
@@ -212,7 +212,7 @@ test("successfully gets added Mu tag instance that's not overwritten by new inst
     ).resolves.toBe(muTag01);
 });
 
-test("successfully adds two Mu tags", async (): Promise<void> => {
+test("successfully adds two MuTags", async (): Promise<void> => {
     (databaseMock.set as jest.Mock).mockResolvedValueOnce(undefined);
     expect.assertions(1);
     const muTagsToAdd = new Set([muTag02, muTag03]);
@@ -221,7 +221,7 @@ test("successfully adds two Mu tags", async (): Promise<void> => {
     );
 });
 
-test("successfully removes Mu tag", async (): Promise<void> => {
+test("successfully removes MuTag", async (): Promise<void> => {
     (databaseMock.remove as jest.Mock).mockResolvedValueOnce(undefined);
     expect.assertions(1);
     await expect(muTagRepoLocalImpl.removeByUid(muTag01.uid)).resolves.toEqual(
@@ -229,7 +229,7 @@ test("successfully removes Mu tag", async (): Promise<void> => {
     );
 });
 
-test("failed to get Mu tag that does not exist", async (): Promise<void> => {
+test("failed to get MuTag that does not exist", async (): Promise<void> => {
     (databaseMock.get as jest.Mock).mockResolvedValueOnce(null);
     expect.assertions(1);
     await expect(muTagRepoLocalImpl.getByUid(muTag01.uid)).rejects.toEqual(

@@ -1,4 +1,10 @@
-import { Button, TextInput, Headline, Text } from "react-native-paper";
+import {
+    Button,
+    TextInput,
+    Headline,
+    Banner,
+    Snackbar
+} from "react-native-paper";
 import {
     StyleSheet,
     Platform,
@@ -17,10 +23,13 @@ import React, {
 } from "react";
 import DeviceInfo from "react-native-device-info";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
-import AddMuTagViewModel from "./AddMuTagViewModel";
-import { skip } from "rxjs/operators";
+import AddMuTagViewModel, {
+    MediumPriorityMessage,
+    LowPriorityMessage
+} from "./AddMuTagViewModel";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import { ViewModelUserMessage } from "../../../shared/viewModel/ViewModel";
+import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
+import Localize from "../../../shared/localization/Localize";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -59,14 +68,14 @@ const styles = StyleSheet.create({
         marginTop: 4,
         marginBottom: 12
     },
-    instructionsIconCol: {
+    /*instructionsIconCol: {
         flex: 1,
         textAlign: "center"
     },
     instructionsInfoIcon: {
         fontSize: Scale(22, 19),
         color: Theme.Color.Error
-    },
+    },*/
     instructionsTextCol: {
         flex: 6,
         marginHorizontal: 12
@@ -81,54 +90,104 @@ const styles = StyleSheet.create({
     }
 });
 
+type BannerActions = Array<{ label: string; onPress: () => void }>;
+
 interface NameMuTagViewProps extends NavigationScreenProps {
+    localize: Localize;
     viewModel: AddMuTagViewModel;
 }
 
 const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
     props
 ): ReactElement => {
+    const [bannerActions, setBannerActions] = useState<BannerActions>([]);
+    const [bannerMessage, setBannerMessage] = useState<
+        MediumPriorityMessage | undefined
+    >(props.viewModel.mediumPriorityMessageValue);
     const [muTagName, setMuTagName] = useState<string>("");
-    const [showActivity, setShowActivity] = useState<boolean>(
-        props.viewModel.showActivity.value
-    );
-    const [showFailure, setShowFailure] = useState<
-        ViewModelUserMessage | undefined
-    >(props.viewModel.showFailure.value);
+    const [progressIndicator, setProgressIndicator] = useState<
+        ProgressIndicatorState
+    >(props.viewModel.progressIndicatorValue);
     const [showRetry, setShowRetry] = useState<boolean>(
         props.viewModel.showRetry.value
     );
+    const [snackbarMessage, setSnackbarMessage] = useState<
+        LowPriorityMessage | undefined
+    >(props.viewModel.lowPriorityMessageValue);
 
     useEffect(() => {
-        const subscription = props.viewModel.showActivity
-            .pipe(skip(1))
-            .subscribe(setShowActivity);
+        const subscription = props.viewModel.progressIndicator.subscribe(
+            setProgressIndicator
+        );
         return () => subscription.unsubscribe();
-    }, [props.viewModel.showActivity]);
+    }, [props.viewModel.progressIndicator]);
 
     useEffect(() => {
-        const subscription = props.viewModel.showFailure
-            .pipe(skip(1))
-            .subscribe(setShowFailure);
+        const subscription = props.viewModel.mediumPriorityMessage.subscribe(
+            setBannerMessage
+        );
         return () => subscription.unsubscribe();
-    }, [props.viewModel.showFailure]);
+    }, [props.viewModel.mediumPriorityMessage]);
 
     useEffect(() => {
-        const subscription = props.viewModel.showRetry
-            .pipe(skip(1))
-            .subscribe(setShowRetry);
+        const subscription = props.viewModel.showRetry.subscribe(setShowRetry);
         return () => subscription.unsubscribe();
     }, [props.viewModel.showRetry]);
+
+    useEffect(() => {
+        const subscription = props.viewModel.lowPriorityMessage.subscribe(
+            setSnackbarMessage
+        );
+        return () => subscription.unsubscribe();
+    }, [props.viewModel.lowPriorityMessage]);
+
+    useEffect(() => {
+        const actions: BannerActions = [];
+        if (showRetry) {
+            actions.push({
+                label: props.localize.getText(
+                    "AddMuTag",
+                    "Naming",
+                    "ButtonTryAgain"
+                ),
+                onPress: () => props.viewModel.setMuTagName(muTagName, true)
+            });
+        }
+        setBannerActions(actions);
+    }, [muTagName, props.localize, props.viewModel, showRetry]);
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <SafeAreaView style={[styles.safeAreaView, styles.base]}>
+                <Banner
+                    visible={bannerMessage != null}
+                    actions={bannerActions}
+                    icon={({ size }) => (
+                        <Icon name="alert-circle" style={{ fontSize: size }} />
+                    )}
+                >
+                    {bannerMessage != null
+                        ? props.localize.getText(
+                              "AddMuTag",
+                              "BannerMessage",
+                              bannerMessage
+                          )
+                        : ""}
+                </Banner>
                 <View style={styles.mainContainer}>
                     <Headline style={styles.headline}>
-                        What is the name of this Mu tag?
+                        {props.localize.getText(
+                            "AddMuTag",
+                            "Naming",
+                            "AskNameTitle"
+                        )}
                     </Headline>
                     <TextInput
-                        label="Attached to"
+                        label={props.localize.getText(
+                            "AddMuTag",
+                            "Naming",
+                            "NameInputLabel"
+                        )}
                         mode="outlined"
                         value={muTagName}
                         onChangeText={text => setMuTagName(text)}
@@ -140,8 +199,8 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                         }}
                         style={styles.attachedToInput}
                     />
-                    <View style={styles.bottomContent}>
-                        {showFailure == null ? null : (
+                    {/*<View style={styles.bottomContent}>
+                        {mediumPriorityMessage == null ? null : (
                             <View style={styles.instructionsRow}>
                                 <Icon
                                     name="alert-circle"
@@ -156,20 +215,52 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                                         styles.instructionsInfoText
                                     ]}
                                 >
-                                    {showFailure?.message}
+                                    {mediumPriorityMessage}
                                 </Text>
                             </View>
                         )}
-                    </View>
+                    </View>*/}
                 </View>
+                <Snackbar
+                    duration={Number.POSITIVE_INFINITY}
+                    visible={snackbarMessage != null}
+                    // eslint-disable-next-line @typescript-eslint/no-empty-function
+                    onDismiss={() => {}}
+                    action={{
+                        label: props.localize.getText(
+                            "AddMuTag",
+                            "SnackbarButton",
+                            "Dismiss"
+                        ),
+                        onPress: () => props.viewModel.hideLowPriorityMessage()
+                    }}
+                >
+                    {snackbarMessage != null
+                        ? props.localize.getText(
+                              "AddMuTag",
+                              "SnackbarMessage",
+                              snackbarMessage
+                          )
+                        : ""}
+                </Snackbar>
                 <Button
                     mode="contained"
                     onPress={() => props.viewModel.setMuTagName(muTagName)}
-                    loading={showActivity}
+                    loading={progressIndicator === "Indeterminate"}
                     style={styles.button}
-                    disabled={showActivity}
+                    disabled={progressIndicator === "Indeterminate"}
                 >
-                    {showActivity ? "Saving" : showRetry ? "Try again" : "Save"}
+                    {progressIndicator === "Indeterminate"
+                        ? props.localize.getText(
+                              "AddMuTag",
+                              "Naming",
+                              "ButtonSaving"
+                          )
+                        : props.localize.getText(
+                              "AddMuTag",
+                              "Naming",
+                              "ButtonSave"
+                          )}
                 </Button>
             </SafeAreaView>
         </TouchableWithoutFeedback>

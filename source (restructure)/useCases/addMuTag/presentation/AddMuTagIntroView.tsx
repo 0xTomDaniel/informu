@@ -20,6 +20,7 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ImageBackgrounds } from "../../../../source/Primary Adapters/Presentation/Images";
 import AddMuTagViewModel from "./AddMuTagViewModel";
 import { Scale } from "../../../../source/Primary Adapters/Presentation/ResponsiveScaler";
+import Localize from "../../../shared/localization/Localize";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -102,6 +103,7 @@ const styles = StyleSheet.create({
 });
 
 interface AddMuTagIntroViewProps extends NavigationScreenProps {
+    localize: Localize;
     viewModel: AddMuTagViewModel;
 }
 
@@ -147,8 +149,11 @@ const AddMuTagIntroView: FunctionComponent<AddMuTagIntroViewProps> = (
                                     styles.instructionsText
                                 ]}
                             >
-                                Keep the Mu tag close to the app during this
-                                setup.
+                                {props.localize.getText(
+                                    "AddMuTag",
+                                    "Instructions",
+                                    "List1"
+                                )}
                             </Text>
                         </View>
                         <View>
@@ -167,7 +172,11 @@ const AddMuTagIntroView: FunctionComponent<AddMuTagIntroViewProps> = (
                                         styles.instructionsText
                                     ]}
                                 >
-                                    Press the Mu tag button now to wake it up.
+                                    {props.localize.getText(
+                                        "AddMuTag",
+                                        "Instructions",
+                                        "List2"
+                                    )}
                                 </Text>
                             </View>
                             <View
@@ -189,8 +198,11 @@ const AddMuTagIntroView: FunctionComponent<AddMuTagIntroViewProps> = (
                                         styles.instructionsInfoText
                                     ]}
                                 >
-                                    Once the dot on the Mu tag logo starts
-                                    flashing green, press 'Continue' below.
+                                    {props.localize.getText(
+                                        "AddMuTag",
+                                        "Instructions",
+                                        "Info"
+                                    )}
                                 </Text>
                             </View>
                         </View>
@@ -201,16 +213,12 @@ const AddMuTagIntroView: FunctionComponent<AddMuTagIntroViewProps> = (
                     onPress={() => props.viewModel.goToFindMuTag()}
                     style={styles.button}
                 >
-                    Continue
+                    {props.localize.getText(
+                        "AddMuTag",
+                        "Instructions",
+                        "ButtonContinue"
+                    )}
                 </Button>
-                {/*<ErrorDialog
-                    message={this.state.userErrorDescription}
-                    detailMessage={this.state.detailedErrorDescription}
-                    visible={this.state.showError}
-                    onDismiss={() =>
-                        this.props.addMuTagService.stopAddingNewMuTag()
-                    }
-                />*/}
             </SafeAreaView>
         </ImageBackgrounds.AddMuTag>
     );

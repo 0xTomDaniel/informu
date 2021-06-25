@@ -13,29 +13,43 @@ import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
-import { switchMap, catchError, first } from "rxjs/operators";
+import { switchMap, catchError, first, finalize, take } from "rxjs/operators";
 import { EmptyError } from "rxjs";
 import Exception from "../../shared/metaLanguage/Exception";
 
-const ExceptionType = [
-    "FailedToAddMuTag",
-    "FailedToNameMuTag",
-    "FailedToSaveSettings",
-    "FindNewMuTagCanceled",
-    "LowMuTagBattery",
-    "NewMuTagNotFound"
-] as const;
-export type ExceptionType = typeof ExceptionType[number];
+type ExceptionType =
+    | {
+          type: "FailedToAddMuTag";
+          data: [];
+      }
+    | {
+          type: "FailedToNameMuTag";
+          data: [];
+      }
+    | {
+          type: "FailedToSaveSettings";
+          data: [];
+      }
+    | {
+          type: "FindNewMuTagCanceled";
+          data: [];
+      }
+    | {
+          type: "LowMuTagBattery";
+          data: [number];
+      }
+    | {
+          type: "NewMuTagNotFound";
+          data: [];
+      };
 
-export class AddMuTagInteractorException<
-    T extends ExceptionType
-> extends Exception<T> {
+export class AddMuTagInteractorException extends Exception<ExceptionType> {
     static FailedToAddMuTag(
         sourceException: unknown
-    ): AddMuTagInteractorException<"FailedToAddMuTag"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "FailedToAddMuTag",
-            "Failed to add Mu tag.",
+            { type: "FailedToAddMuTag", data: [] },
+            "Failed to add MuTag.",
             "error",
             sourceException,
             true
@@ -44,10 +58,10 @@ export class AddMuTagInteractorException<
 
     static FailedToNameMuTag(
         sourceException: unknown
-    ): AddMuTagInteractorException<"FailedToNameMuTag"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "FailedToNameMuTag",
-            "Failed to name Mu tag.",
+            { type: "FailedToNameMuTag", data: [] },
+            "Failed to name MuTag.",
             "error",
             sourceException,
             true
@@ -56,83 +70,45 @@ export class AddMuTagInteractorException<
 
     static FailedToSaveSettings(
         sourceException: unknown
-    ): AddMuTagInteractorException<"FailedToSaveSettings"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "FailedToSaveSettings",
-            "Failed to save Mu tag settings.",
+            { type: "FailedToSaveSettings", data: [] },
+            "Failed to save MuTag settings.",
             "error",
             sourceException,
             true
         );
     }
 
-    static get FindNewMuTagCanceled(): AddMuTagInteractorException<
-        "FindNewMuTagCanceled"
-    > {
+    static get FindNewMuTagCanceled(): AddMuTagInteractorException {
         return new this(
-            "FindNewMuTagCanceled",
-            "Find new Mu tag has been canceled.",
+            { type: "FindNewMuTagCanceled", data: [] },
+            "Find new MuTag has been canceled.",
             "log"
         );
     }
 
     static LowMuTagBattery(
         lowBatteryThreshold: number
-    ): AddMuTagInteractorException<"LowMuTagBattery"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "LowMuTagBattery",
-            `Mu tag battery is too low. It's below ${lowBatteryThreshold}%.`,
+            { type: "LowMuTagBattery", data: [lowBatteryThreshold] },
+            `MuTag battery is too low. It's below ${lowBatteryThreshold}%.`,
             "warn"
         );
     }
 
     static NewMuTagNotFound(
         sourceException: unknown
-    ): AddMuTagInteractorException<"NewMuTagNotFound"> {
+    ): AddMuTagInteractorException {
         return new this(
-            "NewMuTagNotFound",
-            "Could not find a new Mu tag.",
+            { type: "NewMuTagNotFound", data: [] },
+            "Could not find a new MuTag.",
             "warn",
             sourceException
         );
     }
 }
-
-/*export const LowMuTagBattery = (
-    lowBatteryThreshold: number
-): UserErrorType => ({
-    name: "LowMuTagBattery",
-    userFriendlyMessage: `Unable to add Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.`
-});
-
-export const NewMuTagNotFound: UserErrorType = {
-    name: "NewMuTagNotFound",
-    userFriendlyMessage:
-        "Could not find a new Mu tag. Be sure the Mu tag light is flashing and keep it close to the app."
-};
-
-export const FailedToAddMuTag: UserErrorType = {
-    name: "FailedToAddMuTag",
-    userFriendlyMessage:
-        "There was problem adding the Mu tag. Please keep Mu tag close to the app and try again."
-};
-
-export const FailedToNameMuTag: UserErrorType = {
-    name: "FailedToNameMuTag",
-    userFriendlyMessage:
-        "There was problem naming the Mu tag. Please try again."
-};
-
-export const FailedToSaveSettings: UserWarningType = {
-    name: "FailedToSaveSettings",
-    userFriendlyMessage:
-        "Your Mu tag added successfully but some settings failed to save."
-};
-
-export const FindNewMuTagCanceled: UserErrorType = {
-    name: "FindNewMuTagCanceled",
-    userFriendlyMessage: "Finding new Mu tag has been canceled."
-};*/
 
 export default interface AddMuTagInteractor {
     addFoundMuTag(): Promise<void>;
@@ -162,13 +138,13 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
 
     async addFoundMuTag(): Promise<void> {
         if (this.unprovisionedMuTag == null) {
-            throw Error("No Mu tag has been found to add.");
+            throw Error("No MuTag has been found to add.");
         }
         let connection: Connection;
         await this.muTagDevices
             .connectToUnprovisionedMuTag(this.unprovisionedMuTag)
             .pipe(
-                switchMap(async cnnctn => {
+                switchMap(cnnctn => {
                     connection = cnnctn;
                     return this.verifyBatteryLevel(cnnctn);
                 }),
@@ -176,39 +152,48 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
                     this.addMuTagToPersistence(
                         batteryLevel,
                         this.unprovisionedMuTag?.macAddress
-                    )
+                    ).catch(e => {
+                        throw AddMuTagInteractorException.FailedToAddMuTag(e);
+                    })
                 ),
                 switchMap(() =>
-                    this.muTagDevices.provisionMuTag(
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        this.accountNumber!,
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                        this.provisionedMuTag!.beaconId,
-                        connection
-                    )
+                    this.muTagDevices
+                        .provisionMuTag(
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            this.accountNumber!,
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            this.provisionedMuTag!.beaconId,
+                            connection
+                        )
+                        .catch(e => {
+                            throw AddMuTagInteractorException.FailedToAddMuTag(
+                                e
+                            );
+                        })
                 ),
                 switchMap(() =>
-                    this.muTagDevices.changeTxPower(
-                        TxPowerSetting["+6 dBm"],
-                        connection
-                    )
+                    this.muTagDevices
+                        .changeTxPower(TxPowerSetting["+6 dBm"], connection)
+                        .catch(e => {
+                            throw AddMuTagInteractorException.FailedToSaveSettings(
+                                e
+                            );
+                        })
                 ),
                 switchMap(() =>
-                    this.muTagDevices.changeAdvertisingInterval(
-                        AdvertisingIntervalSetting["852 ms"],
-                        connection
-                    )
+                    this.muTagDevices
+                        .changeAdvertisingInterval(
+                            AdvertisingIntervalSetting["852 ms"],
+                            connection
+                        )
+                        .catch(e => {
+                            throw AddMuTagInteractorException.FailedToSaveSettings(
+                                e
+                            );
+                        })
                 ),
-                catchError(e => {
-                    this.muTagDevices.disconnectFromMuTag(connection);
-                    throw AddMuTagInteractorException.isType(
-                        e,
-                        "LowMuTagBattery"
-                    )
-                        ? e
-                        : AddMuTagInteractorException.FailedToAddMuTag(e);
-                }),
-                switchMap(() =>
+                take(1),
+                finalize(() =>
                     this.muTagDevices.disconnectFromMuTag(connection)
                 )
             )
@@ -237,7 +222,7 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
 
     async setMuTagName(name: string): Promise<void> {
         if (this.provisionedMuTag == null) {
-            throw Error("Provisioned Mu tag does not exist.");
+            throw Error("Provisioned MuTag does not exist.");
         }
         if (this.accountUid == null) {
             throw Error("Account UID not found.");
@@ -325,8 +310,8 @@ export class AddMuTagInteractorImpl implements AddMuTagInteractor {
             throw error;
         };
 
-        // Mu tag must be added to local persistence before being added to
-        // account. It's probably best to refactor so that Mu tags don't need to
+        // MuTag must be added to local persistence before being added to
+        // account. It's probably best to refactor so that MuTags don't need to
         // be added to the account object. That's probably better domain driven
         // design.
         await this.muTagRepoLocal.add(this.provisionedMuTag).catch(onError);

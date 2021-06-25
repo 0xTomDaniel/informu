@@ -4,35 +4,44 @@ import Hexadecimal from "../../shared/metaLanguage/Hexadecimal";
 import Percent from "../../shared/metaLanguage/Percent";
 import Exception from "../metaLanguage/Exception";
 
-const ExceptionType = [
-    "FailedToConnectToMuTag",
-    "FailedToFindMuTag",
-    "FindNewMuTagTimeout",
-    "MuTagCommunicationFailure",
-    "MuTagDisconnectedUnexpectedly"
-] as const;
-export type ExceptionType = typeof ExceptionType[number];
+type ExceptionType =
+    | {
+          type: "FailedToConnectToMuTag";
+          data: [];
+      }
+    | {
+          type: "FailedToFindMuTag";
+          data: [];
+      }
+    | {
+          type: "FindNewMuTagTimeout";
+          data: [];
+      }
+    | {
+          type: "MuTagCommunicationFailure";
+          data: [];
+      }
+    | {
+          type: "MuTagDisconnectedUnexpectedly";
+          data: [];
+      };
 
-export class MuTagDevicesException<T extends ExceptionType> extends Exception<
-    T
-> {
+export class MuTagDevicesException extends Exception<ExceptionType> {
     static FailedToConnectToMuTag(
         sourceException: unknown
-    ): MuTagDevicesException<"FailedToConnectToMuTag"> {
+    ): MuTagDevicesException {
         return new this(
-            "FailedToConnectToMuTag",
-            "Failed to connect to Mu tag.",
+            { type: "FailedToConnectToMuTag", data: [] },
+            "Failed to connect to MuTag.",
             "warn",
             sourceException
         );
     }
 
-    static FailedToFindMuTag(
-        sourceException: unknown
-    ): MuTagDevicesException<"FailedToFindMuTag"> {
+    static FailedToFindMuTag(sourceException: unknown): MuTagDevicesException {
         return new this(
-            "FailedToFindMuTag",
-            "Mu tag could not be found.",
+            { type: "FailedToFindMuTag", data: [] },
+            "MuTag could not be found.",
             "log",
             sourceException
         );
@@ -40,10 +49,10 @@ export class MuTagDevicesException<T extends ExceptionType> extends Exception<
 
     static FindNewMuTagTimeout(
         sourceException: unknown
-    ): MuTagDevicesException<"FindNewMuTagTimeout"> {
+    ): MuTagDevicesException {
         return new this(
-            "FindNewMuTagTimeout",
-            "Could not find unprovisioned Mu tag before timeout.",
+            { type: "FindNewMuTagTimeout", data: [] },
+            "Could not find unprovisioned MuTag before timeout.",
             "log",
             sourceException
         );
@@ -51,10 +60,10 @@ export class MuTagDevicesException<T extends ExceptionType> extends Exception<
 
     static MuTagCommunicationFailure(
         sourceException: unknown
-    ): MuTagDevicesException<"MuTagCommunicationFailure"> {
+    ): MuTagDevicesException {
         return new this(
-            "MuTagCommunicationFailure",
-            "Failed to read or write to Mu tag.",
+            { type: "MuTagCommunicationFailure", data: [] },
+            "Failed to read or write to MuTag.",
             "error",
             sourceException
         );
@@ -62,10 +71,10 @@ export class MuTagDevicesException<T extends ExceptionType> extends Exception<
 
     static MuTagDisconnectedUnexpectedly(
         sourceException: unknown
-    ): MuTagDevicesException<"MuTagDisconnectedUnexpectedly"> {
+    ): MuTagDevicesException {
         return new this(
-            "MuTagDisconnectedUnexpectedly",
-            "Mu tag has disconnected unexpectedly.",
+            { type: "MuTagDisconnectedUnexpectedly", data: [] },
+            "MuTag has disconnected unexpectedly.",
             "warn",
             sourceException
         );
@@ -107,7 +116,7 @@ export enum AdvertisingIntervalSetting {
 export default interface MuTagDevicesPort {
     /**
      * @function startFindingUnprovisionedMuTags
-     * @param {Rssi} proximityThreshold - Mu tag with an RSSI less than this threshold will be ignored.
+     * @param {Rssi} proximityThreshold - MuTag with an RSSI less than this threshold will be ignored.
      * @param {number} timeout - Promise will resolve when timeout in seconds has been reached.
      */
     changeAdvertisingInterval(

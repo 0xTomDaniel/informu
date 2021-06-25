@@ -1,30 +1,65 @@
 import { expect, jest, test } from "@jest/globals";
 import BelongingDashboardViewModel, {
     BelongingViewData,
-    BatteryBarLevel,
-    BatteryLevelRange,
-    SafeStatus
+    HighPriorityMessage,
+    LowPriorityMessage
 } from "./BelongingDashboardViewModel";
 import BelongingDashboardInteractor, {
     DashboardBelonging,
     DashboardBelongingDelta
 } from "../BelongingDashboardInteractor";
 import { take, skip } from "rxjs/operators";
-import { Subject, Observable } from "rxjs";
+import { Subject, Observable, Subscription } from "rxjs";
 import ObjectCollectionUpdate from "../../../shared/metaLanguage/ObjectCollectionUpdate";
 import Percent from "../../../shared/metaLanguage/Percent";
 import { fakeSchedulers } from "rxjs-marbles/jest";
-import SignOutInteractor, {
-    SignOutInteractorException,
-    ExceptionType as SignOutInteractorExceptionType
-} from "../../signOut/SignOutInteractor";
+import SignOutInteractor from "../../signOut/SignOutInteractor";
 import RemoveMuTagInteractor, {
-    RemoveMuTagInteractorException,
-    ExceptionType
+    RemoveMuTagInteractorException
 } from "../../removeMuTag/RemoveMuTagInteractor";
+import { NavigationContainerComponent } from "react-navigation";
+import NavigationPort from "../../../shared/navigation/NavigationPort";
+import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
+import { v4 as uuidV4 } from "uuid";
+import EventTracker from "../../../shared/metaLanguage/EventTracker";
+import Logger from "../../../shared/metaLanguage/Logger";
+
+const EventTrackerMock = jest.fn<EventTracker, any>(
+    (): EventTracker => ({
+        log: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        setUser: jest.fn(),
+        removeUser: jest.fn()
+    })
+);
+const eventTrackerMock = new EventTrackerMock();
+Logger.createInstance(eventTrackerMock);
+
+type Routes = typeof BelongingDashboardViewModel.routes[number];
+
+const navigationPortMocks = {
+    navigateTo: jest.fn<void, [Routes]>(),
+    onHardwareBackPress: jest.fn<Observable<void>, [boolean]>(),
+    popToTop: jest.fn<void, []>(),
+    setNavigator: jest.fn<void, [NavigationContainerComponent]>()
+};
+const NavigationPortMock = jest.fn<NavigationPort<Routes>, any>(
+    (): NavigationPort<Routes> => ({
+        routes: Object.assign(
+            {},
+            ...BelongingDashboardViewModel.routes.map(v => ({ [v]: v }))
+        ),
+        navigateTo: navigationPortMocks.navigateTo,
+        onHardwareBackPress: navigationPortMocks.onHardwareBackPress,
+        popToTop: navigationPortMocks.popToTop,
+        setNavigator: navigationPortMocks.setNavigator
+    })
+);
+const navigationPortMock = new NavigationPortMock();
 
 //const showErrorSubject = new Subject<Exception<string>>();
-const showOnDashboardSubject = new Subject<
+const dashboardBelongingsSubject = new Subject<
     ObjectCollectionUpdate<DashboardBelonging, DashboardBelongingDelta>
 >();
 const BelongingDashboardInteractorMock = jest.fn<
@@ -32,36 +67,31 @@ const BelongingDashboardInteractorMock = jest.fn<
     any
 >(
     (): BelongingDashboardInteractor => ({
-        showOnDashboard: showOnDashboardSubject
+        dashboardBelongings: dashboardBelongingsSubject
     })
 );
 const belongingDashboardInteractorMock = BelongingDashboardInteractorMock();
 const RemoveMuTagInteractorMock = jest.fn<RemoveMuTagInteractor, any>(
     (): RemoveMuTagInteractor => ({
-        showActivityIndicator: new Observable<boolean>(),
-        showError: new Observable<
-            RemoveMuTagInteractorException<ExceptionType>
-        >(),
-        remove: jest.fn()
+        remove: jest.fn(() =>
+            Promise.reject(RemoveMuTagInteractorException.LowMuTagBattery(9))
+        )
     })
 );
 const removeMuTagInteractorMock = RemoveMuTagInteractorMock();
 const SignOutInteractorMock = jest.fn<SignOutInteractor, any>(
     (): SignOutInteractor => ({
-        showActivityIndicator: new Observable<boolean>(),
-        showError: new Observable<
-            SignOutInteractorException<SignOutInteractorExceptionType>
-        >(),
-        showSignIn: new Observable<void>(),
-        signOut: jest.fn()
+        signOut: jest.fn(() => Promise.resolve())
     })
 );
 const signOutInteractorMock = SignOutInteractorMock();
 const viewModel = new BelongingDashboardViewModel(
+    navigationPortMock,
     belongingDashboardInteractorMock,
     removeMuTagInteractorMock,
     signOutInteractorMock
 );
+const belongingUuids = [uuidV4(), uuidV4(), uuidV4()];
 const belongings: DashboardBelonging[] = [
     {
         address: "Lamar St, Arvada, CO",
@@ -69,40 +99,58 @@ const belongings: DashboardBelonging[] = [
         isSafe: true,
         lastSeen: new Date(),
         name: "Keys",
-        uid: "randomUUID01"
+        uid: belongingUuids[0]
     },
     {
+        address: undefined,
         batteryLevel: new Percent(15),
         isSafe: false,
         lastSeen: new Date("2011-10-05T14:48:00.000Z"),
         name: "Laptop",
-        uid: "randomUUID02"
+        uid: belongingUuids[1]
     }
 ];
 const belongingsViewData: BelongingViewData[] = [
     {
         address: "Lamar St, Arvada, CO",
-        batteryBarLevel: BatteryBarLevel["90%"],
-        batteryLevelRange: BatteryLevelRange.High,
-        lastSeen: "Just now",
+        batteryBarLevel: "90%",
+        batteryLevelRange: "High",
+        lastSeen: {
+            type: "Recent",
+            state: "Now"
+        },
         name: "Keys",
-        safeStatus: SafeStatus.InRange,
-        uid: "randomUUID01"
+        safeStatus: "InRange",
+        uid: belongingUuids[0]
     },
     {
-        address: "no location name found",
-        batteryBarLevel: BatteryBarLevel["20%"],
-        batteryLevelRange: BatteryLevelRange.Low,
-        lastSeen: "10/5/2011",
+        address: undefined,
+        batteryBarLevel: "20%",
+        batteryLevelRange: "Low",
+        lastSeen: {
+            type: "Date",
+            date: new Date("2011-10-05T14:48:00.000Z")
+        },
         name: "Laptop",
-        safeStatus: SafeStatus.Unsafe,
-        uid: "randomUUID02"
+        safeStatus: "Unsafe",
+        uid: belongingUuids[1]
     }
 ];
 
-test("show empty dashboard", async (): Promise<void> => {
+let emitCount = 0;
+const getEmitCount = (): number => {
+    const number = emitCount;
+    emitCount++;
+    return number;
+};
+
+afterEach(() => {
+    emitCount = 0;
+});
+
+test("Show empty dashboard.", async (): Promise<void> => {
     expect.assertions(1);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         viewModel.showEmptyDashboard.pipe(take(1)).subscribe(
             shouldShow => expect(shouldShow).toBe(true),
             e => reject(e),
@@ -111,9 +159,9 @@ test("show empty dashboard", async (): Promise<void> => {
     });
 });
 
-test("show all current belongings", async (): Promise<void> => {
+test("Show all current belongings.", async (): Promise<void> => {
     expect.assertions(2);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         let completed = 0;
         const resolveWhenAllCompleted = (): void => {
             completed += 1;
@@ -132,34 +180,37 @@ test("show all current belongings", async (): Promise<void> => {
             e => reject(e),
             () => resolveWhenAllCompleted()
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
     });
 });
 
-test("show added belonging", async (): Promise<void> => {
+test("Show added belonging.", async (): Promise<void> => {
     const newBelonging: DashboardBelonging = {
         address: "Everett St, Arvada, CO",
         batteryLevel: new Percent(25),
         isSafe: true,
         lastSeen: new Date(),
         name: "Wallet",
-        uid: "randomUUID03"
+        uid: belongingUuids[2]
     };
     const newBelongingViewData: BelongingViewData = {
         address: "Everett St, Arvada, CO",
-        batteryBarLevel: BatteryBarLevel["30%"],
-        batteryLevelRange: BatteryLevelRange.Medium,
-        lastSeen: "Just now",
+        batteryBarLevel: "30%",
+        batteryLevelRange: "Medium",
+        lastSeen: {
+            type: "Recent",
+            state: "Now"
+        },
         name: "Wallet",
-        safeStatus: SafeStatus.InRange,
-        uid: "randomUUID03"
+        safeStatus: "InRange",
+        uid: belongingUuids[2]
     };
     belongingsViewData.splice(1, 0, newBelongingViewData);
 
     expect.assertions(2);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         let completed = 0;
         const resolveWhenAllCompleted = (): void => {
             completed += 1;
@@ -178,10 +229,10 @@ test("show added belonging", async (): Promise<void> => {
             e => reject(e),
             () => resolveWhenAllCompleted()
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 added: [
                     {
@@ -195,28 +246,31 @@ test("show added belonging", async (): Promise<void> => {
     });
 });
 
-test("show belonging update", async (): Promise<void> => {
+test("Show belonging update.", async (): Promise<void> => {
     const now = new Date();
     const belongingChange: DashboardBelongingDelta = {
         address: "Quitman St, Westminster, CO",
         batteryLevel: new Percent(14),
         isSafe: true,
         lastSeen: now,
-        uid: "randomUUID02"
+        uid: belongingUuids[1]
     };
     const belongingUpdateViewData: BelongingViewData = {
         address: "Quitman St, Westminster, CO",
-        batteryBarLevel: BatteryBarLevel["10%"],
-        batteryLevelRange: BatteryLevelRange.Low,
-        lastSeen: "Just now",
+        batteryBarLevel: "10%",
+        batteryLevelRange: "Low",
+        lastSeen: {
+            type: "Recent",
+            state: "Now"
+        },
         name: "Laptop",
-        safeStatus: SafeStatus.InRange,
-        uid: "randomUUID02"
+        safeStatus: "InRange",
+        uid: belongingUuids[1]
     };
     belongingsViewData.splice(2, 1, belongingUpdateViewData);
 
     expect.assertions(2);
-    await new Promise((resolve, reject) => {
+    await new Promise<void>((resolve, reject) => {
         let completed = 0;
         const resolveWhenAllCompleted = (): void => {
             completed += 1;
@@ -235,10 +289,10 @@ test("show belonging update", async (): Promise<void> => {
             e => reject(e),
             () => resolveWhenAllCompleted()
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 changed: [
                     {
@@ -259,11 +313,12 @@ test("show belonging update", async (): Promise<void> => {
     });
 });
 
-let belonging01LastSeenChange: string;
+let belonging01LastSeenChange: Date;
 
 test(
-    "continuously update last seen message",
+    "Continuously update last seen message.",
     fakeSchedulers(advance => {
+        expect.assertions(14);
         jest.useFakeTimers("modern");
 
         const oneSecondInMS = 1000;
@@ -278,59 +333,103 @@ test(
             e => console.error(e)
         );
 
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
 
         advance(oneSecondInMS * 5);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("Just now");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            state: "Now",
+            type: "Recent"
+        });
 
         advance(oneSecondInMS * 54);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("Just now");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            state: "Now",
+            type: "Recent"
+        });
 
         advance(oneSecondInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("1m ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 1,
+            type: "Interval",
+            unit: "Minute"
+        });
 
         advance(oneMinuteInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("2m ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 2,
+            type: "Interval",
+            unit: "Minute"
+        });
 
         advance(oneMinuteInMS * 57);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("59m ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 59,
+            type: "Interval",
+            unit: "Minute"
+        });
 
         advance(oneMinuteInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("1h ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 1,
+            type: "Interval",
+            unit: "Hour"
+        });
 
         advance(oneHourInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("2h ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 2,
+            type: "Interval",
+            unit: "Hour"
+        });
 
         advance(oneHourInMS * 21);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("23h ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 23,
+            type: "Interval",
+            unit: "Hour"
+        });
 
         advance(oneHourInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("1d ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 1,
+            type: "Interval",
+            unit: "Day"
+        });
 
         advance(oneDayInMS);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("2d ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 2,
+            type: "Interval",
+            unit: "Day"
+        });
 
         advance(oneDayInMS * 4);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("6d ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 6,
+            type: "Interval",
+            unit: "Day"
+        });
 
         advance(oneDayInMS);
         const lastSeenViewDataDate = new Date();
         lastSeenViewDataDate.setDate(lastSeenViewDataDate.getDate() - 7);
-        belonging01LastSeenChange = lastSeenViewDataDate.toLocaleDateString();
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual(
-            belonging01LastSeenChange
-        );
+        belonging01LastSeenChange = lastSeenViewDataDate;
+        if (belongingsViewDataUpdate[1].lastSeen.type === "Date") {
+            expect(belongingsViewDataUpdate[1].lastSeen.date.getSeconds).toBe(
+                belonging01LastSeenChange.getSeconds
+            );
+        }
 
         const newLastSeenDate = new Date();
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 changed: [
                     {
                         index: 1,
                         elementChange: {
-                            uid: "randomUUID03",
+                            uid: belongingUuids[2],
                             isSafe: true,
                             lastSeen: newLastSeenDate
                         }
@@ -338,13 +437,13 @@ test(
                 ]
             })
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 changed: [
                     {
                         index: 1,
                         elementChange: {
-                            uid: "randomUUID03",
+                            uid: belongingUuids[2],
                             isSafe: false
                         }
                     }
@@ -361,53 +460,71 @@ test(
         });
 
         advance(oneSecondInMS * 5);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("Seconds ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            state: "Seconds",
+            type: "Recent"
+        });
 
         advance(oneSecondInMS * 55);
-        expect(belongingsViewDataUpdate[1].lastSeen).toEqual("1m ago");
+        expect(belongingsViewDataUpdate[1].lastSeen).toEqual({
+            count: 1,
+            type: "Interval",
+            unit: "Minute"
+        });
 
         subscription.unsubscribe();
     })
 );
 
 test(
-    "remove belonging",
+    "Remove belonging.",
     fakeSchedulers(advance => {
-        const updatedBelongingsViewData: BelongingViewData[] = [
+        const updatedBelongingsViewData = [
             {
                 address: "Lamar St, Arvada, CO",
-                batteryBarLevel: BatteryBarLevel["90%"],
-                batteryLevelRange: BatteryLevelRange.High,
-                uid: "randomUUID01",
+                batteryBarLevel: "90%",
+                batteryLevelRange: "High",
+                uid: belongingUuids[0],
                 name: "Keys",
-                safeStatus: SafeStatus.InRange,
-                lastSeen: belonging01LastSeenChange
+                safeStatus: "InRange"
             },
             {
                 address: "Everett St, Arvada, CO",
-                batteryBarLevel: BatteryBarLevel["30%"],
-                batteryLevelRange: BatteryLevelRange.Medium,
-                uid: "randomUUID03",
+                batteryBarLevel: "30%",
+                batteryLevelRange: "Medium",
+                uid: belongingUuids[2],
                 name: "Wallet",
-                safeStatus: SafeStatus.Unsafe,
-                lastSeen: "1m ago"
+                safeStatus: "Unsafe",
+                lastSeen: {
+                    count: 1,
+                    type: "Interval",
+                    unit: "Minute"
+                }
             }
         ];
 
-        expect.assertions(2);
+        expect.assertions(3);
         viewModel.showBelongings.pipe(take(1)).subscribe(
-            currentBelongings =>
-                expect(currentBelongings).toEqual(updatedBelongingsViewData),
+            currentBelongings => {
+                expect(currentBelongings).toMatchObject(
+                    updatedBelongingsViewData
+                );
+                if (currentBelongings[0].lastSeen.type === "Date") {
+                    expect(currentBelongings[0].lastSeen.date.getSeconds).toBe(
+                        belonging01LastSeenChange.getSeconds
+                    );
+                }
+            },
             e => console.error(e)
         );
         viewModel.showEmptyDashboard.pipe(take(1)).subscribe(
             shouldShow => expect(shouldShow).toBe(false),
             e => console.error(e)
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({ initial: belongings })
         );
-        showOnDashboardSubject.next(
+        dashboardBelongingsSubject.next(
             new ObjectCollectionUpdate({
                 removed: [
                     {
@@ -421,3 +538,93 @@ test(
         jest.useRealTimers();
     })
 );
+
+test("Remove belonging fails.", async (): Promise<void> => {
+    expect.assertions(1);
+    const stateSequence = {
+        lowPriorityMessage: new Map<number, LowPriorityMessage | undefined>(),
+        progressIndicator: new Map<number, ProgressIndicatorState>()
+    };
+    const lowPriorityMessageSubject = new Subject<void>();
+    const subscriptions: Subscription[] = [];
+    subscriptions.push(
+        viewModel.lowPriorityMessage.subscribe(message => {
+            stateSequence.lowPriorityMessage.set(getEmitCount(), message);
+            lowPriorityMessageSubject.next();
+        })
+    );
+    subscriptions.push(
+        viewModel.progressIndicator.subscribe(message =>
+            stateSequence.progressIndicator.set(getEmitCount(), message)
+        )
+    );
+    const highPriorityMessagePromise = lowPriorityMessageSubject
+        .pipe(take(1))
+        .toPromise();
+    await viewModel.removeMuTag("");
+    await highPriorityMessagePromise;
+    subscriptions.forEach(s => s.unsubscribe());
+    expect(stateSequence).toStrictEqual({
+        lowPriorityMessage: new Map([
+            [0, undefined],
+            [
+                4,
+                {
+                    messageKey: "LowMuTagBattery",
+                    data: [9]
+                }
+            ]
+        ]),
+        progressIndicator: new Map([
+            [1, undefined],
+            [2, "Indeterminate"],
+            [3, undefined]
+        ])
+    });
+});
+
+test("Sign out.", async (): Promise<void> => {
+    expect.assertions(1);
+    const stateSequence = {
+        highPriorityMessage: new Map<number, HighPriorityMessage | undefined>(),
+        progressIndicator: new Map<number, ProgressIndicatorState>()
+    };
+    const highPriorityMessageSubject = new Subject<void>();
+    const subscriptions: Subscription[] = [];
+    subscriptions.push(
+        viewModel.highPriorityMessage.subscribe(message => {
+            stateSequence.highPriorityMessage.set(getEmitCount(), message);
+            highPriorityMessageSubject.next();
+        })
+    );
+    subscriptions.push(
+        viewModel.progressIndicator.subscribe(message =>
+            stateSequence.progressIndicator.set(getEmitCount(), message)
+        )
+    );
+    const highPriorityMessagePromise = highPriorityMessageSubject
+        .pipe(take(1))
+        .toPromise();
+    viewModel.signOut();
+    await highPriorityMessagePromise;
+    await viewModel.confirmSignOut();
+    subscriptions.forEach(s => s.unsubscribe());
+    expect(stateSequence).toStrictEqual({
+        highPriorityMessage: new Map([
+            [0, undefined],
+            [
+                2,
+                {
+                    messageKey: "ConfirmSignOut",
+                    data: []
+                }
+            ],
+            [3, undefined]
+        ]),
+        progressIndicator: new Map([
+            [1, undefined],
+            [4, "Indeterminate"],
+            [5, undefined]
+        ])
+    });
+});

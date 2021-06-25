@@ -83,6 +83,9 @@ import MuTagBatteriesInteractor, {
 } from "./source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 import BackgroundTask from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundTask";
 import BackgroundFetchProxyImpl from "./source (restructure)/useCases/updateMuTagBatteries/device/BackgroundFetchProxy";
+import Localize from "./source (restructure)/shared/localization/Localize";
+import ReactNativeLocalize from "react-native-localize";
+Localize.createInstance(ReactNativeLocalize);
 import { Platform, BackHandler } from "react-native";
 import BluetoothAndroidDecorator from "./source (restructure)/shared/bluetooth/BluetoothAndroidDecorator";
 import ReactNativeBlePlxAdapter from "./source (restructure)/shared/bluetooth/ReactNativeBlePlxAdapter";
@@ -121,7 +124,11 @@ const appViewModel = new AppViewModel();
 const sessionPresenter = new AppPresenter(appViewModel);
 
 const otherRoutes = ["Home"] as const;
-const routes = [...AddMuTagViewModel.routes, ...otherRoutes];
+const routes = [
+    ...AddMuTagViewModel.routes,
+    ...BelongingDashboardViewModel.routes,
+    ...otherRoutes
+];
 const navigationAdapter = new ReactNavigationAdapter(routes, BackHandler);
 
 export class Dependencies {
@@ -297,6 +304,7 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.belongingDashboardViewModel = new BelongingDashboardViewModel(
+            navigationAdapter,
             this.belongingDashboardInteractor,
             this.removeMuTagInteractor,
             this.signOutInteractor
@@ -426,6 +434,7 @@ export class Dependencies {
             this.accountRepoLocal
         );
         this.belongingDashboardViewModel = new BelongingDashboardViewModel(
+            navigationAdapter,
             this.belongingDashboardInteractor,
             this.removeMuTagInteractor,
             this.signOutInteractor
@@ -459,15 +468,15 @@ assertNotNullOrUndefined(geocodingApiKey);
 const mapboxAccessToken = process.env.MAPBOX_ACCESS_TOKEN;
 assertNotNullOrUndefined(mapboxAccessToken);
 const dependencies = new Dependencies(webClientId, geocodingApiKey);
+const localize = Localize.instance;
 
 const HomeStack = createStackNavigator(
     {
         [navigationAdapter.routes.Home]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <BelongingDashboardView
-                    belongingDashboardViewModel={
-                        dependencies.belongingDashboardViewModel
-                    }
+                    localize={localize}
+                    viewModel={dependencies.belongingDashboardViewModel}
                     {...props}
                 />
             )
@@ -475,6 +484,7 @@ const HomeStack = createStackNavigator(
         [navigationAdapter.routes.AddMuTagIntro]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <AddMuTagIntroView
+                    localize={localize}
                     viewModel={dependencies.addMuTagViewModel}
                     {...props}
                 />
@@ -483,6 +493,7 @@ const HomeStack = createStackNavigator(
         [navigationAdapter.routes.FindAddMuTag]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <FindAddMuTagView
+                    localize={localize}
                     viewModel={dependencies.addMuTagViewModel}
                     {...props}
                 />
@@ -491,6 +502,7 @@ const HomeStack = createStackNavigator(
         [navigationAdapter.routes.NameMuTag]: {
             screen: (props: NavigationScreenProps): ReactElement => (
                 <NameMuTagView
+                    localize={localize}
                     viewModel={dependencies.addMuTagViewModel}
                     {...props}
                 />
@@ -585,15 +597,15 @@ const MapStack = createStackNavigator(
 
 const AppStack = createMaterialBottomTabNavigator(
     {
-        Home: { screen: HomeStack },
-        Map: { screen: MapStack }
+        [localize.getText("TabBar", "Screen", "Home")]: { screen: HomeStack },
+        [localize.getText("TabBar", "Screen", "Map")]: { screen: MapStack }
         //Debug: { screen: DebugStack }
     },
     {
         defaultNavigationOptions: {
             header: null
         },
-        initialRouteName: "Home",
+        initialRouteName: localize.getText("TabBar", "Screen", "Home"),
         activeColor: Theme.Color.PrimaryBlue,
         shifting: true,
         barStyle: { backgroundColor: "white" }

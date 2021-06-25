@@ -156,7 +156,7 @@ const account = new Account(validAccountData);
 (accountRepoLocalMock.get as jest.Mock).mockResolvedValue(account);
 const notifier = new Subject<void>();
 
-describe("Mu tag user views a dashboard of all their belongings", (): void => {
+describe("MuTag user views a dashboard of all their belongings", (): void => {
     describe("current account has no belongings", (): void => {
         // Given that an account is logged in
 
@@ -174,12 +174,12 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
 
         // Then
         //
-        it("should show indication that no Mu tags are attached to account and one needs to be added", async (): Promise<
+        it("should show indication that no MuTags are attached to account and one needs to be added", async (): Promise<
             void
         > => {
             expect.assertions(1);
             await new Promise((resolve, reject) => {
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(1))
                     .subscribe(
                         belongings => expect(belongings.initial).toEqual([]),
@@ -197,6 +197,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         //
         const belongingsDashboardData: DashboardBelonging[] = [
             {
+                address: undefined,
                 batteryLevel: belongingsData[0]._batteryLevel,
                 uid: belongingsData[0]._uid,
                 name: belongingsData[0]._name,
@@ -204,6 +205,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
                 lastSeen: belongingsData[0]._lastSeen
             },
             {
+                address: undefined,
                 batteryLevel: belongingsData[1]._batteryLevel,
                 uid: belongingsData[1]._uid,
                 name: belongingsData[1]._name,
@@ -261,7 +263,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
             expect.assertions(3);
             await new Promise((resolve, reject) => {
                 let count = 0;
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(takeUntil(notifier))
                     .subscribe(belongings => {
                         count += 1;
@@ -289,6 +291,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
     });
 
     const newBelongingDashboardData: DashboardBelonging = {
+        address: undefined,
         batteryLevel: new Percent(80),
         uid: belongingsData[2]._uid,
         name: belongingsData[2]._name,
@@ -325,7 +328,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         > => {
             expect.assertions(1);
             await new Promise((resolve, reject) => {
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(1))
                     .subscribe(
                         belongings => {
@@ -382,7 +385,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
                 administrativeAreaLevel1: "CO"
             }
         ];
-        const locationUpdate = [39.8666811, -105.0415883];
+        const locationUpdate: [number, number] = [39.8666811, -105.0415883];
         const now = new Date();
         const belongingsDashboardChange: ObjectCollectionChange<
             DashboardBelongingDelta
@@ -467,7 +470,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
                 ]);
             };
             await new Promise((resolve, reject) => {
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(7))
                     .subscribe(
                         next,
@@ -502,7 +505,7 @@ describe("Mu tag user views a dashboard of all their belongings", (): void => {
         > => {
             expect.assertions(1);
             await new Promise((resolve, reject) => {
-                belongingDashboardInteractor.showOnDashboard
+                belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(1))
                     .subscribe(
                         belongings => {

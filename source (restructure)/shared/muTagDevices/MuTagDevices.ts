@@ -84,7 +84,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
         const peripheralId = this.unprovisionedMuTags.get(unprovisionedMuTag);
         if (peripheralId == null) {
             throw Error(
-                `Unprovisioned Mu tag not found (${JSON.stringify(
+                `Unprovisioned MuTag not found (${JSON.stringify(
                     unprovisionedMuTag
                 )}).`
             );
@@ -113,7 +113,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
             batteryLevel.valueOf() < minimumBatteryLevel.valueOf()
         ) {
             throw Error(
-                `Unprovisioned Mu tag battery level of %${batteryLevel} is below the %${minimumBatteryLevel} threshold.`
+                `Unprovisioned MuTag battery level of %${batteryLevel} is below the %${minimumBatteryLevel} threshold.`
             );
         }
         const major = This.getMajor(accountNumber);
@@ -156,7 +156,10 @@ export default class MuTagDevices implements MuTagDevicesPort {
             ),
             map(peripheral => this.createUnprovisionedMuTag(peripheral)),
             catchError(e => {
-                if (BluetoothException.isType(e, "ScanTimeout")) {
+                if (
+                    BluetoothException.isType(e) &&
+                    e.attributes.type === "ScanTimeout"
+                ) {
                     throw MuTagDevicesException.FindNewMuTagTimeout(e);
                 } else {
                     throw e;
@@ -171,7 +174,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
 
     async unprovisionMuTag(connection: Connection): Promise<void> {
         const peripheralId = this.getPeripheralId(connection);
-        // Write fails because Mu tag restarts as soon as it is unprovisioned.
+        // Write fails because MuTag restarts as soon as it is unprovisioned.
         const writePromise = this.writeCharacteristic(
             peripheralId,
             MuTagBleGatt.MuTagConfiguration.Provision,
@@ -183,7 +186,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
         // Trying to cancel the write on react-native-ble-plx causes a long 20s
         // delay before the promise rejects. However, performing a disconnect of
         // the device causes an immediate promise rejection which is ideal.
-        await new Promise(resolve => {
+        await new Promise<void>(resolve => {
             setTimeout(() => {
                 this.bluetooth
                     .disconnect(peripheralId)
@@ -231,7 +234,7 @@ export default class MuTagDevices implements MuTagDevicesPort {
             }),
             catchError(e => {
                 if (BluetoothException.isType(e)) {
-                    switch (e.type) {
+                    switch (e.attributes.type) {
                         case "ConnectionLostUnexpectedly":
                             throw MuTagDevicesException.MuTagDisconnectedUnexpectedly(
                                 e
@@ -355,10 +358,12 @@ export default class MuTagDevices implements MuTagDevicesPort {
         "de7ec7ed1055b055c0dedefea7edfa7e";
     private static readonly unprovisionedProvisionId = "ffffffff" as MuTagProvisionId;
 
+    // eslint-disable-next-line no-undef
     private static getDeviceUuid(manufacturerData: Buffer): string {
         return manufacturerData.toString("hex").substring(18, 50);
     }
 
+    // eslint-disable-next-line no-undef
     private static getProvisionId(manufacturerData: Buffer): MuTagProvisionId {
         const provisionId = manufacturerData
             .toString("hex")
@@ -375,10 +380,12 @@ export default class MuTagDevices implements MuTagDevicesPort {
         ).toLowerCase() as MuTagProvisionId;
     }
 
+    // eslint-disable-next-line no-undef
     private static isMuTag(manufacturerData: Buffer): boolean {
         return this.getDeviceUuid(manufacturerData) === this.muTagDeviceUuid;
     }
 
+    // eslint-disable-next-line no-undef
     private static isProvisioned(manufacturerData: Buffer): boolean {
         return (
             this.getProvisionId(manufacturerData) !==

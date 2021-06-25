@@ -6,5 +6,11 @@
         "**/.project": true,
         "**/.settings": true,
         "**/.factorypath": true
+    },
+    "editor.rulers": [
+        80
+    ],
+    "editor.codeActionsOnSave": {
+        "source.fixAll.eslint": true,
     }
 }

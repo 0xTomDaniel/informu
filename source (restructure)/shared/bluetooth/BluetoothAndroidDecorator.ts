@@ -14,17 +14,22 @@ import {
 import { catchError } from "rxjs/operators";
 import Exception from "../metaLanguage/Exception";
 
-const ExceptionType = ["OpenConnections", "ScanInProgress"] as const;
-export type ExceptionType = typeof ExceptionType[number];
+type ExceptionType =
+    | {
+          type: "OpenConnections";
+          data: [];
+      }
+    | {
+          type: "ScanInProgress";
+          data: [];
+      };
 
-export class BluetoothAndroidDecoratorException<
-    T extends ExceptionType
-> extends Exception<T> {
-    static get OpenConnections(): BluetoothAndroidDecoratorException<
-        "OpenConnections"
-    > {
+export class BluetoothAndroidDecoratorException extends Exception<
+    ExceptionType
+> {
+    static get OpenConnections(): BluetoothAndroidDecoratorException {
         return new this(
-            "OpenConnections",
+            { type: "OpenConnections", data: [] },
             "Cannot start Bluetooth device scanning because there are open connections.",
             "error",
             undefined,
@@ -32,11 +37,9 @@ export class BluetoothAndroidDecoratorException<
         );
     }
 
-    static get ScanInProgress(): BluetoothAndroidDecoratorException<
-        "ScanInProgress"
-    > {
+    static get ScanInProgress(): BluetoothAndroidDecoratorException {
         return new this(
-            "ScanInProgress",
+            { type: "ScanInProgress", data: [] },
             "Cannot connect to Bluetooth device because scan is in progress.",
             "error",
             undefined,
@@ -109,7 +112,10 @@ export default class BluetoothAndroidDecorator implements BluetoothPort {
         this.sequentialTaskState = SequentialTaskState.Scan;
         return this.bluetooth.startScan(serviceUuids, timeout, scanMode).pipe(
             catchError(e => {
-                if (BluetoothException.isType(e, "ScanAlreadyStarted")) {
+                if (
+                    BluetoothException.isType(e) &&
+                    e.attributes.type === "ScanAlreadyStarted"
+                ) {
                     throw e;
                 }
                 this.sequentialTaskState = SequentialTaskState.Idle;

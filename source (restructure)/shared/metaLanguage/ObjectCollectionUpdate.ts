@@ -14,7 +14,10 @@ export interface ObjectCollectionChange<D> {
     readonly elementChange: D;
 }
 
-interface ObjectCollectionUpdateData<E extends object, D extends Partial<E>> {
+interface ObjectCollectionUpdateData<
+    E extends Record<keyof E, unknown>,
+    D extends Partial<E>
+> {
     readonly initial?: E[];
     readonly added?: ObjectCollectionAddition<E>[];
     readonly removed?: ObjectCollectionRemoval[];
@@ -22,7 +25,7 @@ interface ObjectCollectionUpdateData<E extends object, D extends Partial<E>> {
 }
 
 export default class ObjectCollectionUpdate<
-    E extends object,
+    E extends Record<keyof E, unknown>,
     D extends Partial<E>
 > {
     applyTo(collection?: E[]): E[] {

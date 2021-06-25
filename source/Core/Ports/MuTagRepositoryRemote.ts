@@ -40,7 +40,7 @@ export class MuTagRepoRemoteException<
     ): MuTagRepoRemoteException<"DoesNotExist"> {
         return new this(
             "DoesNotExist",
-            "Mu tag entity does not exist in remote persistence.",
+            "MuTag entity does not exist in remote persistence.",
             "error",
             sourceException,
             true
@@ -52,7 +52,7 @@ export class MuTagRepoRemoteException<
     ): MuTagRepoRemoteException<"FailedToAdd"> {
         return new this(
             "FailedToAdd",
-            "Failed to add Mu tag entity to remote persistence.",
+            "Failed to add MuTag entity to remote persistence.",
             "error",
             sourceException,
             true
@@ -64,7 +64,7 @@ export class MuTagRepoRemoteException<
     ): MuTagRepoRemoteException<"FailedToGet"> {
         return new this(
             "FailedToGet",
-            "Failed to get Mu tag entity from remote persistence.",
+            "Failed to get MuTag entity from remote persistence.",
             "error",
             sourceException,
             true
@@ -76,7 +76,7 @@ export class MuTagRepoRemoteException<
     ): MuTagRepoRemoteException<"FailedToRemove"> {
         return new this(
             "FailedToRemove",
-            "Failed to remove Mu tag entity from remote persistence.",
+            "Failed to remove MuTag entity from remote persistence.",
             "error",
             sourceException,
             true
@@ -88,7 +88,7 @@ export class MuTagRepoRemoteException<
     ): MuTagRepoRemoteException<"FailedToUpdate"> {
         return new this(
             "FailedToUpdate",
-            "Failed to update Mu tag entity to remote persistence.",
+            "Failed to update MuTag entity to remote persistence.",
             "error",
             sourceException,
             true

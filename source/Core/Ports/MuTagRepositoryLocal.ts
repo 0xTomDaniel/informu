@@ -29,7 +29,7 @@ export class MuTagRepositoryLocalException<
     ): MuTagRepositoryLocalException<"DoesNotExist"> {
         return new this(
             "DoesNotExist",
-            `Mu tag entity (${mutagUid}) does not exist in local persistence.`,
+            `MuTag entity (${mutagUid}) does not exist in local persistence.`,
             "error",
             undefined,
             true
@@ -41,7 +41,7 @@ export class MuTagRepositoryLocalException<
     ): MuTagRepositoryLocalException<"FailedToAdd"> {
         return new this(
             "FailedToAdd",
-            "Failed to add Mu tag entity to local persistence.",
+            "Failed to add MuTag entity to local persistence.",
             "error",
             sourceException,
             true
@@ -53,7 +53,7 @@ export class MuTagRepositoryLocalException<
     ): MuTagRepositoryLocalException<"FailedToGet"> {
         return new this(
             "FailedToGet",
-            "Failed to get Mu tag entity from local persistence.",
+            "Failed to get MuTag entity from local persistence.",
             "error",
             sourceException,
             true
@@ -65,7 +65,7 @@ export class MuTagRepositoryLocalException<
     ): MuTagRepositoryLocalException<"FailedToRemove"> {
         return new this(
             "FailedToRemove",
-            "Failed to remove Mu tag entity from local persistence.",
+            "Failed to remove MuTag entity from local persistence.",
             "error",
             sourceException,
             true
@@ -77,7 +77,7 @@ export class MuTagRepositoryLocalException<
     ): MuTagRepositoryLocalException<"FailedToUpdate"> {
         return new this(
             "FailedToUpdate",
-            "Failed to update Mu tag entity to local persistence.",
+            "Failed to update MuTag entity to local persistence.",
             "error",
             sourceException,
             true

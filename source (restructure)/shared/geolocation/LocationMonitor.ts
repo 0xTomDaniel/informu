@@ -83,9 +83,6 @@ export default class LocationMonitor
     implements
         UpdateBelongingsLocationMonitorPort,
         AdjustGeolocationLocationMonitorPort {
-    private readonly geocoder: Geocoder;
-    private readonly geoLocation: Geolocation;
-    private geoLocationStarted = false;
     readonly location = defer(() => {
         this.startGeoLocation();
         return this.locationUpdate;
@@ -97,10 +94,6 @@ export default class LocationMonitor
         publishReplay(1),
         refCount()
     );
-    private readonly locationUpdate = fromEventPattern<PortLocation>(
-        handler => this.geoLocation.on(GeolocationEvent.Location, handler),
-        (handler, subscription) => subscription.remove()
-    );
 
     constructor(geocoder: Geocoder, geoLocation: Geolocation) {
         this.geocoder = geocoder;
@@ -109,6 +102,30 @@ export default class LocationMonitor
 
     async configure(options: GeolocationOptions): Promise<void> {
         await this.geoLocation.configure(options);
+    }
+
+    private readonly geocoder: Geocoder;
+    private readonly geoLocation: Geolocation;
+    private geoLocationStarted = false;
+
+    private readonly locationUpdate = fromEventPattern<PortLocation>(
+        handler => this.geoLocation.on(GeolocationEvent.Location, handler),
+        (_, subscription) => subscription.remove()
+    );
+
+    private async locationWithAddress(
+        location: PortLocation
+    ): Promise<PortLocation> {
+        const locationWithAddress = Object.assign({}, location);
+        try {
+            locationWithAddress.address = await this.geocoder.reverseGeocode(
+                location.latitude,
+                location.longitude
+            );
+        } catch (e) {
+            Logger.instance.warn(e, true);
+        }
+        return locationWithAddress;
     }
 
     private startGeoLocation(): void {
@@ -125,20 +142,5 @@ export default class LocationMonitor
         }
         this.geoLocation.stop();
         this.geoLocationStarted = false;
-    }
-
-    private async locationWithAddress(
-        location: PortLocation
-    ): Promise<PortLocation> {
-        const locationWithAddress = Object.assign({}, location);
-        try {
-            locationWithAddress.address = await this.geocoder.reverseGeocode(
-                location.latitude,
-                location.longitude
-            );
-        } catch (e) {
-            Logger.instance.warn(e, true);
-        }
-        return locationWithAddress;
     }
 }

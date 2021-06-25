@@ -306,13 +306,13 @@ const discoveredPeripheral: Peripheral = {
 };
 const newMuTagName = "Keys";
 
-describe("User adds Mu tag.", () => {
-    describe("Scenario 1: Mu tag adds successfully.", () => {
+describe("User adds MuTag.", () => {
+    describe("Scenario 1: MuTag adds successfully.", () => {
         // Given that an account is logged in
 
-        // Given the Mu tag battery is above threshold
+        // Given the MuTag battery is above threshold
 
-        // Given Mu tag hardware provisions successfully
+        // Given MuTag hardware provisions successfully
 
         const onAccountAddNewMuTag = new Subject<[string, BeaconId]>();
         const addNewMuTagOriginal = account.addNewMuTag.bind(account);
@@ -460,7 +460,7 @@ describe("User adds Mu tag.", () => {
                 .toPromise()
                 .finally(() => executionOrder.push(15));
             bluetoothReadReturnValue = new Percent(45);
-            // user requests to find unprovisioned Mu tag
+            // user requests to find unprovisioned MuTag
             findNewMuTagPromise = addMuTagInteractor.findNewMuTag();
         });
 
@@ -470,7 +470,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should find unprovisioned Mu tag.", async () => {
+        it("Should find unprovisioned MuTag.", async () => {
             expect.assertions(5);
             await expect(onFindUnprovisioned).resolves.toStrictEqual([
                 [],
@@ -485,7 +485,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should connect to unprovisioned Mu tag.", async () => {
+        it("Should connect to unprovisioned MuTag.", async () => {
             expect.assertions(2);
             addFoundMuTagPromise = addMuTagInteractor.addFoundMuTag();
             await expect(onConnectUnprovisioned).resolves.toStrictEqual([
@@ -497,7 +497,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should verify Mu tag battery level.", async () => {
+        it("Should verify MuTag battery level.", async () => {
             expect.assertions(2);
             await expect(onVerifyBatteryLevel).resolves.toStrictEqual([
                 discoveredPeripheral.id,
@@ -508,7 +508,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should add Mu tag to remote persistence.", async () => {
+        it("Should add MuTag to remote persistence.", async () => {
             expect.assertions(2);
             await expect(onAddMuTagRemotePersistence).resolves.toStrictEqual([
                 newMuTag,
@@ -520,7 +520,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should add Mu tag to local persistence.", async () => {
+        it("Should add MuTag to local persistence.", async () => {
             expect.assertions(2);
             await expect(onAddMuTagLocalPersistence).resolves.toStrictEqual(
                 newMuTag
@@ -530,7 +530,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should add Mu tag to account.", async () => {
+        it("Should add MuTag to account.", async () => {
             expect.assertions(5);
             await expect(onAddMuTagToAccount).resolves.toStrictEqual([
                 newMuTag.uid,
@@ -566,7 +566,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should provision Mu tag hardware.", async () => {
+        it("Should provision MuTag hardware.", async () => {
             expect.assertions(2);
             await expect(onProvisionMuTag).resolves.toStrictEqual([
                 [
@@ -616,18 +616,18 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should disconnect from Mu tag.", async () => {
+        it("Should disconnect from MuTag.", async () => {
             expect.assertions(3);
             await expect(onDisconnect).resolves.toBe(discoveredPeripheral.id);
             expect(executionOrder[12]).toBe(12);
             await expect(addFoundMuTagPromise).resolves.toBeUndefined();
         });
 
-        // When user enters Mu tag name
+        // When user enters MuTag name
         //
         // Then
         //
-        it("Should update Mu tag name.", async () => {
+        it("Should update MuTag name.", async () => {
             setMuTagName = addMuTagInteractor.setMuTagName(newMuTagName);
             expect.assertions(2);
             await expect(onSetMuTagEntityName).resolves.toBe(newMuTagName);
@@ -636,7 +636,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should update Mu tag to local persistence.", async () => {
+        it("Should update MuTag to local persistence.", async () => {
             expect.assertions(2);
             await expect(onUpdateMuTagLocalPersistence).resolves.toBe(newMuTag);
             expect(executionOrder[14]).toBe(14);
@@ -644,7 +644,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should update Mu tag to remote persistence.", async () => {
+        it("Should update MuTag to remote persistence.", async () => {
             expect.assertions(3);
             await expect(
                 onUpdateMuTagRemotePersistence
@@ -658,10 +658,10 @@ describe("User adds Mu tag.", () => {
         });
     });
 
-    describe("Scenario 2: User cancels finding Mu tag.", () => {
+    describe("Scenario 2: User cancels finding MuTag.", () => {
         // Given that an account is logged in
 
-        // Given that user has requested to find unprovisioned Mu tag
+        // Given that user has requested to find unprovisioned MuTag
 
         let onStopFindUnprovisioned: Promise<void>;
 
@@ -680,7 +680,7 @@ describe("User adds Mu tag.", () => {
                 .toPromise();
             findNewMuTagPromise = addMuTagInteractor.findNewMuTag();
             await onFindUnprovisioned;
-            // the user cancels finding Mu tag
+            // the user cancels finding MuTag
             stopFindingNewMuTagPromise = addMuTagInteractor.stopFindingNewMuTag();
         });
 
@@ -690,7 +690,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should stop finding new Mu tag.", async () => {
+        it("Should stop finding new MuTag.", async () => {
             expect.assertions(3);
             await expect(onStopFindUnprovisioned).resolves.toBeUndefined();
             await expect(stopFindingNewMuTagPromise).resolves.toBeUndefined();
@@ -702,12 +702,12 @@ describe("User adds Mu tag.", () => {
         });
     });
 
-    describe("Scenario 3: Mu tag battery is below threshold.", () => {
+    describe("Scenario 3: MuTag battery is below threshold.", () => {
         // Given that an account is logged in
 
-        // Given that the unprovisioned Mu tag is found
+        // Given that the unprovisioned MuTag is found
 
-        // Given that the Mu tag battery is below threshold
+        // Given that the MuTag battery is below threshold
 
         let onDisconnect: Promise<PeripheralId>;
 
@@ -727,7 +727,7 @@ describe("User adds Mu tag.", () => {
 
             bluetoothReadReturnValue = new Percent(14);
             await addMuTagInteractor.findNewMuTag();
-            // user requests to add Mu tag
+            // user requests to add MuTag
             addFoundMuTagPromise = addMuTagInteractor.addFoundMuTag();
         });
 
@@ -744,7 +744,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should produce low Mu tag battery error.", async () => {
+        it("Should produce low MuTag battery error.", async () => {
             expect.assertions(1);
             await expect(addFoundMuTagPromise).rejects.toStrictEqual(
                 AddMuTagInteractorException.LowMuTagBattery(
@@ -754,8 +754,8 @@ describe("User adds Mu tag.", () => {
         });
     });
 
-    describe("Scenario 4: Mu tag not found before timeout.", () => {
-        // Given that the unprovisioned Mu tag is not found
+    describe("Scenario 4: MuTag not found before timeout.", () => {
+        // Given that the unprovisioned MuTag is not found
 
         let findNewMuTagPromise: Promise<void>;
 
@@ -774,10 +774,10 @@ describe("User adds Mu tag.", () => {
         // Then
         //
         it(
-            "Should produce Mu tag not found error.",
+            "Should produce MuTag not found error.",
             fakeSchedulers(async advance => {
                 expect.assertions(1);
-                advance(30000);
+                advance(5000);
                 const sourceException01 = BluetoothException.ScanTimeout;
                 const sourceException02 = MuTagDevicesException.FindNewMuTagTimeout(
                     sourceException01
@@ -791,10 +791,10 @@ describe("User adds Mu tag.", () => {
         );
     });
 
-    describe("Scenario 5: Fails to add Mu tag.", () => {
-        // Given that the unprovisioned Mu tag is found
+    describe("Scenario 5: Fails to add MuTag.", () => {
+        // Given that the unprovisioned MuTag is found
 
-        // Given that the Mu tag battery is above threshold
+        // Given that the MuTag battery is above threshold
 
         let addFoundMuTagPromise: Promise<void>;
 
@@ -809,9 +809,9 @@ describe("User adds Mu tag.", () => {
             bluetoothReadReturnValue = new Percent(15);
             await addMuTagInteractor.findNewMuTag();
             muTagRepoRemoteAddError = Error(
-                "Failed to add Mu tag on remote repo."
+                "Failed to add MuTag on remote repo."
             );
-            // user requests to add Mu tag
+            // user requests to add MuTag
             addFoundMuTagPromise = addMuTagInteractor.addFoundMuTag();
         });
 
@@ -822,7 +822,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should produce failed to add Mu tag error.", async () => {
+        it("Should produce failed to add MuTag error.", async () => {
             expect.assertions(1);
             await expect(addFoundMuTagPromise).rejects.toStrictEqual(
                 AddMuTagInteractorException.FailedToAddMuTag(
@@ -832,10 +832,10 @@ describe("User adds Mu tag.", () => {
         });
     });
 
-    describe("Scenario 6: Fails to name Mu tag.", () => {
-        // Given that the unprovisioned Mu tag is found
+    describe("Scenario 6: Fails to name MuTag.", () => {
+        // Given that the unprovisioned MuTag is found
 
-        // Given that the Mu tag battery is above threshold
+        // Given that the MuTag battery is above threshold
 
         let setMuTagNamePromise: Promise<void>;
 
@@ -851,9 +851,9 @@ describe("User adds Mu tag.", () => {
             await addMuTagInteractor.findNewMuTag();
             await addMuTagInteractor.addFoundMuTag();
             muTagRepoRemoteUpdateError = Error(
-                "Failed to update Mu tag on remote repo."
+                "Failed to update MuTag on remote repo."
             );
-            // user requests to name Mu tag
+            // user requests to name MuTag
             setMuTagNamePromise = addMuTagInteractor.setMuTagName(newMuTagName);
         });
 
@@ -864,7 +864,7 @@ describe("User adds Mu tag.", () => {
 
         // Then
         //
-        it("Should produce failed to name Mu tag error.", async () => {
+        it("Should produce failed to name MuTag error.", async () => {
             expect.assertions(1);
             await expect(setMuTagNamePromise).rejects.toStrictEqual(
                 AddMuTagInteractorException.FailedToNameMuTag(

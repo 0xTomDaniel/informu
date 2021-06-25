@@ -75,19 +75,91 @@ const ofWithDelayRn = <T>(delay: number, ...args: T[]): Observable<T> =>
     });
 
 export default class MuTagMonitorRnbm implements MuTagMonitor {
-    private static readonly muTagDeviceUuid =
-        "de7ec7ed-1055-b055-c0de-defea7edfa7e";
-    private readonly didExitRegionDelay = 25000;
+    readonly onMuTagDetection = new Observable<Set<MuTagSignal>>(
+        This.muTagDetectionHandler
+    );
+    readonly onMuTagRegionEnter: Observable<MuTagRegionEnter>;
+    readonly onMuTagRegionExit: Observable<MuTagRegionEnter>;
+
+    constructor() {
+        this.onMuTagRegionEnter = this.onMuTagRegionEnterSubject.asObservable();
+        this.onMuTagRegionExit = this.onMuTagRegionExitSubject.asObservable();
+        this.setup();
+    }
+
+    async startMonitoringMuTags(muTags: Set<MuTagBeacon>): Promise<void> {
+        for (const muTag of muTags) {
+            const onThisMuTagDidEnterRegionRaw = this.onMuTagDidEnterRegionRaw.pipe(
+                filter(regionState => regionState.uid === muTag.uid)
+            );
+            const onThisMuTagDidExitRegionRaw = this.onMuTagDidExitRegionRaw.pipe(
+                filter(regionState => regionState.uid === muTag.uid)
+            );
+            const subscription = merge(
+                onThisMuTagDidEnterRegionRaw,
+                onThisMuTagDidExitRegionRaw.pipe(
+                    switchMap(regionState =>
+                        race(
+                            ofWithDelayRn(This.didExitRegionDelay, regionState),
+                            onThisMuTagDidEnterRegionRaw
+                        )
+                    )
+                )
+            )
+                .pipe(distinctUntilKeyChanged("inRegion"))
+                .subscribe(regionStateChange => {
+                    regionStateChange.inRegion
+                        ? this.onMuTagRegionEnterSubject.next({
+                              uid: muTag.uid,
+                              timestamp: regionStateChange.timestamp
+                          })
+                        : this.onMuTagRegionExitSubject.next({
+                              uid: muTag.uid,
+                              timestamp: regionStateChange.timestamp
+                          });
+                });
+            this.muTagMonitorSubscriptions.set(muTag.uid, subscription);
+            const region = This.getMuTagRegion(muTag);
+            await Beacons.startMonitoringForRegion(region);
+        }
+    }
+
+    async stopMonitoringMuTags(muTags: Set<MuTagBeacon>): Promise<void> {
+        for (const muTag of muTags) {
+            const region = This.getMuTagRegion(muTag);
+            await Beacons.stopMonitoringForRegion(region);
+        }
+        this.muTagMonitorSubscriptions.forEach(subscription => {
+            subscription.unsubscribe();
+        });
+        this.muTagMonitorSubscriptions.clear();
+    }
+
+    async startRangingAllMuTags(): Promise<void> {
+        const isMuTagRegionRanging = await this.isMuTagRegionRanging();
+        if (!isMuTagRegionRanging) {
+            await Beacons.startRangingBeaconsInRegion(
+                This.regionId,
+                This.muTagDeviceUuid
+            );
+        }
+    }
+
+    async stopAllMonitoringAndRanging(): Promise<void> {
+        const monitoredRegions = await Beacons.getMonitoredRegions();
+        for (const region of monitoredRegions) {
+            await Beacons.stopMonitoringForRegion(region);
+        }
+        await Beacons.stopRangingBeaconsInRegion(
+            This.regionId,
+            This.muTagDeviceUuid
+        );
+    }
+
     private readonly muTagMonitorSubscriptions = new Map<
         string,
         Subscription
     >();
-    private readonly regionId = "Informu Beacon";
-
-    constructor() {
-        this.setup();
-    }
-
     private readonly onMuTagDidEnterRegionRaw = new Observable<
         MuTagRegionState
     >(subscriber => {
@@ -122,91 +194,17 @@ export default class MuTagMonitorRnbm implements MuTagMonitor {
             };
         }
     ).pipe(share());
-    readonly onMuTagDetection = new Observable<Set<MuTagSignal>>(
-        MuTagMonitorRnbm.muTagDetectionHandler
-    );
     private readonly onMuTagRegionEnterSubject = new Subject<
         MuTagRegionEnter
     >();
-    readonly onMuTagRegionEnter = this.onMuTagRegionEnterSubject.asObservable();
     private readonly onMuTagRegionExitSubject = new Subject<MuTagRegionExit>();
-    readonly onMuTagRegionExit = this.onMuTagRegionExitSubject.asObservable();
-
-    async startMonitoringMuTags(muTags: Set<MuTagBeacon>): Promise<void> {
-        for (const muTag of muTags) {
-            const onThisMuTagDidEnterRegionRaw = this.onMuTagDidEnterRegionRaw.pipe(
-                filter(regionState => regionState.uid === muTag.uid)
-            );
-            const onThisMuTagDidExitRegionRaw = this.onMuTagDidExitRegionRaw.pipe(
-                filter(regionState => regionState.uid === muTag.uid)
-            );
-            const subscription = merge(
-                onThisMuTagDidEnterRegionRaw,
-                onThisMuTagDidExitRegionRaw.pipe(
-                    switchMap(regionState =>
-                        race(
-                            ofWithDelayRn(this.didExitRegionDelay, regionState),
-                            onThisMuTagDidEnterRegionRaw
-                        )
-                    )
-                )
-            )
-                .pipe(distinctUntilKeyChanged("inRegion"))
-                .subscribe(regionStateChange => {
-                    regionStateChange.inRegion
-                        ? this.onMuTagRegionEnterSubject.next({
-                              uid: muTag.uid,
-                              timestamp: regionStateChange.timestamp
-                          })
-                        : this.onMuTagRegionExitSubject.next({
-                              uid: muTag.uid,
-                              timestamp: regionStateChange.timestamp
-                          });
-                });
-            this.muTagMonitorSubscriptions.set(muTag.uid, subscription);
-            const region = MuTagMonitorRnbm.getMuTagRegion(muTag);
-            await Beacons.startMonitoringForRegion(region);
-        }
-    }
-
-    async stopMonitoringMuTags(muTags: Set<MuTagBeacon>): Promise<void> {
-        for (const muTag of muTags) {
-            const region = MuTagMonitorRnbm.getMuTagRegion(muTag);
-            await Beacons.stopMonitoringForRegion(region);
-        }
-        this.muTagMonitorSubscriptions.forEach(subscription => {
-            subscription.unsubscribe();
-        });
-        this.muTagMonitorSubscriptions.clear();
-    }
-
-    async startRangingAllMuTags(): Promise<void> {
-        /*const isMuTagRegionRanging = await this.isMuTagRegionRanging();
-        if (!isMuTagRegionRanging) {
-            await Beacons.startRangingBeaconsInRegion(
-                this.regionId,
-                MuTagMonitorRnbm.muTagDeviceUuid
-            );
-        }*/
-    }
-
-    async stopAllMonitoringAndRanging(): Promise<void> {
-        const monitoredRegions = await Beacons.getMonitoredRegions();
-        for (const region of monitoredRegions) {
-            await Beacons.stopMonitoringForRegion(region);
-        }
-        await Beacons.stopRangingBeaconsInRegion(
-            this.regionId,
-            MuTagMonitorRnbm.muTagDeviceUuid
-        );
-    }
 
     private async isMuTagRegionRanging(): Promise<boolean> {
         const rangedRegions: RangedRegion[] = await Beacons.getRangedRegions();
         const muTagRegion = rangedRegions.find((rangedRegion): boolean => {
             return (
-                rangedRegion.region === this.regionId &&
-                rangedRegion.uuid === MuTagMonitorRnbm.muTagDeviceUuid
+                rangedRegion.region === This.regionId &&
+                rangedRegion.uuid === This.muTagDeviceUuid
             );
         });
         return muTagRegion != null;
@@ -216,11 +214,16 @@ export default class MuTagMonitorRnbm implements MuTagMonitor {
         Beacons.detectIBeacons();
     }
 
+    private static readonly didExitRegionDelay = 25000;
+    private static readonly muTagDeviceUuid =
+        "de7ec7ed-1055-b055-c0de-defea7edfa7e";
+    private static readonly regionId = "Informu Beacon";
+
     private static muTagDetectionHandler(
         subscriber: Subscriber<Set<MuTagSignal>>
     ): () => void {
         const listener = (data: RangedBeaconData): void => {
-            const muTagSignals = MuTagMonitorRnbm.getMuTagSignals(data);
+            const muTagSignals = This.getMuTagSignals(data);
             if (muTagSignals.size > 0) {
                 subscriber.next(muTagSignals);
             }
@@ -233,11 +236,8 @@ export default class MuTagMonitorRnbm implements MuTagMonitor {
     }
 
     private static getMuTagRegion(muTag: MuTagBeacon): BeaconRegion {
-        const major = MuTagMonitorRnbm.getMajor(muTag.accountNumber);
-        const minor = MuTagMonitorRnbm.getMinor(
-            muTag.accountNumber,
-            muTag.beaconId
-        );
+        const major = This.getMajor(muTag.accountNumber);
+        const minor = This.getMinor(muTag.accountNumber, muTag.beaconId);
         return {
             identifier: muTag.uid,
             uuid: this.muTagDeviceUuid,
@@ -295,3 +295,5 @@ export default class MuTagMonitorRnbm implements MuTagMonitor {
         return BeaconId.create(minorHex.substr(3, 1));
     }
 }
+
+const This = MuTagMonitorRnbm;

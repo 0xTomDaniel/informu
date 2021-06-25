@@ -4,16 +4,54 @@ import AddMuTagInteractor, {
 } from "../AddMuTagInteractor";
 import NavigationPort from "../../../shared/navigation/NavigationPort";
 import ViewModel from "../../../shared/viewModel/ViewModel";
+import assertUnreachable from "../../../shared/metaLanguage/assertUnreachable";
 
-type Routes = typeof AddMuTagViewModel.routes[number];
+export type LowPriorityMessage = {
+    messageKey: "FailedToSaveSettings";
+    data: [];
+};
 
-export default class AddMuTagViewModel extends ViewModel<Routes> {
+export type MediumPriorityMessage =
+    | {
+          messageKey: "FailedToAddMuTag";
+          data: [];
+      }
+    | {
+          messageKey: "FailedToNameMuTag";
+          data: [];
+      }
+    | {
+          messageKey: "LowMuTagBattery";
+          data: [number];
+      }
+    | {
+          messageKey: "NewMuTagNotFound";
+          data: [];
+      };
+
+type Route = typeof AddMuTagViewModel.routes[number];
+
+export default class AddMuTagViewModel extends ViewModel<
+    Route,
+    undefined,
+    LowPriorityMessage,
+    MediumPriorityMessage
+> {
     readonly showCancel = new BehaviorSubject<boolean>(true);
+    get showCancelValue(): boolean {
+        return this._showCancel.value;
+    }
     readonly showCancelActivity = new BehaviorSubject<boolean>(false);
+    get showCancelActivityValue(): boolean {
+        return this._showCancelActivity.value;
+    }
     readonly showRetry = new BehaviorSubject<boolean>(false);
+    get showRetryValue(): boolean {
+        return this._showRetry.value;
+    }
 
     constructor(
-        navigation: NavigationPort<Routes>,
+        navigation: NavigationPort<Route>,
         addMuTagInteractor: AddMuTagInteractor
     ) {
         super(navigation);
@@ -25,9 +63,9 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
         if (this.isFindingNewMuTag) {
             await this.addMuTagInteractor.stopFindingNewMuTag();
         }
-        this.showActivity.next(false);
+        this.hideProgressIndicator();
         this.showCancel.next(true);
-        this.showFailure.next(undefined);
+        this.hideMediumPriorityMessage();
         this.showRetry.next(false);
         this.showCancelActivity.next(false);
         this.hardwareBackPressSubscription?.unsubscribe();
@@ -47,40 +85,32 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
 
     async setMuTagName(name: string, retry = false): Promise<void> {
         if (retry) {
-            this.showFailure.next(undefined);
+            this.hideMediumPriorityMessage();
         }
-        this.showActivity.next(true);
+        this.showProgressIndicator("Indeterminate");
         await this.addMuTagInteractor
             .setMuTagName(name)
+            .finally(() => this.hideProgressIndicator())
             .then(() => {
-                this.showFailure.next(undefined);
+                this.hideMediumPriorityMessage();
                 this.showRetry.next(false);
-                this.showActivity.next(false);
                 this.hardwareBackPressSubscription?.unsubscribe();
                 this.navigation.popToTop();
             })
             .catch(e => {
                 if (AddMuTagInteractorException.isType(e)) {
-                    this.showFailure.next(
-                        This.createUserMessage(e.name, e.message)
-                    );
-                    this.showRetry.next(true);
-                    this.showActivity.next(false);
+                    this.handleException(e);
                 } else {
                     throw e;
                 }
             });
-        // Cannot use 'finally' function of promise because navigation executes
-        // before 'finally' does. This may cause a race condition where the view
-        // that's being navigated to misses the observable being emitted from
-        // 'finally' function.
     }
 
     async startAddingMuTag(retry = false): Promise<void> {
         if (retry) {
-            this.showFailure.next(undefined);
+            this.hideMediumPriorityMessage();
         }
-        this.showActivity.next(true);
+        this.showProgressIndicator("Indeterminate");
         this.isFindingNewMuTag = true;
         await this.addMuTagInteractor
             .findNewMuTag()
@@ -89,32 +119,60 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
                 this.showCancel.next(false);
                 return this.addMuTagInteractor.addFoundMuTag();
             })
+            .finally(() => this.hideProgressIndicator())
             .then(() => {
                 this.showRetry.next(false);
-                this.showActivity.next(false);
                 this.navigation.navigateTo("NameMuTag");
             })
             .catch(e => {
                 this.isFindingNewMuTag = false;
                 if (AddMuTagInteractorException.isType(e)) {
-                    this.showFailure.next(
-                        This.createUserMessage(e.name, e.message)
-                    );
-                    this.showRetry.next(true);
-                    this.showActivity.next(false);
+                    this.handleException(e);
                 } else {
                     throw e;
                 }
             });
-        // Cannot use 'finally' function of promise because navigation executes
-        // before 'finally' does. This may cause a race condition where the view
-        // that's being navigated to misses the observable being emitted from
-        // 'finally' function.
     }
 
     private readonly addMuTagInteractor: AddMuTagInteractor;
     private hardwareBackPressSubscription: Subscription | undefined;
     private isFindingNewMuTag = false;
+    private readonly _showCancel = new BehaviorSubject<boolean>(true);
+    private readonly _showCancelActivity = new BehaviorSubject<boolean>(false);
+    private readonly _showRetry = new BehaviorSubject<boolean>(false);
+
+    private handleException(exception: AddMuTagInteractorException): void {
+        switch (exception.attributes.type) {
+            case "FailedToAddMuTag":
+            case "FailedToNameMuTag":
+            case "NewMuTagNotFound":
+                this.showMediumPriorityMessage({
+                    messageKey: exception.attributes.type,
+                    data: exception.attributes.data
+                });
+                break;
+            case "LowMuTagBattery":
+                this.showMediumPriorityMessage({
+                    messageKey: exception.attributes.type,
+                    data: exception.attributes.data
+                });
+                break;
+            case "FailedToSaveSettings":
+                this.showLowPriorityMessage(
+                    {
+                        messageKey: exception.attributes.type,
+                        data: exception.attributes.data
+                    },
+                    4
+                );
+                break;
+            case "FindNewMuTagCanceled":
+                return;
+            default:
+                assertUnreachable(exception.attributes);
+        }
+        this.showRetry.next(true);
+    }
 
     static readonly routes = [
         "AddMuTagIntro",
@@ -122,5 +180,3 @@ export default class AddMuTagViewModel extends ViewModel<Routes> {
         "NameMuTag"
     ] as const;
 }
-
-const This = AddMuTagViewModel;

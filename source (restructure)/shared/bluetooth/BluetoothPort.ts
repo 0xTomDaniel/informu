@@ -6,38 +6,68 @@ import {
 } from "./Characteristic";
 import Exception from "../metaLanguage/Exception";
 
-const ExceptionType = [
-    "BluetoothPoweredOff",
-    "BluetoothUnauthorized",
-    "ConnectionLostUnexpectedly",
-    "FailedToConnect",
-    "FailedToDisconnect",
-    "FailedToEnableBluetooth",
-    "FailedToRead",
-    "FailedToWrite",
-    "FailedToStartScan",
-    "FailedToStopScan",
-    "ScanAlreadyStarted",
-    "ScanTimeout"
-] as const;
-export type ExceptionType = typeof ExceptionType[number];
+type ExceptionType =
+    | {
+          type: "BluetoothPoweredOff";
+          data: [];
+      }
+    | {
+          type: "BluetoothUnauthorized";
+          data: [];
+      }
+    | {
+          type: "ConnectionLostUnexpectedly";
+          data: [];
+      }
+    | {
+          type: "FailedToConnect";
+          data: [];
+      }
+    | {
+          type: "FailedToDisconnect";
+          data: [];
+      }
+    | {
+          type: "FailedToEnableBluetooth";
+          data: [];
+      }
+    | {
+          type: "FailedToRead";
+          data: [];
+      }
+    | {
+          type: "FailedToWrite";
+          data: [];
+      }
+    | {
+          type: "FailedToStartScan";
+          data: [];
+      }
+    | {
+          type: "FailedToStopScan";
+          data: [];
+      }
+    | {
+          type: "ScanAlreadyStarted";
+          data: [];
+      }
+    | {
+          type: "ScanTimeout";
+          data: [];
+      };
 
-export class BluetoothException<T extends ExceptionType> extends Exception<T> {
-    static get BluetoothPoweredOff(): BluetoothException<
-        "BluetoothPoweredOff"
-    > {
+export class BluetoothException extends Exception<ExceptionType> {
+    static get BluetoothPoweredOff(): BluetoothException {
         return new this(
-            "BluetoothPoweredOff",
+            { type: "BluetoothPoweredOff", data: [] },
             "Bluetooth is powered off.",
             "warn"
         );
     }
 
-    static get BluetoothUnauthorized(): BluetoothException<
-        "BluetoothUnauthorized"
-    > {
+    static get BluetoothUnauthorized(): BluetoothException {
         return new this(
-            "BluetoothUnauthorized",
+            { type: "BluetoothUnauthorized", data: [] },
             "This application isn’t authorized to use the Bluetooth.",
             "warn"
         );
@@ -46,9 +76,9 @@ export class BluetoothException<T extends ExceptionType> extends Exception<T> {
     static ConnectionLostUnexpectedly(
         peripheralId: string,
         sourceException?: unknown
-    ): BluetoothException<"ConnectionLostUnexpectedly"> {
+    ): BluetoothException {
         return new this(
-            "ConnectionLostUnexpectedly",
+            { type: "ConnectionLostUnexpectedly", data: [] },
             `Connection to Bluetooth device (${peripheralId}) lost unexpectedly.`,
             "warn",
             sourceException
@@ -58,9 +88,9 @@ export class BluetoothException<T extends ExceptionType> extends Exception<T> {
     static FailedToConnect(
         peripheralId: string,
         sourceException?: unknown
-    ): BluetoothException<"FailedToConnect"> {
+    ): BluetoothException {
         return new this(
-            "FailedToConnect",
+            { type: "FailedToConnect", data: [] },
             `Failed to connect to Bluetooth device (${peripheralId}).`,
             "log",
             sourceException
@@ -70,9 +100,9 @@ export class BluetoothException<T extends ExceptionType> extends Exception<T> {
     static FailedToDisconnect(
         peripheralId: string,
         sourceException?: unknown
-    ): BluetoothException<"FailedToDisconnect"> {
+    ): BluetoothException {
         return new this(
-            "FailedToDisconnect",
+            { type: "FailedToDisconnect", data: [] },
             `Failed to disconnect from Bluetooth device (${peripheralId}).`,
             "warn",
             sourceException
@@ -81,9 +111,9 @@ export class BluetoothException<T extends ExceptionType> extends Exception<T> {
 
     static FailedToEnableBluetooth(
         sourceException?: unknown
-    ): BluetoothException<"FailedToEnableBluetooth"> {
+    ): BluetoothException {
         return new this(
-            "FailedToEnableBluetooth",
+            { type: "FailedToEnableBluetooth", data: [] },
             `Bluetooth is disabled, failed to enable.`,
             "error",
             sourceException
@@ -94,9 +124,9 @@ export class BluetoothException<T extends ExceptionType> extends Exception<T> {
         characteristic: string,
         peripheralId: string,
         sourceException?: unknown
-    ): BluetoothException<"FailedToRead"> {
+    ): BluetoothException {
         return new this(
-            "FailedToRead",
+            { type: "FailedToRead", data: [] },
             `Failed to read characteristic (${characteristic}) of Bluetooth device (${peripheralId}).`,
             "error",
             sourceException
@@ -108,48 +138,44 @@ export class BluetoothException<T extends ExceptionType> extends Exception<T> {
         characteristic: string,
         peripheralId: string,
         sourceException?: unknown
-    ): BluetoothException<"FailedToWrite"> {
+    ): BluetoothException {
         return new this(
-            "FailedToWrite",
+            { type: "FailedToWrite", data: [] },
             `Failed to write (${value}) to characteristic (${characteristic}) of Bluetooth device (${peripheralId}).`,
             "error",
             sourceException
         );
     }
 
-    static FailedToStartScan(
-        sourceException?: unknown
-    ): BluetoothException<"FailedToStartScan"> {
+    static FailedToStartScan(sourceException?: unknown): BluetoothException {
         return new this(
-            "FailedToStartScan",
+            { type: "FailedToStartScan", data: [] },
             "Failed to start Bluetooth device scanning.",
             "error",
             sourceException
         );
     }
 
-    static FailedToStopScan(
-        sourceException?: unknown
-    ): BluetoothException<"FailedToStopScan"> {
+    static FailedToStopScan(sourceException?: unknown): BluetoothException {
         return new this(
-            "FailedToStopScan",
+            { type: "FailedToStopScan", data: [] },
             "Failed to stop Bluetooth device scanning.",
             "error",
             sourceException
         );
     }
 
-    static get ScanAlreadyStarted(): BluetoothException<"ScanAlreadyStarted"> {
+    static get ScanAlreadyStarted(): BluetoothException {
         return new this(
-            "ScanAlreadyStarted",
+            { type: "ScanAlreadyStarted", data: [] },
             "Bluetooth device scanning has already started.",
             "warn"
         );
     }
 
-    static get ScanTimeout(): BluetoothException<"ScanTimeout"> {
+    static get ScanTimeout(): BluetoothException {
         return new this(
-            "ScanTimeout",
+            { type: "ScanTimeout", data: [] },
             "Bluetooth device scanning has timed out.",
             "log"
         );
