@@ -144,7 +144,7 @@ describe("View belongings location on map", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await new Promise((resolve, reject) => {
+                await new Promise<void>((resolve, reject) => {
                     belongingMapInteractor.showOnMap
                         .pipe(take(1))
                         .subscribe(
@@ -192,7 +192,7 @@ describe("View belongings location on map", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await new Promise(resolve => {
+                await new Promise<void>(resolve => {
                     subscription = belongingMapInteractor.showOnMap.subscribe(
                         update => {
                             if (update.initial != null) {
@@ -247,6 +247,69 @@ describe("View belongings location on map", (): void => {
         });
     });
 
+    const nameChange = "Backpack";
+
+    describe("Scenario 3: Belonging's name changes", (): void => {
+        let belongingLocationInitial: BelongingLocation[] | undefined;
+        let belongingLocationChange: BelongingLocationDelta[] | undefined;
+        let subscription: Subscription;
+
+        // When the belonging's recent location changes
+        //
+        beforeAll(
+            async (): Promise<void> => {
+                await new Promise<void>(resolve => {
+                    subscription = belongingMapInteractor.showOnMap.subscribe(
+                        update => {
+                            if (update.initial != null) {
+                                belongingLocationInitial = update.initial;
+                                // https://github.com/microsoft/TypeScript/issues/33353
+                                const result = belongings.values().next();
+                                if (!result.done) {
+                                    result.value.setName(nameChange);
+                                }
+                            }
+                            if (update.changed != null) {
+                                belongingLocationChange = update.changed.map(
+                                    location => location.elementChange
+                                );
+                                subscription.unsubscribe();
+                                resolve();
+                            }
+                        },
+                        e => Logger.instance.error(e),
+                        () => Logger.instance.log("showOnMap completed.")
+                    );
+                });
+            }
+        );
+
+        afterAll((): void => {
+            jest.clearAllMocks();
+        });
+
+        // Then
+        //
+        it("should show belonging's new name on the map", (): void => {
+            expect(belongingLocationInitial).toEqual([
+                {
+                    name: belongingsData[0]._name,
+                    latitude: locationChange.latitude,
+                    longitude: locationChange.longitude
+                },
+                {
+                    name: belongingsData[1]._name,
+                    latitude: belongingsData[1]._recentLatitude,
+                    longitude: belongingsData[1]._recentLongitude
+                }
+            ]);
+            debugger;
+            expect(belongingLocationChange?.[0]).toEqual({
+                name: nameChange
+            });
+        });
+    });
+
     const newBelongingData = {
         _advertisingInterval: 1,
         _batteryLevel: new Percent(80),
@@ -268,7 +331,7 @@ describe("View belongings location on map", (): void => {
     };
     const newBelonging = new ProvisionedMuTag(newBelongingData);
 
-    describe("Scenario 3: Belonging is added", (): void => {
+    describe("Scenario 4: Belonging is added", (): void => {
         let belongingLocationInitial: BelongingLocation[] | undefined;
         let newBelongingLocation: BelongingLocation[] | undefined;
         let subscription: Subscription;
@@ -280,7 +343,7 @@ describe("View belongings location on map", (): void => {
                 (muTagRepoLocalMock.getByUid as jest.Mock).mockResolvedValueOnce(
                     newBelonging
                 );
-                await new Promise(resolve => {
+                await new Promise<void>(resolve => {
                     subscription = belongingMapInteractor.showOnMap.subscribe(
                         update => {
                             if (update.initial != null) {
@@ -315,7 +378,7 @@ describe("View belongings location on map", (): void => {
         it("should show belonging's location on the map", (): void => {
             expect(belongingLocationInitial).toEqual([
                 {
-                    name: belongingsData[0]._name,
+                    name: nameChange,
                     latitude: locationChange.latitude,
                     longitude: locationChange.longitude
                 },
@@ -335,7 +398,7 @@ describe("View belongings location on map", (): void => {
         });
     });
 
-    describe("Scenario 4: Belonging is removed", (): void => {
+    describe("Scenario 5: Belonging is removed", (): void => {
         let belongingLocationInitial: BelongingLocation[] | undefined;
         let removedBelonging: number[] | undefined;
         let subscription: Subscription;
@@ -344,7 +407,7 @@ describe("View belongings location on map", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await new Promise(resolve => {
+                await new Promise<void>(resolve => {
                     subscription = belongingMapInteractor.showOnMap.subscribe(
                         update => {
                             if (update.initial != null) {
@@ -379,7 +442,7 @@ describe("View belongings location on map", (): void => {
         it("should remove belonging from map", (): void => {
             expect(belongingLocationInitial).toEqual([
                 {
-                    name: belongingsData[0]._name,
+                    name: nameChange,
                     latitude: locationChange.latitude,
                     longitude: locationChange.longitude
                 },

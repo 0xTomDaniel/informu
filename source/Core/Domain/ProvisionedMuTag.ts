@@ -130,6 +130,7 @@ interface AccessorValue {
     readonly didEnterRegion: Subject<void>;
     readonly isSafe: BehaviorSubject<boolean>;
     readonly lastSeen: BehaviorSubject<Date>;
+    readonly name: BehaviorSubject<string>;
     readonly recentAddress: BehaviorSubject<Address | undefined>;
     readonly recentLatitude: BehaviorSubject<number>;
     readonly recentLongitude: BehaviorSubject<number>;
@@ -158,7 +159,9 @@ export default class ProvisionedMuTag extends MuTag {
     private readonly _macAddress: string;
     private _modelNumber: string;
     private readonly _muTagNumber: number;
-    private _name: string;
+    private get _name(): string {
+        return this._accessorValue.name.value;
+    }
     private get _recentAddress(): Address | undefined {
         return this._accessorValue.recentAddress.value;
     }
@@ -207,10 +210,10 @@ export default class ProvisionedMuTag extends MuTag {
     }
 
     get location(): Observable<Location> {
-        return combineLatest(
+        return combineLatest([
             this._accessorValue.recentLatitude,
             this._accessorValue.recentLongitude
-        ).pipe(
+        ]).pipe(
             map(
                 ([latitude, longitude]): Location => ({
                     latitude: latitude,
@@ -220,15 +223,19 @@ export default class ProvisionedMuTag extends MuTag {
         );
     }
 
-    get name(): string {
-        return this._name;
+    get name(): Observable<string> {
+        return this._accessorValue.name;
+    }
+
+    get nameValue(): string {
+        return this._accessorValue.name.value;
     }
 
     get safetyStatus(): Observable<SafetyStatus> {
-        return combineLatest(
+        return combineLatest([
             this._accessorValue.isSafe,
             this._accessorValue.lastSeen
-        ).pipe(
+        ]).pipe(
             map(
                 ([isSafe, lastSeen]): SafetyStatus => ({
                     isSafe: isSafe,
@@ -260,7 +267,6 @@ export default class ProvisionedMuTag extends MuTag {
         this._macAddress = muTagData._macAddress;
         this._modelNumber = muTagData._modelNumber;
         this._muTagNumber = muTagData._muTagNumber;
-        this._name = muTagData._name;
         this._txPower = muTagData._txPower;
         this._uid = muTagData._uid;
         this._accessorValue = {
@@ -268,6 +274,7 @@ export default class ProvisionedMuTag extends MuTag {
             didEnterRegion: new Subject<void>(),
             isSafe: new BehaviorSubject(muTagData._isSafe),
             lastSeen: new BehaviorSubject(muTagData._lastSeen),
+            name: new BehaviorSubject(muTagData._name),
             recentAddress: new BehaviorSubject(muTagData._recentAddress),
             recentLatitude: new BehaviorSubject(muTagData._recentLatitude),
             recentLongitude: new BehaviorSubject(muTagData._recentLongitude)
@@ -282,7 +289,7 @@ export default class ProvisionedMuTag extends MuTag {
     }
 
     setName(name: string): void {
-        this._name = name;
+        this._accessorValue.name.next(name);
     }
 
     updateAddress(address: Address): void {
@@ -340,6 +347,7 @@ export default class ProvisionedMuTag extends MuTag {
                     {
                         _isSafe: value._isSafe,
                         _lastSeen: value._lastSeen,
+                        _name: value._name,
                         _recentAddress: value._recentAddress,
                         _recentLatitude: value._recentLatitude,
                         _recentLongitude: value._recentLongitude

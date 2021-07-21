@@ -169,7 +169,7 @@ export class BelongingDashboardInteractorImpl
             address: undefined,
             batteryLevel: batteryLevel,
             uid: muTag.uid,
-            name: muTag.name,
+            name: muTag.nameValue,
             isSafe: muTag.isSafe,
             lastSeen: muTag.lastSeen
         };

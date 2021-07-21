@@ -36,6 +36,7 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
         number
     > = new Map();
     private readonly locationSubscriptions = new Map<string, Subscription>();
+    private readonly nameSubscriptions = new Map<string, Subscription>();
     private readonly logger = Logger.instance;
     private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
     private muTagsChangeSubscription: Subscription | undefined;
@@ -95,6 +96,9 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
     }
 
     private async stop(): Promise<void> {
+        this.nameSubscriptions.forEach(subscription =>
+            subscription.unsubscribe()
+        );
         this.locationSubscriptions.forEach(subscription =>
             subscription.unsubscribe()
         );
@@ -124,11 +128,12 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                     .toPromise()
             )
         );
+
         await Promise.all(locations)
             .then(results => {
                 const belongingLocations = results.map(result => {
                     const belongingLocation: BelongingLocation = {
-                        name: result.belonging.name,
+                        name: result.belonging.nameValue,
                         latitude: result.location.latitude,
                         longitude: result.location.longitude
                     };
@@ -158,13 +163,35 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                 }
             })
             .catch(e => this.logger.warn(e, true));
+
         belongings.forEach(belonging => {
             const index = this.belongingLocationsUidToIndex.get(belonging.uid);
             if (index == null) {
                 this.logger.warn("Index not found.", true);
                 return;
             }
-            const subscription = belonging.location
+
+            const nameSubscription = belonging.name
+                .pipe(distinctUntilChanged(isEqual))
+                .subscribe(
+                    name =>
+                        this.showOnMapSubject.next(
+                            new ObjectCollectionUpdate({
+                                changed: [
+                                    {
+                                        index: index,
+                                        elementChange: {
+                                            name: name
+                                        }
+                                    }
+                                ]
+                            })
+                        ),
+                    error => this.logger.warn(error, true)
+                );
+            this.nameSubscriptions.set(belonging.uid, nameSubscription);
+
+            const locationSubscription = belonging.location
                 .pipe(distinctUntilChanged(isEqual))
                 .subscribe(
                     location =>
@@ -183,7 +210,7 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                         ),
                     error => this.logger.warn(error, true)
                 );
-            this.locationSubscriptions.set(belonging.uid, subscription);
+            this.locationSubscriptions.set(belonging.uid, locationSubscription);
         });
     }
 }

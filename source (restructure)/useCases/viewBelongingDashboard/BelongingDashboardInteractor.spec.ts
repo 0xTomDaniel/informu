@@ -178,7 +178,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
             void
         > => {
             expect.assertions(1);
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(1))
                     .subscribe(
@@ -261,7 +261,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
             void
         > => {
             expect.assertions(3);
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 let count = 0;
                 belongingDashboardInteractor.dashboardBelongings
                     .pipe(takeUntil(notifier))
@@ -327,7 +327,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
             void
         > => {
             expect.assertions(1);
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(1))
                     .subscribe(
@@ -469,7 +469,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
                     belongingsDashboardChange[count - 1]
                 ]);
             };
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(7))
                     .subscribe(
@@ -504,7 +504,7 @@ describe("MuTag user views a dashboard of all their belongings", (): void => {
             void
         > => {
             expect.assertions(1);
-            await new Promise((resolve, reject) => {
+            await new Promise<void>((resolve, reject) => {
                 belongingDashboardInteractor.dashboardBelongings
                     .pipe(take(1))
                     .subscribe(
