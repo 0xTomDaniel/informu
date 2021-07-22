@@ -55,6 +55,7 @@ export class BelongingDashboardInteractorImpl
         string,
         Subscription
     >();
+    private readonly muTagNameSubscription = new Map<string, Subscription>();
     private readonly muTagSafetyStatusSubscription = new Map<
         string,
         Subscription
@@ -81,6 +82,7 @@ export class BelongingDashboardInteractorImpl
         muTags.forEach((muTag): void => {
             this.updateDashboardOnAddressChange(muTag);
             this.updateDashboardOnBatteryLevelChange(muTag);
+            this.updateDashboardOnNameChange(muTag);
             this.updateDashboardOnSafetyStatusChange(muTag);
         });
     }
@@ -90,6 +92,9 @@ export class BelongingDashboardInteractorImpl
             subscription.unsubscribe()
         );
         this.muTagBatteryLevelSubscription.forEach(subscription =>
+            subscription.unsubscribe()
+        );
+        this.muTagNameSubscription.forEach(subscription =>
             subscription.unsubscribe()
         );
         this.muTagSafetyStatusSubscription.forEach(subscription =>
@@ -124,6 +129,7 @@ export class BelongingDashboardInteractorImpl
                         );
                         this.updateDashboardOnAddressChange(muTag);
                         this.updateDashboardOnBatteryLevelChange(muTag);
+                        this.updateDashboardOnNameChange(muTag);
                         this.updateDashboardOnSafetyStatusChange(muTag);
                     } catch (e) {
                         this.logger.error(e, true, true);
@@ -135,6 +141,9 @@ export class BelongingDashboardInteractorImpl
                         .get(change.deletion)
                         ?.unsubscribe();
                     this.muTagBatteryLevelSubscription
+                        .get(change.deletion)
+                        ?.unsubscribe();
+                    this.muTagNameSubscription
                         .get(change.deletion)
                         ?.unsubscribe();
                     this.muTagSafetyStatusSubscription
@@ -215,6 +224,26 @@ export class BelongingDashboardInteractorImpl
                 );
             });
         this.muTagBatteryLevelSubscription.set(muTag.uid, subscription);
+    }
+
+    private updateDashboardOnNameChange(muTag: ProvisionedMuTag): void {
+        const subscription = muTag.name.pipe(skip(1)).subscribe(update => {
+            const index = this.muTagIndexCache.indexOf(muTag.uid);
+            this._showOnDashboard.next(
+                new ObjectCollectionUpdate({
+                    changed: [
+                        {
+                            index: index,
+                            elementChange: {
+                                uid: muTag.uid,
+                                name: update
+                            }
+                        }
+                    ]
+                })
+            );
+        });
+        this.muTagNameSubscription.set(muTag.uid, subscription);
     }
 
     private updateDashboardOnSafetyStatusChange(muTag: ProvisionedMuTag): void {
