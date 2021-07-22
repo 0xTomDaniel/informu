@@ -1,9 +1,9 @@
-import LocationMonitorPort from "./LocationMonitorPort";
 import AppStateMonitorPort from "./AppStateMonitorPort";
 import {
     GeolocationAccuracy,
     GeolocationOptions,
-    LocationProvider
+    LocationProvider,
+    LocationMonitorPort
 } from "../../shared/geolocation/LocationMonitor";
 import Logger from "../../shared/metaLanguage/Logger";
 

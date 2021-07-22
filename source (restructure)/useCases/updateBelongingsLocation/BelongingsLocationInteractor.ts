@@ -1,4 +1,3 @@
-import LocationMonitorPort, { Location } from "./LocationMonitorPort";
 import { Subscription } from "rxjs";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import { take } from "rxjs/operators";
@@ -8,7 +7,9 @@ import Logger from "../../shared/metaLanguage/Logger";
 import {
     GeolocationOptions,
     GeolocationAccuracy,
-    LocationProvider
+    LocationProvider,
+    LocationMonitorPort,
+    Location
 } from "../../shared/geolocation/LocationMonitor";
 import Localize from "../../shared/localization/Localize";
 

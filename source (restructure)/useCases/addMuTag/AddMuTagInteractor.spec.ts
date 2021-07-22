@@ -93,6 +93,7 @@ const bluetoothMocks = {
     startScan: jest.fn(
         (serviceUuids: string[], timeout?: Millisecond, scanMode?: ScanMode) =>
             new Observable<Peripheral>(subscriber => {
+                // eslint-disable-next-line no-undef
                 let timeoutId: NodeJS.Timeout | undefined;
                 if (timeout != null) {
                     timeoutId = setTimeout(
