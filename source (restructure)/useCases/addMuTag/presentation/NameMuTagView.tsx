@@ -156,6 +156,41 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
         setBannerActions(actions);
     }, [muTagName, props.localize, props.viewModel, showRetry]);
 
+    const getBannerMessage = (): string => {
+        switch (bannerMessage?.messageKey) {
+            case "FailedToAddMuTag":
+            case "FailedToNameMuTag":
+            case "NewMuTagNotFound":
+                return props.localize.getText(
+                    "AddMuTag",
+                    "BannerMessage",
+                    bannerMessage.messageKey
+                );
+            case "LowMuTagBattery":
+                return props.localize.getText(
+                    "AddMuTag",
+                    "BannerMessage",
+                    bannerMessage.messageKey
+                );
+            default:
+                return "";
+        }
+    };
+
+    const getSnackbarMessage = (): string => {
+        if (snackbarMessage == null) {
+            return "";
+        }
+
+        const message = props.localize.getText(
+            "AddMuTag",
+            "SnackbarMessage",
+            snackbarMessage.messageKey
+        );
+
+        return props.localize.replaceVariables(message, snackbarMessage.data);
+    };
+
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
             <SafeAreaView style={[styles.safeAreaView, styles.base]}>
@@ -166,13 +201,7 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                         <Icon name="alert-circle" style={{ fontSize: size }} />
                     )}
                 >
-                    {bannerMessage != null
-                        ? props.localize.getText(
-                              "AddMuTag",
-                              "BannerMessage",
-                              bannerMessage
-                          )
-                        : ""}
+                    {getBannerMessage()}
                 </Banner>
                 <View style={styles.mainContainer}>
                     <Headline style={styles.headline}>
@@ -199,27 +228,7 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                         }}
                         style={styles.attachedToInput}
                     />
-                    {/*<View style={styles.bottomContent}>
-                        {mediumPriorityMessage == null ? null : (
-                            <View style={styles.instructionsRow}>
-                                <Icon
-                                    name="alert-circle"
-                                    style={[
-                                        styles.instructionsIconCol,
-                                        styles.instructionsInfoIcon
-                                    ]}
-                                />
-                                <Text
-                                    style={[
-                                        styles.instructionsTextCol,
-                                        styles.instructionsInfoText
-                                    ]}
-                                >
-                                    {mediumPriorityMessage}
-                                </Text>
-                            </View>
-                        )}
-                    </View>*/}
+                    <View style={styles.bottomContent} />
                 </View>
                 <Snackbar
                     duration={Number.POSITIVE_INFINITY}
@@ -235,13 +244,7 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
                         onPress: () => props.viewModel.hideLowPriorityMessage()
                     }}
                 >
-                    {snackbarMessage != null
-                        ? props.localize.getText(
-                              "AddMuTag",
-                              "SnackbarMessage",
-                              snackbarMessage
-                          )
-                        : ""}
+                    {getSnackbarMessage()}
                 </Snackbar>
                 <Button
                     mode="contained"
