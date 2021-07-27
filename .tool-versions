@@ -1,3 +1,4 @@
+direnv 2.28.0
 ruby 3.0.1
 nodejs 16.1.0
 yarn 1.22.10
