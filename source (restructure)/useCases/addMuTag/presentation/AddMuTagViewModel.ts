@@ -125,6 +125,7 @@ export default class AddMuTagViewModel extends ViewModel<
                 this.navigation.navigateTo("NameMuTag");
             })
             .catch(e => {
+                this.showCancel.next(true);
                 this.isFindingNewMuTag = false;
                 if (AddMuTagInteractorException.isType(e)) {
                     this.handleException(e);
