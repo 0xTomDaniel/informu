@@ -453,7 +453,9 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
                                 "Cancel"
                             )}
                         </Button>
-                        <Button onPress={() => props.viewModel.signOut()}>
+                        <Button
+                            onPress={() => props.viewModel.confirmSignOut()}
+                        >
                             {props.localize.getText(
                                 "SignOut",
                                 "DialogButton",
