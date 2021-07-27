@@ -214,7 +214,7 @@ const BelongingMapView: FunctionComponent<BelongingMapViewProps> = (
                         id="clusteredPoints"
                         belowLayerID="pointCount"
                         filter={["has", "point_count"]}
-                        style={circleLayerStyles.clusteredPoints}
+                        style={circleLayerStyles.clusteredPoint}
                     />
                     <MapboxGL.SymbolLayer
                         id="belongingMarkers"
