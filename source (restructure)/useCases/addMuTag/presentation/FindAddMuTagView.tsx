@@ -19,6 +19,7 @@ import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import AddMuTagViewModel, { MediumPriorityMessage } from "./AddMuTagViewModel";
 import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
 import Localize from "../../../shared/localization/Localize";
+import assertUnreachable from "../../../shared/metaLanguage/assertUnreachable";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -169,6 +170,28 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
         setBannerActions(actions);
     }, [props.localize, props.viewModel, showCancel, showRetry]);
 
+    const getBannerMessage = (): string => {
+        if (bannerMessage == null) {
+            return "";
+        }
+        let message: string;
+        switch (bannerMessage.messageKey) {
+            case "FailedToAddMuTag":
+            case "FailedToNameMuTag":
+            case "LowMuTagBattery":
+            case "NewMuTagNotFound":
+                message = props.localize.getText(
+                    "AddMuTag",
+                    "BannerMessage",
+                    bannerMessage.messageKey
+                );
+                break;
+            default:
+                assertUnreachable(bannerMessage);
+        }
+        return props.localize.replaceVariables(message, bannerMessage.data);
+    };
+
     return (
         <SafeAreaView style={[styles.safeAreaView, styles.base]}>
             <Banner
@@ -178,13 +201,7 @@ const FindAddMuTagView: FunctionComponent<FindAddMuTagViewProps> = (
                     <Icon name="alert-circle" style={{ fontSize: size }} />
                 )}
             >
-                {bannerMessage != null
-                    ? props.localize.getText(
-                          "AddMuTag",
-                          "BannerMessage",
-                          bannerMessage.messageKey
-                      )
-                    : ""}
+                {getBannerMessage()}
             </Banner>
             <View style={styles.mainContainer}>
                 {progressIndicator === "Indeterminate" ? (

@@ -30,6 +30,7 @@ import AddMuTagViewModel, {
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
 import Localize from "../../../shared/localization/Localize";
+import assertUnreachable from "../../../shared/metaLanguage/assertUnreachable";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -157,24 +158,25 @@ const NameMuTagView: FunctionComponent<NameMuTagViewProps> = (
     }, [muTagName, props.localize, props.viewModel, showRetry]);
 
     const getBannerMessage = (): string => {
-        switch (bannerMessage?.messageKey) {
+        if (bannerMessage == null) {
+            return "";
+        }
+        let message: string;
+        switch (bannerMessage.messageKey) {
             case "FailedToAddMuTag":
             case "FailedToNameMuTag":
-            case "NewMuTagNotFound":
-                return props.localize.getText(
-                    "AddMuTag",
-                    "BannerMessage",
-                    bannerMessage.messageKey
-                );
             case "LowMuTagBattery":
-                return props.localize.getText(
+            case "NewMuTagNotFound":
+                message = props.localize.getText(
                     "AddMuTag",
                     "BannerMessage",
                     bannerMessage.messageKey
                 );
+                break;
             default:
-                return "";
+                assertUnreachable(bannerMessage);
         }
+        return props.localize.replaceVariables(message, bannerMessage.data);
     };
 
     const getSnackbarMessage = (): string => {

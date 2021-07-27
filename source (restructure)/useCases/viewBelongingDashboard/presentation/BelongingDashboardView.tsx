@@ -43,6 +43,7 @@ import BelongingCard from "./BelongingCard";
 import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Localize from "../../../shared/localization/Localize";
+import assertUnreachable from "../../../shared/metaLanguage/assertUnreachable";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -332,24 +333,31 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     };
 
     const getBannerMessage = (): string => {
-        switch (bannerMessage?.messageKey) {
+        if (bannerMessage == null) {
+            return "";
+        }
+        let message: string;
+        switch (bannerMessage.messageKey) {
             case "FailedToRemoveMuTag":
             case "FailedToRemoveMuTagFromAccount":
             case "FailedToResetMuTag":
-                return props.localize.getText(
+                message = props.localize.getText(
                     "RemoveMuTag",
                     "BannerMessage",
                     bannerMessage.messageKey
                 );
+                break;
             case "SignOutFailed":
-                return props.localize.getText(
+                message = props.localize.getText(
                     "SignOut",
                     "BannerMessage",
                     "SignOutFailed"
                 );
+                break;
             default:
-                return "";
+                assertUnreachable(bannerMessage);
         }
+        return props.localize.replaceVariables(message, bannerMessage.data);
     };
 
     const getSnackbarMessage = (): string => {
