@@ -49,10 +49,10 @@ platform :android do
     shouldResetCache = prompt(text: "Reset cache?", boolean: true)
     shouldShowLogs = prompt(text: "Show logs?", boolean: true)
     resetCacheOption = shouldResetCache ? " --reset-cache" : ""
-    sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envDevelopmentMetro} && clear && npx react-native start#{resetCacheOption}\"\'"
-    sh "cd .. && npx react-native run-android --appIdSuffix debug"
+    sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envDevelopmentMetro} && clear && yarn react-native start#{resetCacheOption}\"\'"
+    sh "cd .. && yarn react-native run-android --appIdSuffix debug"
     if shouldShowLogs
-      sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && clear && npx react-native log-android\"\'"
+      sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && clear && yarn react-native log-android\"\'"
     end
   end
 
@@ -70,15 +70,17 @@ platform :android do
 
     # Must run Metro Bundler manually to populate environment variables
     
-    #sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envProductionMetro} && clear && npx react-native start --reset-cache\"\'"
+    #sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envProductionMetro} && clear && yarn react-native start --reset-cache\"\'"
 
     shouldShowLogs = prompt(text: "Show logs?", boolean: true)
 
     projectDir = 'android'
     gradle(task: 'clean', project_dir: projectDir)
-    sh "cd .. && export #{envProduction} && npx react-native run-android --variant=release -- --reset-cache"
+    sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envProduction} && clear && yarn react-native start --reset-cache\"\'"
+    sh "cd .. && yarn react-native run-android --variant=release"
+    #sh "cd .. && export #{} && yarn react-native run-android --variant=release -- --reset-cache"
     if shouldShowLogs
-      sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && clear && npx react-native log-android\"\'"
+      sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && clear && yarn react-native log-android\"\'"
     end
   end
 
