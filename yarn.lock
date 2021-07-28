@@ -2382,13 +2382,23 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/react@npm:*, @types/react@npm:^16.8.23":
+"@types/react@npm:*":
   version: 16.9.23
   resolution: "@types/react@npm:16.9.23"
   dependencies:
     "@types/prop-types": "*"
     csstype: ^2.2.0
   checksum: 2aebd251cc8d4551a7c3f39d5d0d251bfcb2d55c0f1b17153010e0c8e52ffda498b4e468ab839ca039c2d277dfa36744d1f3a7f21cf1e525f32bfef55362f77d
+  languageName: node
+  linkType: hard
+
+"@types/react@npm:16.8.6":
+  version: 16.8.6
+  resolution: "@types/react@npm:16.8.6"
+  dependencies:
+    "@types/prop-types": "*"
+    csstype: ^2.2.0
+  checksum: f0db638b3143129162bf681ffd9246a689e3f9ae96b1bd3f5e027ec05dc615e7431258c442fe6461e8193d06313dfe71e0ade03c75c5dd62c95c666c1c08d7e9
   languageName: node
   linkType: hard
 
@@ -2526,7 +2536,7 @@ __metadata:
     "@types/jest": ^26.0.0
     "@types/lodash": ^4.14.149
     "@types/node": ^13.7.0
-    "@types/react": ^16.8.23
+    "@types/react": 16.8.6
     "@types/react-native": 0.60.6
     "@types/react-native-background-timer": ^2.0.0
     "@types/react-native-fbsdk": ^1.0.0
@@ -2550,7 +2560,7 @@ __metadata:
     metro-react-native-babel-preset: ^0.54.1
     patch-package: ^6.2.0
     postinstall-postinstall: ^2.0.0
-    react: ^16.8.6
+    react: 16.8.6
     react-native: 0.60.6
     react-native-background-fetch: ^3.1.0
     react-native-background-timer: ^2.3.1
@@ -9623,14 +9633,15 @@ fsevents@^2.1.2:
   languageName: node
   linkType: hard
 
-"react@npm:^16.8.6":
-  version: 16.13.0
-  resolution: "react@npm:16.13.0"
+"react@npm:16.8.6":
+  version: 16.8.6
+  resolution: "react@npm:16.8.6"
   dependencies:
     loose-envify: ^1.1.0
     object-assign: ^4.1.1
     prop-types: ^15.6.2
-  checksum: a0513b3303ebbbcc4e44d404215d94165b821e01db26d5000a7b37f6e74cace142b516e21cba30a5e5b1923ed41d877995c4e665bf130ee8ec34527e671234b2
+    scheduler: ^0.13.6
+  checksum: 0a87dd21592db96467dd83e38cdc17797fbc469ad1d486b92bac1cc5f5043301a6eca0dc095da8e249248e7348b321bae3ece66b45d36160b98525eaf21647dd
   languageName: node
   linkType: hard
 
@@ -10209,6 +10220,16 @@ resolve@^1.17.0:
     loose-envify: ^1.1.0
     object-assign: ^4.1.1
   checksum: 4d4c4c0bc05f8f33f0813567de24389f6ffbc8dbea5b952eb62d2a7b54acd099dde825bef8c96f52de11a31bd6a914c65286965c470fc1c290c28119203ab440
+  languageName: node
+  linkType: hard
+
+"scheduler@npm:^0.13.6":
+  version: 0.13.6
+  resolution: "scheduler@npm:0.13.6"
+  dependencies:
+    loose-envify: ^1.1.0
+    object-assign: ^4.1.1
+  checksum: 6778b87d7ff5820c8f5a1eff7f325c5ee45218e4be4bbaa937b3ec0c2d18e6799e1008e3ebc46591a84991f4313f43d5099a79b8a545a3a9261ca372ad645516
   languageName: node
   linkType: hard
 
