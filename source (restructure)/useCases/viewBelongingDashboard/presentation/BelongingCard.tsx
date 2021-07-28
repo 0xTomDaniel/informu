@@ -156,14 +156,14 @@ const BelongingCard: FunctionComponent<BelongingCardProps> = (
 
     return (
         <Card elevation={0} style={styles.card}>
-            <View style={styles.cardHeader}>
+            {/*<View style={styles.cardHeader}>
                 <Icon
                     name={batteryBarIconName}
                     size={19}
                     color={batteryBarColor}
                     style={styles.batteryIcon}
                 />
-            </View>
+            </View>*/}
             <Card.Title
                 title={props.viewData.name}
                 subtitle={
