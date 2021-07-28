@@ -37,6 +37,9 @@ export default class ObjectCollectionUpdate<
             collectionUpdated.splice(addition.index, 0, addition.element)
         );
         this.changed?.forEach(change => {
+            if (collectionUpdated[change.index] == null) {
+                return;
+            }
             const elementChange = change.elementChange;
             for (const key in elementChange) {
                 (collectionUpdated as any[])[change.index][key] =

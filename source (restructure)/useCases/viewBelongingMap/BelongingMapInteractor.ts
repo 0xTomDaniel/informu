@@ -30,11 +30,7 @@ export default interface BelongingMapInteractor {
 
 export class BelongingMapInteractorImpl implements BelongingMapInteractor {
     private readonly accountRepoLocal: AccountRepositoryLocalPort;
-    private readonly belongingLocations: BelongingLocation[] = [];
-    private readonly belongingLocationsUidToIndex: Map<
-        string,
-        number
-    > = new Map();
+    private readonly belongingLocationUids: string[] = [];
     private readonly locationSubscriptions = new Map<string, Subscription>();
     private readonly nameSubscriptions = new Map<string, Subscription>();
     private readonly logger = Logger.instance;
@@ -71,15 +67,12 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                 }
 
                 if (change.deletion != null) {
-                    const index = this.belongingLocationsUidToIndex.get(
-                        change.deletion
-                    );
+                    const index = this.belongingLocationUids.indexOf(change.deletion);
                     if (index == null) {
                         this.logger.warn("Index not found.", true);
                         return;
                     }
-                    this.belongingLocations.splice(index, 1);
-                    this.belongingLocationsUidToIndex.delete(change.deletion);
+                    this.belongingLocationUids.splice(index, 1);
                     this.showOnMapSubject.next(
                         new ObjectCollectionUpdate({
                             removed: [{ index: index }]
@@ -103,8 +96,7 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
             subscription.unsubscribe()
         );
         this.muTagsChangeSubscription?.unsubscribe();
-        this.belongingLocations.length = 0;
-        this.belongingLocationsUidToIndex.clear();
+        this.belongingLocationUids.length = 0;
     }
 
     private async showLocationOnMap(
@@ -131,33 +123,31 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
 
         await Promise.all(locations)
             .then(results => {
-                const belongingLocations = results.map(result => {
-                    const belongingLocation: BelongingLocation = {
+                let index: number;
+                const initialBelongingLocations = results.map(result => {
+                    index = this.belongingLocationUids.push(result.belonging.uid) - 1;
+                    return {
                         name: result.belonging.nameValue,
                         latitude: result.location.latitude,
                         longitude: result.location.longitude
                     };
-                    const index =
-                        this.belongingLocations.push(belongingLocation) - 1;
-                    this.belongingLocationsUidToIndex.set(
-                        result.belonging.uid,
-                        index
-                    );
-                    return {
-                        index: index,
-                        element: belongingLocation
-                    };
-                });
+                })
                 if (initial) {
                     this.showOnMapSubject.next(
                         new ObjectCollectionUpdate({
-                            initial: [...this.belongingLocations]
+                            initial: [...initialBelongingLocations]
                         })
                     );
                 } else {
+                    const addedBelongingLocations = initialBelongingLocations.map(belongingLocation => {
+                        return {
+                            index: index,
+                            element: belongingLocation
+                        };
+                    });
                     this.showOnMapSubject.next(
                         new ObjectCollectionUpdate({
-                            added: belongingLocations
+                            added: addedBelongingLocations
                         })
                     );
                 }
@@ -165,7 +155,7 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
             .catch(e => this.logger.warn(e, true));
 
         belongings.forEach(belonging => {
-            const index = this.belongingLocationsUidToIndex.get(belonging.uid);
+            const index = this.belongingLocationUids.indexOf(belonging.uid);
             if (index == null) {
                 this.logger.warn("Index not found.", true);
                 return;

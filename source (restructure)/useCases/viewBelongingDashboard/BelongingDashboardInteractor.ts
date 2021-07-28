@@ -150,6 +150,7 @@ export class BelongingDashboardInteractorImpl
                         .get(change.deletion)
                         ?.unsubscribe();
                     const index = this.muTagIndexCache.indexOf(change.deletion);
+                    this.muTagIndexCache.splice(index, 1);
                     this._showOnDashboard.next(
                         new ObjectCollectionUpdate({
                             removed: [
