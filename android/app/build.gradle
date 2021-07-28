@@ -133,8 +133,8 @@ android {
         applicationId "ai.informu.mutag"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7
-        versionName "v0.4.0-rc.2"
+        versionCode 8
+        versionName "v0.4.0-rc.3"
         multiDexEnabled true
     }
     splits {
