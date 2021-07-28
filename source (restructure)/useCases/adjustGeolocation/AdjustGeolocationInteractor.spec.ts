@@ -1,13 +1,13 @@
 import AdjustGeolocationInteractor from "./AdjustGeolocationInteractor";
-import LocationMonitorPort from "./LocationMonitorPort";
 import LocationMonitor, {
     GeolocationAccuracy,
     GeolocationOptions,
     Geolocation,
     Geocoder,
-    LocationProvider
+    LocationProvider,
+    LocationMonitorPort
 } from "../../shared/geolocation/LocationMonitor";
-import { Subject } from "rxjs";
+import { Observable, Subject } from "rxjs";
 import AppStateMonitorPort from "./AppStateMonitorPort";
 import { take } from "rxjs/operators";
 import EventTracker from "../../shared/metaLanguage/EventTracker";
@@ -37,6 +37,7 @@ describe("Geolocation tracking adjusts automatically", (): void => {
     const appStateMonitor = AppStateMonitorMock();
     const LocationMonitorMock = jest.fn<LocationMonitorPort, any>(
         (): LocationMonitorPort => ({
+            location: new Observable(),
             configure: jest.fn()
         })
     );
@@ -55,6 +56,7 @@ describe("Geolocation tracking adjusts automatically", (): void => {
     const GeolocationMock = jest.fn<Geolocation, any>(
         (): Geolocation => ({
             configure: jest.fn(),
+            getLocations: jest.fn(() => Promise.resolve([])),
             on: jest.fn(),
             start: jest.fn(),
             stop: jest.fn()
@@ -75,7 +77,7 @@ describe("Geolocation tracking adjusts automatically", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await new Promise(resolve => {
+                await new Promise<void>(resolve => {
                     didEnterForegroundSubject.pipe(take(1)).subscribe(
                         undefined,
                         e => console.error(e),
@@ -119,7 +121,7 @@ describe("Geolocation tracking adjusts automatically", (): void => {
         //
         beforeAll(
             async (): Promise<void> => {
-                await new Promise(resolve => {
+                await new Promise<void>(resolve => {
                     didEnterBackgroundSubject.pipe(take(1)).subscribe(
                         undefined,
                         e => console.error(e),

@@ -3,12 +3,7 @@ import database, {
 } from "@react-native-firebase/database";
 import {
     MuTagRepositoryRemote,
-    FailedToAdd,
-    FailedToUpdate,
-    FailedToGet,
-    DoesNotExist,
-    PersistedDataMalformed,
-    FailedToRemove
+    MuTagRepoRemoteException
 } from "../../Core/Ports/MuTagRepositoryRemote";
 import ProvisionedMuTag, {
     MuTagJson,
@@ -62,7 +57,7 @@ export class MuTagRepoRNFirebase
                 .once("value");
         } catch (e) {
             console.warn(e);
-            throw new FailedToGet();
+            throw MuTagRepoRemoteException.FailedToGet;
         }
 
         const muTags = new Set<ProvisionedMuTag>();
@@ -108,7 +103,7 @@ export class MuTagRepoRNFirebase
                 .set(databaseMuTag);
         } catch (e) {
             console.warn(e);
-            throw new FailedToAdd();
+            throw MuTagRepoRemoteException.FailedToAdd;
         }
     }
 
@@ -128,7 +123,7 @@ export class MuTagRepoRNFirebase
                 .update(databaseMuTag);
         } catch (e) {
             console.warn(e);
-            throw new FailedToUpdate();
+            throw MuTagRepoRemoteException.FailedToUpdate;
         }
     }
 
@@ -149,7 +144,7 @@ export class MuTagRepoRNFirebase
                 .remove();
         } catch (e) {
             console.warn(e);
-            throw new FailedToRemove();
+            throw MuTagRepoRemoteException.FailedToRemove;
         }
     }
 
@@ -165,7 +160,6 @@ export class MuTagRepoRNFirebase
         muTagJson: MuTagJson,
         accountNumber: AccountNumber
     ): DatabaseMuTag {
-        /*eslint-disable @typescript-eslint/camelcase*/
         const databaseMuTag: DatabaseMuTag = {
             advertising_interval: muTagJson._advertisingInterval,
             attached_to: muTagJson._name,
@@ -195,7 +189,6 @@ export class MuTagRepoRNFirebase
             recent_longitude: muTagJson._recentLongitude,
             tx_power: muTagJson._txPower
         };
-        /*eslint-enable */
         return databaseMuTag;
     }
 
@@ -204,12 +197,12 @@ export class MuTagRepoRNFirebase
         snapshot: FirebaseDatabaseTypes.DataSnapshot
     ): MuTagJson {
         if (!snapshot.exists()) {
-            throw new DoesNotExist();
+            throw MuTagRepoRemoteException.DoesNotExist;
         }
 
         const snapshotData = snapshot.val();
         if (typeof snapshotData !== "object") {
-            throw new PersistedDataMalformed(uid);
+            throw MuTagRepoRemoteException.PersistedDataMalformed(uid);
         }
 
         const json: { [key: string]: any } = {
@@ -239,8 +232,10 @@ export class MuTagRepoRNFirebase
         try {
             assertIsMuTagJson(json);
         } catch (e) {
-            console.warn(e);
-            throw new PersistedDataMalformed(JSON.stringify(json));
+            throw MuTagRepoRemoteException.PersistedDataMalformed(
+                JSON.stringify(json),
+                e
+            );
         }
 
         return json;

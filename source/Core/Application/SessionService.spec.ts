@@ -2,25 +2,26 @@ import Account, { AccountNumber, AccountData } from "../Domain/Account";
 import { Authentication } from "../Ports/Authentication";
 import {
     AccountRepositoryLocal,
-    DoesNotExist
+    AccountRepositoryLocalException
 } from "../Ports/AccountRepositoryLocal";
-import { DoesNotExist as AccountDoesNotExistOnRemote } from "../Ports/AccountRepositoryRemote";
+import AccountRepositoryRemote, {
+    AccountRepositoryRemoteException
+} from "../Ports/AccountRepositoryRemote";
 import { SessionOutput } from "../Ports/SessionOutput";
-import SessionService from "./SessionService";
+import { SessionServiceImpl } from "./SessionService";
 import ProvisionedMuTag, { BeaconId } from "../Domain/ProvisionedMuTag";
 import { BelongingDetection } from "./BelongingDetectionService";
-import { AccountRepositoryRemote } from "../Ports/AccountRepositoryRemote";
 import { UserData } from "../Ports/UserData";
 import { Database } from "../../Secondary Adapters/Persistence/Database";
-import { MuTagRepositoryLocal } from "../Ports/MuTagRepositoryLocal";
+import MuTagRepositoryLocal from "../Ports/MuTagRepositoryLocal";
 import { MuTagRepositoryRemote } from "../Ports/MuTagRepositoryRemote";
 import AccountRegistrationService from "./AccountRegistrationService";
 import { NewAccountFactory } from "../Ports/NewAccountFactory";
 import LoginOutput from "../Ports/LoginOutput";
 import EventTracker from "../../../source (restructure)/shared/metaLanguage/EventTracker";
 import Logger from "../../../source (restructure)/shared/metaLanguage/Logger";
-import UserError from "../../../source (restructure)/shared/metaLanguage/UserError";
 import { BelongingsLocation } from "../../../source (restructure)/useCases/updateBelongingsLocation/BelongingsLocationInteractor";
+import MuTagBatteriesInteractor from "../../../source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -137,6 +138,9 @@ describe("user opens saved login session", (): void => {
     (belongingDetectionServiceMock.start as jest.Mock).mockResolvedValue(
         undefined
     );
+    (belongingDetectionServiceMock.stop as jest.Mock).mockResolvedValue(
+        undefined
+    );
     const localDatabaseMock = new LocalDatabaseMock();
     const newAccountFactoryMock = new NewAccountFactoryMock();
 
@@ -150,6 +154,9 @@ describe("user opens saved login session", (): void => {
     (belongingsLocationInteractorMock.start as jest.Mock).mockResolvedValue(
         undefined
     );
+    (belongingsLocationInteractorMock.stop as jest.Mock).mockReturnValue(
+        undefined
+    );
 
     const accountRegistrationService = new AccountRegistrationService(
         newAccountFactoryMock,
@@ -160,7 +167,18 @@ describe("user opens saved login session", (): void => {
         accountRegistrationService,
         "register"
     );
-    const sessionService = new SessionService(
+    const MuTagBatteriesInteractorMock = jest.fn<MuTagBatteriesInteractor, any>(
+        (): MuTagBatteriesInteractor => ({
+            start: jest.fn(),
+            stop: jest.fn()
+        })
+    );
+    const muTagBatteriesInteractorMock = new MuTagBatteriesInteractorMock();
+    (muTagBatteriesInteractorMock.start as jest.Mock).mockResolvedValue(
+        undefined
+    );
+    (muTagBatteriesInteractorMock.stop as jest.Mock).mockReturnValue(undefined);
+    const sessionService = new SessionServiceImpl(
         eventTrackerMock,
         sessionOutputMock,
         loginOutputMock,
@@ -172,7 +190,8 @@ describe("user opens saved login session", (): void => {
         belongingDetectionServiceMock,
         belongingsLocationInteractorMock,
         localDatabaseMock,
-        accountRegistrationService
+        accountRegistrationService,
+        muTagBatteriesInteractorMock
     );
 
     const recycledBeaconIds = [BeaconId.create("1")];
@@ -244,10 +263,16 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should start Mu tag location updates", (): void => {
+        it("should start MuTag location updates", (): void => {
             expect(
                 belongingsLocationInteractorMock.start
             ).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should start MuTag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.start).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -259,7 +284,7 @@ describe("user opens saved login session", (): void => {
         beforeAll(
             async (): Promise<void> => {
                 (accountRepoLocalMock.get as jest.Mock).mockRejectedValueOnce(
-                    UserError.create(DoesNotExist)
+                    AccountRepositoryLocalException.DoesNotExist
                 );
                 await sessionService.load();
             }
@@ -324,10 +349,16 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should stop Mu tag location updates", (): void => {
+        it("should stop MuTag location updates", (): void => {
             expect(belongingsLocationInteractorMock.stop).toHaveBeenCalledTimes(
                 1
             );
+        });
+
+        // Then
+        //
+        it("should stop MuTag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.stop).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -409,10 +440,16 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should start Mu tag location updates", (): void => {
+        it("should start MuTag location updates", (): void => {
             expect(
                 belongingsLocationInteractorMock.start
             ).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should start MuTag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.start).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -490,10 +527,16 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should start Mu tag location updates", (): void => {
+        it("should start MuTag location updates", (): void => {
             expect(
                 belongingsLocationInteractorMock.start
             ).toHaveBeenCalledTimes(1);
+        });
+
+        // Then
+        //
+        it("should start MuTag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.start).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -533,10 +576,16 @@ describe("user opens saved login session", (): void => {
 
         // Then
         //
-        it("should stop Mu tag location updates", (): void => {
+        it("should stop MuTag location updates", (): void => {
             expect(belongingsLocationInteractorMock.stop).toHaveBeenCalledTimes(
                 1
             );
+        });
+
+        // Then
+        //
+        it("should stop MuTag battery updates", (): void => {
+            expect(muTagBatteriesInteractorMock.stop).toHaveBeenCalledTimes(1);
         });
 
         // Then
@@ -586,7 +635,7 @@ describe("user opens saved login session", (): void => {
         beforeAll(
             async (): Promise<void> => {
                 (accountRepoRemoteMock.getByUid as jest.Mock).mockRejectedValueOnce(
-                    UserError.create(AccountDoesNotExistOnRemote)
+                    AccountRepositoryRemoteException.DoesNotExist
                 );
                 account.clearSession();
                 await sessionService.start(userData);

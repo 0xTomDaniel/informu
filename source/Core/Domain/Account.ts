@@ -6,14 +6,32 @@ import _ from "lodash";
 import isType, {
     RuntimeType
 } from "../../../source (restructure)/shared/metaLanguage/isType";
+import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
-class InvalidAccountNumber extends RangeError {
-    constructor(value: string) {
-        super(
-            `${value} is an invalid account number. Expected a 7-character hexadecimal value.`
+const ExceptionType = ["InvalidAccountNumber", "NewBeaconIdNotFound"] as const;
+export type ExceptionType = typeof ExceptionType[number];
+
+export class AccountException<T extends ExceptionType> extends Exception<T> {
+    static InvalidAccountNumber(
+        value: string
+    ): AccountException<"InvalidAccountNumber"> {
+        return new this(
+            "InvalidAccountNumber",
+            `${value} is an invalid account number. Expected a 7-character hexadecimal value.`,
+            "warn"
         );
-        this.name = "InvalidAccountNumber";
-        Object.setPrototypeOf(this, new.target.prototype);
+    }
+
+    static NewBeaconIdNotFound(
+        value: string
+    ): AccountException<"NewBeaconIdNotFound"> {
+        return new this(
+            "NewBeaconIdNotFound",
+            `New beacon ID (${value}) not found.`,
+            "error",
+            undefined,
+            true
+        );
     }
 }
 
@@ -44,16 +62,8 @@ export class AccountNumber extends Hexadecimal {
         hex: string
     ): asserts hexLength is 7 {
         if (hex.length !== 7) {
-            throw new InvalidAccountNumber(hex);
+            throw AccountException.InvalidAccountNumber(hex);
         }
-    }
-}
-
-class NewBeaconIdNotFound extends Error {
-    constructor(value: string) {
-        super(`New beacon ID ${value} not found.`);
-        this.name = "NewBeaconIdNotFound";
-        Object.setPrototypeOf(this, new.target.prototype);
     }
 }
 
@@ -219,7 +229,7 @@ export default class Account {
         } else if (this._nextBeaconId === beaconId) {
             this.incrementNextBeaconId();
         } else {
-            throw new NewBeaconIdNotFound(beaconId.toString());
+            throw AccountException.NewBeaconIdNotFound(beaconId.toString());
         }
 
         this._nextMuTagNumber += 1;

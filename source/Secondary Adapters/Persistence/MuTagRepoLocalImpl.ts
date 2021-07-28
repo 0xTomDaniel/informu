@@ -1,9 +1,5 @@
-import {
-    MuTagRepositoryLocal,
-    FailedToAdd,
-    FailedToRemove,
-    FailedToUpdate,
-    DoesNotExist as MuTagDoesNotExist
+import MuTagRepositoryLocal, {
+    MuTagRepositoryLocalException
 } from "../../Core/Ports/MuTagRepositoryLocal";
 import ProvisionedMuTag, { BeaconId } from "../../Core/Domain/ProvisionedMuTag";
 import { AccountRepositoryLocal } from "../../Core/Ports/AccountRepositoryLocal";
@@ -12,6 +8,9 @@ import MuTagRepositoryLocalPortAddMuTag from "../../../source (restructure)/useC
 import MuTagRepositoryLocalPortRemoveMuTag from "../../../source (restructure)/useCases/removeMuTag/MuTagRepositoryLocalPort";
 import { defer } from "rxjs";
 import { publish, refCount } from "rxjs/operators";
+import MuTagRepositoryLocalPortUpdateBelongingsLocation from "../../../source (restructure)/useCases/updateBelongingsLocation/MuTagRepositoryLocalPort";
+import MuTagRepositoryLocalPortViewBelongingMap from "../../../source (restructure)/useCases/viewBelongingMap/MuTagRepositoryLocalPort";
+import MuTagRepositoryLocalPortUpdateMuTagBatteries from "../../../source (restructure)/useCases/updateMuTagBatteries/MuTagRepositoryLocalPort";
 
 interface PromiseExecutor {
     resolve: (value?: void | PromiseLike<void> | undefined) => void;
@@ -22,7 +21,10 @@ export default class MuTagRepoLocalImpl
     implements
         MuTagRepositoryLocal,
         MuTagRepositoryLocalPortAddMuTag,
-        MuTagRepositoryLocalPortRemoveMuTag {
+        MuTagRepositoryLocalPortRemoveMuTag,
+        MuTagRepositoryLocalPortUpdateBelongingsLocation,
+        MuTagRepositoryLocalPortViewBelongingMap,
+        MuTagRepositoryLocalPortUpdateMuTagBatteries {
     private readonly database: Database;
     private readonly accountRepoLocal: AccountRepositoryLocal;
     private readonly muTagCache = new Map<string, ProvisionedMuTag>();
@@ -42,7 +44,7 @@ export default class MuTagRepoLocalImpl
         if (this.muTagCache.has(uid)) {
             return this.muTagCache.get(uid) as ProvisionedMuTag;
         } else {
-            throw new MuTagDoesNotExist(uid);
+            throw MuTagRepositoryLocalException.DoesNotExist(uid);
         }
     }
 
@@ -52,7 +54,9 @@ export default class MuTagRepoLocalImpl
         if (uid != null && this.muTagCache.has(uid)) {
             return this.muTagCache.get(uid) as ProvisionedMuTag;
         } else {
-            throw new MuTagDoesNotExist(beaconId.toString());
+            throw MuTagRepositoryLocalException.DoesNotExist(
+                beaconId.toString()
+            );
         }
     }
 
@@ -72,7 +76,7 @@ export default class MuTagRepoLocalImpl
             );
         } catch (e) {
             console.log(e);
-            throw new FailedToAdd();
+            throw MuTagRepositoryLocalException.FailedToAdd;
         }
     }
 
@@ -88,7 +92,7 @@ export default class MuTagRepoLocalImpl
             await this.database.set(`muTags/${muTag.uid}`, rawMuTag);
         } catch (e) {
             console.log(e);
-            throw new FailedToUpdate();
+            throw MuTagRepositoryLocalException.FailedToUpdate;
         }
     }
 
@@ -104,7 +108,7 @@ export default class MuTagRepoLocalImpl
             });
         } catch (e) {
             console.log(e);
-            throw new FailedToRemove();
+            throw MuTagRepositoryLocalException.FailedToRemove;
         }
     }
 
@@ -136,7 +140,7 @@ export default class MuTagRepoLocalImpl
             }
             const rawMuTag = await this.database.get(`muTags/${muTagUid}`);
             if (rawMuTag == null) {
-                throw new MuTagDoesNotExist(muTagUid);
+                throw MuTagRepositoryLocalException.DoesNotExist(muTagUid);
             }
             muTags.add(ProvisionedMuTag.deserialize(rawMuTag));
         }

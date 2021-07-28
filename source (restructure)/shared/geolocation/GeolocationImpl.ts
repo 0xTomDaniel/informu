@@ -4,7 +4,8 @@ import {
     GeolocationOptions
 } from "./LocationMonitor";
 import BackgroundGeolocation, {
-    EventSubscription
+    EventSubscription,
+    Location
 } from "@mauron85/react-native-background-geolocation";
 
 export default class GeolocationImpl implements Geolocation {
@@ -35,6 +36,16 @@ export default class GeolocationImpl implements Geolocation {
                 successCallback,
                 failCallback
             );
+        });
+    }
+
+    async getLocations(): Promise<Location[]> {
+        return new Promise((resolve, reject) => {
+            const successCallback = (locations: Location[]): void =>
+                resolve(locations);
+            const failCallback = (): void =>
+                reject(Error("Failed to configure BackgroundGeolocation."));
+            BackgroundGeolocation.getLocations(successCallback, failCallback);
         });
     }
 

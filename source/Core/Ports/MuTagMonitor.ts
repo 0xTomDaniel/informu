@@ -9,6 +9,11 @@ export interface MuTagSignal {
     readonly timestamp: Date;
 }
 
+export interface MuTagRegionEnter {
+    readonly uid: string;
+    readonly timestamp: Date;
+}
+
 export interface MuTagRegionExit {
     readonly uid: string;
     readonly timestamp: Date;

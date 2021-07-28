@@ -18,11 +18,37 @@ import Account, {
 import LocationMonitor, {
     Geolocation,
     GeolocationEvent,
-    Geocoder
+    Geocoder,
+    Address
 } from "../../shared/geolocation/LocationMonitor";
 import { EventSubscription } from "@mauron85/react-native-background-geolocation";
 import { take } from "rxjs/operators";
-import { Address } from "./LocationMonitorPort";
+import Localize, { RnLocalize } from "../../shared/localization/Localize";
+
+const ReactNativeLocalizeMock = jest.fn<RnLocalize, any>(
+    (): RnLocalize => ({
+        getCalendar: jest.fn(),
+        getCountry: jest.fn(),
+        getCurrencies: jest.fn(),
+        getLocales: jest.fn(() => [
+            {
+                languageCode: "",
+                countryCode: "",
+                languageTag: "en-US",
+                isRTL: true
+            }
+        ]),
+        getNumberFormatSettings: jest.fn(),
+        getTemperatureUnit: jest.fn(),
+        getTimeZone: jest.fn(),
+        uses24HourClock: jest.fn(),
+        usesMetricSystem: jest.fn(),
+        usesAutoDateAndTime: jest.fn(),
+        usesAutoTimeZone: jest.fn()
+    })
+);
+const reactNativeLocalizeMock = new ReactNativeLocalizeMock();
+Localize.createInstance(reactNativeLocalizeMock);
 
 const EventTrackerMock = jest.fn<EventTracker, any>(
     (): EventTracker => ({
@@ -65,6 +91,7 @@ const geocoderMock = new GeocoderMock();
 const GeoLocationMock = jest.fn<Geolocation, any>(
     (): Geolocation => ({
         configure: jest.fn(),
+        getLocations: jest.fn(() => Promise.resolve([])),
         on: jest.fn(),
         start: jest.fn(),
         stop: jest.fn()
@@ -168,7 +195,7 @@ describe("Location of belongings continuously updates", (): void => {
 
                 // When user location changes
                 //
-                await new Promise(resolve => {
+                await new Promise<void>(resolve => {
                     locationMonitor.location
                         .pipe(take(1))
                         .subscribe(undefined, undefined, () => resolve());
@@ -217,7 +244,7 @@ describe("Location of belongings continuously updates", (): void => {
 
                 // When user location changes
                 //
-                await new Promise(resolve => {
+                await new Promise<void>(resolve => {
                     locationMonitor.location
                         .pipe(take(2))
                         .subscribe(undefined, undefined, () => resolve());
@@ -378,7 +405,6 @@ describe("Location of belongings continuously updates", (): void => {
         it("should update belonging location to user's current location a second time", async (): Promise<
             void
         > => {
-            debugger;
             newBelonging.userDidExitRegion();
             const locationUpdateFour = {
                 latitude: 39.80963962521709,

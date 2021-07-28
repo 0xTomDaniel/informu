@@ -1,4 +1,3 @@
-import LocationMonitorPort, { Location } from "./LocationMonitorPort";
 import { Subscription } from "rxjs";
 import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import { take } from "rxjs/operators";
@@ -8,8 +7,11 @@ import Logger from "../../shared/metaLanguage/Logger";
 import {
     GeolocationOptions,
     GeolocationAccuracy,
-    LocationProvider
+    LocationProvider,
+    LocationMonitorPort,
+    Location
 } from "../../shared/geolocation/LocationMonitor";
+import Localize from "../../shared/localization/Localize";
 
 export interface BelongingsLocation {
     start(): Promise<void>;
@@ -18,38 +20,35 @@ export interface BelongingsLocation {
 
 export default class BelongingsLocationInteractor
     implements BelongingsLocation {
-    private accountMuTagsChangeSubscription?: Subscription;
-    private readonly accountRepoLocal: AccountRepositoryLocal;
-    private readonly defaultLocationMonitorOptions: GeolocationOptions = {
-        activitiesInterval: 10000,
-        desiredAccuracy: GeolocationAccuracy.Medium,
-        fastestInterval: 5000,
-        interval: 10000,
-        locationProvider: LocationProvider.Activity,
-        //notificationIconColor: string,
-        //notificationIconLarge: string,
-        //notificationIconSmall: string,
-        notificationText: "Keeping Mu tag location up-to-date.",
-        notificationTitle: "Mu Tag Tracking",
-        stopOnTerminate: false,
-        startForeground: true,
-        startOnBoot: true
-    };
-    private readonly locationMonitor: LocationMonitorPort;
-    private locationSubscription?: Subscription;
-    private logger = Logger.instance;
-    private readonly muTagDetectionSubscriptions = new Map<
-        string,
-        Subscription
-    >();
-    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
-
     constructor(
         accountRepoLocal: AccountRepositoryLocal,
         locationMonitor: LocationMonitorPort,
         muTagRepoLocal: MuTagRepositoryLocalPort
     ) {
         this.accountRepoLocal = accountRepoLocal;
+        this.defaultLocationMonitorOptions = {
+            activitiesInterval: 10000,
+            desiredAccuracy: GeolocationAccuracy.Medium,
+            fastestInterval: 5000,
+            interval: 10000,
+            locationProvider: LocationProvider.Activity,
+            //notificationIconColor: string,
+            //notificationIconLarge: string,
+            //notificationIconSmall: string,
+            notificationTitle: this.localize.getText(
+                "BelongingsLocation",
+                "ForegroundServiceNotification",
+                "Title"
+            ),
+            notificationText: this.localize.getText(
+                "BelongingsLocation",
+                "ForegroundServiceNotification",
+                "Description"
+            ),
+            stopOnTerminate: false,
+            startForeground: true,
+            startOnBoot: true
+        };
         this.locationMonitor = locationMonitor;
         this.muTagRepoLocal = muTagRepoLocal;
 
@@ -57,6 +56,10 @@ export default class BelongingsLocationInteractor
     }
 
     async start(): Promise<void> {
+        if (this.hasStarted) {
+            return;
+        }
+        this.hasStarted = true;
         this.locationSubscription = this.locationMonitor.location.subscribe(
             location => {
                 this.muTagRepoLocal
@@ -99,12 +102,30 @@ export default class BelongingsLocationInteractor
     }
 
     stop(): void {
+        if (!this.hasStarted) {
+            return;
+        }
         this.accountMuTagsChangeSubscription?.unsubscribe();
         this.locationSubscription?.unsubscribe();
         this.muTagDetectionSubscriptions.forEach(subscription =>
             subscription.unsubscribe()
         );
+        this.hasStarted = false;
     }
+
+    private accountMuTagsChangeSubscription?: Subscription;
+    private readonly accountRepoLocal: AccountRepositoryLocal;
+    private readonly defaultLocationMonitorOptions: GeolocationOptions;
+    private hasStarted = false;
+    private readonly localize = Localize.instance;
+    private readonly locationMonitor: LocationMonitorPort;
+    private locationSubscription?: Subscription;
+    private readonly logger = Logger.instance;
+    private readonly muTagDetectionSubscriptions = new Map<
+        string,
+        Subscription
+    >();
+    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
 
     private updateMuTagLocationWhenDetected(
         muTags: Set<ProvisionedMuTag>

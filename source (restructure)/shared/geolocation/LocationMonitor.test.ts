@@ -4,10 +4,10 @@ import LocationMonitor, {
     Subscription as EventSubscription,
     Geocoder,
     GeolocationOptions,
-    GeolocationAccuracy
+    GeolocationAccuracy,
+    Location
 } from "./LocationMonitor";
 import { v4 as uuidV4 } from "uuid";
-import { Location } from "../../useCases/updateBelongingsLocation/LocationMonitorPort";
 import { take } from "rxjs/operators";
 
 const GeocoderMock = jest.fn<Geocoder, any>(
@@ -19,6 +19,7 @@ const geocoderMock = new GeocoderMock();
 const GeoLocationMock = jest.fn<Geolocation, any>(
     (): Geolocation => ({
         configure: jest.fn(),
+        getLocations: jest.fn(() => Promise.resolve([])),
         on: jest.fn(),
         start: jest.fn(),
         stop: jest.fn()
@@ -108,7 +109,7 @@ it("multiple subscribers receive last location and location update", async (): P
         secondLocationUpdateWithAddress.address
     );
     expect.assertions(5);
-    await new Promise(resolve => {
+    await new Promise<void>(resolve => {
         let firstLocationCount = 0;
         locationMonitor.location
             .pipe(take(2))
@@ -163,7 +164,7 @@ it("geolocation starts once when there are subscribers and stops once when there
         time: new Date().valueOf()
     };
     expect.assertions(2);
-    await new Promise(resolve => {
+    await new Promise<void>(resolve => {
         locationMonitor.location
             .pipe(take(2))
             .subscribe(undefined, undefined, () => resolve());

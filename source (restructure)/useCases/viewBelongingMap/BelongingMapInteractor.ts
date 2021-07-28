@@ -5,9 +5,10 @@ import ProvisionedMuTag, {
 import Logger from "../../shared/metaLanguage/Logger";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import { Subscription, Observable, Subject } from "rxjs";
-import CollectionUpdate from "../../shared/metaLanguage/CollectionUpdate";
-import { take, map } from "rxjs/operators";
+import ObjectCollectionUpdate from "../../shared/metaLanguage/ObjectCollectionUpdate";
+import { take, map, distinctUntilChanged } from "rxjs/operators";
 import LifecycleObservable from "../../shared/metaLanguage/LifecycleObservable";
+import { isEqual } from "lodash";
 
 export interface BelongingLocation {
     name: string;
@@ -23,36 +24,26 @@ export interface BelongingLocationDelta {
 
 export default interface BelongingMapInteractor {
     showOnMap: Observable<
-        CollectionUpdate<BelongingLocation, BelongingLocationDelta>
+        ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
     >;
 }
 
 export class BelongingMapInteractorImpl implements BelongingMapInteractor {
     private readonly accountRepoLocal: AccountRepositoryLocalPort;
-    private readonly belongingLocations: BelongingLocation[] = [];
-    private readonly belongingLocationsUidToIndex: Map<
-        string,
-        number
-    > = new Map();
+    private readonly belongingLocationUids: string[] = [];
     private readonly locationSubscriptions = new Map<string, Subscription>();
+    private readonly nameSubscriptions = new Map<string, Subscription>();
     private readonly logger = Logger.instance;
     private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
     private muTagsChangeSubscription: Subscription | undefined;
+    private readonly showOnMapSubject = new Subject<
+        ObjectCollectionUpdate<BelongingLocation, BelongingLocationDelta>
+    >();
     readonly showOnMap = LifecycleObservable(
-        new Observable<
-            CollectionUpdate<BelongingLocation, BelongingLocationDelta>
-        >(subscriber => {
-            this.showOnMapSubject.subscribe(subscriber);
-            // Must copy the array 'belongingLocations' to prevent mutation of
-            // original.
-            subscriber.next({ initial: [...this.belongingLocations] });
-        }),
+        this.showOnMapSubject,
         this.start.bind(this),
         this.stop.bind(this)
     );
-    private readonly showOnMapSubject = new Subject<
-        CollectionUpdate<BelongingLocation, BelongingLocationDelta>
-    >();
 
     constructor(
         accountRepoLocal: AccountRepositoryLocalPort,
@@ -76,18 +67,17 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                 }
 
                 if (change.deletion != null) {
-                    const index = this.belongingLocationsUidToIndex.get(
-                        change.deletion
-                    );
+                    const index = this.belongingLocationUids.indexOf(change.deletion);
                     if (index == null) {
                         this.logger.warn("Index not found.", true);
                         return;
                     }
-                    this.belongingLocations.splice(index, 1);
-                    this.belongingLocationsUidToIndex.delete(change.deletion);
-                    this.showOnMapSubject.next({
-                        removed: [{ index: index }]
-                    });
+                    this.belongingLocationUids.splice(index, 1);
+                    this.showOnMapSubject.next(
+                        new ObjectCollectionUpdate({
+                            removed: [{ index: index }]
+                        })
+                    );
                     this.locationSubscriptions
                         .get(change.deletion)
                         ?.unsubscribe();
@@ -99,12 +89,14 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
     }
 
     private async stop(): Promise<void> {
+        this.nameSubscriptions.forEach(subscription =>
+            subscription.unsubscribe()
+        );
         this.locationSubscriptions.forEach(subscription =>
             subscription.unsubscribe()
         );
         this.muTagsChangeSubscription?.unsubscribe();
-        this.belongingLocations.length = 0;
-        this.belongingLocationsUidToIndex.clear();
+        this.belongingLocationUids.length = 0;
     }
 
     private async showLocationOnMap(
@@ -128,54 +120,87 @@ export class BelongingMapInteractorImpl implements BelongingMapInteractor {
                     .toPromise()
             )
         );
+
         await Promise.all(locations)
             .then(results => {
-                const belongingLocations = results.map(result => {
-                    const belongingLocation: BelongingLocation = {
-                        name: result.belonging.name,
+                let index: number;
+                const initialBelongingLocations = results.map(result => {
+                    index = this.belongingLocationUids.push(result.belonging.uid) - 1;
+                    return {
+                        name: result.belonging.nameValue,
                         latitude: result.location.latitude,
                         longitude: result.location.longitude
                     };
-                    const index =
-                        this.belongingLocations.push(belongingLocation) - 1;
-                    this.belongingLocationsUidToIndex.set(
-                        result.belonging.uid,
-                        index
+                })
+                if (initial) {
+                    this.showOnMapSubject.next(
+                        new ObjectCollectionUpdate({
+                            initial: [...initialBelongingLocations]
+                        })
                     );
-                    return {
-                        index: index,
-                        element: belongingLocation
-                    };
-                });
-                if (!initial) {
-                    this.showOnMapSubject.next({
-                        added: belongingLocations
+                } else {
+                    const addedBelongingLocations = initialBelongingLocations.map(belongingLocation => {
+                        return {
+                            index: index,
+                            element: belongingLocation
+                        };
                     });
+                    this.showOnMapSubject.next(
+                        new ObjectCollectionUpdate({
+                            added: addedBelongingLocations
+                        })
+                    );
                 }
             })
             .catch(e => this.logger.warn(e, true));
+
         belongings.forEach(belonging => {
-            const index = this.belongingLocationsUidToIndex.get(belonging.uid);
+            const index = this.belongingLocationUids.indexOf(belonging.uid);
             if (index == null) {
                 this.logger.warn("Index not found.", true);
                 return;
             }
-            const subscription = belonging.location.subscribe(
-                location =>
-                    this.showOnMapSubject.next({
-                        changed: [
-                            {
-                                index: index,
-                                elementChange: {
-                                    latitude: location.latitude,
-                                    longitude: location.longitude
-                                }
-                            }
-                        ]
-                    }),
-                error => this.logger.warn(error, true)
-            );
-            this.locationSubscriptions.set(belonging.uid, subscription);
+
+            const nameSubscription = belonging.name
+                .pipe(distinctUntilChanged(isEqual))
+                .subscribe(
+                    name =>
+                        this.showOnMapSubject.next(
+                            new ObjectCollectionUpdate({
+                                changed: [
+                                    {
+                                        index: index,
+                                        elementChange: {
+                                            name: name
+                                        }
+                                    }
+                                ]
+                            })
+                        ),
+                    error => this.logger.warn(error, true)
+                );
+            this.nameSubscriptions.set(belonging.uid, nameSubscription);
+
+            const locationSubscription = belonging.location
+                .pipe(distinctUntilChanged(isEqual))
+                .subscribe(
+                    location =>
+                        this.showOnMapSubject.next(
+                            new ObjectCollectionUpdate({
+                                changed: [
+                                    {
+                                        index: index,
+                                        elementChange: {
+                                            latitude: location.latitude,
+                                            longitude: location.longitude
+                                        }
+                                    }
+                                ]
+                            })
+                        ),
+                    error => this.logger.warn(error, true)
+                );
+            this.locationSubscriptions.set(belonging.uid, locationSubscription);
         });
     }
 }

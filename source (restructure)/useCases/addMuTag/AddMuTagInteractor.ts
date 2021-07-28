@@ -1,9 +1,9 @@
-import AddMuTagOutputPort from "./AddMuTagOutputPort";
 import MuTagDevicesPort, {
     TxPowerSetting,
     UnprovisionedMuTag,
-    AdvertisingIntervalSetting
-} from "./MuTagDevicesPort";
+    AdvertisingIntervalSetting,
+    Connection
+} from "../../shared/muTagDevices/MuTagDevicesPort";
 import { Rssi, Millisecond } from "../../shared/metaLanguage/Types";
 import Percent from "../../shared/metaLanguage/Percent";
 import ProvisionedMuTag from "../../../source/Core/Domain/ProvisionedMuTag";
@@ -12,56 +12,115 @@ import MuTagRepositoryLocalPort from "./MuTagRepositoryLocalPort";
 import MuTagRepositoryRemotePort from "./MuTagRepositoryRemotePort";
 import AccountRepositoryLocalPort from "./AccountRepositoryLocalPort";
 import AccountRepositoryRemotePort from "./AccountRepositoryRemotePort";
-import UserError, { UserErrorType } from "../../shared/metaLanguage/UserError";
-import UserWarning, {
-    UserWarningType
-} from "../../shared/metaLanguage/UserWarning";
 import { AccountNumber } from "../../../source/Core/Domain/Account";
-import { take, switchMap } from "rxjs/operators";
+import { switchMap, catchError, first, finalize, take } from "rxjs/operators";
+import { EmptyError } from "rxjs";
+import Exception from "../../shared/metaLanguage/Exception";
 
-const LowMuTagBattery = (lowBatteryThreshold: number): UserErrorType => ({
-    name: "LowMuTagBattery",
-    userFriendlyMessage: `Unable to add Mu tag because its battery is below ${lowBatteryThreshold}%. Please charge Mu tag and try again.`
-});
+type ExceptionType =
+    | {
+          type: "FailedToAddMuTag";
+          data: [];
+      }
+    | {
+          type: "FailedToNameMuTag";
+          data: [];
+      }
+    | {
+          type: "FailedToSaveSettings";
+          data: [];
+      }
+    | {
+          type: "FindNewMuTagCanceled";
+          data: [];
+      }
+    | {
+          type: "LowMuTagBattery";
+          data: [number];
+      }
+    | {
+          type: "NewMuTagNotFound";
+          data: [];
+      };
 
-const NewMuTagNotFound: UserErrorType = {
-    name: "NewMuTagNotFound",
-    userFriendlyMessage:
-        "Could not find a new Mu tag. Be sure the Mu tag light is flashing and keep it close to the app."
-};
+export class AddMuTagInteractorException extends Exception<ExceptionType> {
+    static FailedToAddMuTag(
+        sourceException: unknown
+    ): AddMuTagInteractorException {
+        return new this(
+            { type: "FailedToAddMuTag", data: [] },
+            "Failed to add MuTag.",
+            "error",
+            sourceException,
+            true
+        );
+    }
 
-const FailedToAddMuTag: UserErrorType = {
-    name: "FailedToAddMuTag",
-    userFriendlyMessage:
-        "There was problem adding the Mu tag. Please keep Mu tag close to the app and try again."
-};
+    static FailedToNameMuTag(
+        sourceException: unknown
+    ): AddMuTagInteractorException {
+        return new this(
+            { type: "FailedToNameMuTag", data: [] },
+            "Failed to name MuTag.",
+            "error",
+            sourceException,
+            true
+        );
+    }
 
-const FailedToSaveSettings: UserWarningType = {
-    name: "FailedToSaveSettings",
-    userFriendlyMessage:
-        "Your Mu tag added successfully but some settings failed to save."
-};
+    static FailedToSaveSettings(
+        sourceException: unknown
+    ): AddMuTagInteractorException {
+        return new this(
+            { type: "FailedToSaveSettings", data: [] },
+            "Failed to save MuTag settings.",
+            "error",
+            sourceException,
+            true
+        );
+    }
 
-export default class AddMuTagInteractor {
-    private readonly connectThreshold: Rssi;
-    private readonly addMuTagBatteryThreshold: Percent;
-    private readonly addMuTagOutput: AddMuTagOutputPort;
-    private readonly muTagDevices: MuTagDevicesPort;
-    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
-    private readonly muTagRepoRemote: MuTagRepositoryRemotePort;
-    private readonly accountRepoLocal: AccountRepositoryLocalPort;
-    private readonly accountRepoRemote: AccountRepositoryRemotePort;
+    static get FindNewMuTagCanceled(): AddMuTagInteractorException {
+        return new this(
+            { type: "FindNewMuTagCanceled", data: [] },
+            "Find new MuTag has been canceled.",
+            "log"
+        );
+    }
 
-    private unprovisionedMuTag: UnprovisionedMuTag | undefined;
-    private provisionedMuTag: ProvisionedMuTag | undefined;
-    private muTagName: string | undefined;
-    private accountUid: string | undefined;
-    private accountNumber: AccountNumber | undefined;
+    static LowMuTagBattery(
+        lowBatteryThreshold: number
+    ): AddMuTagInteractorException {
+        return new this(
+            { type: "LowMuTagBattery", data: [lowBatteryThreshold] },
+            `MuTag battery is too low. It's below ${lowBatteryThreshold}%.`,
+            "warn"
+        );
+    }
 
+    static NewMuTagNotFound(
+        sourceException: unknown
+    ): AddMuTagInteractorException {
+        return new this(
+            { type: "NewMuTagNotFound", data: [] },
+            "Could not find a new MuTag.",
+            "warn",
+            sourceException
+        );
+    }
+}
+
+export default interface AddMuTagInteractor {
+    addFoundMuTag(): Promise<void>;
+    findNewMuTag(): Promise<void>;
+    setMuTagName(name: string): Promise<void>;
+    stopFindingNewMuTag(): Promise<void>;
+}
+
+export class AddMuTagInteractorImpl implements AddMuTagInteractor {
     constructor(
         connectThreshold: Rssi,
         addMuTagBatteryThreshold: Percent,
-        addMuTagOutput: AddMuTagOutputPort,
         muTagDevices: MuTagDevicesPort,
         muTagRepoLocal: MuTagRepositoryLocalPort,
         muTagRepoRemote: MuTagRepositoryRemotePort,
@@ -70,7 +129,6 @@ export default class AddMuTagInteractor {
     ) {
         this.connectThreshold = connectThreshold;
         this.addMuTagBatteryThreshold = addMuTagBatteryThreshold;
-        this.addMuTagOutput = addMuTagOutput;
         this.muTagDevices = muTagDevices;
         this.muTagRepoLocal = muTagRepoLocal;
         this.muTagRepoRemote = muTagRepoRemote;
@@ -78,256 +136,213 @@ export default class AddMuTagInteractor {
         this.accountRepoRemote = accountRepoRemote;
     }
 
-    async startAddingNewMuTag(): Promise<void> {
-        this.addMuTagOutput.showAddMuTagScreen();
-        const findTimeout = 120000 as Millisecond;
-        try {
-            this.unprovisionedMuTag = await this.findFirstUnprovisionedMuTag(
-                findTimeout
-            );
-        } catch (e) {
-            this.showError(UserError.create(NewMuTagNotFound, e));
-            return;
+    async addFoundMuTag(): Promise<void> {
+        if (this.unprovisionedMuTag == null) {
+            throw Error("No MuTag has been found to add.");
         }
-        if (
-            this.unprovisionedMuTag.batteryLevel.valueOf() <
-            this.addMuTagBatteryThreshold.valueOf()
-        ) {
-            const error = UserError.create(
-                LowMuTagBattery(this.addMuTagBatteryThreshold.valueOf())
-            );
-            this.showError(error);
-            return;
-        }
-
-        if (this.muTagName != null) {
-            await this.addNewMuTag(
-                this.unprovisionedMuTag,
-                this.muTagName
-            ).catch(e => this.showError(UserError.create(FailedToAddMuTag, e)));
-        }
+        let connection: Connection;
+        await this.muTagDevices
+            .connectToUnprovisionedMuTag(this.unprovisionedMuTag)
+            .pipe(
+                switchMap(cnnctn => {
+                    connection = cnnctn;
+                    return this.verifyBatteryLevel(cnnctn);
+                }),
+                switchMap(batteryLevel =>
+                    this.addMuTagToPersistence(
+                        batteryLevel,
+                        this.unprovisionedMuTag?.macAddress
+                    ).catch(e => {
+                        throw AddMuTagInteractorException.FailedToAddMuTag(e);
+                    })
+                ),
+                switchMap(() =>
+                    this.muTagDevices
+                        .provisionMuTag(
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            this.accountNumber!,
+                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                            this.provisionedMuTag!.beaconId,
+                            connection
+                        )
+                        .catch(e => {
+                            throw AddMuTagInteractorException.FailedToAddMuTag(
+                                e
+                            );
+                        })
+                ),
+                switchMap(() =>
+                    this.muTagDevices
+                        .changeTxPower(TxPowerSetting["+6 dBm"], connection)
+                        .catch(e => {
+                            throw AddMuTagInteractorException.FailedToSaveSettings(
+                                e
+                            );
+                        })
+                ),
+                switchMap(() =>
+                    this.muTagDevices
+                        .changeAdvertisingInterval(
+                            AdvertisingIntervalSetting["852 ms"],
+                            connection
+                        )
+                        .catch(e => {
+                            throw AddMuTagInteractorException.FailedToSaveSettings(
+                                e
+                            );
+                        })
+                ),
+                take(1),
+                finalize(() =>
+                    this.muTagDevices.disconnectFromMuTag(connection)
+                )
+            )
+            .toPromise();
     }
 
-    stopAddingNewMuTag(): void {
-        this.addMuTagOutput.showHomeScreen();
-        this.muTagDevices.stopFindingUnprovisionedMuTags();
-        this.resetAddNewMuTagState();
-    }
-
-    instructionsComplete(): void {
-        this.addMuTagOutput.showMuTagNamingScreen();
+    async findNewMuTag(): Promise<void> {
+        this.unprovisionedMuTag = await this.muTagDevices
+            .startFindingUnprovisionedMuTags(
+                this.connectThreshold,
+                This.findMuTagTimeout
+            )
+            .pipe(
+                first(),
+                catchError(e => {
+                    if (e instanceof EmptyError) {
+                        throw AddMuTagInteractorException.FindNewMuTagCanceled;
+                    } else {
+                        throw AddMuTagInteractorException.NewMuTagNotFound(e);
+                    }
+                })
+            )
+            .toPromise();
+        await this.muTagDevices.stopFindingUnprovisionedMuTags();
     }
 
     async setMuTagName(name: string): Promise<void> {
-        this.addMuTagOutput.showActivityIndicator();
-
-        if (this.unprovisionedMuTag != null) {
-            await this.addNewMuTag(this.unprovisionedMuTag, name).catch(e =>
-                this.showError(UserError.create(FailedToAddMuTag, e))
-            );
-        } else {
-            this.muTagName = name;
-            this.addMuTagOutput.showMuTagConnectingScreen();
+        if (this.provisionedMuTag == null) {
+            throw Error("Provisioned MuTag does not exist.");
         }
-    }
-
-    async completeMuTagSetup(color: MuTagColor): Promise<void> {
+        if (this.accountUid == null) {
+            throw Error("Account UID not found.");
+        }
+        if (this.accountNumber == null) {
+            throw Error("Account number not found.");
+        }
         try {
-            if (this.provisionedMuTag == null) {
-                throw Error("Newly provisioned Mu tag not found.");
-            }
-
-            this.addMuTagOutput.showActivityIndicator();
-
-            this.provisionedMuTag.changeColor(color);
-            await this.muTagRepoLocal.update(this.provisionedMuTag);
-            const { accountUid, accountNumber } = await this.getAccountIds();
+            this.provisionedMuTag.setName(name);
             await this.muTagRepoRemote.update(
                 this.provisionedMuTag,
-                accountUid,
-                accountNumber
+                this.accountUid,
+                this.accountNumber
             );
+            await this.muTagRepoLocal.update(this.provisionedMuTag);
         } catch (e) {
-            this.addMuTagOutput.showWarning(
-                UserWarning.create(FailedToSaveSettings, e)
-            );
-        } finally {
-            this.resetAddNewMuTagState();
-            this.addMuTagOutput.showHomeScreen();
+            throw AddMuTagInteractorException.FailedToNameMuTag(e);
         }
     }
 
-    private async findFirstUnprovisionedMuTag(
-        timeout: Millisecond
-    ): Promise<UnprovisionedMuTag> {
-        let didPromiseComplete = false;
-        return new Promise((resolve, reject) => {
-            const subscription = this.muTagDevices.unprovisionedMuTag
-                .pipe(take(1))
-                .subscribe(unprovisionedMuTag => {
-                    if (!didPromiseComplete) {
-                        didPromiseComplete = true;
-                        this.muTagDevices.stopFindingUnprovisionedMuTags();
-                        resolve(unprovisionedMuTag);
-                    }
-                });
-            this.muTagDevices
-                .startFindingUnprovisionedMuTags(this.connectThreshold, timeout)
-                .then(() => {
-                    if (!didPromiseComplete) {
-                        didPromiseComplete = true;
-                        subscription.unsubscribe();
-                        reject(
-                            new Error(
-                                "Could not find any unprovisioned Mu tags."
-                            )
-                        );
-                    }
-                })
-                .catch(e => reject(e));
-        });
+    async stopFindingNewMuTag(): Promise<void> {
+        await this.muTagDevices.stopFindingUnprovisionedMuTags();
     }
 
-    private async addNewMuTag(
-        unprovisionedMuTag: UnprovisionedMuTag,
-        name: string
+    private readonly connectThreshold: Rssi;
+    private readonly addMuTagBatteryThreshold: Percent;
+    private readonly muTagDevices: MuTagDevicesPort;
+    private readonly muTagRepoLocal: MuTagRepositoryLocalPort;
+    private readonly muTagRepoRemote: MuTagRepositoryRemotePort;
+    private readonly accountRepoLocal: AccountRepositoryLocalPort;
+    private readonly accountRepoRemote: AccountRepositoryRemotePort;
+
+    private unprovisionedMuTag: UnprovisionedMuTag | undefined;
+    private provisionedMuTag: ProvisionedMuTag | undefined;
+    private accountUid: string | undefined;
+    private accountNumber: AccountNumber | undefined;
+
+    private async addMuTagToPersistence(
+        batteryLevel: Percent,
+        macAddress?: string
     ): Promise<void> {
         const account = await this.accountRepoLocal.get();
+        this.accountUid = account.uid;
         const beaconId = account.newBeaconId;
-        const accountNumber = account.accountNumber;
         const uid = this.muTagRepoRemote.createNewUid(account.uid);
         const dateNow = new Date();
         this.provisionedMuTag = new ProvisionedMuTag({
-            _advertisingInterval: 1,
-            _batteryLevel: unprovisionedMuTag.batteryLevel,
+            _advertisingInterval: 3,
+            _batteryLevel: batteryLevel,
             _beaconId: beaconId,
             _color: MuTagColor.MuOrange,
             _dateAdded: dateNow,
-            _didExitRegion: true,
+            _didExitRegion: false,
             _firmwareVersion: "1.6.1",
-            _isSafe: false,
+            _isSafe: true,
             _lastSeen: dateNow,
-            _macAddress: unprovisionedMuTag.macAddress,
+            _macAddress: macAddress ?? "unknown",
             _modelNumber: "REV8",
             _muTagNumber: account.newMuTagNumber,
-            _name: name,
+            _name: "unnamed",
             _recentLatitude: 0,
             _recentLongitude: 0,
             _txPower: 1,
             _uid: uid
         });
 
+        const undoCommands: (() => Promise<void>)[] = [];
+
+        this.accountNumber = account.accountNumber;
         await this.muTagRepoRemote.add(
             this.provisionedMuTag,
             account.uid,
-            accountNumber
+            this.accountNumber
+        );
+        undoCommands.push(() =>
+            this.muTagRepoRemote.removeByUid(uid, account.uid)
         );
 
-        // Mu tag must be added to local persistence before being added to
-        // account. It's probably best to refactor so that Mu tags don't need to
+        const executeUndoCommands = async () => {
+            const execute = undoCommands.map(command => command());
+            await Promise.all(execute);
+        };
+        const onError = async (error: any) => {
+            await executeUndoCommands();
+            throw error;
+        };
+
+        // MuTag must be added to local persistence before being added to
+        // account. It's probably best to refactor so that MuTags don't need to
         // be added to the account object. That's probably better domain driven
         // design.
-        try {
-            await this.muTagRepoLocal.add(this.provisionedMuTag);
-        } catch (e) {
-            await this.muTagRepoRemote.removeByUid(uid, account.uid);
-            throw e;
-        }
+        await this.muTagRepoLocal.add(this.provisionedMuTag).catch(onError);
+        undoCommands.push(() => this.muTagRepoLocal.removeByUid(uid));
+
         try {
             account.addNewMuTag(this.provisionedMuTag.uid, beaconId);
+            undoCommands.push(async () => account.removeMuTag(uid, beaconId));
         } catch (e) {
-            await this.muTagRepoRemote.removeByUid(uid, account.uid);
-            await this.muTagRepoLocal.removeByUid(uid);
+            await onError(e);
         }
-        try {
-            await this.accountRepoRemote.update(account);
-        } catch (e) {
-            await this.muTagRepoRemote.removeByUid(uid, account.uid);
-            await this.muTagRepoLocal.removeByUid(uid);
-            account.removeMuTag(uid, beaconId);
-            throw e;
-        }
-        try {
-            await this.accountRepoLocal.update(account);
-        } catch (e) {
-            await this.muTagRepoRemote.removeByUid(uid, account.uid);
-            await this.muTagRepoLocal.removeByUid(uid);
-            account.removeMuTag(uid, beaconId);
-            await this.accountRepoRemote.update(account);
-            throw e;
-        }
-        try {
-            await this.muTagDevices.provisionMuTag(
-                unprovisionedMuTag.id,
-                accountNumber,
-                beaconId
+
+        await this.accountRepoRemote.update(account).catch(onError);
+        undoCommands.push(() => this.accountRepoRemote.update(account));
+
+        await this.accountRepoLocal.update(account).catch(onError);
+    }
+
+    private async verifyBatteryLevel(connection: Connection): Promise<Percent> {
+        const batteryLevel = await this.muTagDevices.readBatteryLevel(
+            connection
+        );
+        if (batteryLevel.valueOf() < this.addMuTagBatteryThreshold.valueOf()) {
+            throw AddMuTagInteractorException.LowMuTagBattery(
+                this.addMuTagBatteryThreshold.valueOf()
             );
-        } catch (e) {
-            await this.muTagRepoRemote.removeByUid(uid, account.uid);
-            await this.muTagRepoLocal.removeByUid(uid);
-            account.removeMuTag(uid, beaconId);
-            await this.accountRepoRemote.update(account);
-            await this.accountRepoLocal.update(account);
-            throw e;
         }
-        try {
-            await this.muTagDevices
-                .connectToProvisionedMuTag(accountNumber, beaconId)
-                .pipe(
-                    switchMap(() =>
-                        this.muTagDevices
-                            .changeTxPower(
-                                TxPowerSetting["+6 dBm"],
-                                accountNumber,
-                                beaconId
-                            )
-                            .then(() =>
-                                this.muTagDevices.changeAdvertisingInterval(
-                                    AdvertisingIntervalSetting["852 ms"],
-                                    accountNumber,
-                                    beaconId
-                                )
-                            )
-                            .finally(() =>
-                                this.muTagDevices.disconnectFromProvisionedMuTag(
-                                    accountNumber,
-                                    beaconId
-                                )
-                            )
-                    )
-                )
-                .toPromise();
-        } catch (e) {
-            console.warn(e);
-        }
-
-        this.addMuTagOutput.showMuTagFinalSetupScreen();
+        return batteryLevel;
     }
 
-    private showError(error: UserError): void {
-        this.resetAddNewMuTagState();
-        this.addMuTagOutput.showError(error);
-    }
-
-    private resetAddNewMuTagState(): void {
-        this.unprovisionedMuTag = undefined;
-        this.provisionedMuTag = undefined;
-        this.muTagName = undefined;
-    }
-
-    private async getAccountIds(): Promise<{
-        accountUid: string;
-        accountNumber: AccountNumber;
-    }> {
-        if (this.accountUid == null || this.accountNumber == null) {
-            const account = await this.accountRepoLocal.get();
-            this.accountUid = account.uid;
-            this.accountNumber = account.accountNumber;
-        }
-
-        return {
-            accountUid: this.accountUid,
-            accountNumber: this.accountNumber
-        };
-    }
+    private static findMuTagTimeout = 5000 as Millisecond;
 }
+
+const This = AddMuTagInteractorImpl;

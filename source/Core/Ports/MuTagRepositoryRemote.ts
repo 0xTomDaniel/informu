@@ -1,53 +1,6 @@
 import ProvisionedMuTag from "../Domain/ProvisionedMuTag";
 import { AccountNumber } from "../Domain/Account";
-
-export class DoesNotExist extends Error {
-    constructor() {
-        super("Mu tag entity does not exist in remote persistence.");
-        this.name = "DoesNotExist";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class FailedToGet extends Error {
-    constructor() {
-        super("Failed to get Mu tag entity from remote persistence.");
-        this.name = "FailedToGet";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class PersistedDataMalformed extends Error {
-    constructor(json: string) {
-        super(`Received malformed data from remote persistence:\n${json}`);
-        this.name = "PersistedDataMalformed";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class FailedToAdd extends Error {
-    constructor() {
-        super("Failed to add Mu tag entity to remote persistence.");
-        this.name = "FailedToAdd";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class FailedToUpdate extends Error {
-    constructor() {
-        super("Failed to update Mu tag entity to remote persistence.");
-        this.name = "FailedToUpdate";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
-
-export class FailedToRemove extends Error {
-    constructor() {
-        super("Failed to remove Mu tag entity from remote persistence.");
-        this.name = "FailedToRemove";
-        Object.setPrototypeOf(this, new.target.prototype);
-    }
-}
+import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
 export interface MuTagRepositoryRemote {
     getAll(accountUid: string): Promise<Set<ProvisionedMuTag>>;
@@ -67,4 +20,91 @@ export interface MuTagRepositoryRemote {
         accountNumber: AccountNumber
     ): Promise<void>;
     removeByUid(uid: string, accountUid: string): Promise<void>;
+}
+
+const ExceptionType = [
+    "DoesNotExist",
+    "FailedToAdd",
+    "FailedToGet",
+    "FailedToRemove",
+    "FailedToUpdate",
+    "PersistedDataMalformed"
+] as const;
+export type ExceptionType = typeof ExceptionType[number];
+
+export class MuTagRepoRemoteException<
+    T extends ExceptionType
+> extends Exception<T> {
+    static DoesNotExist(
+        sourceException: unknown
+    ): MuTagRepoRemoteException<"DoesNotExist"> {
+        return new this(
+            "DoesNotExist",
+            "MuTag entity does not exist in remote persistence.",
+            "error",
+            sourceException,
+            true
+        );
+    }
+
+    static FailedToAdd(
+        sourceException: unknown
+    ): MuTagRepoRemoteException<"FailedToAdd"> {
+        return new this(
+            "FailedToAdd",
+            "Failed to add MuTag entity to remote persistence.",
+            "error",
+            sourceException,
+            true
+        );
+    }
+
+    static FailedToGet(
+        sourceException: unknown
+    ): MuTagRepoRemoteException<"FailedToGet"> {
+        return new this(
+            "FailedToGet",
+            "Failed to get MuTag entity from remote persistence.",
+            "error",
+            sourceException,
+            true
+        );
+    }
+
+    static FailedToRemove(
+        sourceException: unknown
+    ): MuTagRepoRemoteException<"FailedToRemove"> {
+        return new this(
+            "FailedToRemove",
+            "Failed to remove MuTag entity from remote persistence.",
+            "error",
+            sourceException,
+            true
+        );
+    }
+
+    static FailedToUpdate(
+        sourceException: unknown
+    ): MuTagRepoRemoteException<"FailedToUpdate"> {
+        return new this(
+            "FailedToUpdate",
+            "Failed to update MuTag entity to remote persistence.",
+            "error",
+            sourceException,
+            true
+        );
+    }
+
+    static PersistedDataMalformed(
+        json: string,
+        sourceException?: unknown
+    ): MuTagRepoRemoteException<"PersistedDataMalformed"> {
+        return new this(
+            "PersistedDataMalformed",
+            `Received malformed data from remote persistence:\n${json}`,
+            "error",
+            sourceException,
+            true
+        );
+    }
 }

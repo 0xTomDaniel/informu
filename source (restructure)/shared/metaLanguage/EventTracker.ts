@@ -17,10 +17,15 @@ export default interface EventTracker {
 }
 
 export class EventTrackerImpl implements EventTracker {
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     log(message: any): void {
-        Sentry.captureMessage(JSON.stringify(message), Sentry.Severity.Info);
+        Sentry.captureMessage(
+            JSON.stringify(message, Object.getOwnPropertyNames(message)),
+            Sentry.Severity.Info
+        );
     }
 
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     warn(message: any): void {
         Sentry.withScope(scope => {
             scope.setLevel(Sentry.Severity.Warning);
@@ -28,6 +33,7 @@ export class EventTrackerImpl implements EventTracker {
         });
     }
 
+    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     error(message: any): void {
         Sentry.captureException(message);
     }

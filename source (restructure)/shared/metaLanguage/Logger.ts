@@ -3,12 +3,12 @@ import EventTracker from "./EventTracker";
 export default class Logger {
     private static _instance: Logger;
     static get instance(): Logger {
-        if (Logger._instance == null) {
+        if (this._instance == null) {
             throw Error(
                 "Logger instance does not exist. Please create it first."
             );
         }
-        return Logger._instance;
+        return this._instance;
     }
     private readonly eventTracker: EventTracker;
 
@@ -17,13 +17,13 @@ export default class Logger {
     }
 
     static createInstance(eventTracker: EventTracker): void {
-        if (Logger._instance != null) {
+        if (this._instance != null) {
             throw Error("Logger instance already exists.");
         }
-        Logger._instance = new Logger(eventTracker);
+        this._instance = new this(eventTracker);
     }
 
-    log(message: any, report = false, toConsole = true): void {
+    log(message: unknown, report = false, toConsole = true): void {
         if (toConsole) {
             console.log(
                 JSON.stringify(message, Object.getOwnPropertyNames(message))
@@ -34,7 +34,7 @@ export default class Logger {
         }
     }
 
-    warn(message: any, report = false, toConsole = true): void {
+    warn(message: unknown, report = false, toConsole = true): void {
         if (toConsole) {
             console.warn(
                 JSON.stringify(message, Object.getOwnPropertyNames(message))
@@ -45,7 +45,7 @@ export default class Logger {
         }
     }
 
-    error(message: any, report = false, toConsole = true): void {
+    error(message: unknown, report = false, toConsole = true): void {
         if (toConsole) {
             console.error(
                 JSON.stringify(message, Object.getOwnPropertyNames(message))

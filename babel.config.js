@@ -8,8 +8,8 @@ module.exports = api => {
     ];
     if (babelEnv !== "development") {
         plugins.push([
-            "transform-remove-console",
-            { exclude: ["error", "warn"] }
+            "transform-remove-console"
+            //{ exclude: ["error", "warn", "log"] }
         ]);
     }
     return {
