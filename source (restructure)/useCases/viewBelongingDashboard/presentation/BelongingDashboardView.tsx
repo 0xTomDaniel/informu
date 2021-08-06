@@ -13,7 +13,6 @@ import {
     StyleSheet,
     Platform,
     StatusBar,
-    PermissionsAndroid,
     View,
     FlatList,
     ListRenderItem
@@ -44,6 +43,7 @@ import { ProgressIndicatorState } from "../../../shared/viewModel/ViewModel";
 import Icon from "react-native-vector-icons/MaterialCommunityIcons";
 import Localize from "../../../shared/localization/Localize";
 import assertUnreachable from "../../../shared/metaLanguage/assertUnreachable";
+import { check, request, PERMISSIONS, RESULTS } from "react-native-permissions";
 
 const styles = StyleSheet.create({
     safeAreaView: {
@@ -203,19 +203,21 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
     };*/
 
     const requestPermissions = async (): Promise<void> => {
-        const isPermissionGranted = await PermissionsAndroid.check(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
+        // Permission: ACTIVITY_RECOGNITION
+
+        const activityPermissionCheck = await check(
+            PERMISSIONS.ANDROID.ACTIVITY_RECOGNITION
         );
 
-        if (isPermissionGranted) {
+        if (activityPermissionCheck === RESULTS.GRANTED) {
             console.log("Bluetooth granted");
             return;
         }
 
         console.log("Bluetooth denied");
 
-        const permissionStatus = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        const activityPermissionRequest = await request(
+            PERMISSIONS.ANDROID.ACTIVITY_RECOGNITION,
             {
                 title: props.localize.getText(
                     "ViewBelongingDashboard",
@@ -241,7 +243,53 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
             }
         );
 
-        if (permissionStatus === PermissionsAndroid.RESULTS.GRANTED) {
+        if (activityPermissionRequest === RESULTS.GRANTED) {
+            console.log("Bluetooth successfully granted!");
+        } else {
+            console.log("Bluetooth was denied!");
+        }
+
+        // Permission: ACCESS_FINE_LOCATION
+
+        const locationPermissionCheck = await check(
+            PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION
+        );
+
+        if (locationPermissionCheck === RESULTS.GRANTED) {
+            console.log("Bluetooth granted");
+            return;
+        }
+
+        console.log("Bluetooth denied");
+
+        const locationPermissionRequest = await request(
+            PERMISSIONS.ANDROID.ACCESS_FINE_LOCATION,
+            {
+                title: props.localize.getText(
+                    "ViewBelongingDashboard",
+                    "LocationPermissionRequest",
+                    "Title"
+                ),
+                message: props.localize.getText(
+                    "ViewBelongingDashboard",
+                    "LocationPermissionRequest",
+                    "Message"
+                ),
+                //buttonNeutral: "Ask Me Later",
+                buttonNegative: props.localize.getText(
+                    "ViewBelongingDashboard",
+                    "LocationPermissionRequest",
+                    "ButtonDeny"
+                ),
+                buttonPositive: props.localize.getText(
+                    "ViewBelongingDashboard",
+                    "LocationPermissionRequest",
+                    "ButtonAllow"
+                )
+            }
+        );
+
+        if (locationPermissionRequest === RESULTS.GRANTED) {
             console.log("Bluetooth successfully granted!");
         } else {
             console.log("Bluetooth was denied!");

@@ -6,7 +6,7 @@ import {
 import BackgroundGeolocation, {
     EventSubscription,
     Location
-} from "@mauron85/react-native-background-geolocation";
+} from "@darron1217/react-native-background-geolocation";
 
 export default class GeolocationImpl implements Geolocation {
     on(

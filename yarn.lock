@@ -2574,6 +2574,7 @@ __metadata:
     react-native-linear-gradient: ^2.5.6
     react-native-localize: ^2.0.1
     react-native-paper: ^3.2.1
+    react-native-permissions: 2.2.2
     react-native-reanimated: ^1.4.0
     react-native-screens: ^2.0.0-alpha.34
     react-native-vector-icons: ^6.6.0
@@ -9424,6 +9425,16 @@ fsevents@^2.1.2:
     react-native: "*"
     react-native-vector-icons: "*"
   checksum: fe59210635075372152a90252ab2845d5f13b316be88d2412e16e2f3cf10d0848fdb506f1ce822837094a90481690b94d2d79496efcb9945686a3bfe54fa4cc1
+  languageName: node
+  linkType: hard
+
+"react-native-permissions@npm:2.2.2":
+  version: 2.2.2
+  resolution: "react-native-permissions@npm:2.2.2"
+  peerDependencies:
+    react: ">=16.8.6"
+    react-native: ">=0.60.0"
+  checksum: c5102c203bc1fe4b4016ed7c75131a33bbe4ad10725086b2eb4f8bd6e7a8009dc9675dffc67126a0327febb2d574dda25fc02361dce26d4f9b06bb7293ae1de2
   languageName: node
   linkType: hard
 
