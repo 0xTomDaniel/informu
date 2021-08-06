@@ -204,18 +204,18 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
 
     const requestPermissions = async (): Promise<void> => {
         const isPermissionGranted = await PermissionsAndroid.check(
-            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
         );
 
         if (isPermissionGranted) {
-            console.log("Bluetooth granted!");
+            console.log("Bluetooth granted");
             return;
         }
 
         console.log("Bluetooth denied");
 
         const permissionStatus = await PermissionsAndroid.request(
-            PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION,
+            PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
             {
                 title: props.localize.getText(
                     "ViewBelongingDashboard",
@@ -242,9 +242,9 @@ const BelongingDashboardView: FunctionComponent<BelongingDashboardViewProps> = (
         );
 
         if (permissionStatus === PermissionsAndroid.RESULTS.GRANTED) {
-            console.log("Bluetooth granted!");
+            console.log("Bluetooth successfully granted!");
         } else {
-            console.log("Bluetooth denied");
+            console.log("Bluetooth was denied!");
         }
     };
 

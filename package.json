@@ -9,7 +9,7 @@
     "postinstall": "patch-package"
   },
   "dependencies": {
-    "@mauron85/react-native-background-geolocation": "^0.6.3",
+    "@darron1217/react-native-background-geolocation": "^0.6.6",
     "@nozbe/watermelondb": "^0.15.0",
     "@react-native-community/google-signin": "^3.0.3",
     "@react-native-firebase/app": "^6.1.0",
@@ -35,8 +35,8 @@
     "react-native-background-fetch": "^3.1.0",
     "react-native-background-timer": "^2.3.1",
     "react-native-beacons-manager": "^1.0.7",
-    "react-native-ble-manager": "^7.0.0",
-    "react-native-ble-plx": "^1.1.1",
+    "react-native-ble-manager": "^7.5.0",
+    "react-native-ble-plx": "^2.0.2",
     "react-native-device-info": "^2.3.2",
     "react-native-fbsdk": "^1.1.1",
     "react-native-geocoding": "^0.4.0",

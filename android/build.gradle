@@ -3,8 +3,8 @@
 buildscript {
     ext {
         buildToolsVersion = "28.0.3"
-        // Minimum SDK version required by react-native-ble-manager is 19.
-        // Minimum SDK version required by react-native-ble-plx is 18.
+        // Minimum SDK version required by react-native-ble-manager is at least 19.
+        // Minimum SDK version required by react-native-ble-plx is at least 18.
         minSdkVersion = 19
         compileSdkVersion = 29
         targetSdkVersion = 29
@@ -41,6 +41,10 @@ allprojects {
         maven {
             // react-native-background-fetch
             url("${project(':react-native-background-fetch').projectDir}/libs")
+        }
+        maven {
+            // react-native-ble-plx
+            url 'https://www.jitpack.io'
         }
 
         google()

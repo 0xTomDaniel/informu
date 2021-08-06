@@ -1282,6 +1282,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@darron1217/react-native-background-geolocation@npm:^0.6.6":
+  version: 0.6.6
+  resolution: "@darron1217/react-native-background-geolocation@npm:0.6.6"
+  dependencies:
+    plist: ^3.0.1
+  peerDependencies:
+    react-native: ">=0.60.5"
+  checksum: 232bec5892631741c03652938b13f8d61e0417f4e3d92a750047c8009e3dba25c78160b054349d52154dbb407c2d5ec567a6c3148f13969720fc8de52302ba30
+  languageName: node
+  linkType: hard
+
 "@egjs/hammerjs@npm:^2.0.17":
   version: 2.0.17
   resolution: "@egjs/hammerjs@npm:2.0.17"
@@ -1628,17 +1639,6 @@ __metadata:
     to900913: bin/to900913.js
     xyz: bin/xyz.js
   checksum: 826719a93bd358ed0dab0b5bca0fa169b3e7d8af09ee171487c3ebdc7fc4574a97661d610da3e4476ec54c9b547cdfc9ab01dc444222153bc2d30b4d5da17ed0
-  languageName: node
-  linkType: hard
-
-"@mauron85/react-native-background-geolocation@npm:^0.6.3":
-  version: 0.6.3
-  resolution: "@mauron85/react-native-background-geolocation@npm:0.6.3"
-  dependencies:
-    plist: ^3.0.1
-  peerDependencies:
-    react-native: ">=0.60.5"
-  checksum: 1b75efefee10a330b75cee2169b05841e218f8991a2c7ac67a08ddd82a84dc3623f8b463aa0ffaee31551582a4398c6ddf7bf922b5564b08b14a5981c099db6d
   languageName: node
   linkType: hard
 
@@ -2522,7 +2522,7 @@ __metadata:
     "@babel/core": ^7.5.4
     "@babel/plugin-proposal-decorators": ^7.7.4
     "@babel/runtime": ^7.5.4
-    "@mauron85/react-native-background-geolocation": ^0.6.3
+    "@darron1217/react-native-background-geolocation": ^0.6.6
     "@nozbe/watermelondb": ^0.15.0
     "@react-native-community/eslint-config": ~0.0.3
     "@react-native-community/google-signin": ^3.0.3
@@ -2565,8 +2565,8 @@ __metadata:
     react-native-background-fetch: ^3.1.0
     react-native-background-timer: ^2.3.1
     react-native-beacons-manager: ^1.0.7
-    react-native-ble-manager: ^7.0.0
-    react-native-ble-plx: ^1.1.1
+    react-native-ble-manager: ^7.5.0
+    react-native-ble-plx: ^2.0.2
     react-native-device-info: ^2.3.2
     react-native-fbsdk: ^1.1.1
     react-native-geocoding: ^0.4.0
@@ -9345,17 +9345,17 @@ fsevents@^2.1.2:
   languageName: node
   linkType: hard
 
-"react-native-ble-manager@npm:^7.0.0":
-  version: 7.2.0
-  resolution: "react-native-ble-manager@npm:7.2.0"
-  checksum: 10c9ca4580d46a68567badb8630c069e51ec7566a106311f37654d22441da9cb25bda21dd3df64bb34fe535792f7f44c9eba901967f1b037041e67692e6133fd
+"react-native-ble-manager@npm:^7.5.0":
+  version: 7.6.0
+  resolution: "react-native-ble-manager@npm:7.6.0"
+  checksum: ce90b33f557645fe853a506d709d1eb301fc6b3c65d385431357dd633e7d5a4b2a5dab12be0f7e42f45ab7b8aab7ac7162db0fa607c27a4ff3af8824a5aca305
   languageName: node
   linkType: hard
 
-"react-native-ble-plx@npm:^1.1.1":
-  version: 1.1.1
-  resolution: "react-native-ble-plx@npm:1.1.1"
-  checksum: 725c3553cc92dbdce915330d97488102de561009c3dd87419e92eca03c3c75eab361f13f7900a58b95cfce27188685633061f3f353fc44b537796cb8995edd81
+"react-native-ble-plx@npm:^2.0.2":
+  version: 2.0.2
+  resolution: "react-native-ble-plx@npm:2.0.2"
+  checksum: 360f5c8d6fc488a13cff904143d18b6b3af19a6e8f91c951f5120976055de02255a5e63eec0483d8ab56922b5449780fe76d3410564b6cb60b6fdd40fe3d797f
   languageName: node
   linkType: hard
 
