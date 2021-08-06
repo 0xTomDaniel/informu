@@ -1779,17 +1779,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@react-native-community/google-signin@npm:^3.0.3":
-  version: 3.0.4
-  resolution: "@react-native-community/google-signin@npm:3.0.4"
-  peerDependencies:
-    prop-types: "*"
-    react: "*"
-    react-native: "*"
-  checksum: d1f2b8116e2e5dabb9de0346129bb48ed9c500c1a6dc8e8b3941095163cc35331d983a36001eff81143ef3b4211ec48834d81b33aea85293980d80aba34c2e30
-  languageName: node
-  linkType: hard
-
 "@react-native-firebase/app-types@npm:6.3.4":
   version: 6.3.4
   resolution: "@react-native-firebase/app-types@npm:6.3.4"
@@ -1826,6 +1815,17 @@ __metadata:
   peerDependencies:
     "@react-native-firebase/app": "*"
   checksum: 5a2740ffe04f08a24d3477abd2d9fc7e162a95e173ceb3a5a5468bb9ebdf15b012d4cc7ed5631359d68215102272fba59d57e1ddd7ca554f1aefec1dac88fa22
+  languageName: node
+  linkType: hard
+
+"@react-native-google-signin/google-signin@npm:^6.0.1":
+  version: 6.0.1
+  resolution: "@react-native-google-signin/google-signin@npm:6.0.1"
+  peerDependencies:
+    prop-types: "*"
+    react: "*"
+    react-native: "*"
+  checksum: 744906f1592588b54fff160e23ccf8e9add21908608e15b1a7f4e963e65ba30aebad29310df7f505e0d72d540d6ff46715aa9de906e386b37e15f573c7473198
   languageName: node
   linkType: hard
 
@@ -2525,10 +2525,10 @@ __metadata:
     "@darron1217/react-native-background-geolocation": ^0.6.6
     "@nozbe/watermelondb": ^0.15.0
     "@react-native-community/eslint-config": ~0.0.3
-    "@react-native-community/google-signin": ^3.0.3
     "@react-native-firebase/app": ^6.1.0
     "@react-native-firebase/auth": ^6.1.0
     "@react-native-firebase/database": ^6.1.0
+    "@react-native-google-signin/google-signin": ^6.0.1
     "@react-native-mapbox-gl/maps": ^8.0.0
     "@sentry/integrations": ^5.13.2
     "@sentry/react-native": ^1.3.3

@@ -9,7 +9,7 @@ import { UserData } from "../../Core/Ports/UserData";
 import {
     GoogleSignin,
     statusCodes
-} from "@react-native-community/google-signin";
+} from "@react-native-google-signin/google-signin";
 import { LoginManager, AccessToken } from "react-native-fbsdk";
 
 export class AuthenticationFirebase implements Authentication {

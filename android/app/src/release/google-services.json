@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "578567758914-is970isttt2nei8i6ojvk1oedq3r9396.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ai.informu.mutag",
+            "certificate_hash": "ece7e5ef437be265697aa6684fd03ffe89e92e45"
+          }
+        },
+        {
           "client_id": "578567758914-mhodnv7ske3vd2vqcofphsdi8s93demg.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -40,11 +48,11 @@
               "client_type": 3
             },
             {
-              "client_id": "578567758914-q06rrupknj20dkt4ejfg6krvnte9pk8k.apps.googleusercontent.com",
+              "client_id": "578567758914-14o7qjsc16scaigebi9br90ajukqrtt5.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "io.informu.mu-tag",
-                "app_store_id": "1469326437"
+                "bundle_id": "io.informu.mutag",
+                "app_store_id": "1382127598"
               }
             }
           ]
@@ -77,11 +85,11 @@
               "client_type": 3
             },
             {
-              "client_id": "578567758914-q06rrupknj20dkt4ejfg6krvnte9pk8k.apps.googleusercontent.com",
+              "client_id": "578567758914-14o7qjsc16scaigebi9br90ajukqrtt5.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "io.informu.mu-tag",
-                "app_store_id": "1469326437"
+                "bundle_id": "io.informu.mutag",
+                "app_store_id": "1382127598"
               }
             }
           ]
@@ -122,11 +130,11 @@
               "client_type": 3
             },
             {
-              "client_id": "578567758914-q06rrupknj20dkt4ejfg6krvnte9pk8k.apps.googleusercontent.com",
+              "client_id": "578567758914-14o7qjsc16scaigebi9br90ajukqrtt5.apps.googleusercontent.com",
               "client_type": 2,
               "ios_info": {
-                "bundle_id": "io.informu.mu-tag",
-                "app_store_id": "1469326437"
+                "bundle_id": "io.informu.mutag",
+                "app_store_id": "1382127598"
               }
             }
           ]
