@@ -68,17 +68,11 @@ platform :android do
     envProduction << " UPLOAD_KEY_PASSWORD=#{keystoreAndKeyPassword}"
     envProduction = envProduction.gsub('"','\"')
 
-    # Must run Metro Bundler manually to populate environment variables
-    
-    #sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envProductionMetro} && clear && yarn react-native start --reset-cache\"\'"
-
     shouldShowLogs = prompt(text: "Show logs?", boolean: true)
 
     projectDir = 'android'
     gradle(task: 'clean', project_dir: projectDir)
-    sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && export #{envProduction} && clear && yarn react-native start --reset-cache\"\'"
-    sh "cd .. && yarn react-native run-android --variant=release"
-    #sh "cd .. && export #{} && yarn react-native run-android --variant=release -- --reset-cache"
+    sh "cd .. && export #{envProduction} && yarn react-native run-android --variant=release -- --reset-cache"
     if shouldShowLogs
       sh "osascript -e \'tell application \"Terminal\" to do script \"cd #{Dir.pwd}/.. && clear && yarn react-native log-android\"\'"
     end
