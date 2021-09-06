@@ -96,8 +96,11 @@ import ReactNavigationAdapter from "./source (restructure)/shared/navigation/Rea
 import FindAddMuTagView from "./source (restructure)/useCases/addMuTag/presentation/FindAddMuTagView";
 import AddMuTagIntroView from "./source (restructure)/useCases/addMuTag/presentation/AddMuTagIntroView";
 import NameMuTagView from "./source (restructure)/useCases/addMuTag/presentation/NameMuTagView";
+//import DebugView from "./source (restructure)/useCases/debug/presentation/DebugView";
+//import AdjustGeolocationViewDebug from "./source (restructure)/useCases/adjustGeolocation/debug/AdjustGeolocationViewDebug";
+//import AdjustGeolocationInteractorDebug from "./source (restructure)/useCases/adjustGeolocation/debug/AdjustGeolocationInteractorDebug";
 
-// DEBUG
+// START DEBUG
 /*import MessageQueue from "react-native/Libraries/BatchedBridge/MessageQueue.js";
 
 const spyFunction = (msg: unknown) => {
@@ -562,7 +565,38 @@ const MapStack = createStackNavigator(
     }
 );
 
-/*const DebugStack = createStackNavigator(
+/*const DebugStackOne = createStackNavigator(
+    {
+        Debug: {
+            screen: (props: NavigationScreenProps): ReactElement => (
+                <DebugView
+                    locationMonitor={dependencies.locationMonitor}
+                    {...props}
+                />
+            )
+        }
+    },
+    {
+        defaultNavigationOptions: {
+            header: null
+        },
+        navigationOptions: {
+            tabBarIcon: ({ tintColor, focused }): ReactElement => (
+                <Icon
+                    name="bug"
+                    size={24}
+                    color={
+                        focused
+                            ? Theme.Color.SecondaryBlue
+                            : tintColor ?? undefined
+                    }
+                />
+            )
+        }
+    }
+);
+
+const DebugStackTwo = createStackNavigator(
     {
         Debug: {
             screen: (props: NavigationScreenProps): ReactElement => (
@@ -599,7 +633,8 @@ const AppStack = createMaterialBottomTabNavigator(
     {
         [localize.getText("TabBar", "Screen", "Home")]: { screen: HomeStack },
         [localize.getText("TabBar", "Screen", "Map")]: { screen: MapStack }
-        //Debug: { screen: DebugStack }
+        //DebugOne: { screen: DebugStackOne },
+        //DebugTwo: { screen: DebugStackTwo }
     },
     {
         defaultNavigationOptions: {
