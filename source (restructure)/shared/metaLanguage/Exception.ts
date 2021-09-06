@@ -2,7 +2,7 @@ import Logger from "./Logger";
 
 type Severity = "log" | "warn" | "error";
 
-type ExceptionAttributes = {
+export type ExceptionAttributes = {
     type: string;
     data: readonly [...any];
 };

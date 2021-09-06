@@ -22,15 +22,20 @@ import { BelongingsLocation } from "../../../source (restructure)/useCases/updat
 import MuTagBatteriesInteractor from "../../../source (restructure)/useCases/updateMuTagBatteries/MuTagBatteriesInteractor";
 import Exception from "../../../source (restructure)/shared/metaLanguage/Exception";
 
-const ExceptionType = ["SignedIntoOtherDevice", "UnknownException"] as const;
-type ExceptionType = typeof ExceptionType[number];
+type ExceptionType =
+    | {
+          type: "SignedIntoOtherDevice";
+          data: [];
+      }
+    | {
+          type: "UnknownException";
+          data: [];
+      };
 
-class SessionServiceException<T extends ExceptionType> extends Exception<T> {
-    static get SignedIntoOtherDevice(): SessionServiceException<
-        "SignedIntoOtherDevice"
-    > {
+class SessionServiceException extends Exception<ExceptionType> {
+    static get SignedIntoOtherDevice(): SessionServiceException {
         return new this(
-            "SignedIntoOtherDevice",
+            { type: "SignedIntoOtherDevice", data: [] },
             "Account is already signed into another device.",
             "warn",
             undefined,
@@ -38,11 +43,9 @@ class SessionServiceException<T extends ExceptionType> extends Exception<T> {
         );
     }
 
-    static UnknownException(
-        sourceException: unknown
-    ): SessionServiceException<"UnknownException"> {
+    static UnknownException(sourceException: unknown): SessionServiceException {
         return new this(
-            "UnknownException",
+            { type: "UnknownException", data: [] },
             "An unknown problem has occurred while attempting to load the login session.",
             "error",
             sourceException,
@@ -156,7 +159,10 @@ export class SessionServiceImpl implements SessionService {
             await this.belongingsLocationInteractor.start();
             await this.muTagBatteriesInteractor.start();
         } catch (e) {
-            if (AccountRepositoryLocalException.isType(e, "DoesNotExist")) {
+            if (
+                AccountRepositoryLocalException.isType(e) &&
+                e.attributes.type === "DoesNotExist"
+            ) {
                 this.sessionOutput.showLoginScreen();
             } else {
                 SessionServiceException.UnknownException(e);
@@ -178,7 +184,10 @@ export class SessionServiceImpl implements SessionService {
         try {
             account = await this.accountRepoRemote.getByUid(userData.uid);
         } catch (e) {
-            if (AccountRepositoryRemoteException.isType(e, "DoesNotExist")) {
+            if (
+                AccountRepositoryRemoteException.isType(e) &&
+                e.attributes.type === "DoesNotExist"
+            ) {
                 await this.accountRegistrationService.register(
                     userData.uid,
                     userData.emailAddress,

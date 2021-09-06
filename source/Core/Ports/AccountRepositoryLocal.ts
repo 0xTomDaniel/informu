@@ -8,21 +8,32 @@ export interface AccountRepositoryLocal {
     remove(): Promise<void>;
 }
 
-const ExceptionType = [
-    "DoesNotExist",
-    "FailedToAdd",
-    "FailedToGet",
-    "FailedToRemove",
-    "FailedToUpdate"
-] as const;
-type ExceptionType = typeof ExceptionType[number];
+type ExceptionType =
+    | {
+          type: "DoesNotExist";
+          data: [];
+      }
+    | {
+          type: "FailedToAdd";
+          data: [];
+      }
+    | {
+          type: "FailedToGet";
+          data: [];
+      }
+    | {
+          type: "FailedToRemove";
+          data: [];
+      }
+    | {
+          type: "FailedToUpdate";
+          data: [];
+      };
 
-export class AccountRepositoryLocalException<
-    T extends ExceptionType
-> extends Exception<T> {
-    static get DoesNotExist(): AccountRepositoryLocalException<"DoesNotExist"> {
+export class AccountRepositoryLocalException extends Exception<ExceptionType> {
+    static get DoesNotExist(): AccountRepositoryLocalException {
         return new this(
-            "DoesNotExist",
+            { type: "DoesNotExist", data: [] },
             "Account entity does not exist in local persistence.",
             "error",
             undefined,
@@ -30,9 +41,9 @@ export class AccountRepositoryLocalException<
         );
     }
 
-    static get FailedToAdd(): AccountRepositoryLocalException<"FailedToAdd"> {
+    static get FailedToAdd(): AccountRepositoryLocalException {
         return new this(
-            "FailedToAdd",
+            { type: "FailedToAdd", data: [] },
             "Failed to add account entity to local persistence.",
             "error",
             undefined,
@@ -40,9 +51,9 @@ export class AccountRepositoryLocalException<
         );
     }
 
-    static get FailedToGet(): AccountRepositoryLocalException<"FailedToGet"> {
+    static get FailedToGet(): AccountRepositoryLocalException {
         return new this(
-            "FailedToGet",
+            { type: "FailedToGet", data: [] },
             "Failed to get account entity from local persistence.",
             "error",
             undefined,
@@ -50,11 +61,9 @@ export class AccountRepositoryLocalException<
         );
     }
 
-    static get FailedToRemove(): AccountRepositoryLocalException<
-        "FailedToRemove"
-    > {
+    static get FailedToRemove(): AccountRepositoryLocalException {
         return new this(
-            "FailedToRemove",
+            { type: "FailedToRemove", data: [] },
             "Failed to remove account entity from local persistence.",
             "error",
             undefined,
@@ -62,11 +71,9 @@ export class AccountRepositoryLocalException<
         );
     }
 
-    static get FailedToUpdate(): AccountRepositoryLocalException<
-        "FailedToUpdate"
-    > {
+    static get FailedToUpdate(): AccountRepositoryLocalException {
         return new this(
-            "FailedToUpdate",
+            { type: "FailedToUpdate", data: [] },
             "Failed to update account entity to local persistence.",
             "error",
             undefined,
